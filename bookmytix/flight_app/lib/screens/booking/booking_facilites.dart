@@ -1272,7 +1272,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
               vertical: 12,
             ),
             decoration: BoxDecoration(
-              color: TravelloTheme.primaryMain.withOpacity(0.08),
+              color: TravelloTheme.primaryMain.withValues(alpha: 0.08),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(12)),
             ),
@@ -1402,7 +1402,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                             ),
                             decoration: BoxDecoration(
                               color: selected
-                                  ? TravelloTheme.primaryMain.withOpacity(0.1)
+                                  ? TravelloTheme.primaryMain.withValues(alpha: 0.1)
                                   : const Color(0xFFF5F5F5),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(

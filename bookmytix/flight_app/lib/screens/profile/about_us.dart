@@ -28,7 +28,7 @@ class AboutUs extends StatelessWidget {
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: TravelloTheme.primaryLight.withOpacity(0.2),
+                color: TravelloTheme.primaryLight.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Center(

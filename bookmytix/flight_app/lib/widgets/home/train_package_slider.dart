@@ -242,7 +242,7 @@ class _TrainPackageSliderState extends State<TrainPackageSlider> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
+                          color: Colors.black.withValues(alpha: 0.15),
                           blurRadius: 8,
                           spreadRadius: 1,
                           offset: const Offset(0, 2),
@@ -269,7 +269,7 @@ class _TrainPackageSliderState extends State<TrainPackageSlider> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
+                          color: Colors.black.withValues(alpha: 0.15),
                           blurRadius: 8,
                           spreadRadius: 1,
                           offset: const Offset(0, 2),

@@ -165,7 +165,7 @@ class _FeatureCardState extends State<_FeatureCard> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: _kGold.withOpacity(active ? 0.40 : 0.20),
+                  color: _kGold.withValues(alpha: active ? 0.40 : 0.20),
                   blurRadius: active ? 16 : 8,
                   offset: const Offset(0, 4),
                 ),
@@ -178,7 +178,7 @@ class _FeatureCardState extends State<_FeatureCard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.20),
+                    color: Colors.white.withValues(alpha: 0.20),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(widget.icon, color: Colors.white, size: iconSize),
@@ -194,7 +194,7 @@ class _FeatureCardState extends State<_FeatureCard> {
                 Text(widget.subtitle,
                     style: TextStyle(
                       fontSize: subSize,
-                      color: Colors.white.withOpacity(0.80),
+                      color: Colors.white.withValues(alpha: 0.80),
                     )),
               ],
             ),

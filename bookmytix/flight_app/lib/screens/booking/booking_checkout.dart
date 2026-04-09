@@ -1226,7 +1226,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                   Border.all(color: const Color(0xFFE0E0E0)), // Light divider
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -1239,7 +1239,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: primary.withOpacity(0.05),
+                    color: primary.withValues(alpha: 0.05),
                     borderRadius:
                         const BorderRadius.vertical(top: Radius.circular(14)),
                   ),
@@ -1250,7 +1250,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                         height: 38,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [primary, primary.withOpacity(0.7)],
+                            colors: [primary, primary.withValues(alpha: 0.7)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -1289,10 +1289,10 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: pType == 'Adult'
-                              ? primary.withOpacity(0.1)
+                              ? primary.withValues(alpha: 0.1)
                               : pType == 'Child'
-                                  ? Colors.orange.withOpacity(0.12)
-                                  : Colors.purple.withOpacity(0.12),
+                                  ? Colors.orange.withValues(alpha: 0.12)
+                                  : Colors.purple.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -1930,7 +1930,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
             border: Border.all(color: const Color(0xFFE0E0E0)), // Light divider
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               )
@@ -2038,7 +2038,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
-                  color: primary.withOpacity(0.04),
+                  color: primary.withValues(alpha: 0.04),
                   borderRadius:
                       const BorderRadius.vertical(bottom: Radius.circular(14)),
                 ),
@@ -2112,7 +2112,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: primary.withOpacity(0.07),
+            color: primary.withValues(alpha: 0.07),
             borderRadius: BorderRadius.circular(9),
           ),
           child: Icon(icon, size: 18, color: primary),
@@ -2958,7 +2958,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
         color: const Color(0xFFF5F5F5), // Light card
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),

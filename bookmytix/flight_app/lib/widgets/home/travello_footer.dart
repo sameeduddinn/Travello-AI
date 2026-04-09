@@ -226,7 +226,7 @@ class TravelloFooter extends StatelessWidget {
   Widget _buildFooterLink(String text, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      hoverColor: TravelloTheme.primaryLight.withOpacity(0.3),
+      hoverColor: TravelloTheme.primaryLight.withValues(alpha: 0.3),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: spacingUnit(0.75)),
         child: Text(
@@ -254,7 +254,7 @@ class TravelloFooter extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha: 0.2),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -361,10 +361,10 @@ class TravelloFooter extends StatelessWidget {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: TravelloTheme.primaryMain.withOpacity(0.1),
+          color: TravelloTheme.primaryMain.withValues(alpha: 0.1),
           shape: BoxShape.circle,
           border: Border.all(
-            color: TravelloTheme.primaryMain.withOpacity(0.3),
+            color: TravelloTheme.primaryMain.withValues(alpha: 0.3),
             width: 1.5,
           ),
         ),

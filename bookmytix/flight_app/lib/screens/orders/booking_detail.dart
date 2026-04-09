@@ -148,7 +148,7 @@ class _BookingDetailState extends State<BookingDetail> {
                   vertical: 5.6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -179,7 +179,7 @@ class _BookingDetailState extends State<BookingDetail> {
               Text(
                 'PNR: ',
                 style: TravelloTheme.paragraph.copyWith(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
               ),
               Text(
@@ -221,7 +221,7 @@ class _BookingDetailState extends State<BookingDetail> {
         icon = Icons.cancel;
         break;
       case 'completed':
-        bgColor = Colors.white.withOpacity(0.3);
+        bgColor = Colors.white.withValues(alpha: 0.3);
         label = 'COMPLETED';
         icon = Icons.check_circle_outline;
         break;
@@ -311,7 +311,7 @@ class _BookingDetailState extends State<BookingDetail> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -403,7 +403,7 @@ class _BookingDetailState extends State<BookingDetail> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -433,10 +433,10 @@ class _BookingDetailState extends State<BookingDetail> {
                         horizontal: 9.6,
                         vertical: spacingUnit(0.4)),
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.1),
+                      color: accentColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                          color: accentColor.withOpacity(0.35), width: 1),
+                          color: accentColor.withValues(alpha: 0.35), width: 1),
                     ),
                     child: Row(
                       children: [
@@ -916,10 +916,10 @@ class _BookingDetailState extends State<BookingDetail> {
                 vertical: 6.4,
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFF059669).withOpacity(0.1),
+                color: const Color(0xFF059669).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFF059669).withOpacity(0.3),
+                  color: const Color(0xFF059669).withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -963,7 +963,7 @@ class _BookingDetailState extends State<BookingDetail> {
                               (index) => Container(
                                 width: 3,
                                 height: 2,
-                                color: const Color(0xFF059669).withOpacity(0.4),
+                                color: const Color(0xFF059669).withValues(alpha: 0.4),
                               ),
                             ),
                           );
@@ -991,7 +991,7 @@ class _BookingDetailState extends State<BookingDetail> {
                               (index) => Container(
                                 width: 3,
                                 height: 2,
-                                color: const Color(0xFF059669).withOpacity(0.4),
+                                color: const Color(0xFF059669).withValues(alpha: 0.4),
                               ),
                             ),
                           );
@@ -1019,10 +1019,10 @@ class _BookingDetailState extends State<BookingDetail> {
                 vertical: 6.4,
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFF059669).withOpacity(0.1),
+                color: const Color(0xFF059669).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFF059669).withOpacity(0.3),
+                  color: const Color(0xFF059669).withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -1187,10 +1187,10 @@ class _BookingDetailState extends State<BookingDetail> {
                 vertical: 6.4,
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -1234,7 +1234,7 @@ class _BookingDetailState extends State<BookingDetail> {
                               (index) => Container(
                                 width: 3,
                                 height: 2,
-                                color: const Color(0xFF3B82F6).withOpacity(0.4),
+                                color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
                               ),
                             ),
                           );
@@ -1265,7 +1265,7 @@ class _BookingDetailState extends State<BookingDetail> {
                               (index) => Container(
                                 width: 3,
                                 height: 2,
-                                color: const Color(0xFF3B82F6).withOpacity(0.4),
+                                color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
                               ),
                             ),
                           );
@@ -1293,10 +1293,10 @@ class _BookingDetailState extends State<BookingDetail> {
                 vertical: 6.4,
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -1380,7 +1380,7 @@ class _BookingDetailState extends State<BookingDetail> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: goldColor.withOpacity(0.1),
+            color: goldColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: goldColor, size: 20),
@@ -1427,7 +1427,7 @@ class _BookingDetailState extends State<BookingDetail> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1595,7 +1595,7 @@ class _BookingDetailState extends State<BookingDetail> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1660,7 +1660,7 @@ class _BookingDetailState extends State<BookingDetail> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: TravelloTheme.primaryMain.withOpacity(0.1),
+            color: TravelloTheme.primaryMain.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -1723,10 +1723,10 @@ class _BookingDetailState extends State<BookingDetail> {
       padding: EdgeInsets.symmetric(
           horizontal: 8, vertical: spacingUnit(0.4)),
       decoration: BoxDecoration(
-        color: const Color(0xFF3B82F6).withOpacity(0.08),
+        color: const Color(0xFF3B82F6).withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-            color: const Color(0xFF3B82F6).withOpacity(0.25), width: 1),
+            color: const Color(0xFF3B82F6).withValues(alpha: 0.25), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1920,7 +1920,7 @@ class _BookingDetailState extends State<BookingDetail> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -2213,13 +2213,13 @@ class _BookingDetailState extends State<BookingDetail> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: hasPendingReturnBaggage
-                ? TravelloTheme.primaryMain.withOpacity(0.5)
+                ? TravelloTheme.primaryMain.withValues(alpha: 0.5)
                 : Colors.grey.shade200,
             width: hasPendingReturnBaggage ? 1.5 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 12,
               offset: const Offset(0, 3),
             ),
@@ -2233,14 +2233,14 @@ class _BookingDetailState extends State<BookingDetail> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: hasPendingReturnBaggage
-                    ? TravelloTheme.primaryMain.withOpacity(0.06)
+                    ? TravelloTheme.primaryMain.withValues(alpha: 0.06)
                     : Colors.grey.shade50,
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(16)),
                 border: Border(
                   bottom: BorderSide(
                     color: hasPendingReturnBaggage
-                        ? TravelloTheme.primaryMain.withOpacity(0.25)
+                        ? TravelloTheme.primaryMain.withValues(alpha: 0.25)
                         : Colors.grey.shade200,
                   ),
                 ),
@@ -2250,7 +2250,7 @@ class _BookingDetailState extends State<BookingDetail> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: TravelloTheme.primaryMain.withOpacity(0.12),
+                      color: TravelloTheme.primaryMain.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -2293,12 +2293,12 @@ class _BookingDetailState extends State<BookingDetail> {
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: hasPendingReturnBaggage
-                          ? TravelloTheme.primaryMain.withOpacity(0.12)
+                          ? TravelloTheme.primaryMain.withValues(alpha: 0.12)
                           : Colors.green.shade50,
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: hasPendingReturnBaggage
-                            ? TravelloTheme.primaryMain.withOpacity(0.4)
+                            ? TravelloTheme.primaryMain.withValues(alpha: 0.4)
                             : Colors.green.shade200,
                       ),
                     ),
@@ -2536,7 +2536,7 @@ class _BookingDetailState extends State<BookingDetail> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: TravelloTheme.primaryMain.withOpacity(0.12),
+                          color: TravelloTheme.primaryMain.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.luggage_rounded,
@@ -2634,7 +2634,7 @@ class _BookingDetailState extends State<BookingDetail> {
                                   height: 24,
                                   decoration: BoxDecoration(
                                     color: TravelloTheme.primaryMain
-                                        .withOpacity(0.12),
+                                        .withValues(alpha: 0.12),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Center(
@@ -2680,7 +2680,7 @@ class _BookingDetailState extends State<BookingDetail> {
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? TravelloTheme.primaryMain
-                                          .withOpacity(0.07)
+                                          .withValues(alpha: 0.07)
                                       : Colors.grey.shade50,
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
@@ -2763,7 +2763,7 @@ class _BookingDetailState extends State<BookingDetail> {
                         Border(top: BorderSide(color: Colors.grey.shade200)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         blurRadius: 8,
                         offset: const Offset(0, -4),
                       ),

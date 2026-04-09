@@ -387,7 +387,7 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                   decoration: BoxDecoration(
                     color: colorScheme(context)
                         .surfaceContainerHighest
-                        .withOpacity(0.5),
+                        .withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -418,7 +418,7 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color:
-                        TravelloTheme.primaryMainContainer.withOpacity(0.5),
+                        TravelloTheme.primaryMainContainer.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -468,7 +468,7 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                       Border.all(color: TravelloTheme.primaryMain, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                       spreadRadius: 2,
                     ),
@@ -538,7 +538,7 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: TravelloTheme.primaryMainContainer.withOpacity(0.3),
+              color: TravelloTheme.primaryMainContainer.withValues(alpha: 0.3),
               borderRadius: ThemeRadius.small,
               border: Border.all(color: TravelloTheme.primaryMain),
             ),
@@ -785,7 +785,7 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
               boxShadow: status == 'current'
                   ? [
                       BoxShadow(
-                        color: TravelloTheme.primaryMain.withOpacity(0.4),
+                        color: TravelloTheme.primaryMain.withValues(alpha: 0.4),
                         blurRadius: 4,
                         spreadRadius: 1,
                       )
@@ -903,7 +903,7 @@ class _NoseConePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withOpacity(0.2)
+      ..color = color.withValues(alpha: 0.2)
       ..style = PaintingStyle.fill;
 
     final path = Path();
@@ -945,7 +945,7 @@ class _WingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withOpacity(0.3)
+      ..color = color.withValues(alpha: 0.3)
       ..style = PaintingStyle.fill;
 
     final path = Path();
@@ -977,7 +977,7 @@ class _WingPainter extends CustomPainter {
 
     // Wing details (lines)
     final detailPaint = Paint()
-      ..color = color.withOpacity(0.5)
+      ..color = color.withValues(alpha: 0.5)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
@@ -1019,7 +1019,7 @@ class _TailPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withOpacity(0.2)
+      ..color = color.withValues(alpha: 0.2)
       ..style = PaintingStyle.fill;
 
     // Vertical stabilizer (tail fin)

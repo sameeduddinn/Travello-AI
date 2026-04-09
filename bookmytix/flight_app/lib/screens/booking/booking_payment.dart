@@ -543,7 +543,7 @@ class _BookingPaymentState extends State<BookingPayment>
               gradient: LinearGradient(
                 colors: [
                   summaryColor,
-                  summaryColor.withOpacity(0.85),
+                  summaryColor.withValues(alpha: 0.85),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,

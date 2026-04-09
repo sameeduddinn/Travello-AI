@@ -312,9 +312,9 @@ class TermsCondition extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: TravelloTheme.primaryLight.withOpacity(0.1),
+                color: TravelloTheme.primaryLight.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: TravelloTheme.primaryMain.withOpacity(0.3)),
+                border: Border.all(color: TravelloTheme.primaryMain.withValues(alpha: 0.3)),
               ),
               child: Text(
                 'By using Travello AI, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.',

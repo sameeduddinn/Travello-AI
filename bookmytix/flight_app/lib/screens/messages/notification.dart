@@ -582,7 +582,7 @@ class _NotifTile extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 7, vertical: 2),
                         decoration: BoxDecoration(
-                          color: _tagColor(item.tag).withOpacity(0.1),
+                          color: _tagColor(item.tag).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(item.tag,

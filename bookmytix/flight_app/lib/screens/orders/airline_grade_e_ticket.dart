@@ -554,7 +554,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -579,7 +579,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                     Text(
                       'Your e-ticket is ready',
                       style:
-                          DS.captionText(color: Colors.white.withOpacity(0.9)),
+                          DS.captionText(color: Colors.white.withValues(alpha: 0.9)),
                     ),
                   ],
                 ),
@@ -589,7 +589,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
           const SizedBox(height: DS.space20),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(DS.radiusMd),
             ),
             padding: const EdgeInsets.all(DS.space16),
@@ -597,7 +597,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
               children: [
                 Text(
                   'CONFIRMATION CODE',
-                  style: DS.labelText(color: Colors.white.withOpacity(0.8)),
+                  style: DS.labelText(color: Colors.white.withValues(alpha: 0.8)),
                 ),
                 const SizedBox(height: DS.space8),
                 Row(
@@ -613,7 +613,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                       child: Container(
                         padding: const EdgeInsets.all(DS.space8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(DS.radiusSm),
                         ),
                         child: const Icon(
@@ -761,10 +761,10 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
+              color: Colors.white.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(DS.radiusMd),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 width: 1,
               ),
             ),
@@ -791,7 +791,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                     vertical: DS.space4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -811,10 +811,10 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                   vertical: DS.space8,
                 ),
                 decoration: BoxDecoration(
-                  color: DS.successPrimary.withOpacity(0.2),
+                  color: DS.successPrimary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(DS.radiusPill),
                   border: Border.all(
-                    color: DS.successPrimary.withOpacity(0.5),
+                    color: DS.successPrimary.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
@@ -840,7 +840,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                   vertical: DS.space4,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
+                  color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -904,7 +904,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                   vertical: DS.space4,
                 ),
                 decoration: BoxDecoration(
-                  color: DS.brandBlue.withOpacity(0.1),
+                  color: DS.brandBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -971,7 +971,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
         Expanded(
           child: Container(
             height: 2,
-            color: DS.brandBlue.withOpacity(0.3),
+            color: DS.brandBlue.withValues(alpha: 0.3),
           ),
         ),
         // Plane icon in the middle
@@ -987,7 +987,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
         Expanded(
           child: Container(
             height: 2,
-            color: DS.brandBlue.withOpacity(0.3),
+            color: DS.brandBlue.withValues(alpha: 0.3),
           ),
         ),
         // Right circle - filled blue
@@ -1066,7 +1066,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                 children: [
                   Container(
                     height: 1,
-                    color: DS.borderLight.withOpacity(0.7),
+                    color: DS.borderLight.withValues(alpha: 0.7),
                   ),
                   const SizedBox(height: DS.space12),
                   const SizedBox(
@@ -1124,7 +1124,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: DS.brandBlue.withOpacity(0.1),
+                  color: DS.brandBlue.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -1369,7 +1369,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: DS.brandBlue.withOpacity(0.1),
+                        color: DS.brandBlue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Icon(tip.$1, size: 14, color: DS.brandBlue),

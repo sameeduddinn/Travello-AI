@@ -1821,7 +1821,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               border: Border.all(
                                 color: Theme.of(context)
                                     .dividerColor
-                                    .withOpacity(0.2),
+                                    .withValues(alpha: 0.2),
                                 width: 1,
                               ),
                             ),
@@ -1875,7 +1875,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                               ? Theme.of(context)
                                                   .colorScheme
                                                   .primary
-                                                  .withOpacity(0.1)
+                                                  .withValues(alpha: 0.1)
                                               : Colors.transparent,
                                           borderRadius:
                                               BorderRadius.circular(8),
@@ -1908,7 +1908,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                   : Theme.of(context)
                                                       .colorScheme
                                                       .onSurface
-                                                      .withOpacity(0.5),
+                                                      .withValues(alpha: 0.5),
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
@@ -1947,7 +1947,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                               ? Theme.of(context)
                                                   .colorScheme
                                                   .primary
-                                                  .withOpacity(0.1)
+                                                  .withValues(alpha: 0.1)
                                               : Colors.transparent,
                                           borderRadius:
                                               BorderRadius.circular(8),
@@ -1981,7 +1981,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                       : Theme.of(context)
                                                           .colorScheme
                                                           .onSurface
-                                                          .withOpacity(0.5),
+                                                          .withValues(alpha: 0.5),
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
@@ -2107,7 +2107,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               border: Border.all(
                                 color: Theme.of(context)
                                     .dividerColor
-                                    .withOpacity(0.2),
+                                    .withValues(alpha: 0.2),
                                 width: 1,
                               ),
                             ),
@@ -2161,7 +2161,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                 ? Theme.of(context)
                                                     .colorScheme
                                                     .primary
-                                                    .withOpacity(0.1)
+                                                    .withValues(alpha: 0.1)
                                                 : Colors.transparent,
                                             borderRadius:
                                                 BorderRadius.circular(8),
@@ -2195,7 +2195,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                         : Theme.of(context)
                                                             .colorScheme
                                                             .onSurface
-                                                            .withOpacity(0.5),
+                                                            .withValues(alpha: 0.5),
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
@@ -2237,7 +2237,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                 ? Theme.of(context)
                                                     .colorScheme
                                                     .primary
-                                                    .withOpacity(0.1)
+                                                    .withValues(alpha: 0.1)
                                                 : Colors.transparent,
                                             borderRadius:
                                                 BorderRadius.circular(8),
@@ -2273,7 +2273,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                         : Theme.of(context)
                                                             .colorScheme
                                                             .onSurface
-                                                            .withOpacity(0.5),
+                                                            .withValues(alpha: 0.5),
                                               ),
                                               const SizedBox(width: 8),
                                               Text(

@@ -1658,7 +1658,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
             border: Border.all(color: const Color(0xFFE0E0E0)), // Light divider
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               )
@@ -1739,7 +1739,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
-                  color: greenTheme.withOpacity(0.04),
+                  color: greenTheme.withValues(alpha: 0.04),
                   borderRadius:
                       const BorderRadius.vertical(bottom: Radius.circular(14)),
                 ),
@@ -1799,7 +1799,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: greenTheme.withOpacity(0.07),
+            color: greenTheme.withValues(alpha: 0.07),
             borderRadius: BorderRadius.circular(9),
           ),
           child: Icon(icon, size: 18, color: greenTheme),
@@ -2747,7 +2747,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
         color: const Color(0xFFF5F5F5), // Light card
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),

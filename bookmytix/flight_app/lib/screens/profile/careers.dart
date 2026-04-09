@@ -166,7 +166,7 @@ class Careers extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -178,7 +178,7 @@ class Careers extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: TravelloTheme.primaryLight.withOpacity(0.2),
+              color: TravelloTheme.primaryLight.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: TravelloTheme.primaryMain, size: 28),

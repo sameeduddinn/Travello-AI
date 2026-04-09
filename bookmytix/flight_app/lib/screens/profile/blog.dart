@@ -127,7 +127,7 @@ class Blog extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -140,7 +140,7 @@ class Blog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: TravelloTheme.primaryLight.withOpacity(0.1),
+              color: TravelloTheme.primaryLight.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -152,7 +152,7 @@ class Blog extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: TravelloTheme.primaryMain.withOpacity(0.2),
+                    color: TravelloTheme.primaryMain.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: TravelloTheme.primaryMain, size: 24),

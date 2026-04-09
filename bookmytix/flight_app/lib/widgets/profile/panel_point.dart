@@ -120,13 +120,13 @@ class _PanelPointState extends State<PanelPoint>
               boxShadow: [
                 ThemeShade.shadeSoft(context),
                 BoxShadow(
-                  color: TravelloTheme.primaryMain.withOpacity(0.1),
+                  color: TravelloTheme.primaryMain.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
               ],
               border: Border.all(
-                color: TravelloTheme.primaryMain.withOpacity(0.15),
+                color: TravelloTheme.primaryMain.withValues(alpha: 0.15),
                 width: 1,
               ),
             ),
@@ -170,8 +170,8 @@ class _PanelPointState extends State<PanelPoint>
             label: 'Total Bookings',
             gradient: LinearGradient(
               colors: [
-                TravelloTheme.primaryMain.withOpacity(0.15),
-                TravelloTheme.primaryLight.withOpacity(0.1),
+                TravelloTheme.primaryMain.withValues(alpha: 0.15),
+                TravelloTheme.primaryLight.withValues(alpha: 0.1),
               ],
             ),
             iconColor: TravelloTheme.primaryMain,
@@ -182,7 +182,7 @@ class _PanelPointState extends State<PanelPoint>
         SizedBox(
           height: 40,
           child: VerticalDivider(
-            color: TravelloTheme.primaryMain.withOpacity(0.2),
+            color: TravelloTheme.primaryMain.withValues(alpha: 0.2),
             width: 20,
             thickness: 1,
           ),
@@ -197,8 +197,8 @@ class _PanelPointState extends State<PanelPoint>
             label: 'Upcoming',
             gradient: LinearGradient(
               colors: [
-                TravelloTheme.secondaryMain.withOpacity(0.15),
-                TravelloTheme.secondaryLight.withOpacity(0.1),
+                TravelloTheme.secondaryMain.withValues(alpha: 0.15),
+                TravelloTheme.secondaryLight.withValues(alpha: 0.1),
               ],
             ),
             iconColor: TravelloTheme.secondaryMain,
@@ -236,7 +236,7 @@ class _PanelPointState extends State<PanelPoint>
                     gradient: gradient,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: iconColor.withOpacity(0.2),
+                      color: iconColor.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -244,7 +244,7 @@ class _PanelPointState extends State<PanelPoint>
                     shaderCallback: (bounds) => LinearGradient(
                       colors: [
                         iconColor,
-                        iconColor.withOpacity(0.8),
+                        iconColor.withValues(alpha: 0.8),
                       ],
                     ).createShader(bounds),
                     child: Icon(
@@ -310,15 +310,15 @@ class _PanelPointState extends State<PanelPoint>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      TravelloTheme.primaryMain.withOpacity(0.08),
-                      TravelloTheme.primaryLight.withOpacity(0.05),
+                      TravelloTheme.primaryMain.withValues(alpha: 0.08),
+                      TravelloTheme.primaryLight.withValues(alpha: 0.05),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: ThemeRadius.medium,
                   border: Border.all(
-                    color: TravelloTheme.primaryMain.withOpacity(0.2),
+                    color: TravelloTheme.primaryMain.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -332,7 +332,7 @@ class _PanelPointState extends State<PanelPoint>
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: TravelloTheme.primaryMain.withOpacity(0.3),
+                            color: TravelloTheme.primaryMain.withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -375,7 +375,7 @@ class _PanelPointState extends State<PanelPoint>
                     Icon(
                       Icons.arrow_forward_ios,
                       size: 16,
-                      color: TravelloTheme.primaryMain.withOpacity(0.5),
+                      color: TravelloTheme.primaryMain.withValues(alpha: 0.5),
                     ),
                   ],
                 ),
