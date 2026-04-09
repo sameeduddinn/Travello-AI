@@ -1,7 +1,7 @@
 ﻿import 'dart:math' as math;
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/ui/themes/theme_text.dart';
-import 'package:flight_app/widgets/app_button/ds_button.dart';
+import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
 import 'package:flight_app/ui/themes/theme_palette.dart';

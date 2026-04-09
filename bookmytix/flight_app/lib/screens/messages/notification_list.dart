@@ -1,4 +1,4 @@
-import 'package:flight_app/constants/img_api.dart';
+import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/utils/no_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/notification.dart';

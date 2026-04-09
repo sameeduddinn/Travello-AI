@@ -5,7 +5,7 @@ import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/models/hotel.dart';
 import 'package:flight_app/models/room_type.dart';
-import 'package:flight_app/widgets/app_button/ds_button.dart';
+import 'package:flight_app/widgets/app_button/design_system_button.dart';
 
 /// Hotel Checkout — Step 4 in hotel booking flow.
 /// Review page shown between Guest Details and Payment.

@@ -4,7 +4,7 @@ import 'package:flight_app/models/chat.dart';
 import 'package:flight_app/ui/layouts/general_layout.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/ui/themes/theme_text.dart';
-import 'package:flight_app/widgets/action_header/other_btn.dart';
+import 'package:flight_app/widgets/action_headers/other_btn.dart';
 import 'package:flight_app/widgets/chat/chat_input.dart';
 import 'package:flight_app/widgets/chat/chat_message.dart';
 

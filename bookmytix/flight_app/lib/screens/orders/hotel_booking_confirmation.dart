@@ -11,7 +11,7 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/utils/col_row.dart';
+import 'package:flight_app/utils/column_row_utils.dart';
 import 'package:flight_app/ui/themes/theme_button.dart';
 import 'package:flight_app/services/notification_service.dart';
 import 'package:flight_app/utils/booking_service.dart';

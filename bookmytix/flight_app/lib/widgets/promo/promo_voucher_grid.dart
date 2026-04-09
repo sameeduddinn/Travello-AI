@@ -1,5 +1,5 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/constants/img_api.dart';
+import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/models/voucher.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/no_data.dart';

@@ -1,4 +1,4 @@
-import 'package:flight_app/constants/img_api.dart';
+import 'package:flight_app/constants/image_api.dart';
 
 class News {
   final String title;
@@ -10,28 +10,23 @@ class News {
 
 final List<News> newsList = [
   News(
-    title: 'Overstock Sales Calendar: When to Shop to Save the Most',
-    thumb: ImgApi.photo[81],
-    date: '22 Mar 2024'
-  ),
+      title: 'Overstock Sales Calendar: When to Shop to Save the Most',
+      thumb: ImgApi.photo[81],
+      date: '22 Mar 2024'),
   News(
-    title: 'Lovehoney Returns & Discreet Shipping',
-    thumb: ImgApi.photo[82],
-    date: '23 Mar 2024'
-  ),
+      title: 'Lovehoney Returns & Discreet Shipping',
+      thumb: ImgApi.photo[82],
+      date: '23 Mar 2024'),
   News(
-    title: 'Macy\'s Cyber Monday Guide',
-    thumb: ImgApi.photo[83],
-    date: '22 Mar 2024'
-  ),
+      title: 'Macy\'s Cyber Monday Guide',
+      thumb: ImgApi.photo[83],
+      date: '22 Mar 2024'),
   News(
-    title: 'Labor Day weekend is definitely the best time to shop',
-    thumb: ImgApi.photo[84],
-    date: '20 Mar 2024'
-  ),
+      title: 'Labor Day weekend is definitely the best time to shop',
+      thumb: ImgApi.photo[84],
+      date: '20 Mar 2024'),
   News(
-    title: 'Lovehoney Returns & Discreet Shipping',
-    thumb: ImgApi.photo[86],
-    date: '18 Mar 2024'
-  )
+      title: 'Lovehoney Returns & Discreet Shipping',
+      thumb: ImgApi.photo[86],
+      date: '18 Mar 2024')
 ];

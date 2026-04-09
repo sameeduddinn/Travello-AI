@@ -7,7 +7,7 @@ import 'package:flight_app/utils/picker.dart';
 import 'package:flight_app/widgets/booking/passenger_options.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/constants/app_const.dart';
+import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/app_input/app_input_box.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/controllers/payment_form_controller.dart';
-import 'package:flight_app/utils/ds_formatters.dart';
-import 'package:flight_app/utils/ds_validators.dart';
+import 'package:flight_app/utils/design_system_formatters.dart';
+import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/widgets/app_input/ds_input_field.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 

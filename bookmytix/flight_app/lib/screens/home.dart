@@ -1,6 +1,6 @@
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/custom_tooltip.dart';
-import 'package:flight_app/widgets/bottom_nav/bottom_nav_menu.dart';
+import 'package:flight_app/widgets/bottom_navigation/bottom_nav_menu.dart';
 import 'package:flight_app/widgets/home/city_destinations/city_destinations_main.dart';
 import 'package:flight_app/widgets/home/header.dart';
 import 'package:flight_app/widgets/home/package_list_slider.dart';

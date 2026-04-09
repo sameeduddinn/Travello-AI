@@ -1,4 +1,4 @@
-import 'package:flight_app/constants/img_api.dart';
+import 'package:flight_app/constants/image_api.dart';
 
 class Promotion {
   int id;
@@ -8,14 +8,13 @@ class Promotion {
   double price;
   String date;
 
-  Promotion({
-    required this.id,
-    required this.name,
-    required this.thumb,
-    required this.desc,
-    required this.price,
-    required this.date
-  });
+  Promotion(
+      {required this.id,
+      required this.name,
+      required this.thumb,
+      required this.desc,
+      required this.price,
+      required this.date});
 }
 
 final List<Promotion> promoList = [
@@ -23,7 +22,8 @@ final List<Promotion> promoList = [
     id: 1,
     name: 'drive 24/365 eyeballs',
     thumb: ImgApi.photo[71],
-    desc: 'Vivamus metus arcu, adipiscing molestie, hendrerit at, vulputate vitae, nisl. Aenean lectus. Pellentesque eget nunc. Donec quis orci eget orci vehicula condimentum.',
+    desc:
+        'Vivamus metus arcu, adipiscing molestie, hendrerit at, vulputate vitae, nisl. Aenean lectus. Pellentesque eget nunc. Donec quis orci eget orci vehicula condimentum.',
     price: 540,
     date: '16/01/2025',
   ),
@@ -31,7 +31,8 @@ final List<Promotion> promoList = [
     id: 2,
     name: 'monetize B2B schemas',
     thumb: ImgApi.photo[72],
-    desc: 'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Donec pharetra, magna vestibulum aliquet ultrices, erat tortor sollicitudin mi, sit amet lobortis sapien sapien non mi. Integer ac neque. Duis bibendum.',
+    desc:
+        'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Donec pharetra, magna vestibulum aliquet ultrices, erat tortor sollicitudin mi, sit amet lobortis sapien sapien non mi. Integer ac neque. Duis bibendum.',
     price: 860,
     date: '27/12/2024',
   ),
@@ -47,7 +48,8 @@ final List<Promotion> promoList = [
     id: 4,
     name: 'e-enable bricks-and-clicks platforms',
     thumb: ImgApi.photo[74],
-    desc: 'Suspendisse potenti. Cras in purus eu magna vulputate luctus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.',
+    desc:
+        'Suspendisse potenti. Cras in purus eu magna vulputate luctus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.',
     price: 500,
     date: '04/06/2024',
   ),
@@ -71,7 +73,8 @@ final List<Promotion> promoList = [
     id: 7,
     name: 'exploit holistic channels',
     thumb: ImgApi.photo[77],
-    desc: 'In hac habitasse platea dictumst. Maecenas ut massa quis augue luctus tincidunt. Nulla mollis molestie lorem.',
+    desc:
+        'In hac habitasse platea dictumst. Maecenas ut massa quis augue luctus tincidunt. Nulla mollis molestie lorem.',
     price: 210,
     date: '22/05/2024',
   ),
@@ -79,7 +82,8 @@ final List<Promotion> promoList = [
     id: 8,
     name: 'reintermediate compelling e-services',
     thumb: ImgApi.photo[78],
-    desc: 'Maecenas pulvinar lobortis est. Phasellus sit amet erat. Nulla tempus.',
+    desc:
+        'Maecenas pulvinar lobortis est. Phasellus sit amet erat. Nulla tempus.',
     price: 80,
     date: '06/02/2025',
   ),
@@ -95,7 +99,8 @@ final List<Promotion> promoList = [
     id: 10,
     name: 'productize end-to-end markets',
     thumb: ImgApi.photo[80],
-    desc: 'Fusce consequat. Nulla nisl. Nunc nisl. Duis bibendum, felis sed interdum venenatis, turpis enim blandit mi, in porttitor pede justo eu massa.',
+    desc:
+        'Fusce consequat. Nulla nisl. Nunc nisl. Duis bibendum, felis sed interdum venenatis, turpis enim blandit mi, in porttitor pede justo eu massa.',
     price: 970,
     date: '15/10/2024',
   ),
@@ -103,7 +108,8 @@ final List<Promotion> promoList = [
     id: 11,
     name: 'iterate viral web-readiness',
     thumb: ImgApi.photo[81],
-    desc: 'Donec odio justo, sollicitudin ut, suscipit a, feugiat et, eros. Vestibulum ac est lacinia nisi venenatis tristique.',
+    desc:
+        'Donec odio justo, sollicitudin ut, suscipit a, feugiat et, eros. Vestibulum ac est lacinia nisi venenatis tristique.',
     price: 70,
     date: '09/08/2024',
   ),
@@ -119,7 +125,8 @@ final List<Promotion> promoList = [
     id: 13,
     name: 'engineering advenced platforms',
     thumb: ImgApi.photo[83],
-    desc: 'Pellentesque ultrices mattis odio. Donec vitae nisi. Nam ultrices, libero non mattis pulvinar, nulla pede ullamcorper augue, a suscipit nulla elit ac nulla.',
+    desc:
+        'Pellentesque ultrices mattis odio. Donec vitae nisi. Nam ultrices, libero non mattis pulvinar, nulla pede ullamcorper augue, a suscipit nulla elit ac nulla.',
     price: 110,
     date: '29/05/2024',
   ),
@@ -135,7 +142,8 @@ final List<Promotion> promoList = [
     id: 15,
     name: 'orchestrate one-to-one e-services',
     thumb: ImgApi.photo[85],
-    desc: 'Donec quis orci eget orci vehicula condimentum. Curabitur in libero ut massa volutpat convallis. Morbi odio odio, elementum eu, interdum eu, tincidunt in, leo. Maecenas pulvinar lobortis est.',
+    desc:
+        'Donec quis orci eget orci vehicula condimentum. Curabitur in libero ut massa volutpat convallis. Morbi odio odio, elementum eu, interdum eu, tincidunt in, leo. Maecenas pulvinar lobortis est.',
     price: 370,
     date: '19/11/2024',
   ),
@@ -143,7 +151,8 @@ final List<Promotion> promoList = [
     id: 16,
     name: 'architect frictionless e-commerce',
     thumb: ImgApi.photo[90],
-    desc: 'Donec odio justo, sollicitudin ut, suscipit a, feugiat et, eros. Vestibulum ac est lacinia nisi venenatis tristique. Fusce congue, diam id ornare imperdiet, sapien urna pretium nisl, ut volutpat sapien arcu sed augue.',
+    desc:
+        'Donec odio justo, sollicitudin ut, suscipit a, feugiat et, eros. Vestibulum ac est lacinia nisi venenatis tristique. Fusce congue, diam id ornare imperdiet, sapien urna pretium nisl, ut volutpat sapien arcu sed augue.',
     price: 570,
     date: '06/08/2024',
   ),
@@ -159,7 +168,8 @@ final List<Promotion> promoList = [
     id: 18,
     name: 'enable integrated partnerships',
     thumb: ImgApi.photo[87],
-    desc: 'Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Etiam vel augue. Vestibulum rutrum rutrum neque.',
+    desc:
+        'Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Etiam vel augue. Vestibulum rutrum rutrum neque.',
     price: 560,
     date: '10/12/2024',
   ),

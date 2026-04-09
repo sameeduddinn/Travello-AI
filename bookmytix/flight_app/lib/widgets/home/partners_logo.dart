@@ -1,4 +1,4 @@
-import 'package:flight_app/constants/img_api.dart';
+import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/title/title_basic.dart';

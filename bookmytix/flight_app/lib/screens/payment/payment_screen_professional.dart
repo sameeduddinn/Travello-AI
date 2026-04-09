@@ -6,7 +6,7 @@ import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/screens/orders/hotel_booking_confirmation.dart';
-import 'package:flight_app/utils/ds_validators.dart';
+import 'package:flight_app/utils/design_system_validators.dart';
 
 class PaymentScreenProfessional extends StatefulWidget {
   const PaymentScreenProfessional({super.key});

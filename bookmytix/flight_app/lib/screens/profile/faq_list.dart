@@ -2,7 +2,7 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/widgets/app_button/back_icon_button.dart';
-import 'package:flight_app/widgets/search_filter/search_input_btn.dart';
+import 'package:flight_app/widgets/search_filters/search_input_btn.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/models/faq.dart';

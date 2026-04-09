@@ -12,7 +12,7 @@ import 'package:flight_app/screens/healthcare/healthcare_screen.dart';
 import 'package:flight_app/screens/intro/intro_screen.dart';
 import 'package:flight_app/screens/intro/start_screen.dart';
 import 'package:flight_app/screens/messages/notification.dart';
-import 'package:flight_app/screens/mode_selection/travel_mode_selection.dart';
+import 'package:flight_app/screens/mode_selector/travel_mode_selection.dart';
 import 'package:flight_app/screens/home/unified_home_screen.dart';
 import 'package:flight_app/screens/not_found.dart';
 import 'package:flight_app/screens/orders/booking_detail.dart';

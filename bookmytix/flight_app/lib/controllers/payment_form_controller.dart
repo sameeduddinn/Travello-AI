@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/utils/ds_validators.dart';
+import 'package:flight_app/utils/design_system_validators.dart';
 
 /// PaymentFormController
 /// Manages all form field states for the payment page.

@@ -1,5 +1,5 @@
 ﻿import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/widgets/app_button/ds_button.dart';
+import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
 import 'package:flight_app/ui/themes/theme_palette.dart';

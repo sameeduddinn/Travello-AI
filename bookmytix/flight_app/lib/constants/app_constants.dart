@@ -1,6 +1,6 @@
 import 'package:flight_app/models/company.dart';
 import 'package:flight_app/models/user.dart';
-import 'package:flight_app/constants/img_api.dart';
+import 'package:flight_app/constants/image_api.dart';
 
 User userDummy = User(
   id: '1',

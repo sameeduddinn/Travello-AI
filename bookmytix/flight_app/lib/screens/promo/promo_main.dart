@@ -1,4 +1,4 @@
-import 'package:flight_app/constants/app_const.dart';
+import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/models/voucher.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flight_app/ui/themes/theme_palette.dart';
@@ -11,7 +11,7 @@ import 'package:flight_app/widgets/promo/tab_menu_promo.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/promo.dart';
 import 'package:flight_app/widgets/promo/promo_list.dart';
-import 'package:flight_app/widgets/search_filter/search_input_btn.dart';
+import 'package:flight_app/widgets/search_filters/search_input_btn.dart';
 
 class PromoMain extends StatefulWidget {
   const PromoMain({super.key});

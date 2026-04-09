@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/constants/app_const.dart';
+import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/app/app_routes.dart';
 import 'package:flight_app/controllers/notification_controller.dart';
 import 'package:flight_app/ui/themes/theme_data.dart';

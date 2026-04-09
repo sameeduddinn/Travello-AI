@@ -457,7 +457,7 @@ class _CodeInputBoxState extends State<_CodeInputBox> {
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
             ],
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               counterText: '',
               border: InputBorder.none,
               enabledBorder: InputBorder.none,

@@ -1,13 +1,13 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/constants/app_const.dart';
-import 'package:flight_app/constants/img_api.dart';
+import 'package:flight_app/constants/app_constants.dart';
+import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/controllers/notification_controller.dart';
 import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flight_app/ui/themes/theme_radius.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/auth_service.dart';
-import 'package:flight_app/widgets/bottom_nav/bottom_nav_menu.dart';
+import 'package:flight_app/widgets/bottom_navigation/bottom_nav_menu.dart';
 import 'package:flight_app/widgets/home/city_destinations/city_destinations_main.dart';
 import 'package:flight_app/widgets/home/flight_list_double.dart';
 import 'package:flight_app/widgets/home/package_list_slider.dart';

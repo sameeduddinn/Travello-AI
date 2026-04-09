@@ -1,5 +1,5 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/widgets/app_button/ds_button.dart';
+import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/screens/railway/train_results_screen.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/ui/themes/theme_text.dart';

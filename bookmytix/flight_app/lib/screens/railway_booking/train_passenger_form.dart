@@ -7,9 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/models/railway_station.dart';
 import 'package:flight_app/screens/railway/train_results_screen.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/utils/ds_validators.dart';
+import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/utils/format_utils.dart';
-import 'package:flight_app/widgets/app_button/ds_button.dart';
+import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/widgets/app_input/ds_input_field.dart';
 
 class TrainPassengerForm extends StatefulWidget {

@@ -1,6 +1,6 @@
 ﻿import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flight_app/widgets/app_button/ds_button.dart';
+import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -9,7 +9,7 @@ import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/utils/ds_validators.dart';
+import 'package:flight_app/utils/design_system_validators.dart';
 import 'dart:math' as math;
 
 class BookingPayment extends StatefulWidget {

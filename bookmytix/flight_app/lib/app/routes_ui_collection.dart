@@ -1,10 +1,10 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/screens/sample_ui/button_collection.dart';
-import 'package:flight_app/screens/sample_ui/card_collection.dart';
-import 'package:flight_app/screens/sample_ui/color_collection.dart';
-import 'package:flight_app/screens/sample_ui/form_input_collection.dart';
-import 'package:flight_app/screens/sample_ui/shadow_border_radius.dart';
-import 'package:flight_app/screens/sample_ui/typography_collection.dart';
+import 'package:flight_app/screens/samples/button_collection.dart';
+import 'package:flight_app/screens/samples/card_collection.dart';
+import 'package:flight_app/screens/samples/color_collection.dart';
+import 'package:flight_app/screens/samples/form_input_collection.dart';
+import 'package:flight_app/screens/samples/shadow_border_radius.dart';
+import 'package:flight_app/screens/samples/typography_collection.dart';
 import 'package:flight_app/ui/layouts/general_layout.dart';
 import 'package:get/route_manager.dart';
 

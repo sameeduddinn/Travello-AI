@@ -11,7 +11,7 @@ import 'package:flight_app/widgets/home/package_list_slider.dart';
 import 'package:flight_app/widgets/home/train_package_slider.dart';
 import 'package:flight_app/widgets/title/title_action.dart';
 import 'package:flight_app/widgets/home/premium_carousel.dart';
-import 'package:flight_app/widgets/bottom_nav/bottom_nav_menu.dart';
+import 'package:flight_app/widgets/bottom_navigation/bottom_nav_menu.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/ui/themes/theme_palette.dart';
@@ -21,7 +21,6 @@ import 'package:flight_app/controllers/notification_controller.dart';
 import 'package:flight_app/models/destination.dart';
 import 'package:flight_app/models/hotel.dart';
 import 'package:flight_app/utils/wishlist_service.dart';
-import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
 import 'package:intl/intl.dart';
 
 /// 🔥 TRAVELLO AI - UNIFIED HOME SCREEN

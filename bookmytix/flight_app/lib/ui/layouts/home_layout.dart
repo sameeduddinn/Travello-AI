@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/widgets/bottom_nav/bottom_nav_menu.dart';
+import 'package:flight_app/widgets/bottom_navigation/bottom_nav_menu.dart';
 import 'package:flight_app/utils/responsive_utils.dart';
 
 class HomeLayout extends StatelessWidget {

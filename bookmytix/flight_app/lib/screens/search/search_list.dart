@@ -4,7 +4,7 @@ import 'package:flight_app/models/railway_station.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/search_history_service.dart';
-import 'package:flight_app/widgets/search_filter/search_input.dart';
+import 'package:flight_app/widgets/search_filters/search_input.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 

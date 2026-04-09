@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/widgets/app_button/ds_button.dart';
+import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/widgets/app_input/ds_input_field.dart';
-import 'package:flight_app/utils/ds_validators.dart';
-import 'package:flight_app/utils/ds_formatters.dart';
+import 'package:flight_app/utils/design_system_validators.dart';
+import 'package:flight_app/utils/design_system_formatters.dart';
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
 import 'package:flight_app/ui/themes/theme_palette.dart';

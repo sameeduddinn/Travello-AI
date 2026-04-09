@@ -4,7 +4,7 @@ import 'package:flight_app/models/city.dart';
 import 'package:flight_app/models/flight_package.dart';
 import 'package:flight_app/models/flight_route.dart';
 import 'package:flight_app/widgets/cards/flight_route_card.dart';
-import 'package:flight_app/constants/img_api.dart';
+import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/models/plane.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';

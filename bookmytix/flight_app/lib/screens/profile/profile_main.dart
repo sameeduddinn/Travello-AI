@@ -4,7 +4,7 @@ import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/settings/setting_list.dart';
 import 'package:flight_app/widgets/profile/profile_banner_header.dart';
 import 'package:flight_app/utils/auth_service.dart';
-import 'package:flight_app/constants/app_const.dart';
+import 'package:flight_app/constants/app_constants.dart';
 
 class ProfileMain extends StatefulWidget {
   const ProfileMain({super.key});

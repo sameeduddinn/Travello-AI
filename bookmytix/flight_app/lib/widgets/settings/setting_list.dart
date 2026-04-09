@@ -1,7 +1,7 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/constants/app_const.dart';
+import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
 import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/ui/themes/theme_text.dart';
