@@ -1,16 +1,13 @@
 import 'package:flight_app/models/booking.dart';
 import 'package:flight_app/models/city.dart';
 import 'package:flight_app/models/plane.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/decorations/cut_deco.dart';
 import 'package:flight_app/widgets/decorations/dashed_border.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TicketCard extends StatelessWidget {
   const TicketCard(
@@ -46,7 +43,7 @@ class TicketCard extends StatelessWidget {
     final bool isDark = Get.isDarkMode;
     final Color cardColor = isDark
         ? colorScheme(context).outline
-        : colorScheme(context).primaryContainer;
+        : TravelloTheme.primaryMainContainer;
 
     return Column(
       children: [
@@ -68,30 +65,30 @@ class TicketCard extends StatelessWidget {
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               /// TOP INFO
               Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: spacingUnit(2), vertical: spacingUnit(1)),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 8),
                 child: Row(children: [
                   Text('Date Order: ',
-                      style: ThemeText.caption.copyWith(
+                      style: TravelloTheme.caption.copyWith(
                           color: colorScheme(context).onSurfaceVariant)),
                   Text('12 May 2004',
-                      style: ThemeText.caption
+                      style: TravelloTheme.caption
                           .copyWith(fontWeight: FontWeight.bold)),
                   const Spacer(),
                   status != BookStatus.waiting
                       ? Text('Booking Code: ',
-                          style: ThemeText.caption.copyWith(
+                          style: TravelloTheme.caption.copyWith(
                               color: colorScheme(context).onSurfaceVariant))
                       : Container(),
                   status != BookStatus.waiting
                       ? Text(bookingCode,
-                          style: ThemeText.caption.copyWith(
+                          style: TravelloTheme.caption.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: colorScheme(context).primary))
+                              color: TravelloTheme.primaryMain))
                       : Container(),
                 ]),
               ),
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
 
               /// TRIP DETAIL
               Stack(
@@ -124,7 +121,7 @@ class TicketCard extends StatelessWidget {
 
                   /// FLIGHT DETAILS
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -135,7 +132,7 @@ class TicketCard extends StatelessWidget {
                                 children: [
                                   Text(from.name,
                                       overflow: TextOverflow.ellipsis,
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant)),
                                   Padding(
@@ -143,16 +140,16 @@ class TicketCard extends StatelessWidget {
                                         const EdgeInsets.symmetric(vertical: 1),
                                     child: Text(
                                       from.code,
-                                      style: ThemeText.paragraph.copyWith(
+                                      style: TravelloTheme.paragraph.copyWith(
                                           fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                   Text(DateFormat.MMMEd().format(depart),
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant)),
                                   Text(DateFormat.jm().format(depart),
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant)),
                                 ]),
@@ -165,7 +162,7 @@ class TicketCard extends StatelessWidget {
                                 children: [
                                   Text(plane.code,
                                       overflow: TextOverflow.ellipsis,
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           fontWeight: FontWeight.bold)),
                                   Padding(
                                     padding: const EdgeInsets.only(top: 8),
@@ -189,8 +186,8 @@ class TicketCard extends StatelessWidget {
                                           width: 4,
                                         ),
                                         Text(plane.name,
-                                            style: ThemeText.caption),
-                                        SizedBox(width: spacingUnit(1)),
+                                            style: TravelloTheme.caption),
+                                        const SizedBox(width: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 4),
@@ -199,7 +196,7 @@ class TicketCard extends StatelessWidget {
                                               color: colorScheme(context)
                                                   .surfaceDim),
                                           child: Text(plane.classType,
-                                              style: ThemeText.caption),
+                                              style: TravelloTheme.caption),
                                         ),
                                       ]),
                                 ]),
@@ -210,7 +207,7 @@ class TicketCard extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(to.name,
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant)),
                                   Padding(
@@ -218,16 +215,16 @@ class TicketCard extends StatelessWidget {
                                         const EdgeInsets.symmetric(vertical: 1),
                                     child: Text(
                                       to.code,
-                                      style: ThemeText.paragraph.copyWith(
+                                      style: TravelloTheme.paragraph.copyWith(
                                           fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                   Text(DateFormat.MMMEd().format(arrival),
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant)),
                                   Text(DateFormat.jm().format(arrival),
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant)),
                                 ]),
@@ -236,8 +233,8 @@ class TicketCard extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(
-                height: spacingUnit(1),
+              const SizedBox(
+                height: 8,
               )
             ]),
           ),
@@ -257,9 +254,9 @@ class TicketCard extends StatelessWidget {
               GestureDetector(
                 onTap: showDetail,
                 child: Container(
-                  padding: EdgeInsets.all(spacingUnit(1)),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                      color: colorScheme(context).surfaceContainerLowest,
+                      color: TravelloTheme.paperLightContainerLowest,
                       border: Border(
                         bottom: BorderSide(color: cardColor, width: 1),
                         left: BorderSide(color: cardColor, width: 1),
@@ -282,13 +279,13 @@ class TicketCard extends StatelessWidget {
                           children: [
                             Text('Total Price',
                                 textAlign: TextAlign.end,
-                                style: ThemeText.caption.copyWith(
+                                style: TravelloTheme.caption.copyWith(
                                     color:
                                         colorScheme(context).onSurfaceVariant)),
-                            SizedBox(width: spacingUnit(1)),
+                            const SizedBox(width: 8),
                             Text('\$$price',
                                 textAlign: TextAlign.end,
-                                style: ThemeText.subtitle),
+                                style: TravelloTheme.subtitle),
                           ],
                         ),
                       ]),
@@ -300,14 +297,14 @@ class TicketCard extends StatelessWidget {
                   ? GestureDetector(
                       onTap: showBoardingPass,
                       child: Padding(
-                        padding: EdgeInsets.all(spacingUnit(1)),
+                        padding: const EdgeInsets.all(8),
                         child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.qr_code, color: cardColor, size: 16),
-                              SizedBox(width: spacingUnit(1)),
+                              const SizedBox(width: 8),
                               Text('SHOW BOARDING PASS',
-                                  style: ThemeText.paragraph.copyWith(
+                                  style: TravelloTheme.paragraph.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: colorScheme(context)
                                           .onPrimaryContainer)),
@@ -343,7 +340,7 @@ class TicketCard extends StatelessWidget {
           children: [
             Text('Check in available in',
                 textAlign: TextAlign.start,
-                style: ThemeText.caption
+                style: TravelloTheme.caption
                     .copyWith(color: colorScheme(context).onSurfaceVariant)),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
@@ -355,7 +352,7 @@ class TicketCard extends StatelessWidget {
                 const Icon(Icons.access_time, size: 16),
                 const SizedBox(width: 4),
                 Text(timeLeft,
-                    textAlign: TextAlign.center, style: ThemeText.subtitle),
+                    textAlign: TextAlign.center, style: TravelloTheme.subtitle),
                 const SizedBox(width: 8),
                 Container(
                   padding:
@@ -365,7 +362,7 @@ class TicketCard extends StatelessWidget {
                     color: colorStatus(status),
                   ),
                   child: Text(status.name.toUpperCase(),
-                      style: ThemeText.caption.copyWith(
+                      style: TravelloTheme.caption.copyWith(
                           fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ]),
@@ -378,7 +375,7 @@ class TicketCard extends StatelessWidget {
           children: [
             Text('Expired in',
                 textAlign: TextAlign.start,
-                style: ThemeText.caption
+                style: TravelloTheme.caption
                     .copyWith(color: colorScheme(context).onSurfaceVariant)),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
@@ -390,7 +387,7 @@ class TicketCard extends StatelessWidget {
                 const Icon(Icons.access_time, size: 16),
                 const SizedBox(width: 4),
                 Text(timeLeft,
-                    textAlign: TextAlign.center, style: ThemeText.subtitle),
+                    textAlign: TextAlign.center, style: TravelloTheme.subtitle),
                 const SizedBox(width: 8),
                 Container(
                   padding:
@@ -400,7 +397,7 @@ class TicketCard extends StatelessWidget {
                     color: colorStatus(status),
                   ),
                   child: Text(status.name.toUpperCase(),
-                      style: ThemeText.caption.copyWith(
+                      style: TravelloTheme.caption.copyWith(
                           fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ]),
@@ -409,14 +406,14 @@ class TicketCard extends StatelessWidget {
         );
       default:
         return Container(
-          padding: EdgeInsets.all(spacingUnit(1)),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             borderRadius: ThemeRadius.small,
             color: colorStatus(status).withValues(alpha: 0.25),
           ),
           child: Text(
             status.name.toUpperCase(),
-            style: ThemeText.caption.copyWith(fontWeight: FontWeight.bold),
+            style: TravelloTheme.caption.copyWith(fontWeight: FontWeight.bold),
           ),
         );
     }

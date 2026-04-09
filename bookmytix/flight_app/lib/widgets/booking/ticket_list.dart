@@ -2,8 +2,6 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/models/booking.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
 import 'package:flight_app/utils/no_data.dart';
 import 'package:flight_app/widgets/booking/choose_passengger.dart';
@@ -11,6 +9,7 @@ import 'package:flight_app/widgets/cards/ticket_card.dart';
 import 'package:flight_app/widgets/cards/ticket_wide_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TicketList extends StatelessWidget {
   const TicketList({super.key, required this.bookingList});
@@ -25,7 +24,7 @@ class TicketList extends StatelessWidget {
       Get.bottomSheet(
         StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
           return Padding(
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             child: const Wrap(
               alignment: WrapAlignment.center,
               children: [VSpace(), GrabberIcon(), ChoosePassengger()],
@@ -36,20 +35,20 @@ class TicketList extends StatelessWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
-        backgroundColor: colorScheme(context).surface,
+        backgroundColor: TravelloTheme.paperLight,
       );
     }
 
     return bookingList.isNotEmpty
         ? ListView.builder(
             shrinkWrap: true,
-            padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             physics: const ClampingScrollPhysics(),
             itemCount: bookingList.length,
             itemBuilder: ((BuildContext context, int index) {
               Booking item = bookingList[index];
               return Padding(
-                padding: EdgeInsets.only(bottom: spacingUnit(2)),
+                padding: const EdgeInsets.only(bottom: 16),
                 child: wideScreen
                     ? TicketWideCard(
                         from: item.from,

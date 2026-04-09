@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
+
 class WeatherData {
   final String city;
   final double temperature;
   final String condition;
-  final String icon;
+  final IconData icon;
   final int humidity;
   final double windSpeed;
   final bool travelWarning;
@@ -50,7 +52,7 @@ class PakistanWeatherData {
           city: city,
           temperature: 32.0,
           condition: 'Partly Cloudy',
-          icon: '⛅',
+          icon: Icons.wb_cloudy,
           humidity: 65,
           windSpeed: 15.5,
           travelWarning: false,
@@ -61,7 +63,7 @@ class PakistanWeatherData {
           city: city,
           temperature: 28.0,
           condition: 'Sunny',
-          icon: '☀️',
+          icon: Icons.wb_sunny,
           humidity: 45,
           windSpeed: 8.2,
           travelWarning: false,
@@ -72,7 +74,7 @@ class PakistanWeatherData {
           city: city,
           temperature: 25.0,
           condition: 'Clear',
-          icon: '🌤️',
+          icon: Icons.wb_sunny,
           humidity: 50,
           windSpeed: 10.0,
           travelWarning: false,
@@ -83,7 +85,7 @@ class PakistanWeatherData {
           city: city,
           temperature: 12.0,
           condition: 'Rainy',
-          icon: '🌧️',
+          icon: Icons.water_drop,
           humidity: 85,
           windSpeed: 20.0,
           travelWarning: true,
@@ -95,7 +97,7 @@ class PakistanWeatherData {
           city: city,
           temperature: 18.0,
           condition: 'Windy',
-          icon: '💨',
+          icon: Icons.air,
           humidity: 30,
           windSpeed: 25.0,
           travelWarning: true,
@@ -107,7 +109,7 @@ class PakistanWeatherData {
           city: city,
           temperature: 30.0,
           condition: 'Hot',
-          icon: '🌡️',
+          icon: Icons.local_fire_department,
           humidity: 40,
           windSpeed: 7.5,
           travelWarning: false,
@@ -118,7 +120,7 @@ class PakistanWeatherData {
           city: city,
           temperature: 35.0,
           condition: 'Very Hot',
-          icon: '🔥',
+          icon: Icons.local_fire_department,
           humidity: 35,
           windSpeed: 12.0,
           travelWarning: true,
@@ -130,7 +132,7 @@ class PakistanWeatherData {
           city: city,
           temperature: 29.0,
           condition: 'Cloudy',
-          icon: '☁️',
+          icon: Icons.cloud,
           humidity: 55,
           windSpeed: 9.0,
           travelWarning: false,
@@ -141,7 +143,7 @@ class PakistanWeatherData {
           city: city,
           temperature: 15.0,
           condition: 'Cool',
-          icon: '🌄',
+          icon: Icons.landscape,
           humidity: 60,
           windSpeed: 11.0,
           travelWarning: false,
@@ -152,7 +154,7 @@ class PakistanWeatherData {
           city: city,
           temperature: 10.0,
           condition: 'Cold',
-          icon: '❄️',
+          icon: Icons.ac_unit,
           humidity: 70,
           windSpeed: 14.0,
           travelWarning: true,
@@ -164,7 +166,7 @@ class PakistanWeatherData {
           city: city,
           temperature: 27.0,
           condition: 'Pleasant',
-          icon: '🌤️',
+          icon: Icons.wb_sunny,
           humidity: 50,
           windSpeed: 10.0,
           travelWarning: false,

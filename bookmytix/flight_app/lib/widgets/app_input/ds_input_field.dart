@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 /// DSInputField
 /// Airline-grade form field with:
@@ -125,7 +124,7 @@ class _DSInputFieldState extends State<DSInputField>
   // ── Colors based on state ─────────────────────────────────────────────────
   Color get _borderColor {
     if (_errorText != null) return const Color(0xFFDC2626);
-    if (_isFocused) return ThemePalette.primaryMain;
+    if (_isFocused) return TravelloTheme.primaryMain;
     return const Color(0xFFE2E8F0);
   }
 
@@ -145,7 +144,7 @@ class _DSInputFieldState extends State<DSInputField>
         // ── Label ─────────────────────────────────────────────────────────────
         Text(
           widget.label,
-          style: ThemeText.caption.copyWith(
+          style: TravelloTheme.caption.copyWith(
             fontWeight: FontWeight.w600,
             color: _errorText != null
                 ? const Color(0xFFDC2626)
@@ -171,7 +170,7 @@ class _DSInputFieldState extends State<DSInputField>
             boxShadow: _isFocused
                 ? [
                     BoxShadow(
-                      color: ThemePalette.primaryMain.withValues(alpha: 0.12),
+                      color: TravelloTheme.primaryMain.withValues(alpha: 0.12),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -189,7 +188,7 @@ class _DSInputFieldState extends State<DSInputField>
             textCapitalization: widget.textCapitalization,
             autofillHints: widget.autofillHints,
             onTap: widget.onTap,
-            style: ThemeText.paragraph.copyWith(
+            style: TravelloTheme.paragraph.copyWith(
               fontWeight: FontWeight.w500,
               color: Colors.black,
             ),
@@ -200,7 +199,7 @@ class _DSInputFieldState extends State<DSInputField>
             },
             decoration: InputDecoration(
               hintText: widget.hint,
-              hintStyle: ThemeText.paragraph.copyWith(
+              hintStyle: TravelloTheme.paragraph.copyWith(
                 color: const Color(0xFF94A3B8),
                 fontWeight: FontWeight.w400,
               ),
@@ -217,15 +216,15 @@ class _DSInputFieldState extends State<DSInputField>
                       widget.prefixIcon,
                       size: 18,
                       color: _isFocused
-                          ? ThemePalette.primaryMain
+                          ? TravelloTheme.primaryMain
                           : const Color(0xFF94A3B8),
                     )
                   : null,
               prefixText: widget.prefixText,
-              prefixStyle: ThemeText.paragraph.copyWith(
+              prefixStyle: TravelloTheme.paragraph.copyWith(
                 fontWeight: FontWeight.w700,
                 fontSize: 15,
-                color: ThemePalette.primaryMain,
+                color: TravelloTheme.primaryMain,
               ),
               suffixIcon: widget.suffix,
               // suppress default Flutter error display — we render our own
@@ -256,7 +255,7 @@ class _DSInputFieldState extends State<DSInputField>
                           Flexible(
                             child: Text(
                               _errorText!,
-                              style: ThemeText.caption.copyWith(
+                              style: TravelloTheme.caption.copyWith(
                                 color: const Color(0xFFDC2626),
                                 fontWeight: FontWeight.w500,
                               ),

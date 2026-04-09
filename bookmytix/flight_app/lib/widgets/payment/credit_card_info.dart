@@ -4,7 +4,7 @@ import 'package:flight_app/controllers/payment_form_controller.dart';
 import 'package:flight_app/utils/design_system_formatters.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/widgets/app_input/ds_input_field.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class CreditCardInfo extends StatefulWidget {
   const CreditCardInfo({super.key});
@@ -70,7 +70,7 @@ class _CreditCardInfoState extends State<CreditCardInfo> {
             ),
           ],
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
 
         // ── Card number ────────────────────────────────────────────────────
         DSInputField(
@@ -84,7 +84,7 @@ class _CreditCardInfoState extends State<CreditCardInfo> {
           onChanged: _ctrl.validateCardNumber,
           autofillHints: const [AutofillHints.creditCardNumber],
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
 
         // ── Expiry + CVV ───────────────────────────────────────────────────
         Row(
@@ -103,7 +103,7 @@ class _CreditCardInfoState extends State<CreditCardInfo> {
                 autofillHints: const [AutofillHints.creditCardExpirationDate],
               ),
             ),
-            SizedBox(width: spacingUnit(2)),
+            const SizedBox(width: 16),
             Expanded(
               child: DSInputField(
                 label: 'CVV',
@@ -130,7 +130,7 @@ class _CreditCardInfoState extends State<CreditCardInfo> {
             ),
           ],
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
 
         // ── Cardholder name ────────────────────────────────────────────────
         DSInputField(

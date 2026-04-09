@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TravelloFooter extends StatelessWidget {
   const TravelloFooter({super.key});
@@ -26,7 +24,7 @@ class TravelloFooter extends StatelessWidget {
           Container(
             constraints: const BoxConstraints(maxWidth: 1200),
             padding: EdgeInsets.symmetric(
-              horizontal: isMobile ? spacingUnit(2) : spacingUnit(4),
+              horizontal: isMobile ? 16 : 32,
               vertical: spacingUnit(6),
             ),
             child: Column(
@@ -34,7 +32,7 @@ class TravelloFooter extends StatelessWidget {
                 // Footer Columns
                 _buildFooterColumns(isMobile, isTablet),
 
-                SizedBox(height: spacingUnit(4)),
+                const SizedBox(height: 32),
 
                 // Social Media Section
                 _buildSocialMediaSection(),
@@ -56,11 +54,11 @@ class TravelloFooter extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildAboutColumn(),
-          SizedBox(height: spacingUnit(4)),
+          const SizedBox(height: 32),
           _buildServicesColumn(),
-          SizedBox(height: spacingUnit(4)),
+          const SizedBox(height: 32),
           _buildSupportColumn(),
-          SizedBox(height: spacingUnit(4)),
+          const SizedBox(height: 32),
           _buildAppColumn(),
         ],
       );
@@ -72,16 +70,16 @@ class TravelloFooter extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(child: _buildAboutColumn()),
-              SizedBox(width: spacingUnit(3)),
+              const SizedBox(width: 24),
               Expanded(child: _buildServicesColumn()),
             ],
           ),
-          SizedBox(height: spacingUnit(4)),
+          const SizedBox(height: 32),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(child: _buildSupportColumn()),
-              SizedBox(width: spacingUnit(3)),
+              const SizedBox(width: 24),
               Expanded(child: _buildAppColumn()),
             ],
           ),
@@ -93,11 +91,11 @@ class TravelloFooter extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(flex: 2, child: _buildAboutColumn()),
-          SizedBox(width: spacingUnit(4)),
+          const SizedBox(width: 32),
           Expanded(child: _buildServicesColumn()),
-          SizedBox(width: spacingUnit(4)),
+          const SizedBox(width: 32),
           Expanded(child: _buildSupportColumn()),
-          SizedBox(width: spacingUnit(4)),
+          const SizedBox(width: 32),
           Expanded(child: _buildAppColumn()),
         ],
       );
@@ -111,20 +109,20 @@ class TravelloFooter extends StatelessWidget {
       children: [
         Text(
           'About Travello AI',
-          style: ThemeText.subtitle2.copyWith(
-            color: ThemePalette.primaryDark,
+          style: TravelloTheme.subtitle2.copyWith(
+            color: TravelloTheme.primaryDark,
             fontWeight: FontWeight.w800,
           ),
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         Text(
           'Your intelligent travel companion powered by AI. Book flights, trains, hotels, and access smart travel assistance all in one platform.',
-          style: ThemeText.paragraph.copyWith(
+          style: TravelloTheme.paragraph.copyWith(
             color: Colors.grey.shade700,
             height: 1.6,
           ),
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         _buildFooterLink('About Us', () => Get.toNamed(AppLink.aboutUs)),
         _buildFooterLink('Careers', () => Get.toNamed(AppLink.careers)),
         _buildFooterLink('Blog', () => Get.toNamed(AppLink.blog)),
@@ -140,12 +138,12 @@ class TravelloFooter extends StatelessWidget {
       children: [
         Text(
           'Services',
-          style: ThemeText.subtitle2.copyWith(
-            color: ThemePalette.primaryDark,
+          style: TravelloTheme.subtitle2.copyWith(
+            color: TravelloTheme.primaryDark,
             fontWeight: FontWeight.w800,
           ),
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         _buildFooterLink(
             'Flight Booking', () => Get.toNamed(AppLink.flightSearchHome)),
         _buildFooterLink(
@@ -168,12 +166,12 @@ class TravelloFooter extends StatelessWidget {
       children: [
         Text(
           'Support',
-          style: ThemeText.subtitle2.copyWith(
-            color: ThemePalette.primaryDark,
+          style: TravelloTheme.subtitle2.copyWith(
+            color: TravelloTheme.primaryDark,
             fontWeight: FontWeight.w800,
           ),
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         _buildFooterLink('Help Center', () => Get.toNamed(AppLink.contact)),
         _buildFooterLink('Privacy Policy', () => Get.toNamed(AppLink.privacy)),
         _buildFooterLink('Terms of Service', () => Get.toNamed(AppLink.terms)),
@@ -191,20 +189,20 @@ class TravelloFooter extends StatelessWidget {
       children: [
         Text(
           'Get the App',
-          style: ThemeText.subtitle2.copyWith(
-            color: ThemePalette.primaryDark,
+          style: TravelloTheme.subtitle2.copyWith(
+            color: TravelloTheme.primaryDark,
             fontWeight: FontWeight.w800,
           ),
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         Text(
           'Download our app for the best travel experience',
-          style: ThemeText.paragraph.copyWith(
+          style: TravelloTheme.paragraph.copyWith(
             color: Colors.grey.shade700,
             height: 1.6,
           ),
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
 
         // App Store Button
         _buildAppBadge(
@@ -213,7 +211,7 @@ class TravelloFooter extends StatelessWidget {
           () {},
         ),
 
-        SizedBox(height: spacingUnit(1.5)),
+        const SizedBox(height: 12),
 
         // Google Play Button
         _buildAppBadge(
@@ -228,12 +226,12 @@ class TravelloFooter extends StatelessWidget {
   Widget _buildFooterLink(String text, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      hoverColor: ThemePalette.primaryLight.withOpacity(0.3),
+      hoverColor: TravelloTheme.primaryLight.withOpacity(0.3),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: spacingUnit(0.75)),
         child: Text(
           text,
-          style: ThemeText.paragraph.copyWith(
+          style: TravelloTheme.paragraph.copyWith(
             color: Colors.grey.shade600,
             height: 1.5,
           ),
@@ -247,9 +245,9 @@ class TravelloFooter extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(2),
-          vertical: spacingUnit(1.5),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
         ),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -266,21 +264,21 @@ class TravelloFooter extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, color: const Color(0xFFD4AF37), size: 24),
-            SizedBox(width: spacingUnit(1)),
+            const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'Download on the',
-                  style: ThemeText.caption.copyWith(
+                  style: TravelloTheme.caption.copyWith(
                     color: Colors.grey.shade700,
                     fontSize: 9,
                   ),
                 ),
                 Text(
                   store,
-                  style: ThemeText.paragraph.copyWith(
+                  style: TravelloTheme.paragraph.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
@@ -303,22 +301,22 @@ class TravelloFooter extends StatelessWidget {
           color: Colors.grey.shade300,
         ),
 
-        SizedBox(height: spacingUnit(3)),
+        const SizedBox(height: 24),
 
         // Social Media Title
         Text(
           'Follow Us',
-          style: ThemeText.subtitle2.copyWith(
-            color: ThemePalette.primaryDark,
+          style: TravelloTheme.subtitle2.copyWith(
+            color: TravelloTheme.primaryDark,
             fontWeight: FontWeight.w700,
           ),
         ),
 
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
 
         // Social Media Icons Row
         Wrap(
-          spacing: spacingUnit(2),
+          spacing: 16,
           children: [
             _buildSocialIcon(
               icon: Icons.facebook,
@@ -363,16 +361,16 @@ class TravelloFooter extends StatelessWidget {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: ThemePalette.primaryMain.withOpacity(0.1),
+          color: TravelloTheme.primaryMain.withOpacity(0.1),
           shape: BoxShape.circle,
           border: Border.all(
-            color: ThemePalette.primaryMain.withOpacity(0.3),
+            color: TravelloTheme.primaryMain.withOpacity(0.3),
             width: 1.5,
           ),
         ),
         child: Icon(
           icon,
-          color: ThemePalette.primaryMain,
+          color: TravelloTheme.primaryMain,
           size: 20,
         ),
       ),
@@ -382,9 +380,9 @@ class TravelloFooter extends StatelessWidget {
   Widget _buildCopyrightBar() {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        vertical: spacingUnit(2),
-        horizontal: spacingUnit(2),
+      padding: const EdgeInsets.symmetric(
+        vertical: 16,
+        horizontal: 16,
       ),
       decoration: BoxDecoration(
         color: Colors.grey.shade200,
@@ -398,7 +396,7 @@ class TravelloFooter extends StatelessWidget {
       child: Center(
         child: Text(
           '© 2026 Travello AI. All rights reserved.',
-          style: ThemeText.paragraph.copyWith(
+          style: TravelloTheme.paragraph.copyWith(
             color: Colors.grey.shade600,
             fontSize: 13,
           ),

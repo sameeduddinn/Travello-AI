@@ -1,7 +1,6 @@
 import 'package:flight_app/constants/image_api.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class AuthWrap extends StatelessWidget {
   const AuthWrap({super.key, required this.content});
@@ -21,8 +20,8 @@ class AuthWrap extends StatelessWidget {
         ? screenW * 0.2
         : isTablet
             ? screenW * 0.1
-            : spacingUnit(2);
-    final vPad = screenH < 700 ? spacingUnit(1.5) : spacingUnit(3);
+            : 16.0;
+    final vPad = screenH < 700 ? 12.0 : 24.0;
 
     // Card max-width: phone fills, tablet capped nicely
     final cardMaxWidth = isLargeTablet
@@ -40,11 +39,11 @@ class AuthWrap extends StatelessWidget {
               ? [
                   const Color(0xFF1a1a2e),
                   const Color(0xFF16213e),
-                  ThemePalette.primaryMain.withValues(alpha: 0.8),
+                  TravelloTheme.primaryMain.withValues(alpha: 0.8),
                 ]
               : [
-                  ThemePalette.primaryMain,
-                  ThemePalette.primaryMain.withValues(alpha: 0.8),
+                  TravelloTheme.primaryMain,
+                  TravelloTheme.primaryMain.withValues(alpha: 0.8),
                   const Color(0xFF6366f1),
                 ],
         ),
@@ -69,7 +68,8 @@ class AuthWrap extends StatelessWidget {
                   constraints: BoxConstraints(maxWidth: cardMaxWidth),
                   child: Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(isTablet ? 28 : 24),
+                      borderRadius:
+                          BorderRadius.circular(isTablet ? 28.0 : 24.0),
                       color: Theme.of(context).colorScheme.surface,
                       boxShadow: [
                         BoxShadow(
@@ -80,15 +80,14 @@ class AuthWrap extends StatelessWidget {
                         ),
                         BoxShadow(
                           color:
-                              ThemePalette.primaryMain.withValues(alpha: 0.1),
+                              TravelloTheme.primaryMain.withValues(alpha: 0.1),
                           blurRadius: 60,
                           offset: const Offset(0, 20),
                           spreadRadius: 0,
                         ),
                       ],
                     ),
-                    padding: EdgeInsets.all(
-                        isTablet ? spacingUnit(4) : spacingUnit(3)),
+                    padding: EdgeInsets.all(isTablet ? 32.0 : 24.0),
                     child: content,
                   ),
                 ),

@@ -2,16 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/app/app_link.dart';
+import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/models/flight_route.dart';
 import 'package:flight_app/models/train_package.dart';
 import 'package:flight_app/models/railway_station.dart';
 import 'package:flight_app/screens/railway/train_results_screen.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/app_button/back_icon_button.dart';
 import 'package:flight_app/widgets/cards/flight_route_card.dart';
 import 'package:flight_app/widgets/decorations/oval_shape.dart';
@@ -21,6 +18,7 @@ import 'package:flight_app/widgets/railway/train_summary.dart';
 import 'package:flight_app/widgets/railway/train_summary_wide.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 /// Train package detail screen - matches flight package UI exactly
 class TrainDetailPackage extends StatefulWidget {
@@ -155,11 +153,26 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
     final String label = _getDiscountLabel(pkg?.packageType ?? 'express');
     final bool wideScreen = ThemeBreakpoints.smUp(context);
 
+    final String headerImageUrl = (pkg?.imageUrl ?? '').trim();
+    final Widget headerImage = headerImageUrl.isNotEmpty
+        ? Image.network(
+            headerImageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Image.asset(
+              ImgApi.railwayBanner,
+              fit: BoxFit.cover,
+            ),
+          )
+        : Image.asset(
+            ImgApi.railwayBanner,
+            fit: BoxFit.cover,
+          );
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        shadowColor: colorScheme(context).surface,
+        shadowColor: TravelloTheme.paperLight,
         scrolledUnderElevation: 1,
         backgroundColor: Colors.transparent,
         leading: BackIconButton(onTap: () {
@@ -181,7 +194,7 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
               ),
             ),
           ),
-          SizedBox(width: spacingUnit(2)),
+          const SizedBox(width: 16),
         ],
       ),
       body: SingleChildScrollView(
@@ -189,16 +202,10 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
           alignment: Alignment.topCenter,
           children: [
             /// DECORATION BG
-            Container(
-              alignment: Alignment.bottomCenter,
+            SizedBox(
               width: double.infinity,
               height: 150,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(pkg?.imageUrl ?? ''),
-                  fit: BoxFit.cover,
-                ),
-              ),
+              child: headerImage,
             ),
 
             /// DECORATION ROUNDED
@@ -207,7 +214,7 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
               left: -10,
               child: CustomPaint(
                 painter: OvalShape(
-                  color: colorScheme(context).surfaceContainerLowest,
+                  color: TravelloTheme.paperLightContainerLowest,
                   width: MediaQuery.of(context).size.width + 20,
                 ),
               ),
@@ -222,7 +229,7 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
                 /// TRAIN SUMMARY – mirrors FlightSummary / FlightSummaryWide
                 Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: wideScreen ? spacingUnit(12) : 0,
+                    horizontal: wideScreen ? 96 : 0,
                   ),
                   child: wideScreen
                       ? TrainSummaryWide(
@@ -256,7 +263,7 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
                 /// DEPARTURE ROUTES – reuses FlightRoutes / FlightRoutesHorizontal
                 Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: wideScreen ? spacingUnit(12) : 0,
+                    horizontal: wideScreen ? 96 : 0,
                   ),
                   child: wideScreen
                       ? FlightRoutesHorizontal(
@@ -287,7 +294,7 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
                 if (pkg?.roundTrip ?? false)
                   Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: wideScreen ? spacingUnit(12) : 0,
+                      horizontal: wideScreen ? 96 : 0,
                     ),
                     child: wideScreen
                         ? FlightRoutesHorizontal(
@@ -327,10 +334,10 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
         elevation: 20,
         shadowColor: Colors.black,
         height: 80,
-        color: colorScheme(context).surface,
-        padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(2),
-          vertical: spacingUnit(1),
+        color: TravelloTheme.paperLight,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -346,7 +353,7 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
                 Text(
                   'PKR ${_basePrice.toStringAsFixed(0)}',
                   textAlign: TextAlign.end,
-                  style: ThemeText.headline.copyWith(
+                  style: TravelloTheme.headline.copyWith(
                     color: colorScheme(context).onSurfaceVariant,
                     decoration: TextDecoration.lineThrough,
                     height: 1,
@@ -355,22 +362,22 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
                 Text(
                   'PKR ${_finalPrice.toStringAsFixed(0)}',
                   textAlign: TextAlign.end,
-                  style: ThemeText.title.copyWith(
-                    color: colorScheme(context).primary,
+                  style: TravelloTheme.title.copyWith(
+                    color: TravelloTheme.primaryMain,
                     height: 1,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-            SizedBox(width: spacingUnit(3)),
+            const SizedBox(width: 24),
             Expanded(
               child: SizedBox(
                 height: 50,
                 child: FilledButton(
                   onPressed: _onBookNow,
                   style: ThemeButton.btnBig.merge(ThemeButton.primary),
-                  child: const Text('BOOK NOW', style: ThemeText.subtitle2),
+                  child: const Text('BOOK NOW', style: TravelloTheme.subtitle2),
                 ),
               ),
             )

@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/screens/orders/hotel_booking_confirmation.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PaymentScreenProfessional extends StatefulWidget {
   const PaymentScreenProfessional({super.key});
@@ -149,18 +147,18 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: EdgeInsets.all(spacingUnit(2)),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme(context).primaryContainer,
+                  color: TravelloTheme.primaryMainContainer,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   CupertinoIcons.check_mark_circled,
-                  color: colorScheme(context).primary,
+                  color: TravelloTheme.primaryMain,
                   size: 60,
                 ),
               ),
-              SizedBox(height: spacingUnit(2)),
+              const SizedBox(height: 16),
               const Text(
                 'Booking Confirmed!',
                 style: TextStyle(
@@ -168,26 +166,26 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
               Text(
                 'Your ${bookingType == 'flight' ? 'flight' : bookingType == 'train' ? 'train' : 'transport'} has been booked successfully',
                 textAlign: TextAlign.center,
-                style: ThemeText.caption,
+                style: TravelloTheme.caption,
               ),
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
               Container(
-                padding: EdgeInsets.all(spacingUnit(2)),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme(context).surfaceContainerHighest,
+                  color: TravelloTheme.paperLightContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   children: [
                     const Text(
                       'Booking Reference',
-                      style: ThemeText.caption,
+                      style: TravelloTheme.caption,
                     ),
-                    SizedBox(height: spacingUnit(0.5)),
+                    const SizedBox(height: 4),
                     Text(
                       'TRA${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
                       style: const TextStyle(
@@ -199,14 +197,14 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                   ],
                 ),
               ),
-              SizedBox(height: spacingUnit(3)),
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                   Get.until((route) => route.isFirst);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme(context).primary,
+                  backgroundColor: TravelloTheme.primaryMain,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
@@ -224,7 +222,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = colorScheme(context).primary;
+    const primaryColor = TravelloTheme.primaryMain;
 
     return Scaffold(
       appBar: AppBar(
@@ -249,8 +247,8 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
           children: [
             // Progress Stepper
             Container(
-              padding: EdgeInsets.symmetric(
-                  horizontal: spacingUnit(2), vertical: spacingUnit(1.5)),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
@@ -366,11 +364,11 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
             // Booking Summary
             Container(
-              margin: EdgeInsets.all(spacingUnit(2)),
-              padding: EdgeInsets.all(spacingUnit(2)),
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
-                color: colorScheme(context).surface,
+                color: TravelloTheme.paperLight,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -391,8 +389,8 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
             // Fare breakdown
             Container(
-              margin: EdgeInsets.all(spacingUnit(2)),
-              padding: EdgeInsets.all(spacingUnit(2)),
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
@@ -415,16 +413,16 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                                     : CupertinoIcons.car_detailed,
                         color: primaryColor,
                       ),
-                      SizedBox(width: spacingUnit(1)),
+                      const SizedBox(width: 8),
                       Text(
                         'Fare Breakdown',
-                        style: ThemeText.subtitle.copyWith(
+                        style: TravelloTheme.subtitle.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                   if (bookingType == 'flight') ...[
                     _buildFareRow(
                         'Base Fare', (totalPrice * 0.85).toStringAsFixed(0)),
@@ -476,7 +474,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                             'PKR ${pricePerNight.toStringAsFixed(0)} × $nights night${nights > 1 ? 's' : ''} × $rooms room${rooms > 1 ? 's' : ''}',
                             baseAmount.toStringAsFixed(0),
                           ),
-                          SizedBox(height: spacingUnit(1)),
+                          const SizedBox(height: 8),
                           _buildFareRow(
                             'Service Charge (5%)',
                             serviceCharge.toStringAsFixed(0),
@@ -490,11 +488,11 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                             gst.toStringAsFixed(0),
                           ),
                           if (protectionPlan && protectionCost > 0) ...[
-                            SizedBox(height: spacingUnit(1)),
+                            const SizedBox(height: 8),
                             Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: spacingUnit(1.5),
-                                vertical: spacingUnit(1),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.green.withValues(alpha: 0.1),
@@ -510,7 +508,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                                     size: 16,
                                     color: Colors.green.shade700,
                                   ),
-                                  SizedBox(width: spacingUnit(1)),
+                                  const SizedBox(width: 8),
                                   const Expanded(
                                     child: Text(
                                       'Travel Protection Plan',
@@ -553,7 +551,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                       );
                     }(),
                   ],
-                  Divider(height: spacingUnit(3), thickness: 1),
+                  const Divider(height: 24, thickness: 1),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -580,7 +578,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
             // Payment method selection
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -601,14 +599,14 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // ── Section header inside card ────────────────────
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(spacingUnit(2),
-                              spacingUnit(2), spacingUnit(2), spacingUnit(1)),
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(16,
+                              16, 16, 8),
                           child: Row(children: [
-                            const Icon(Icons.credit_card,
+                            Icon(Icons.credit_card,
                                 color: Color(0xFFD4AF37), size: 22),
-                            SizedBox(width: spacingUnit(1)),
-                            const Text('Choose Payment Method',
+                            SizedBox(width: 8),
+                            Text('Choose Payment Method',
                                 style: TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.bold,
@@ -643,7 +641,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                     ),
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // Payment details form
                   if (_selectedPaymentMethod == 'Card')
@@ -654,12 +652,12 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                   else
                     _buildBankTransferInfo(),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // ── Security Badges ────────────────────────────────────────────
                   Container(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: spacingUnit(2), vertical: spacingUnit(2.5)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 20),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
@@ -687,7 +685,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                                 label: 'Money Back'),
                           ],
                         ),
-                        SizedBox(height: spacingUnit(1.5)),
+                        const SizedBox(height: 12),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -700,7 +698,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                                     fontSize: 12, color: Colors.grey.shade600)),
                           ],
                         ),
-                        SizedBox(height: spacingUnit(0.5)),
+                        const SizedBox(height: 4),
                         Text(
                           '24/7 Customer Support: +92-300-1234567',
                           style: TextStyle(
@@ -715,16 +713,16 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
               ),
             ),
 
-            SizedBox(height: spacingUnit(10)),
+            const SizedBox(height: 80),
           ],
         ),
       ),
 
       // Confirm button
       bottomNavigationBar: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: colorScheme(context).surface,
+          color: TravelloTheme.paperLight,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.1),
@@ -790,7 +788,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
   Widget _buildFareRow(String label, String amount) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: spacingUnit(0.6)),
+      padding: const EdgeInsets.symmetric(vertical: 4.8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -823,7 +821,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(2), vertical: spacingUnit(1.75)),
+              horizontal: 16, vertical: spacingUnit(1.75)),
           child: Row(children: [
             Container(
               width: 44,
@@ -866,7 +864,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
     return Form(
       key: _formKey,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(2.5)),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
@@ -906,7 +904,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                 ]),
               ),
             ]),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
 
             // Dynamic card network logos
             Row(
@@ -967,7 +965,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                 ),
               ],
             ),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
 
             // Card number
             const Text('Credit Card Number',
@@ -1036,7 +1034,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                 }
               },
             ),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
 
             // Expiry + CVC row
             Row(children: [
@@ -1096,7 +1094,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                       ),
                     ]),
               ),
-              SizedBox(width: spacingUnit(2)),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1147,7 +1145,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                     ]),
               ),
             ]),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
 
             // Cardholder Name
             const Text('CARDHOLDER NAME',
@@ -1179,7 +1177,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
               ),
               validator: DSValidators.cardholderName,
             ),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
 
             // Save card checkbox
             InkWell(
@@ -1212,12 +1210,12 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                 ]),
               ),
             ),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
 
             // SSL notice
             Container(
               padding: EdgeInsets.symmetric(
-                  horizontal: spacingUnit(1.5), vertical: spacingUnit(1.25)),
+                  horizontal: 12, vertical: spacingUnit(1.25)),
               decoration: BoxDecoration(
                   color: const Color(0xFFE3F2FD),
                   borderRadius: BorderRadius.circular(8)),
@@ -1241,7 +1239,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
   Widget _buildMobileWalletForm() {
     return Container(
-      padding: EdgeInsets.all(spacingUnit(2.5)),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -1272,7 +1270,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
               ),
             ),
           ]),
-          Divider(height: spacingUnit(3), color: Colors.grey.shade200),
+          Divider(height: 24, color: Colors.grey.shade200),
 
           // Phone number label
           Text('Phone Number',
@@ -1332,7 +1330,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
               },
             ),
           ),
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
 
           // Get Code button
           SizedBox(
@@ -1370,9 +1368,9 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
   Widget _buildBankTransferInfo() {
     return Container(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme(context).surface,
+        color: TravelloTheme.paperLight,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -1385,15 +1383,15 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Bank Transfer Details', style: ThemeText.subtitle),
-          SizedBox(height: spacingUnit(2)),
+          const Text('Bank Transfer Details', style: TravelloTheme.subtitle),
+          const SizedBox(height: 16),
           _buildInfoRow('Bank Name', 'Meezan Bank'),
           _buildInfoRow('Account Title', 'Travello AI'),
           _buildInfoRow('Account Number', '0123456789012'),
           _buildInfoRow('IBAN', 'PK12MEZN0000120123456789'),
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
           Container(
-            padding: EdgeInsets.all(spacingUnit(1.5)),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
@@ -1408,11 +1406,11 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                   color: Colors.orange,
                   size: 20,
                 ),
-                SizedBox(width: spacingUnit(1)),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Transfer the amount and share receipt via email',
-                    style: ThemeText.caption.copyWith(color: Colors.orange),
+                    style: TravelloTheme.caption.copyWith(color: Colors.orange),
                   ),
                 ),
               ],
@@ -1425,12 +1423,12 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: spacingUnit(0.5)),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: ThemeText.caption),
-          Text(value, style: ThemeText.subtitle),
+          Text(label, style: TravelloTheme.caption),
+          Text(value, style: TravelloTheme.subtitle),
         ],
       ),
     );
@@ -1439,26 +1437,26 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
   Widget _buildFlightSummary() {
     final flight = bookingData['flight'];
     if (flight == null) return const SizedBox();
-    final primary = colorScheme(context).primary;
+    const primary = TravelloTheme.primaryMain;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── Gold header bar ──────────────────────────────────────────────
         Container(
-          margin: EdgeInsets.only(
-            top: -spacingUnit(2),
-            left: -spacingUnit(2),
-            right: -spacingUnit(2),
-            bottom: spacingUnit(2),
+          margin: const EdgeInsets.only(
+            top: -16,
+            left: -16,
+            right: -16,
+            bottom: 16,
           ),
           padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(2), vertical: spacingUnit(1.75)),
+              horizontal: 16, vertical: spacingUnit(1.75)),
           color: primary,
-          child: Row(children: [
-            const Icon(CupertinoIcons.airplane, color: Colors.white, size: 20),
-            SizedBox(width: spacingUnit(1)),
-            const Text('Flight Summary',
+          child: const Row(children: [
+            Icon(CupertinoIcons.airplane, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Text('Flight Summary',
                 style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -1469,7 +1467,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         Row(
           children: [
             Container(
-              padding: EdgeInsets.all(spacingUnit(1)),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
@@ -1480,26 +1478,26 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                 size: 22,
               ),
             ),
-            SizedBox(width: spacingUnit(1.5)),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     flight.airlineName ?? 'Flight',
-                    style: ThemeText.subtitle
+                    style: TravelloTheme.subtitle
                         .copyWith(fontWeight: FontWeight.bold),
                   ),
                   Text(
                     '${flight.airlineCode ?? ''} • ${flight.cabinClass ?? 'Economy'}',
-                    style: ThemeText.caption,
+                    style: TravelloTheme.caption,
                   ),
                 ],
               ),
             ),
           ],
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -1508,23 +1506,23 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
               children: [
                 Text(
                   flight.departureTime ?? '',
-                  style: ThemeText.title2,
+                  style: TravelloTheme.title2,
                 ),
                 Text(
                   bookingData['searchParams']?['fromAirport']?.code ?? 'DEP',
-                  style: ThemeText.caption,
+                  style: TravelloTheme.caption,
                 ),
               ],
             ),
             Column(
               children: [
-                Icon(
+                const Icon(
                   CupertinoIcons.arrow_right,
-                  color: colorScheme(context).primary,
+                  color: TravelloTheme.primaryMain,
                 ),
                 Text(
                   flight.duration ?? '',
-                  style: ThemeText.caption,
+                  style: TravelloTheme.caption,
                 ),
               ],
             ),
@@ -1533,11 +1531,11 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
               children: [
                 Text(
                   flight.arrivalTime ?? '',
-                  style: ThemeText.title2,
+                  style: TravelloTheme.title2,
                 ),
                 Text(
                   bookingData['searchParams']?['toAirport']?.code ?? 'ARR',
-                  style: ThemeText.caption,
+                  style: TravelloTheme.caption,
                 ),
               ],
             ),
@@ -1563,22 +1561,22 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         children: [
           // Outbound Train Header
           Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(1), vertical: spacingUnit(0.5)),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: colorScheme(context).primaryContainer,
+              color: TravelloTheme.primaryMainContainer,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Text(
+            child: const Text(
               'OUTBOUND JOURNEY',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: colorScheme(context).primary,
+                color: TravelloTheme.primaryMain,
               ),
             ),
           ),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           _buildSingleTrainSummary(
             outboundTrain,
             outboundClass,
@@ -1592,28 +1590,28 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             true, // isOutbound
           ),
 
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
           Divider(thickness: 1, color: Colors.grey.withValues(alpha: 0.3)),
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
 
           // Return Train Header
           Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(1), vertical: spacingUnit(0.5)),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: colorScheme(context).primaryContainer,
+              color: TravelloTheme.primaryMainContainer,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Text(
+            child: const Text(
               'RETURN JOURNEY',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: colorScheme(context).primary,
+                color: TravelloTheme.primaryMain,
               ),
             ),
           ),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           _buildSingleTrainSummary(
             returnTrain,
             returnClass,
@@ -1671,37 +1669,37 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         Row(
           children: [
             Container(
-              padding: EdgeInsets.all(spacingUnit(1.5)),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: colorScheme(context).primaryContainer,
+                color: TravelloTheme.primaryMainContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 CupertinoIcons.train_style_one,
-                color: colorScheme(context).primary,
+                color: TravelloTheme.primaryMain,
                 size: 28,
               ),
             ),
-            SizedBox(width: spacingUnit(1.5)),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     train.trainName ?? 'Train',
-                    style: ThemeText.subtitle
+                    style: TravelloTheme.subtitle
                         .copyWith(fontWeight: FontWeight.bold),
                   ),
                   Text(
                     '${train.trainNumber ?? ''} • $selectedClass',
-                    style: ThemeText.caption,
+                    style: TravelloTheme.caption,
                   ),
                 ],
               ),
             ),
           ],
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -1710,23 +1708,23 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
               children: [
                 Text(
                   train.departureTime ?? '',
-                  style: ThemeText.title2,
+                  style: TravelloTheme.title2,
                 ),
                 Text(
                   fromCode,
-                  style: ThemeText.caption,
+                  style: TravelloTheme.caption,
                 ),
               ],
             ),
             Column(
               children: [
-                Icon(
+                const Icon(
                   CupertinoIcons.arrow_right,
-                  color: colorScheme(context).primary,
+                  color: TravelloTheme.primaryMain,
                 ),
                 Text(
                   train.duration ?? '',
-                  style: ThemeText.caption,
+                  style: TravelloTheme.caption,
                 ),
               ],
             ),
@@ -1735,11 +1733,11 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
               children: [
                 Text(
                   train.arrivalTime ?? '',
-                  style: ThemeText.title2,
+                  style: TravelloTheme.title2,
                 ),
                 Text(
                   toCode,
-                  style: ThemeText.caption,
+                  style: TravelloTheme.caption,
                 ),
               ],
             ),
@@ -1747,7 +1745,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         ),
 
         // Show/Hide Details Button
-        SizedBox(height: spacingUnit(1.5)),
+        const SizedBox(height: 12),
         GestureDetector(
           onTap: () {
             setState(() {
@@ -1765,18 +1763,18 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             children: [
               Text(
                 showDetails ? 'Hide details' : 'Show details',
-                style: TextStyle(
-                  color: colorScheme(context).primary,
+                style: const TextStyle(
+                  color: TravelloTheme.primaryMain,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              SizedBox(width: spacingUnit(0.5)),
+              const SizedBox(width: 4),
               Icon(
                 showDetails
                     ? CupertinoIcons.chevron_up
                     : CupertinoIcons.chevron_down,
-                color: colorScheme(context).primary,
+                color: TravelloTheme.primaryMain,
                 size: 16,
               ),
             ],
@@ -1785,15 +1783,15 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
         // Expandable Details Section
         if (showDetails) ...[
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
           Container(
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color:
-                  colorScheme(context).primaryContainer.withValues(alpha: 0.3),
+                  TravelloTheme.primaryMainContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: colorScheme(context).primary.withValues(alpha: 0.2),
+                color: TravelloTheme.primaryMain.withValues(alpha: 0.2),
               ),
             ),
             child: Column(
@@ -1808,16 +1806,16 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                         size: 16,
                         color: Colors.grey[600],
                       ),
-                      SizedBox(width: spacingUnit(1)),
+                      const SizedBox(width: 8),
                       Text(
                         _formatDate(travelDate),
-                        style: ThemeText.caption.copyWith(
+                        style: TravelloTheme.caption.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                 ],
 
                 // Departure Station
@@ -1829,8 +1827,8 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                         Container(
                           width: 12,
                           height: 12,
-                          decoration: BoxDecoration(
-                            color: colorScheme(context).primary,
+                          decoration: const BoxDecoration(
+                            color: TravelloTheme.primaryMain,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -1843,45 +1841,45 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                         ),
                       ],
                     ),
-                    SizedBox(width: spacingUnit(1.5)),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             train.departureTime ?? '',
-                            style: ThemeText.subtitle.copyWith(
+                            style: TravelloTheme.subtitle.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
                             '($fromCode) $fromName',
-                            style: ThemeText.caption,
+                            style: TravelloTheme.caption,
                           ),
-                          SizedBox(height: spacingUnit(0.5)),
+                          const SizedBox(height: 4),
                           Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: spacingUnit(1),
-                              vertical: spacingUnit(0.5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: colorScheme(context).primaryContainer,
+                              color: TravelloTheme.primaryMainContainer,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
+                                const Icon(
                                   CupertinoIcons.train_style_one,
                                   size: 14,
-                                  color: colorScheme(context).primary,
+                                  color: TravelloTheme.primaryMain,
                                 ),
-                                SizedBox(width: spacingUnit(0.5)),
+                                const SizedBox(width: 4),
                                 Text(
                                   '${train.trainNumber ?? ''} • ${train.trainName ?? ''}',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 11,
-                                    color: colorScheme(context).primary,
+                                    color: TravelloTheme.primaryMain,
                                   ),
                                 ),
                               ],
@@ -1901,15 +1899,15 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                       width: 2,
                       height: 30,
                       color:
-                          colorScheme(context).primary.withValues(alpha: 0.3),
+                          TravelloTheme.primaryMain.withValues(alpha: 0.3),
                     ),
-                    SizedBox(width: spacingUnit(1.5)),
+                    const SizedBox(width: 12),
                     Icon(
                       CupertinoIcons.time,
                       size: 14,
                       color: Colors.grey[600],
                     ),
-                    SizedBox(width: spacingUnit(0.5)),
+                    const SizedBox(width: 4),
                     Text(
                       train.duration ?? '',
                       style: TextStyle(
@@ -1936,27 +1934,27 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                         Container(
                           width: 12,
                           height: 12,
-                          decoration: BoxDecoration(
-                            color: colorScheme(context).primary,
+                          decoration: const BoxDecoration(
+                            color: TravelloTheme.primaryMain,
                             shape: BoxShape.circle,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(width: spacingUnit(1.5)),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             train.arrivalTime ?? '',
-                            style: ThemeText.subtitle.copyWith(
+                            style: TravelloTheme.subtitle.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
                             '($toCode) $toName',
-                            style: ThemeText.caption,
+                            style: TravelloTheme.caption,
                           ),
                         ],
                       ),
@@ -1964,18 +1962,18 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                   ],
                 ),
 
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
                 Divider(height: 1, color: Colors.grey.withValues(alpha: 0.3)),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // Class details
                 Text(
                   selectedClass,
-                  style: ThemeText.subtitle.copyWith(
+                  style: TravelloTheme.subtitle.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     if (selectedClass.contains('AC')) ...[
@@ -1984,24 +1982,24 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                         size: 16,
                         color: Colors.grey[600],
                       ),
-                      SizedBox(width: spacingUnit(0.5)),
+                      const SizedBox(width: 4),
                       const Text(
                         'Air Conditioned',
-                        style: ThemeText.caption,
+                        style: TravelloTheme.caption,
                       ),
-                      SizedBox(width: spacingUnit(2)),
+                      const SizedBox(width: 16),
                     ],
                     Icon(
                       CupertinoIcons.person_2,
                       size: 16,
                       color: Colors.grey[600],
                     ),
-                    SizedBox(width: spacingUnit(0.5)),
+                    const SizedBox(width: 4),
                     Text(
                       selectedClass.contains('Sleeper')
                           ? 'Sleeping Berths'
                           : 'Comfortable Seating',
-                      style: ThemeText.caption,
+                      style: TravelloTheme.caption,
                     ),
                   ],
                 ),
@@ -2023,7 +2021,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
     final rooms = bookingData['rooms'] ?? 1;
     final guests = bookingData['guests'] ?? 1;
 
-    final primary = colorScheme(context).primary;
+    const primary = TravelloTheme.primaryMain;
     final hasImage = hotel.images != null && (hotel.images as List).isNotEmpty;
 
     return Column(
@@ -2033,7 +2031,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         Container(
           width: double.infinity,
           padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(2), vertical: spacingUnit(1.25)),
+              horizontal: 16, vertical: spacingUnit(1.25)),
           decoration: BoxDecoration(
             color: primary,
             borderRadius: const BorderRadius.only(
@@ -2174,7 +2172,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             ),
           ),
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -2184,13 +2182,13 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                 children: [
                   Text(
                     'Check-in',
-                    style: ThemeText.caption.copyWith(
+                    style: TravelloTheme.caption.copyWith(
                       fontSize: 13,
                     ),
                   ),
                   Text(
                     checkInDate != null ? _formatDate(checkInDate) : '-',
-                    style: ThemeText.subtitle.copyWith(
+                    style: TravelloTheme.subtitle.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -2199,14 +2197,14 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             ),
             Column(
               children: [
-                Icon(
+                const Icon(
                   Icons.nights_stay,
-                  color: colorScheme(context).primary,
+                  color: TravelloTheme.primaryMain,
                   size: 20,
                 ),
                 Text(
                   '$nights night${nights > 1 ? 's' : ''}',
-                  style: ThemeText.caption,
+                  style: TravelloTheme.caption,
                 ),
               ],
             ),
@@ -2216,13 +2214,13 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                 children: [
                   Text(
                     'Check-out',
-                    style: ThemeText.caption.copyWith(
+                    style: TravelloTheme.caption.copyWith(
                       fontSize: 13,
                     ),
                   ),
                   Text(
                     checkOutDate != null ? _formatDate(checkOutDate) : '-',
-                    style: ThemeText.subtitle.copyWith(
+                    style: TravelloTheme.subtitle.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -2231,7 +2229,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             ),
           ],
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         Row(
           children: [
             Icon(
@@ -2242,9 +2240,9 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             SizedBox(width: spacingUnit(0.75)),
             Text(
               '$guests Guest${guests > 1 ? 's' : ''}',
-              style: ThemeText.paragraph,
+              style: TravelloTheme.paragraph,
             ),
-            SizedBox(width: spacingUnit(2.5)),
+            const SizedBox(width: 20),
             Icon(
               CupertinoIcons.bed_double,
               size: 18,
@@ -2253,36 +2251,36 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             SizedBox(width: spacingUnit(0.75)),
             Text(
               '$rooms Room${rooms > 1 ? 's' : ''}',
-              style: ThemeText.paragraph,
+              style: TravelloTheme.paragraph,
             ),
           ],
         ),
 
         // Room Type Details (if available)
         if (bookingData['roomType'] != null) ...[
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
           Divider(thickness: 1, color: Colors.grey.withValues(alpha: 0.3)),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Row(
             children: [
-              Icon(
+              const Icon(
                 CupertinoIcons.bed_double_fill,
-                color: colorScheme(context).primary,
+                color: TravelloTheme.primaryMain,
                 size: 20,
               ),
-              SizedBox(width: spacingUnit(1.5)),
+              const SizedBox(width: 12),
               const Text(
                 'Room Type',
-                style: ThemeText.subtitle2,
+                style: TravelloTheme.subtitle2,
               ),
             ],
           ),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Container(
-            padding: EdgeInsets.all(spacingUnit(1.5)),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color:
-                  colorScheme(context).primaryContainer.withValues(alpha: 0.3),
+                  TravelloTheme.primaryMainContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -2290,46 +2288,46 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
               children: [
                 Text(
                   bookingData['roomType'].name ?? 'Room',
-                  style: ThemeText.subtitle.copyWith(
+                  style: TravelloTheme.subtitle.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: spacingUnit(0.5)),
+                const SizedBox(height: 4),
                 Text(
                   bookingData['roomType'].description ?? '',
-                  style: ThemeText.caption,
+                  style: TravelloTheme.caption,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Icon(Icons.people, size: 16, color: Colors.grey.shade600),
-                    SizedBox(width: spacingUnit(0.5)),
+                    const SizedBox(width: 4),
                     Text(
                       '${bookingData['roomType'].maxOccupancy ?? ''} guests',
-                      style: ThemeText.caption,
+                      style: TravelloTheme.caption,
                     ),
-                    SizedBox(width: spacingUnit(2)),
+                    const SizedBox(width: 16),
                     Icon(Icons.aspect_ratio,
                         size: 16, color: Colors.grey.shade600),
-                    SizedBox(width: spacingUnit(0.5)),
+                    const SizedBox(width: 4),
                     Text(
                       '${bookingData['roomType'].sizeInSqFt ?? ''} sq ft',
-                      style: ThemeText.caption,
+                      style: TravelloTheme.caption,
                     ),
                   ],
                 ),
                 if (bookingData['roomType'].bedType != null) ...[
-                  SizedBox(height: spacingUnit(0.5)),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       Icon(CupertinoIcons.bed_double,
                           size: 16, color: Colors.grey.shade600),
-                      SizedBox(width: spacingUnit(0.5)),
+                      const SizedBox(width: 4),
                       Text(
                         bookingData['roomType'].bedType ?? '',
-                        style: ThemeText.caption.copyWith(
+                        style: TravelloTheme.caption.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -2342,7 +2340,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                     children: [
                       Icon(Icons.check_circle,
                           size: 16, color: Colors.green.shade600),
-                      SizedBox(width: spacingUnit(0.5)),
+                      const SizedBox(width: 4),
                       Text(
                         'Breakfast included',
                         style: TextStyle(
@@ -2360,11 +2358,11 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         ],
 
         // Cancellation Policy
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         Divider(thickness: 1, color: Colors.grey.withValues(alpha: 0.3)),
-        SizedBox(height: spacingUnit(1.5)),
+        const SizedBox(height: 12),
         Container(
-          padding: EdgeInsets.all(spacingUnit(1.5)),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: hotel.isRefundable == true
                 ? Colors.green.withValues(alpha: 0.1)
@@ -2386,7 +2384,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                     hotel.isRefundable == true ? Colors.green : Colors.orange,
                 size: 20,
               ),
-              SizedBox(width: spacingUnit(1.5)),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2403,7 +2401,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                             : Colors.orange[700],
                       ),
                     ),
-                    SizedBox(height: spacingUnit(0.5)),
+                    const SizedBox(height: 4),
                     Text(
                       hotel.isRefundable == true
                           ? 'Free cancellation up to 24 hours before check-in'
@@ -2422,10 +2420,10 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
         // Hotel Amenities Summary
         if (hotel.amenities != null && hotel.amenities!.isNotEmpty) ...[
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Wrap(
-            spacing: spacingUnit(1),
-            runSpacing: spacingUnit(0.5),
+            spacing: 8,
+            runSpacing: 4,
             children: hotel.amenities!.take(4).map<Widget>((amenity) {
               IconData icon;
               switch (amenity.toLowerCase()) {
@@ -2454,11 +2452,11 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
               }
               return Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: spacingUnit(1.5),
+                  horizontal: 12,
                   vertical: spacingUnit(0.75),
                 ),
                 decoration: BoxDecoration(
-                  color: colorScheme(context).surfaceContainerHighest,
+                  color: TravelloTheme.paperLightContainerHighest,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
@@ -2467,7 +2465,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                     Icon(
                       icon,
                       size: 14,
-                      color: colorScheme(context).primary,
+                      color: TravelloTheme.primaryMain,
                     ),
                     SizedBox(width: spacingUnit(0.75)),
                     Text(
@@ -2500,37 +2498,37 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         Row(
           children: [
             Container(
-              padding: EdgeInsets.all(spacingUnit(1.5)),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: colorScheme(context).primaryContainer,
+                color: TravelloTheme.primaryMainContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 CupertinoIcons.car_detailed,
-                color: colorScheme(context).primary,
+                color: TravelloTheme.primaryMain,
                 size: 28,
               ),
             ),
-            SizedBox(width: spacingUnit(1.5)),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     transport.name ?? 'Transport',
-                    style: ThemeText.subtitle
+                    style: TravelloTheme.subtitle
                         .copyWith(fontWeight: FontWeight.bold),
                   ),
                   Text(
                     '${transport.vehicleModel ?? ''} • ${transport.type ?? ''}',
-                    style: ThemeText.caption,
+                    style: TravelloTheme.caption,
                   ),
                 ],
               ),
             ),
           ],
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         if (pickupLocation.isNotEmpty || dropoffLocation.isNotEmpty) ...[
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2540,8 +2538,8 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                   Container(
                     width: 10,
                     height: 10,
-                    decoration: BoxDecoration(
-                      color: colorScheme(context).primary,
+                    decoration: const BoxDecoration(
+                      color: TravelloTheme.primaryMain,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -2560,29 +2558,29 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                   ),
                 ],
               ),
-              SizedBox(width: spacingUnit(1.5)),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Pickup',
-                      style: ThemeText.caption,
+                      style: TravelloTheme.caption,
                     ),
                     Text(
                       pickupLocation.isNotEmpty ? pickupLocation : '-',
-                      style: ThemeText.subtitle,
+                      style: TravelloTheme.subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: spacingUnit(2)),
+                    const SizedBox(height: 16),
                     const Text(
                       'Drop-off',
-                      style: ThemeText.caption,
+                      style: TravelloTheme.caption,
                     ),
                     Text(
                       dropoffLocation.isNotEmpty ? dropoffLocation : '-',
-                      style: ThemeText.subtitle,
+                      style: TravelloTheme.subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -2591,7 +2589,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
               ),
             ],
           ),
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
         ],
         Row(
           children: [
@@ -2601,22 +2599,22 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                 size: 16,
                 color: Colors.grey[600],
               ),
-              SizedBox(width: spacingUnit(0.5)),
+              const SizedBox(width: 4),
               const Text(
                 'Air Conditioned',
-                style: ThemeText.caption,
+                style: TravelloTheme.caption,
               ),
-              SizedBox(width: spacingUnit(2)),
+              const SizedBox(width: 16),
             ],
             Icon(
               CupertinoIcons.person_2,
               size: 16,
               color: Colors.grey[600],
             ),
-            SizedBox(width: spacingUnit(0.5)),
+            const SizedBox(width: 4),
             Text(
               '${transport.seatingCapacity ?? 0} Seats',
-              style: ThemeText.caption,
+              style: TravelloTheme.caption,
             ),
           ],
         ),
@@ -2679,10 +2677,10 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                 )
               : null,
         ),
-        SizedBox(height: spacingUnit(0.5)),
+        const SizedBox(height: 4),
         Text(
           label,
-          style: ThemeText.caption.copyWith(
+          style: TravelloTheme.caption.copyWith(
             fontSize: 10,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
             color:

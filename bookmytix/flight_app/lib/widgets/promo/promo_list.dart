@@ -1,9 +1,9 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/promo.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/cards/promo_card.dart';
 import 'package:get/get.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PromoList extends StatelessWidget {
   const PromoList({super.key, required this.items, this.isHome = false});
@@ -16,12 +16,12 @@ class PromoList extends StatelessWidget {
     return ListView.builder(
       shrinkWrap: true,
       physics: const ClampingScrollPhysics(),
-      padding: EdgeInsets.only(top: spacingUnit(2), left: spacingUnit(2), right: spacingUnit(2), bottom: isHome ? 100 : spacingUnit(1)),
+      padding: EdgeInsets.only(top: 16, left: 16, right: 16, bottom: isHome ? 100 : 8),
       itemCount: items.length,
       itemBuilder: (BuildContext context, int index) {
         Promotion item = items[index];
         return Padding(
-          padding: EdgeInsets.only(bottom: spacingUnit(1)),
+          padding: const EdgeInsets.only(bottom: 8),
           child: PromoCard(
             thumb: item.thumb,
             title: item.name,

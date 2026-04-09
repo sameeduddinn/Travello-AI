@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class LikeBtn extends StatelessWidget {
   const LikeBtn({
@@ -22,12 +22,12 @@ class LikeBtn extends StatelessWidget {
     return IconButton(
       onPressed: onPressed, 
       style: hasBg ? IconButton.styleFrom(
-        backgroundColor: colorScheme(context).surface,
+        backgroundColor: TravelloTheme.paperLight,
         shadowColor: Colors.grey.withValues(alpha: 0.5),
         elevation: 3
       ) : null,
       icon: isLiked == true ? 
-        Icon(Icons.favorite, color: ThemePalette.tertiaryMain)
+        Icon(Icons.favorite, color: TravelloTheme.tertiaryMain)
         : Icon(
             Icons.favorite_border_outlined,
             shadows: highContrast ? const [BoxShadow(color: Colors.black, offset: Offset(0, 0), blurRadius: 5)] : null,

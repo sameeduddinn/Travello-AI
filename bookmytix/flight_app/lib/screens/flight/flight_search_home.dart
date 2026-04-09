@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/widgets/range_date_picker.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightSearchHome extends StatefulWidget {
   const FlightSearchHome({super.key});
@@ -172,7 +170,7 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
-              padding: EdgeInsets.all(spacingUnit(3)),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -180,15 +178,15 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                   Container(
                     width: 40,
                     height: 4,
-                    margin: EdgeInsets.only(bottom: spacingUnit(2)),
+                    margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: Colors.grey[300],
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
 
-                  const Text('Passengers', style: ThemeText.title2),
-                  SizedBox(height: spacingUnit(3)),
+                  const Text('Passengers', style: TravelloTheme.title2),
+                  const SizedBox(height: 24),
 
                   // Adults
                   _buildPassengerRow(
@@ -214,7 +212,7 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                     minCount: 1,
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // Children
                   _buildPassengerRow(
@@ -230,7 +228,7 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                     },
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // Infants (cannot exceed adults; total must stay ≤ 9)
                   _buildPassengerRow(
@@ -248,12 +246,12 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                     },
                   ),
 
-                  SizedBox(height: spacingUnit(3)),
+                  const SizedBox(height: 24),
 
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme(context).primary,
+                      backgroundColor: TravelloTheme.primaryMain,
                       foregroundColor: colorScheme(context).onPrimary,
                       minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(
@@ -263,7 +261,7 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                     child: const Text('Done'),
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                 ],
               ),
             );
@@ -282,8 +280,8 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: ThemeText.subtitle),
-            Text(subtitle, style: ThemeText.caption),
+            Text(title, style: TravelloTheme.subtitle),
+            Text(subtitle, style: TravelloTheme.caption),
           ],
         ),
         Row(
@@ -293,7 +291,7 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
               icon: Icon(
                 CupertinoIcons.minus_circle_fill,
                 color: count > minCount
-                    ? colorScheme(context).primary
+                    ? TravelloTheme.primaryMain
                     : Colors.grey,
               ),
             ),
@@ -301,15 +299,15 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
               width: 30,
               child: Text(
                 '$count',
-                style: ThemeText.subtitle,
+                style: TravelloTheme.subtitle,
                 textAlign: TextAlign.center,
               ),
             ),
             IconButton(
               onPressed: () => onChanged(count + 1),
-              icon: Icon(
+              icon: const Icon(
                 CupertinoIcons.plus_circle_fill,
-                color: colorScheme(context).primary,
+                color: TravelloTheme.primaryMain,
               ),
             ),
           ],
@@ -529,15 +527,15 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                 children: [
                   // Trip type selector
                   Container(
-                    color: colorScheme(context).surface,
-                    padding: EdgeInsets.all(spacingUnit(2)),
+                    color: TravelloTheme.paperLight,
+                    padding: const EdgeInsets.all(16),
                     child: Row(
                       children: _tripTypes.map((type) {
                         final isSelected = _tripType == type;
                         return Expanded(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: spacingUnit(0.5)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4),
                             child: InkWell(
                               onTap: () {
                                 setState(() {
@@ -548,17 +546,17 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                 });
                               },
                               child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    vertical: spacingUnit(1.5)),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 12),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? colorScheme(context).primary
+                                      ? TravelloTheme.primaryMain
                                       : colorScheme(context)
                                           .surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: isSelected
-                                        ? colorScheme(context).primary
+                                        ? TravelloTheme.primaryMain
                                         : Colors.grey.withValues(alpha: 0.3),
                                   ),
                                 ),
@@ -583,13 +581,13 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                     ),
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // From and To airports
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: colorScheme(context).surface,
+                      color: TravelloTheme.paperLight,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -605,31 +603,31 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                         InkWell(
                           onTap: () => _selectAirport(true),
                           child: Container(
-                            padding: EdgeInsets.all(spacingUnit(2)),
+                            padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   CupertinoIcons.airplane,
-                                  color: colorScheme(context).primary,
+                                  color: TravelloTheme.primaryMain,
                                 ),
-                                SizedBox(width: spacingUnit(2)),
+                                const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       const Text('From',
-                                          style: ThemeText.caption),
-                                      SizedBox(height: spacingUnit(0.5)),
+                                          style: TravelloTheme.caption),
+                                      const SizedBox(height: 4),
                                       Text(
                                         _fromAirport?.location ??
                                             'Select departure city',
-                                        style: ThemeText.subtitle,
+                                        style: TravelloTheme.subtitle,
                                       ),
                                       if (_fromAirport != null)
                                         Text(
                                           _fromAirport!.name,
-                                          style: ThemeText.caption,
+                                          style: TravelloTheme.caption,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                     ],
@@ -638,8 +636,8 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                 if (_fromAirport != null)
                                   Text(
                                     _fromAirport!.code,
-                                    style: ThemeText.title2.copyWith(
-                                      color: colorScheme(context).primary,
+                                    style: TravelloTheme.title2.copyWith(
+                                      color: TravelloTheme.primaryMain,
                                     ),
                                   ),
                               ],
@@ -657,13 +655,13 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                             onPressed: _swapAirports,
                             icon: Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: ThemePalette.primaryMain,
+                              decoration: const BoxDecoration(
+                                color: TravelloTheme.primaryMain,
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(
+                              child: const Icon(
                                 CupertinoIcons.arrow_up_arrow_down,
-                                color: ThemePalette.textPrimary,
+                                color: TravelloTheme.textPrimary,
                                 size: 20,
                               ),
                             ),
@@ -677,31 +675,31 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                         InkWell(
                           onTap: () => _selectAirport(false),
                           child: Container(
-                            padding: EdgeInsets.all(spacingUnit(2)),
+                            padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   CupertinoIcons.airplane,
-                                  color: colorScheme(context).primary,
+                                  color: TravelloTheme.primaryMain,
                                 ),
-                                SizedBox(width: spacingUnit(2)),
+                                const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       const Text('To',
-                                          style: ThemeText.caption),
-                                      SizedBox(height: spacingUnit(0.5)),
+                                          style: TravelloTheme.caption),
+                                      const SizedBox(height: 4),
                                       Text(
                                         _toAirport?.location ??
                                             'Select arrival city',
-                                        style: ThemeText.subtitle,
+                                        style: TravelloTheme.subtitle,
                                       ),
                                       if (_toAirport != null)
                                         Text(
                                           _toAirport!.name,
-                                          style: ThemeText.caption,
+                                          style: TravelloTheme.caption,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                     ],
@@ -710,8 +708,8 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                 if (_toAirport != null)
                                   Text(
                                     _toAirport!.code,
-                                    style: ThemeText.title2.copyWith(
-                                      color: colorScheme(context).primary,
+                                    style: TravelloTheme.title2.copyWith(
+                                      color: TravelloTheme.primaryMain,
                                     ),
                                   ),
                               ],
@@ -722,11 +720,11 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                     ),
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // Dates
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
                         // Departure date
@@ -734,9 +732,9 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                           child: InkWell(
                             onTap: _selectDepartureDate,
                             child: Container(
-                              padding: EdgeInsets.all(spacingUnit(2)),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: colorScheme(context).surface,
+                                color: TravelloTheme.paperLight,
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
@@ -751,27 +749,27 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         CupertinoIcons.calendar,
                                         size: 20,
-                                        color: colorScheme(context).primary,
+                                        color: TravelloTheme.primaryMain,
                                       ),
-                                      SizedBox(width: spacingUnit(1)),
+                                      const SizedBox(width: 8),
                                       const Text('Departure',
-                                          style: ThemeText.caption),
+                                          style: TravelloTheme.caption),
                                     ],
                                   ),
-                                  SizedBox(height: spacingUnit(1)),
+                                  const SizedBox(height: 8),
                                   Text(
                                     _departureDate != null
                                         ? '${_departureDate!.day} ${_getMonthName(_departureDate!.month)}'
                                         : 'Select date',
-                                    style: ThemeText.subtitle,
+                                    style: TravelloTheme.subtitle,
                                   ),
                                   if (_departureDate != null)
                                     Text(
                                       _getDayName(_departureDate!.weekday),
-                                      style: ThemeText.caption,
+                                      style: TravelloTheme.caption,
                                     ),
                                 ],
                               ),
@@ -780,15 +778,15 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                         ),
 
                         if (_tripType == 'Round-trip') ...[
-                          SizedBox(width: spacingUnit(2)),
+                          const SizedBox(width: 16),
                           // Return date
                           Expanded(
                             child: InkWell(
                               onTap: _selectReturnDate,
                               child: Container(
-                                padding: EdgeInsets.all(spacingUnit(2)),
+                                padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: colorScheme(context).surface,
+                                  color: TravelloTheme.paperLight,
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -804,27 +802,27 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                   children: [
                                     Row(
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           CupertinoIcons.calendar,
                                           size: 20,
-                                          color: colorScheme(context).primary,
+                                          color: TravelloTheme.primaryMain,
                                         ),
-                                        SizedBox(width: spacingUnit(1)),
+                                        const SizedBox(width: 8),
                                         const Text('Return',
-                                            style: ThemeText.caption),
+                                            style: TravelloTheme.caption),
                                       ],
                                     ),
-                                    SizedBox(height: spacingUnit(1)),
+                                    const SizedBox(height: 8),
                                     Text(
                                       _returnDate != null
                                           ? '${_returnDate!.day} ${_getMonthName(_returnDate!.month)}'
                                           : 'Select date',
-                                      style: ThemeText.subtitle,
+                                      style: TravelloTheme.subtitle,
                                     ),
                                     if (_returnDate != null)
                                       Text(
                                         _getDayName(_returnDate!.weekday),
-                                        style: ThemeText.caption,
+                                        style: TravelloTheme.caption,
                                       ),
                                   ],
                                 ),
@@ -836,11 +834,11 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                     ),
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // Passengers and Class
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
                         // Passengers
@@ -848,9 +846,9 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                           child: InkWell(
                             onTap: _showPassengerPicker,
                             child: Container(
-                              padding: EdgeInsets.all(spacingUnit(2)),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: colorScheme(context).surface,
+                                color: TravelloTheme.paperLight,
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
@@ -865,24 +863,24 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         CupertinoIcons.person_2,
                                         size: 20,
-                                        color: colorScheme(context).primary,
+                                        color: TravelloTheme.primaryMain,
                                       ),
-                                      SizedBox(width: spacingUnit(1)),
+                                      const SizedBox(width: 8),
                                       const Text('Passengers',
-                                          style: ThemeText.caption),
+                                          style: TravelloTheme.caption),
                                     ],
                                   ),
-                                  SizedBox(height: spacingUnit(1)),
+                                  const SizedBox(height: 8),
                                   Text(
                                     '$totalPassengers ${totalPassengers == 1 ? "Passenger" : "Passengers"}',
-                                    style: ThemeText.subtitle,
+                                    style: TravelloTheme.subtitle,
                                   ),
                                   Text(
                                     'A: $_adults, C: $_children, I: $_infants',
-                                    style: ThemeText.caption,
+                                    style: TravelloTheme.caption,
                                   ),
                                 ],
                               ),
@@ -890,7 +888,7 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                           ),
                         ),
 
-                        SizedBox(width: spacingUnit(2)),
+                        const SizedBox(width: 16),
 
                         // Cabin class
                         Expanded(
@@ -901,12 +899,12 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                 backgroundColor: Colors.transparent,
                                 isScrollControlled: true,
                                 builder: (context) => Container(
-                                  decoration: BoxDecoration(
-                                    color: colorScheme(context).surface,
-                                    borderRadius: const BorderRadius.vertical(
+                                  decoration: const BoxDecoration(
+                                    color: TravelloTheme.paperLight,
+                                    borderRadius: BorderRadius.vertical(
                                         top: Radius.circular(24)),
                                   ),
-                                  padding: EdgeInsets.all(spacingUnit(3)),
+                                  padding: const EdgeInsets.all(24),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -914,8 +912,8 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                       Container(
                                         width: 40,
                                         height: 4,
-                                        margin: EdgeInsets.only(
-                                            bottom: spacingUnit(2)),
+                                        margin: const EdgeInsets.only(
+                                            bottom: 16),
                                         decoration: BoxDecoration(
                                           color: Colors.grey[300],
                                           borderRadius:
@@ -923,8 +921,8 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                         ),
                                       ),
                                       const Text('Cabin Class',
-                                          style: ThemeText.title2),
-                                      SizedBox(height: spacingUnit(3)),
+                                          style: TravelloTheme.title2),
+                                      const SizedBox(height: 24),
                                       ..._cabinClasses.map((cabinClass) {
                                         final isSelected =
                                             _cabinClass == cabinClass;
@@ -957,12 +955,12 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                         }
 
                                         return Container(
-                                          margin: EdgeInsets.only(
-                                              bottom: spacingUnit(1.5)),
+                                          margin: const EdgeInsets.only(
+                                              bottom: 12),
                                           decoration: BoxDecoration(
                                             border: Border.all(
                                               color: isSelected
-                                                  ? colorScheme(context).primary
+                                                  ? TravelloTheme.primaryMain
                                                   : Colors.grey
                                                       .withValues(alpha: 0.3),
                                               width: isSelected ? 2 : 1,
@@ -984,15 +982,15 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                             borderRadius:
                                                 BorderRadius.circular(12),
                                             child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: spacingUnit(2),
-                                                vertical: spacingUnit(1.5),
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 12,
                                               ),
                                               child: Row(
                                                 children: [
                                                   Container(
-                                                    padding: EdgeInsets.all(
-                                                        spacingUnit(1)),
+                                                    padding: const EdgeInsets.all(
+                                                        8),
                                                     decoration: BoxDecoration(
                                                       color:
                                                           classColor.withValues(
@@ -1007,12 +1005,12 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                                       size: 24,
                                                     ),
                                                   ),
-                                                  SizedBox(
-                                                      width: spacingUnit(2)),
+                                                  const SizedBox(
+                                                      width: 16),
                                                   Expanded(
                                                     child: Text(
                                                       cabinClass,
-                                                      style: ThemeText.subtitle
+                                                      style: TravelloTheme.subtitle
                                                           .copyWith(
                                                         fontWeight: isSelected
                                                             ? FontWeight.bold
@@ -1039,16 +1037,16 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                           ),
                                         );
                                       }),
-                                      SizedBox(height: spacingUnit(2)),
+                                      const SizedBox(height: 16),
                                     ],
                                   ),
                                 ),
                               );
                             },
                             child: Container(
-                              padding: EdgeInsets.all(spacingUnit(2)),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: colorScheme(context).surface,
+                                color: TravelloTheme.paperLight,
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
@@ -1063,20 +1061,20 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         CupertinoIcons.checkmark_seal,
                                         size: 20,
-                                        color: colorScheme(context).primary,
+                                        color: TravelloTheme.primaryMain,
                                       ),
-                                      SizedBox(width: spacingUnit(1)),
+                                      const SizedBox(width: 8),
                                       const Text('Class',
-                                          style: ThemeText.caption),
+                                          style: TravelloTheme.caption),
                                     ],
                                   ),
-                                  SizedBox(height: spacingUnit(1)),
+                                  const SizedBox(height: 8),
                                   Text(
                                     _cabinClass,
-                                    style: ThemeText.subtitle,
+                                    style: TravelloTheme.subtitle,
                                   ),
                                 ],
                               ),
@@ -1087,7 +1085,7 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                     ),
                   ),
 
-                  SizedBox(height: spacingUnit(10)),
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
@@ -1097,9 +1095,9 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
 
       // Sticky bottom button
       bottomNavigationBar: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: colorScheme(context).surface,
+          color: TravelloTheme.paperLight,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.1),
@@ -1112,7 +1110,7 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
           child: ElevatedButton(
             onPressed: _searchFlights,
             style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme(context).primary,
+              backgroundColor: TravelloTheme.primaryMain,
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 56),
               shape: RoundedRectangleBorder(
@@ -1120,12 +1118,12 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
               ),
               elevation: 0,
             ),
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(CupertinoIcons.search),
-                SizedBox(width: spacingUnit(1)),
-                const Text(
+                Icon(CupertinoIcons.search),
+                SizedBox(width: 8),
+                Text(
                   'Search Flights',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
@@ -1208,22 +1206,22 @@ class _AirportSearchBottomSheetState extends State<_AirportSearchBottomSheet> {
       expand: false,
       builder: (context, scrollController) {
         return Container(
-          padding: EdgeInsets.all(spacingUnit(2)),
+          padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               // Handle bar
               Container(
                 width: 40,
                 height: 4,
-                margin: EdgeInsets.only(bottom: spacingUnit(2)),
+                margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
 
-              const Text('Select Airport', style: ThemeText.title2),
-              SizedBox(height: spacingUnit(2)),
+              const Text('Select Airport', style: TravelloTheme.title2),
+              const SizedBox(height: 16),
 
               // Search field
               TextField(
@@ -1256,7 +1254,7 @@ class _AirportSearchBottomSheetState extends State<_AirportSearchBottomSheet> {
                 ),
               ),
 
-              SizedBox(height: spacingUnit(2)),
+              const SizedBox(height: 16),
 
               // Airport list
               Expanded(

@@ -1,9 +1,8 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/auth_service.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class EditProfile extends StatefulWidget {
   const EditProfile({super.key});
@@ -57,7 +56,7 @@ class _EditProfileState extends State<EditProfile> {
     if (!mounted) return;
     if (success) {
       Get.snackbar(
-        '✅ Profile Updated',
+        'Profile Updated',
         'Your profile has been saved successfully.',
         backgroundColor: Colors.green.shade600,
         colorText: Colors.white,
@@ -69,7 +68,7 @@ class _EditProfileState extends State<EditProfile> {
       Get.back();
     } else {
       Get.snackbar(
-        '⚠️ Update Failed',
+        'Update Failed',
         'Could not save changes. Please try again.',
         backgroundColor: Colors.orange.shade600,
         colorText: Colors.white,
@@ -88,7 +87,7 @@ class _EditProfileState extends State<EditProfile> {
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
-        backgroundColor: ThemePalette.primaryMain,
+        backgroundColor: TravelloTheme.primaryMain,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -112,13 +111,12 @@ class _EditProfileState extends State<EditProfile> {
                     // ── Gold header with avatar ──────────────────────
                     Container(
                       width: double.infinity,
-                      padding: EdgeInsets.only(
-                          top: spacingUnit(3), bottom: spacingUnit(4)),
+                      padding: const EdgeInsets.only(top: 24, bottom: 32),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            ThemePalette.primaryMain,
-                            ThemePalette.primaryMain.withValues(alpha: 0.75),
+                            TravelloTheme.primaryMain,
+                            TravelloTheme.primaryMain.withValues(alpha: 0.75),
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -150,10 +148,10 @@ class _EditProfileState extends State<EditProfile> {
                                   _nameCtrl.text.isNotEmpty
                                       ? _nameCtrl.text[0].toUpperCase()
                                       : '?',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       fontSize: 38,
                                       fontWeight: FontWeight.bold,
-                                      color: ThemePalette.primaryMain),
+                                      color: TravelloTheme.primaryMain),
                                 ),
                               ),
                             ),
@@ -165,11 +163,11 @@ class _EditProfileState extends State<EditProfile> {
                                     : Colors.white,
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                    color: ThemePalette.primaryMain,
+                                    color: TravelloTheme.primaryMain,
                                     width: 1.5),
                               ),
-                              child: Icon(Icons.edit,
-                                  size: 14, color: ThemePalette.primaryMain),
+                              child: const Icon(Icons.edit,
+                                  size: 14, color: TravelloTheme.primaryMain),
                             ),
                           ],
                         ),
@@ -180,9 +178,8 @@ class _EditProfileState extends State<EditProfile> {
                     Transform.translate(
                       offset: const Offset(0, -20),
                       child: Container(
-                        margin:
-                            EdgeInsets.symmetric(horizontal: spacingUnit(2)),
-                        padding: EdgeInsets.all(spacingUnit(2.5)),
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: cs.surface,
                           borderRadius: BorderRadius.circular(20),
@@ -202,7 +199,7 @@ class _EditProfileState extends State<EditProfile> {
                                     fontWeight: FontWeight.w700,
                                     color: cs.onSurface.withValues(alpha: 0.5),
                                     letterSpacing: 0.8)),
-                            SizedBox(height: spacingUnit(2)),
+                            const SizedBox(height: 16),
 
                             // Name
                             const _FieldLabel('Full Name'),
@@ -219,7 +216,7 @@ class _EditProfileState extends State<EditProfile> {
                               ]),
                               onChanged: (_) => setState(() {}),
                             ),
-                            SizedBox(height: spacingUnit(2)),
+                            const SizedBox(height: 16),
 
                             // Email
                             const _FieldLabel('Email Address'),
@@ -236,7 +233,7 @@ class _EditProfileState extends State<EditProfile> {
                                     errorText: 'Enter a valid email'),
                               ]),
                             ),
-                            SizedBox(height: spacingUnit(2)),
+                            const SizedBox(height: 16),
 
                             // Phone
                             const _FieldLabel('Phone Number'),
@@ -256,15 +253,14 @@ class _EditProfileState extends State<EditProfile> {
 
                     // ── Save button ───────────────────────────────────
                     Padding(
-                      padding: EdgeInsets.fromLTRB(
-                          spacingUnit(2), 0, spacingUnit(2), spacingUnit(3)),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       child: SizedBox(
                         width: double.infinity,
                         height: 54,
                         child: FilledButton.icon(
                           onPressed: _isSaving ? null : _save,
                           style: FilledButton.styleFrom(
-                            backgroundColor: ThemePalette.primaryMain,
+                            backgroundColor: TravelloTheme.primaryMain,
                             foregroundColor: Colors.white,
                             disabledBackgroundColor:
                                 cs.onSurface.withValues(alpha: 0.12),
@@ -343,7 +339,7 @@ class _ProfileField extends StatelessWidget {
         hintText: hint,
         hintStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.35)),
         prefixIcon: Icon(icon,
-            size: 20, color: ThemePalette.primaryMain.withValues(alpha: 0.8)),
+            size: 20, color: TravelloTheme.primaryMain.withValues(alpha: 0.8)),
         filled: true,
         fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.45),
         contentPadding:
@@ -358,7 +354,8 @@ class _ProfileField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: ThemePalette.primaryMain, width: 1.5),
+          borderSide:
+              const BorderSide(color: TravelloTheme.primaryMain, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

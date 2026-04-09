@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class ChatMessage {
   final String id;
   final String message;
@@ -14,21 +16,24 @@ class ChatMessage {
 
 class AISuggestion {
   final String title;
-  final String icon;
+  final IconData icon;
 
-  AISuggestion({required this.title, required this.icon});
+  const AISuggestion({required this.title, required this.icon});
 }
 
 // Dummy AI responses for demo
 class AIAssistantData {
   static List<AISuggestion> getSuggestions() {
-    return [
-      AISuggestion(title: 'Plan a trip to Hunza Valley', icon: '🏔️'),
-      AISuggestion(title: 'Cheapest flights to Islamabad', icon: '✈️'),
-      AISuggestion(title: 'Best time to visit Skardu', icon: '❄️'),
-      AISuggestion(title: 'Hotels near Faisal Mosque', icon: '🏨'),
-      AISuggestion(title: 'Train from Karachi to Lahore', icon: '🚆'),
-      AISuggestion(title: 'Budget trip to Northern Pakistan', icon: '💰'),
+    return const [
+      AISuggestion(title: 'Plan a trip to Hunza Valley', icon: Icons.landscape),
+      AISuggestion(
+          title: 'Cheapest flights to Islamabad', icon: Icons.flight_takeoff),
+      AISuggestion(title: 'Best time to visit Skardu', icon: Icons.ac_unit),
+      AISuggestion(title: 'Hotels near Faisal Mosque', icon: Icons.hotel),
+      AISuggestion(title: 'Train from Karachi to Lahore', icon: Icons.train),
+      AISuggestion(
+          title: 'Budget trip to Northern Pakistan',
+          icon: Icons.account_balance_wallet),
     ];
   }
 
@@ -37,79 +42,79 @@ class AIAssistantData {
 
     // ── Hunza / Northern Pakistan ───────────────────────────────────
     if (msg.contains('hunza')) {
-      return "🏔️ Hunza Valley is Pakistan's crown jewel! Best time: April–October.\n\n"
-          "✈️ Fly Islamabad → Gilgit (PIA/AirBlue, ~1.5 hrs, PKR 8,000–14,000) then drive 2.5 hrs to Karimabad.\n\n"
-          "📍 Must-see: Attabad Lake, Baltit Fort, Eagle's Nest, Rakaposhi viewpoint.\n\n"
-          "💰 Budget: PKR 25,000–45,000 for 5 days (mid-range guesthouse + meals).\n\n"
-          "Shall I generate a full 5-day itinerary? Go to the **Plan Trip** tab! 🗺️";
+      return "Hunza Valley is Pakistan's crown jewel! Best time: April-October.\n\n"
+          "Flight: Islamabad -> Gilgit (PIA/AirBlue, ~1.5 hrs, PKR 8,000-14,000) then drive 2.5 hrs to Karimabad.\n\n"
+          "Must-see: Attabad Lake, Baltit Fort, Eagle's Nest, Rakaposhi viewpoint.\n\n"
+          "Budget: PKR 25,000-45,000 for 5 days (mid-range guesthouse + meals).\n\n"
+          "Want a full 5-day itinerary? Go to the **Plan Trip** tab!";
     }
 
     // ── Skardu ──────────────────────────────────────────────────────
     if (msg.contains('skardu') ||
         msg.contains('k2') ||
         msg.contains('deosai')) {
-      return "⛰️ Skardu — Gateway to K2 & the Karakoram!\n\n"
-          "✈️ Fly Islamabad → Skardu (1.5 hrs, PKR 9,000–16,000) — book early as flights fill fast.\n\n"
-          "📍 Top spots: Shangrila Resort, Deosai National Park (brown bears!), Kachura Lakes, K2 viewpoint.\n\n"
-          "🌡️ Best season: May–September. Winter roads may close.\n\n"
-          "💰 Budget: PKR 30,000–55,000 for 5 days. Use the **Plan Trip** tab for your personalised itinerary!";
+      return "Skardu - Gateway to K2 and the Karakoram!\n\n"
+          "Flight: Islamabad -> Skardu (~1.5 hrs, PKR 9,000-16,000) - book early as flights fill fast.\n\n"
+          "Top spots: Shangrila Resort, Deosai National Park, Kachura Lakes, K2 viewpoint.\n\n"
+          "Best season: May-September. Winter roads may close.\n\n"
+          "Budget: PKR 30,000-55,000 for 5 days. Use the **Plan Trip** tab for your personalised itinerary!";
     }
 
     // ── Lahore ──────────────────────────────────────────────────────
     if (msg.contains('lahore')) {
-      return "🕌 Lahore — The Heart of Pakistan!\n\n"
-          "✈️ Flights from Karachi/Islamabad take 1 hr (PKR 6,000–12,000).\n\n"
-          "📍 Must visit: Badshahi Mosque, Lahore Fort (Sheesh Mahal), Walled City, Fort Road Food Street.\n\n"
-          "🍖 Food: Try Cooco's Den, Cafe Aylanto, and Anarkali's legendary street food.\n\n"
-          "💰 Budget: PKR 15,000–30,000 for 3 days including transport & food.";
+      return "Lahore - The Heart of Pakistan!\n\n"
+          "Flights from Karachi/Islamabad take ~1 hr (PKR 6,000-12,000).\n\n"
+          "Must visit: Badshahi Mosque, Lahore Fort (Sheesh Mahal), Walled City, Fort Road Food Street.\n\n"
+          "Food: Try Cooco's Den, Cafe Aylanto, and Anarkali's street food.\n\n"
+          "Budget: PKR 15,000-30,000 for 3 days including transport and food.";
     }
 
     // ── Islamabad / Murree ──────────────────────────────────────────
     if (msg.contains('islamabad') ||
         msg.contains('murree') ||
         msg.contains('margalla')) {
-      return "🏙️ Islamabad — Pakistan's Beautiful Capital!\n\n"
-          "📍 Top attractions: Faisal Mosque, Margalla Hills Trail 3, Pakistan Monument, Daman-e-Koh.\n\n"
-          "🌲 Day trips: Murree (1 hr), Taxila ruins (45 min), Khanpur Dam.\n\n"
-          "✈️ Well-connected: Flights from all major cities (PKR 5,000–13,000 from Karachi/Lahore).\n\n"
-          "💰 Budget: PKR 12,000–25,000 for 2-3 days. Ideal as a base for northern travels!";
+      return "Islamabad - Pakistan's beautiful capital!\n\n"
+          "Top attractions: Faisal Mosque, Margalla Hills Trail 3, Pakistan Monument, Daman-e-Koh.\n\n"
+          "Day trips: Murree (~1 hr), Taxila ruins (~45 min), Khanpur Dam.\n\n"
+          "Well-connected: Flights from major cities (PKR 5,000-13,000 from Karachi/Lahore).\n\n"
+          "Budget: PKR 12,000-25,000 for 2-3 days. Ideal as a base for northern travels!";
     }
 
     // ── Karachi ─────────────────────────────────────────────────────
     if (msg.contains('karachi')) {
-      return "🌊 Karachi — City of Lights & the Arabian Sea!\n\n"
-          "📍 Must see: Quaid's Mausoleum, Clifton Beach, Port Grand, Empress Market.\n\n"
-          "🍽️ Food heaven: Burns Road, Boat Basin, Student Biryani, Kolachi seafood restaurant.\n\n"
-          "🏖️ Beaches: French Beach, Hawkes Bay, Manora Island.\n\n"
-          "✈️ Karachi is Pakistan's main aviation hub — flights available from all cities.";
+      return "Karachi - City of Lights and the Arabian Sea!\n\n"
+          "Must see: Quaid's Mausoleum, Clifton Beach, Port Grand, Empress Market.\n\n"
+          "Food: Burns Road, Boat Basin, Student Biryani, Kolachi seafood restaurant.\n\n"
+          "Beaches: French Beach, Hawkes Bay, Manora Island.\n\n"
+          "Karachi is Pakistan's main aviation hub - flights available from all cities.";
     }
 
     // ── Flights ─────────────────────────────────────────────────────
     if (msg.contains('flight') ||
         msg.contains('fly') ||
         msg.contains('airline')) {
-      return "✈️ Pakistan's major airlines: PIA, AirBlue, SereneAir & FlyJinnah.\n\n"
-          "💡 Tips for cheap flights:\n"
-          "• Book 3–4 weeks in advance\n"
-          "• Morning flights (6–8 AM) are usually cheapest\n"
-          "• Avoid school holiday periods\n"
-          "• Check all airlines via the **Flights** tab\n\n"
-          "Popular routes & approx fares:\n"
-          "• Karachi → Lahore: PKR 6,000–12,000\n"
-          "• Islamabad → Gilgit: PKR 8,000–14,000\n"
-          "• Islamabad → Skardu: PKR 9,000–16,000";
+      return "Pakistan's major airlines: PIA, AirBlue, SereneAir and FlyJinnah.\n\n"
+          "Tips for cheap flights:\n"
+          "- Book 3-4 weeks in advance\n"
+          "- Morning flights (6-8 AM) are usually cheapest\n"
+          "- Avoid school holiday periods\n"
+          "- Check all airlines via the **Flights** tab\n\n"
+          "Popular routes and approx fares:\n"
+          "- Karachi -> Lahore: PKR 6,000-12,000\n"
+          "- Islamabad -> Gilgit: PKR 8,000-14,000\n"
+          "- Islamabad -> Skardu: PKR 9,000-16,000";
     }
 
     // ── Trains ──────────────────────────────────────────────────────
     if (msg.contains('train') ||
         msg.contains('rail') ||
         msg.contains('railway')) {
-      return "🚆 Pakistan Railways network covers major cities!\n\n"
+      return "Pakistan Railways network covers major cities.\n\n"
           "Popular routes:\n"
-          "• Karachi → Lahore: Tezgam Express (14 hrs), PKR 2,500–6,500\n"
-          "• Karachi → Islamabad: Green Line (18 hrs), PKR 3,000–7,000\n"
-          "• Lahore → Peshawar: Khyber Mail (5 hrs), PKR 800–2,500\n\n"
-          "💡 AC Business class recommended for long journeys. Book via the **Trains** tab!";
+          "- Karachi -> Lahore: Tezgam Express (14 hrs), PKR 2,500-6,500\n"
+          "- Karachi -> Islamabad: Green Line (18 hrs), PKR 3,000-7,000\n"
+          "- Lahore -> Peshawar: Khyber Mail (5 hrs), PKR 800-2,500\n\n"
+          "Tip: AC Business class is recommended for long journeys. Book via the **Trains** tab!";
     }
 
     // ── Hotels ──────────────────────────────────────────────────────
@@ -117,12 +122,12 @@ class AIAssistantData {
         msg.contains('stay') ||
         msg.contains('accommodation') ||
         msg.contains('hostel')) {
-      return "🏨 Accommodation options across Pakistan:\n\n"
-          "**Budget (PKR 2,000–5,000/night):** Guest houses, hostels\n"
-          "**Mid-range (PKR 5,000–15,000/night):** 3-star hotels\n"
+      return "Accommodation options across Pakistan:\n\n"
+          "**Budget (PKR 2,000-5,000/night):** Guest houses, hostels\n"
+          "**Mid-range (PKR 5,000-15,000/night):** 3-star hotels\n"
           "**Luxury (PKR 15,000+/night):** Pearl Continental, Serena Hotels, Avari\n\n"
-          "📍 Popular: Serena Hotel (Islamabad/Gilgit), PC Hotel (Karachi/Lahore), PTDC motels (Northern areas).\n\n"
-          "Use the **Hotels** tab to search & book!";
+          "Popular: Serena Hotel (Islamabad/Gilgit), PC Hotel (Karachi/Lahore), PTDC motels (Northern areas).\n\n"
+          "Use the **Hotels** tab to search and book!";
     }
 
     // ── Weather / Best time ─────────────────────────────────────────
@@ -130,15 +135,15 @@ class AIAssistantData {
         msg.contains('best time') ||
         msg.contains('season') ||
         msg.contains('when to visit')) {
-      return "🌦️ Pakistan travel seasons:\n\n"
+      return "Pakistan travel seasons:\n\n"
           "**Northern areas (Hunza, Skardu, Swat):**\n"
-          "✅ Best: April–October\n"
-          "❄️ Winter (Nov–Mar): Roads may close, heavy snow\n\n"
-          "**Punjab & Sindh (Lahore, Karachi):**\n"
-          "✅ Best: Oct–March (pleasant 15–25°C)\n"
-          "🌡️ Summer (May–Aug): Very hot 35–45°C\n\n"
+          "- Best: April-October\n"
+          "- Winter (Nov-Mar): Roads may close, heavy snow\n\n"
+          "**Punjab and Sindh (Lahore, Karachi):**\n"
+          "- Best: Oct-Mar (pleasant 15-25 C)\n"
+          "- Summer (May-Aug): Very hot 35-45 C\n\n"
           "**Balochistan (Quetta, Gwadar):**\n"
-          "✅ Best: March–May & September–November";
+          "- Best: Mar-May and Sep-Nov";
     }
 
     // ── Budget / Cost ────────────────────────────────────────────────
@@ -147,14 +152,14 @@ class AIAssistantData {
         msg.contains('expensive') ||
         msg.contains('cheap') ||
         msg.contains('price')) {
-      return "💰 Pakistan travel budget guide:\n\n"
-          "**Budget traveller:** PKR 3,000–5,000/day\n"
-          "• Shared transport, local food, budget guesthouse\n\n"
-          "**Mid-range:** PKR 8,000–15,000/day\n"
-          "• Comfortable hotel, restaurant meals, attractions\n\n"
+      return "Pakistan travel budget guide:\n\n"
+          "**Budget traveller:** PKR 3,000-5,000/day\n"
+          "- Shared transport, local food, budget guesthouse\n\n"
+          "**Mid-range:** PKR 8,000-15,000/day\n"
+          "- Comfortable hotel, restaurant meals, attractions\n\n"
           "**Luxury:** PKR 25,000+/day\n"
-          "• 5-star hotels, private guides, premium experiences\n\n"
-          "✈️ Biggest expense is usually flights. Book early for best prices!";
+          "- 5-star hotels, private guides, premium experiences\n\n"
+          "Biggest expense is usually flights. Book early for best prices!";
     }
 
     // ── Trip planning ────────────────────────────────────────────────
@@ -162,13 +167,13 @@ class AIAssistantData {
         msg.contains('itinerary') ||
         msg.contains('trip') ||
         msg.contains('tour')) {
-      return "🗺️ Let me help you plan your Pakistan adventure!\n\n"
+      return "I can help you plan your Pakistan adventure.\n\n"
           "Switch to the **Plan Trip** tab to:\n"
-          "• Choose your destination (17 destinations available)\n"
-          "• Select travel style (Adventure, Cultural, Relaxing, Family, Nature)\n"
-          "• Set trip duration (3, 5, 7 or 10 days)\n"
-          "• Pick your budget range\n\n"
-          "I'll generate a complete day-by-day itinerary with activities, highlights & tips! 🌟";
+          "- Choose your destination (17 destinations available)\n"
+          "- Select travel style (Adventure, Cultural, Relaxing, Family, Nature)\n"
+          "- Set trip duration (3, 5, 7 or 10 days)\n"
+          "- Pick your budget range\n\n"
+          "I'll generate a complete day-by-day itinerary with activities, highlights and tips!";
     }
 
     // ── Food ────────────────────────────────────────────────────────
@@ -178,14 +183,14 @@ class AIAssistantData {
         msg.contains('cuisine') ||
         msg.contains('biryani') ||
         msg.contains('kebab')) {
-      return "🍽️ Pakistani cuisine is world-class!\n\n"
+      return "Pakistani cuisine is world-class!\n\n"
           "**Must-try dishes:**\n"
-          "• Biryani (Karachi-style) 🍚\n"
-          "• Chapli Kebab (Peshawar) 🥩\n"
-          "• Lahori Nihari & Paye 🍖\n"
-          "• Sajji — whole roasted lamb/chicken (Balochistan) 🐑\n"
-          "• Hunza Tsamak & Chapshuro (Northern) 🫓\n"
-          "• Karahi Gosht & Butter Chicken 🍛\n\n"
+          "- Biryani (Karachi-style)\n"
+          "- Chapli Kebab (Peshawar)\n"
+          "- Lahori Nihari and Paye\n"
+          "- Sajji - whole roasted lamb/chicken (Balochistan)\n"
+          "- Hunza Tsamak and Chapshuro (Northern)\n"
+          "- Karahi Gosht and Butter Chicken\n\n"
           "**Food streets:** Fort Road Lahore, Burns Road Karachi, Namak Mandi Peshawar";
     }
 
@@ -194,28 +199,28 @@ class AIAssistantData {
         msg.contains('safety') ||
         msg.contains('danger') ||
         msg.contains('security')) {
-      return "🛡️ Pakistan safety tips for travellers:\n\n"
-          "✅ Tourist areas are generally safe\n"
-          "✅ Northern Pakistan (Hunza, Skardu) is very safe & tourist-friendly\n"
-          "✅ Major cities have tourist police\n\n"
-          "⚠️ Tips:\n"
-          "• Register with your country's embassy if staying long\n"
-          "• Hire a local guide for remote treks\n"
-          "• Keep copies of ID & travel documents\n"
-          "• Check travel advisories before visiting border areas\n\n"
-          "Pakistan is renowned for its incredibly warm hospitality! 🤝";
+      return "Pakistan safety tips for travellers:\n\n"
+          "- Tourist areas are generally safe\n"
+          "- Northern Pakistan (Hunza, Skardu) is very safe and tourist-friendly\n"
+          "- Major cities have tourist police\n\n"
+          "Tips:\n"
+          "- Register with your country's embassy if staying long\n"
+          "- Hire a local guide for remote treks\n"
+          "- Keep copies of ID and travel documents\n"
+          "- Check travel advisories before visiting border areas\n\n"
+          "Pakistan is renowned for its warm hospitality.";
     }
 
     // ── Default ─────────────────────────────────────────────────────
-    return "🌟 I'm your AI Travel Assistant for Pakistan!\n\n"
+    return "I'm your AI Travel Assistant for Pakistan!\n\n"
         "I can help you with:\n"
-        "• ✈️ Flight booking guidance & pricing\n"
-        "• 🚆 Train routes & schedules\n"
-        "• 🏨 Hotel recommendations\n"
-        "• 🗺️ Personalised trip planning (17 destinations!)\n"
-        "• 🌡️ Best time to visit\n"
-        "• 💰 Budget planning\n"
-        "• 🍽️ Food & cuisine guide\n\n"
-        "What would you like to explore? Try the **Plan Trip** tab for a full AI-generated itinerary! 🇵🇰";
+        "- Flight booking guidance and pricing\n"
+        "- Train routes and schedules\n"
+        "- Hotel recommendations\n"
+        "- Personalised trip planning (17 destinations)\n"
+        "- Best time to visit\n"
+        "- Budget planning\n"
+        "- Food and cuisine guide\n\n"
+        "What would you like to explore? Try the **Plan Trip** tab for a full AI-generated itinerary!";
   }
 }

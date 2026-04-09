@@ -6,11 +6,7 @@ import 'package:flight_app/widgets/search_filters/search_input_btn.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/models/faq.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FaqList extends StatefulWidget {
   const FaqList({super.key});
@@ -70,8 +66,8 @@ class _FaqListState extends State<FaqList> {
         titleSpacing: 0,
         title: _showSearch
             ? Padding(
-                padding: EdgeInsets.symmetric(
-                    vertical: spacingUnit(2), horizontal: spacingUnit(2)),
+                padding: const EdgeInsets.symmetric(
+                    vertical: 16, horizontal: 16),
                 child: SearchInputBtn(
                   location: '/search-list',
                   title: 'Search Topic',
@@ -95,7 +91,7 @@ class _FaqListState extends State<FaqList> {
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(color: colorScheme(context).secondary),
+        decoration: const BoxDecoration(color: TravelloTheme.secondaryMain),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -103,34 +99,34 @@ class _FaqListState extends State<FaqList> {
             Padding(
               padding: EdgeInsets.only(
                   top: spacingUnit(8),
-                  bottom: spacingUnit(1),
-                  left: spacingUnit(2),
-                  right: spacingUnit(2)),
+                  bottom: 8,
+                  left: 16,
+                  right: 16),
               child: RichText(
                   text: TextSpan(
                       text: 'Hello ',
-                      style: ThemeText.title2.copyWith(
+                      style: TravelloTheme.title2.copyWith(
                           fontWeight: FontWeight.normal, color: Colors.black),
                       children: [
                     TextSpan(
                         text: _userName,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: colorScheme(context).primary))
+                            color: TravelloTheme.primaryMain))
                   ])),
             ),
             Padding(
-                padding: EdgeInsets.only(
-                    bottom: spacingUnit(3),
-                    left: spacingUnit(2),
-                    right: spacingUnit(2)),
+                padding: const EdgeInsets.only(
+                    bottom: 24,
+                    left: 16,
+                    right: 16),
                 child: Text('How can we help you today?',
-                    style: ThemeText.title.copyWith(color: Colors.black))),
+                    style: TravelloTheme.title.copyWith(color: Colors.black))),
 
             /// CONTENTS
             Expanded(
               child: Container(
-                  padding: EdgeInsets.all(spacingUnit(3)),
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     borderRadius:
                         const BorderRadius.vertical(top: Radius.circular(30)),
@@ -173,7 +169,7 @@ class _FaqListState extends State<FaqList> {
                                       contentPadding: EdgeInsets.zero,
                                       title: Text(
                                         item.headerValue,
-                                        style: ThemeText.subtitle2,
+                                        style: TravelloTheme.subtitle2,
                                       ),
                                     ),
                                   );
@@ -187,7 +183,7 @@ class _FaqListState extends State<FaqList> {
 
                           /// CONTACT BUTTON
                           Container(
-                              padding: EdgeInsets.all(spacingUnit(2)),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 borderRadius: ThemeRadius.medium,
                                 color: Theme.of(context)
@@ -197,7 +193,7 @@ class _FaqListState extends State<FaqList> {
                               child: Column(
                                 children: [
                                   Text('Need More Help?',
-                                      style: ThemeText.subtitle.copyWith(
+                                      style: TravelloTheme.subtitle.copyWith(
                                         color: colorScheme(context)
                                             .onPrimaryContainer,
                                       )),
@@ -205,7 +201,7 @@ class _FaqListState extends State<FaqList> {
                                   const Text(
                                     'Our support team is available 24/7 to assist you with any questions or concerns.',
                                     textAlign: TextAlign.center,
-                                    style: ThemeText.paragraph,
+                                    style: TravelloTheme.paragraph,
                                   ),
                                   const VSpaceShort(),
                                   SizedBox(

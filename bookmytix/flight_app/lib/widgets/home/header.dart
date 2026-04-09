@@ -1,17 +1,14 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/controllers/notification_controller.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flight_app/utils/custom_tooltip.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/widgets/action_headers/home_action_group.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:overlay_tooltip/overlay_tooltip.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class HomeHeader extends StatefulWidget {
   const HomeHeader({super.key, this.isFixed = false});
@@ -74,17 +71,42 @@ class _HomeHeaderState extends State<HomeHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasTooltipScaffold =
+        context.findAncestorWidgetOfExactType<OverlayTooltipScaffold>() != null;
+
+    final String avatarUrl =
+        (_userAvatar.isEmpty ? userDummy.avatar : _userAvatar).trim();
+
+    final Widget notificationsButton = Obx(() {
+      final ctrl = Get.find<NotificationController>();
+      final n = ctrl.unreadCount.value;
+      return Badge.count(
+        backgroundColor: TravelloTheme.primaryMain,
+        textColor: Colors.black,
+        count: n,
+        isLabelVisible: n > 0,
+        offset: const Offset(0, -1),
+        child: iconBtn(
+          context,
+          Icons.notifications,
+          widget.isFixed,
+          () {
+            Get.toNamed(AppLink.notification);
+          },
+        ),
+      );
+    });
+
     return AppBar(
       toolbarHeight: 60,
       scrolledUnderElevation: 0.0,
       forceMaterialTransparency: true,
       backgroundColor: Colors.transparent,
       automaticallyImplyLeading: false,
-      titleSpacing: spacingUnit(1),
+      titleSpacing: 8,
       flexibleSpace: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        color:
-            widget.isFixed ? colorScheme(context).surface : Colors.transparent,
+        color: widget.isFixed ? TravelloTheme.paperLight : Colors.transparent,
       ),
       title: GestureDetector(
         onTap: () {
@@ -94,13 +116,35 @@ class _HomeHeaderState extends State<HomeHeader> {
           /// AVATAR AND USER PROFILE
           CircleAvatar(
             radius: 24,
-            backgroundImage: NetworkImage(
-                _userAvatar.isEmpty ? userDummy.avatar : _userAvatar),
+            backgroundColor: TravelloTheme.paperLightContainerHighest,
+            child: ClipOval(
+              child: avatarUrl.isNotEmpty
+                  ? Image.network(
+                      avatarUrl,
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Icon(
+                          Icons.person,
+                          color: TravelloTheme.textMuted,
+                          size: 24,
+                        ),
+                      ),
+                    )
+                  : const Center(
+                      child: Icon(
+                        Icons.person,
+                        color: TravelloTheme.textMuted,
+                        size: 24,
+                      ),
+                    ),
+            ),
           ),
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(_userName,
-                style: ThemeText.title2.copyWith(
+                style: TravelloTheme.title2.copyWith(
                     color: widget.isFixed
                         ? colorScheme(context).onSurface
                         : Colors.white)),
@@ -109,7 +153,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                 padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
                 decoration: BoxDecoration(
                   borderRadius: ThemeRadius.small,
-                  color: colorScheme(context).surface.withValues(alpha: 0.8),
+                  color: TravelloTheme.paperLight.withValues(alpha: 0.8),
                 ),
                 child: Row(
                   children: [
@@ -135,34 +179,20 @@ class _HomeHeaderState extends State<HomeHeader> {
           widget.isFixed,
           () => _showModeSwitch(context),
         ),
-        OverlayTooltipItem(
-          displayIndex: 2,
-          tooltip: (controller) => Padding(
-            padding: const EdgeInsets.only(right: 15),
-            child: MTooltip(
-                title: 'Check messages, the best deals, or notification here.',
-                controller: controller),
-          ),
-          child: Obx(() {
-            final ctrl = Get.find<NotificationController>();
-            final n = ctrl.unreadCount.value;
-            return Badge.count(
-              backgroundColor: ThemePalette.primaryMain,
-              textColor: Colors.black,
-              count: n,
-              isLabelVisible: n > 0,
-              offset: const Offset(0, -1),
-              child: iconBtn(
-                context,
-                Icons.notifications,
-                widget.isFixed,
-                () {
-                  Get.toNamed(AppLink.notification);
-                },
-              ),
-            );
-          }),
-        ),
+        hasTooltipScaffold
+            ? OverlayTooltipItem(
+                displayIndex: 2,
+                tooltip: (controller) => Padding(
+                  padding: const EdgeInsets.only(right: 15),
+                  child: MTooltip(
+                    title:
+                        'Check messages, the best deals, or notification here.',
+                    controller: controller,
+                  ),
+                ),
+                child: notificationsButton,
+              )
+            : notificationsButton,
         const SizedBox(width: 4),
         Tooltip(
           message: 'Help and Support',

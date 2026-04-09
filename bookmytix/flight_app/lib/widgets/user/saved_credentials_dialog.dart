@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class SavedCredentialsDialog extends StatelessWidget {
   final String emailOrPhone;
@@ -38,7 +36,7 @@ class SavedCredentialsDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(3)),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
@@ -55,7 +53,7 @@ class SavedCredentialsDialog extends StatelessWidget {
           children: [
             // Icon
             Container(
-              padding: EdgeInsets.all(spacingUnit(2)),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -79,23 +77,23 @@ class SavedCredentialsDialog extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
 
             // Title
             Text(
               'Welcome Back!',
-              style: ThemeText.title.copyWith(
+              style: TravelloTheme.title.copyWith(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
 
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
 
             // Saved account info
             Container(
-              margin: EdgeInsets.symmetric(vertical: spacingUnit(2)),
-              padding: EdgeInsets.all(spacingUnit(2)),
+              margin: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
@@ -110,14 +108,14 @@ class SavedCredentialsDialog extends StatelessWidget {
                     Icons.person_outline,
                     color: colorScheme.primary,
                   ),
-                  SizedBox(width: spacingUnit(1)),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Saved Account',
-                          style: ThemeText.caption.copyWith(
+                          style: TravelloTheme.caption.copyWith(
                             color: colorScheme.onSurfaceVariant,
                             fontSize: 11,
                           ),
@@ -125,7 +123,7 @@ class SavedCredentialsDialog extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           _maskEmail(emailOrPhone),
-                          style: ThemeText.subtitle.copyWith(
+                          style: TravelloTheme.subtitle.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -151,12 +149,12 @@ class SavedCredentialsDialog extends StatelessWidget {
                 icon: const Icon(Icons.login),
                 label: const Text(
                   'Continue',
-                  style: ThemeText.subtitle,
+                  style: TravelloTheme.subtitle,
                 ),
               ),
             ),
 
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
 
             // Use different account
             SizedBox(
@@ -178,7 +176,7 @@ class SavedCredentialsDialog extends StatelessWidget {
                 ),
                 label: Text(
                   'Use Different Account',
-                  style: ThemeText.subtitle.copyWith(
+                  style: TravelloTheme.subtitle.copyWith(
                     color: colorScheme.onSurface,
                   ),
                 ),

@@ -4,12 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/app_input/app_textfield.dart';
 import 'package:flight_app/utils/auth_service.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
@@ -65,6 +63,54 @@ class _RegisterFormState extends State<RegisterForm> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+    final Widget fallbackGoogleMark = ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (bounds) => const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFF4285F4), // Blue
+          Color(0xFF34A853), // Green
+          Color(0xFFFBBC05), // Yellow
+          Color(0xFFEA4335), // Red
+        ],
+      ).createShader(bounds),
+      child: const FaIcon(
+        FontAwesomeIcons.google,
+        size: 18,
+      ),
+    );
+
+    final Widget googleMark = googleBrandIconUrl.isNotEmpty
+        ? Image.network(
+            googleBrandIconUrl,
+            width: 18,
+            height: 18,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => fallbackGoogleMark,
+            loadingBuilder: (context, child, progress) =>
+                progress == null ? child : fallbackGoogleMark,
+          )
+        : fallbackGoogleMark;
+
+    const Widget fallbackAppleMark = FaIcon(
+      FontAwesomeIcons.apple,
+      size: 20,
+      color: Colors.black,
+    );
+
+    final Widget appleMark = appleBrandIconUrl.isNotEmpty
+        ? Image.network(
+            appleBrandIconUrl,
+            width: 20,
+            height: 20,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => fallbackAppleMark,
+            loadingBuilder: (context, child, progress) =>
+                progress == null ? child : fallbackAppleMark,
+          )
+        : fallbackAppleMark;
 
     return FormBuilder(
       key: _registerKey,
@@ -323,12 +369,12 @@ class _RegisterFormState extends State<RegisterForm> {
                     ],
                   ),
                 ),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
                 // Brand name
                 Text(
                   branding.name,
-                  style: ThemeText.headline.copyWith(
-                    color: ThemePalette.primaryMain,
+                  style: TravelloTheme.headline.copyWith(
+                    color: TravelloTheme.primaryMain,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                     letterSpacing: 2,
@@ -339,7 +385,7 @@ class _RegisterFormState extends State<RegisterForm> {
                 // Main heading
                 Text(
                   'Sign Up',
-                  style: ThemeText.title.copyWith(
+                  style: TravelloTheme.title.copyWith(
                     fontSize: 34,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
@@ -347,11 +393,11 @@ class _RegisterFormState extends State<RegisterForm> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 // Subtitle
                 Text(
                   'Join us and start your journey today',
-                  style: ThemeText.headline.copyWith(
+                  style: TravelloTheme.headline.copyWith(
                     color: colorScheme.onSurfaceVariant,
                     fontSize: 15,
                   ),
@@ -360,7 +406,7 @@ class _RegisterFormState extends State<RegisterForm> {
               ],
             ),
           ),
-          SizedBox(height: spacingUnit(3)),
+          const SizedBox(height: 24),
 
           /// INPUT FIELD
           FormBuilderField(
@@ -404,7 +450,7 @@ class _RegisterFormState extends State<RegisterForm> {
                             },
                             child: Text(
                               'Verify',
-                              style: ThemeText.caption.copyWith(
+                              style: TravelloTheme.caption.copyWith(
                                 color: Theme.of(context).colorScheme.primary,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -586,7 +632,7 @@ class _RegisterFormState extends State<RegisterForm> {
                           if (success) {
                             // Show success message
                             Get.snackbar(
-                              '🎉 Registration Successful!',
+                              'Registration Successful',
                               'Please verify your email to continue.',
                               backgroundColor: Colors.green.shade600,
                               colorText: Colors.white,
@@ -604,7 +650,7 @@ class _RegisterFormState extends State<RegisterForm> {
                           } else {
                             // Show error message
                             Get.snackbar(
-                              '⚠️ Registration Failed',
+                              'Registration Failed',
                               'This email or phone number is already registered. Please login instead.',
                               backgroundColor: Colors.orange.shade600,
                               colorText: Colors.white,
@@ -619,7 +665,7 @@ class _RegisterFormState extends State<RegisterForm> {
                         }
                       },
                 style: ThemeButton.btnBig.merge(FilledButton.styleFrom(
-                  backgroundColor: ThemePalette.primaryMain,
+                  backgroundColor: TravelloTheme.primaryMain,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -634,7 +680,7 @@ class _RegisterFormState extends State<RegisterForm> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2.5, color: Colors.white))
                     : Text('SIGN UP',
-                        style: ThemeText.subtitle.copyWith(
+                        style: TravelloTheme.subtitle.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.5,
@@ -644,7 +690,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
           /// DIVIDER WITH "OR" - PROFESSIONAL STYLE
           Padding(
-            padding: EdgeInsets.symmetric(vertical: spacingUnit(2)),
+            padding: const EdgeInsets.symmetric(vertical: 16),
             child: Row(
               children: [
                 Expanded(
@@ -661,11 +707,11 @@ class _RegisterFormState extends State<RegisterForm> {
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: spacingUnit(3)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: spacingUnit(2),
-                      vertical: spacingUnit(0.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
                     ),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHighest
@@ -678,7 +724,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     ),
                     child: Text(
                       'OR SIGN UP WITH',
-                      style: ThemeText.caption.copyWith(
+                      style: TravelloTheme.caption.copyWith(
                         color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 1.2,
@@ -736,7 +782,7 @@ class _RegisterFormState extends State<RegisterForm> {
                 onTap: () {
                   // TODO: Implement Google Sign Up
                   Get.snackbar(
-                    '🚀 Coming Soon',
+                    'Coming Soon',
                     'Google Sign Up will be available soon!',
                     backgroundColor: Colors.blue.shade600,
                     colorText: Colors.white,
@@ -749,7 +795,7 @@ class _RegisterFormState extends State<RegisterForm> {
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -768,102 +814,13 @@ class _RegisterFormState extends State<RegisterForm> {
                           ],
                         ),
                         child: Center(
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // Google logo using custom design with official colors
-                              Container(
-                                width: 22,
-                                height: 22,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                                child: Stack(
-                                  children: [
-                                    // Blue section (top-right)
-                                    Positioned(
-                                      top: 0,
-                                      right: 0,
-                                      child: Container(
-                                        width: 11,
-                                        height: 11,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF4285F4),
-                                          borderRadius: BorderRadius.only(
-                                            topRight: Radius.circular(2),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    // Red section (top-left)
-                                    Positioned(
-                                      top: 0,
-                                      left: 0,
-                                      child: Container(
-                                        width: 11,
-                                        height: 11,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFEA4335),
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(2),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    // Yellow section (bottom-left)
-                                    Positioned(
-                                      bottom: 0,
-                                      left: 0,
-                                      child: Container(
-                                        width: 11,
-                                        height: 11,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFFBBC05),
-                                          borderRadius: BorderRadius.only(
-                                            bottomLeft: Radius.circular(2),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    // Green section (bottom-right)
-                                    Positioned(
-                                      bottom: 0,
-                                      right: 0,
-                                      child: Container(
-                                        width: 11,
-                                        height: 11,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF34A853),
-                                          borderRadius: BorderRadius.only(
-                                            bottomRight: Radius.circular(2),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    // White "G" overlay
-                                    const Center(
-                                      child: Text(
-                                        'G',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w900,
-                                          color: Colors.white,
-                                          fontFamily: 'Arial',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                          child: googleMark,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         'Sign up with Google',
-                        style: ThemeText.subtitle.copyWith(
+                        style: TravelloTheme.subtitle.copyWith(
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.3,
                         ),
@@ -874,7 +831,7 @@ class _RegisterFormState extends State<RegisterForm> {
               ),
             ),
           ),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
 
           /// APPLE SIGNUP - PREMIUM STYLE
           Container(
@@ -907,7 +864,7 @@ class _RegisterFormState extends State<RegisterForm> {
                 onTap: () {
                   // TODO: Implement Apple Sign Up
                   Get.snackbar(
-                    '🚀 Coming Soon',
+                    'Coming Soon',
                     'Apple Sign Up will be available soon!',
                     backgroundColor: Colors.grey.shade100,
                     colorText: Colors.black87,
@@ -920,7 +877,7 @@ class _RegisterFormState extends State<RegisterForm> {
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -940,106 +897,12 @@ class _RegisterFormState extends State<RegisterForm> {
                             ),
                           ],
                         ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.apple,
-                            size: 22,
-                            color: Colors.black,
-                          ),
-                        ),
+                        child: Center(child: appleMark),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         'Sign up with Apple',
-                        style: ThemeText.subtitle.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: spacingUnit(1.5)),
-
-          /// FACEBOOK SIGNUP - PREMIUM STYLE
-          Container(
-            width: double.infinity,
-            height: 56,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFFE7F3FF),
-                  const Color(0xFFD0E7FF).withValues(alpha: 0.5),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(
-                color: const Color(0xFF1877F2).withValues(alpha: 0.2),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF1877F2).withValues(alpha: 0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  // TODO: Implement Facebook Sign Up
-                  Get.snackbar(
-                    '🚀 Coming Soon',
-                    'Facebook Sign Up will be available soon!',
-                    backgroundColor: Colors.blue.shade800,
-                    colorText: Colors.white,
-                    snackPosition: SnackPosition.TOP,
-                    duration: const Duration(seconds: 2),
-                    icon: const Icon(Icons.info_outline, color: Colors.white),
-                    borderRadius: 10,
-                    margin: const EdgeInsets.all(10),
-                  );
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1877F2),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF1877F2)
-                                  .withValues(alpha: 0.3),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.facebook,
-                            size: 22,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Sign up with Facebook',
-                        style: ThemeText.subtitle.copyWith(
+                        style: TravelloTheme.subtitle.copyWith(
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.3,
                         ),
@@ -1061,11 +924,11 @@ class _RegisterFormState extends State<RegisterForm> {
               child: Text.rich(
                 TextSpan(
                   text: 'Already have an account? ',
-                  style: ThemeText.caption,
+                  style: TravelloTheme.caption,
                   children: [
                     TextSpan(
                       text: 'Login Here',
-                      style: ThemeText.caption.copyWith(
+                      style: TravelloTheme.caption.copyWith(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.underline,

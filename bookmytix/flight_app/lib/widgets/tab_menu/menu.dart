@@ -1,9 +1,6 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/tab_menu/button_tab.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TabMenu extends StatelessWidget {
   const TabMenu({
@@ -20,17 +17,17 @@ class TabMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.all(spacingUnit(1)),
+      margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       width: MediaQuery.of(context).size.width.clamp(0.0, 600.0),
       height: 40,
       decoration: BoxDecoration(
-        color: colorScheme(context).surface,
+        color: TravelloTheme.paperLight,
         boxShadow: [ThemeShade.shadeSoft(context)],
         borderRadius: ThemeRadius.medium,
         border: Border.all(
           width: 1,
-          color: colorScheme(context).surfaceDim
+          color: TravelloTheme.paperLightDim
         )
       ),
       child: Row(

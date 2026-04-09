@@ -1,11 +1,8 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/shimmer_preloader.dart';
 import 'package:flight_app/widgets/decorations/dashed_border.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 enum VoucherStatus { disable, enable, readonly }
 
@@ -38,7 +35,7 @@ class VoucherCard extends StatelessWidget {
         Container(
           height: 100,
           width: 80,
-          padding: EdgeInsets.all(spacingUnit(1)),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(10),
@@ -86,7 +83,7 @@ class VoucherCard extends StatelessWidget {
           child: Container(
             alignment: Alignment.centerLeft,
             height: 100,
-            padding: EdgeInsets.all(spacingUnit(1)),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.only(
                 topRight: Radius.circular(10),
@@ -101,8 +98,8 @@ class VoucherCard extends StatelessWidget {
             child: ListTile(
               minTileHeight: 0,
               contentPadding: const EdgeInsets.all(0),
-              title: Text(title, style: ThemeText.paragraph, maxLines: 1, overflow: TextOverflow.ellipsis,),
-              subtitle: Text(desc, style: ThemeText.caption, maxLines: 2, overflow: TextOverflow.ellipsis,),
+              title: Text(title, style: TravelloTheme.paragraph, maxLines: 1, overflow: TextOverflow.ellipsis,),
+              subtitle: Text(desc, style: TravelloTheme.caption, maxLines: 2, overflow: TextOverflow.ellipsis,),
               trailing: _voucherState(context, status)
             ),
           ),
@@ -119,7 +116,7 @@ class VoucherCard extends StatelessWidget {
       width: radius,
       height: 10,
       decoration: BoxDecoration(
-        color: colorScheme(context).surfaceContainerLowest,
+        color: TravelloTheme.paperLightContainerLowest,
         border: Border(
           left: BorderSide(color: color, width: 1),
           right: BorderSide(color: color, width: 1),
@@ -140,7 +137,7 @@ class VoucherCard extends StatelessWidget {
   Widget _voucherState(BuildContext context, VoucherStatus st) {
     switch(st) {
       case VoucherStatus.disable:
-        return const SizedBox(width: 60,child: Text('Not Available', textAlign: TextAlign.center, style: ThemeText.caption));
+        return const SizedBox(width: 60,child: Text('Not Available', textAlign: TextAlign.center, style: TravelloTheme.caption));
       case VoucherStatus.readonly:
         return Icon(Icons.arrow_forward_ios, color: color, size: 22);
       case VoucherStatus.enable:

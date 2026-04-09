@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/settings/account_info.dart';
 import 'package:flight_app/widgets/title/title_basic.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class SettingList extends StatefulWidget {
   const SettingList({super.key});
@@ -40,7 +39,7 @@ class _SettingListState extends State<SettingList> {
     return ListView(
         shrinkWrap: true,
         physics: const ClampingScrollPhysics(),
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         children: [
           /// AUTH PAGES - Only show for guest users
           if (_isGuestMode) ...[
@@ -399,7 +398,7 @@ class _SettingListState extends State<SettingList> {
                     // Exit guest mode - go to welcome page
                     await prefs.remove('guest_mode');
                     Get.snackbar(
-                      '👋 Goodbye!',
+                      'Goodbye!',
                       'Thank you for visiting. Login to access all features!',
                       backgroundColor: Colors.blue.shade600,
                       colorText: Colors.white,
@@ -416,7 +415,7 @@ class _SettingListState extends State<SettingList> {
                     await prefs.setBool('guest_mode', true);
 
                     Get.snackbar(
-                      '✅ Signed Out Successfully',
+                      'Signed Out Successfully',
                       'Now browsing as guest. Login anytime for full access!',
                       backgroundColor: Colors.green.shade600,
                       colorText: Colors.white,
@@ -440,7 +439,7 @@ class _SettingListState extends State<SettingList> {
           const VSpace(),
           Center(
               child: Text('${branding.name} Version: ${branding.version}',
-                  style: ThemeText.caption)),
+                  style: TravelloTheme.caption)),
           const VSpaceBig(),
         ]);
   }

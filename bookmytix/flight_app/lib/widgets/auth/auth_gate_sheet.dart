@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 /// Industry-standard "Soft Auth Gate" — shown when a guest attempts
 /// an action that requires authentication (booking, checkout, etc.)
@@ -48,10 +47,10 @@ class AuthGateSheet extends StatelessWidget {
         ],
       ),
       padding: EdgeInsets.fromLTRB(
-        spacingUnit(3),
-        spacingUnit(1),
-        spacingUnit(3),
-        spacingUnit(3) + bottomPad,
+        24,
+        8,
+        24,
+        24 + bottomPad,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -61,7 +60,7 @@ class AuthGateSheet extends StatelessWidget {
             child: Container(
               width: 40,
               height: 4,
-              margin: EdgeInsets.only(bottom: spacingUnit(2.5)),
+              margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
@@ -75,17 +74,17 @@ class AuthGateSheet extends StatelessWidget {
             height: 64,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  ThemePalette.primaryMain,
-                  ThemePalette.primaryDark,
+                  TravelloTheme.primaryMain,
+                  TravelloTheme.primaryDark,
                 ],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: ThemePalette.primaryMain.withValues(alpha: 0.35),
+                  color: TravelloTheme.primaryMain.withValues(alpha: 0.35),
                   blurRadius: 20,
                   spreadRadius: 2,
                 ),
@@ -98,7 +97,7 @@ class AuthGateSheet extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
 
           // ── Headline ─────────────────────────────────────────────
           const Text(
@@ -111,7 +110,7 @@ class AuthGateSheet extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
 
           // ── Sub-copy ──────────────────────────────────────────────
           Text(
@@ -124,7 +123,7 @@ class AuthGateSheet extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: spacingUnit(3)),
+          const SizedBox(height: 24),
 
           // ── Primary: Login button ─────────────────────────────────
           SizedBox(
@@ -136,7 +135,7 @@ class AuthGateSheet extends StatelessWidget {
                 Get.toNamed(AppLink.login);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: ThemePalette.primaryMain,
+                backgroundColor: TravelloTheme.primaryMain,
                 foregroundColor: Colors.black87,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -154,7 +153,7 @@ class AuthGateSheet extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
 
           // ── Secondary: Create account ─────────────────────────────
           SizedBox(
@@ -166,9 +165,9 @@ class AuthGateSheet extends StatelessWidget {
                 Get.toNamed(AppLink.register);
               },
               style: OutlinedButton.styleFrom(
-                foregroundColor: ThemePalette.primaryMain,
+                foregroundColor: TravelloTheme.primaryMain,
                 side: BorderSide(
-                  color: ThemePalette.primaryMain.withValues(alpha: 0.6),
+                  color: TravelloTheme.primaryMain.withValues(alpha: 0.6),
                   width: 1.5,
                 ),
                 shape: RoundedRectangleBorder(
@@ -186,7 +185,7 @@ class AuthGateSheet extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
 
           // ── Tertiary: Dismiss ──────────────────────────────────────
           GestureDetector(

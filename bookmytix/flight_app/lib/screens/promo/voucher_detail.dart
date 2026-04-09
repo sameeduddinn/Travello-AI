@@ -2,15 +2,11 @@ import 'package:change_case/change_case.dart';
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/models/promo.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
 import 'package:flight_app/widgets/app_button/back_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/promo/promo_desc.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class VoucherDetail extends StatefulWidget {
   const VoucherDetail({
@@ -63,7 +59,7 @@ class _VoucherDetailState extends State<VoucherDetail> {
           child: Text(
             promoItem.name.toCapitalCase(),
             overflow: TextOverflow.ellipsis,
-            style: ThemeText.subtitle2,
+            style: TravelloTheme.subtitle2,
           ),
         ),
         actions: [
@@ -74,12 +70,12 @@ class _VoucherDetailState extends State<VoucherDetail> {
               color: Theme.of(context).colorScheme.primaryContainer,
               borderRadius: ThemeRadius.big
             ),
-            child: Text('${promoItem.price} POINT', style: ThemeText.paragraph)
+            child: Text('${promoItem.price} POINT', style: TravelloTheme.paragraph)
           ),
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           /// LIKED
           Padding(
-            padding: EdgeInsets.only(right: spacingUnit(1)),
+            padding: const EdgeInsets.only(right: 8),
             child: Container(
               width: 24,
               height: 24,
@@ -123,11 +119,11 @@ class _VoucherDetailState extends State<VoucherDetail> {
         elevation: 20,
         shadowColor: Colors.black,
         color: Theme.of(context).colorScheme.surface,
-        padding: EdgeInsets.only(
-          left: spacingUnit(2),
-          right: spacingUnit(2),
-          top: spacingUnit(1),
-          bottom: spacingUnit(3)
+        padding: const EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 8,
+          bottom: 24
         ),
         child: Center(
           child: Container(
@@ -139,7 +135,7 @@ class _VoucherDetailState extends State<VoucherDetail> {
                 Get.toNamed(AppLink.searchFlight);
               },
               style: ThemeButton.btnBig.merge(ThemeButton.outlinedSecondary(context)),
-              child: const Text('USE THIS COUPON', style: ThemeText.subtitle2)
+              child: const Text('USE THIS COUPON', style: TravelloTheme.subtitle2)
             ),
           ),
         ),

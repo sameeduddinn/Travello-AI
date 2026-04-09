@@ -1,14 +1,11 @@
 import 'package:flight_app/models/city.dart';
 import 'package:flight_app/models/plane.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/decorations/dashed_border.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightCard extends StatelessWidget {
   const FlightCard(
@@ -44,8 +41,8 @@ class FlightCard extends StatelessWidget {
     final Duration tripDuration = arrival.difference(depart);
     final bool isDark = Get.isDarkMode;
     final Color cardColor = isDark
-        ? colorScheme(context).surfaceContainerLowest
-        : colorScheme(context).primaryContainer;
+        ? TravelloTheme.paperLightContainerLowest
+        : TravelloTheme.primaryMainContainer;
 
     return Container(
       decoration: BoxDecoration(
@@ -55,15 +52,15 @@ class FlightCard extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            padding: EdgeInsets.symmetric(vertical: spacingUnit(1)),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: colorScheme(context).surface,
+              color: TravelloTheme.paperLight,
               borderRadius: ThemeRadius.medium,
             ),
             child: Column(children: [
               /// AIRPLANE INFO
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(children: [
                   ClipRRect(
                     borderRadius: ThemeRadius.xsmall,
@@ -75,18 +72,18 @@ class FlightCard extends StatelessWidget {
                   const SizedBox(
                     width: 4,
                   ),
-                  Text(plane.name, style: ThemeText.paragraph),
+                  Text(plane.name, style: TravelloTheme.paragraph),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                         borderRadius: ThemeRadius.xsmall,
                         color: colorScheme(context).outline),
-                    child: Text(plane.classType, style: ThemeText.caption),
+                    child: Text(plane.classType, style: TravelloTheme.caption),
                   )
                 ]),
               ),
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
 
               /// FLIGHT INFO
               Stack(
@@ -121,7 +118,7 @@ class FlightCard extends StatelessWidget {
 
                   /// FLIGHT DETAILS
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -132,7 +129,7 @@ class FlightCard extends StatelessWidget {
                                 children: [
                                   Text(from.name,
                                       overflow: TextOverflow.ellipsis,
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant)),
                                   Padding(
@@ -140,12 +137,12 @@ class FlightCard extends StatelessWidget {
                                         const EdgeInsets.symmetric(vertical: 1),
                                     child: Text(
                                       from.code,
-                                      style: ThemeText.subtitle.copyWith(
+                                      style: TravelloTheme.subtitle.copyWith(
                                           fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                   Text(DateFormat.jm().format(depart),
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant)),
                                 ]),
@@ -159,7 +156,7 @@ class FlightCard extends StatelessWidget {
                                   Text(
                                     plane.code,
                                     overflow: TextOverflow.ellipsis,
-                                    style: ThemeText.caption
+                                    style: TravelloTheme.caption
                                         .copyWith(fontWeight: FontWeight.bold),
                                   ),
                                   Padding(
@@ -172,7 +169,7 @@ class FlightCard extends StatelessWidget {
                                   ),
                                   Text(
                                     '${transit > 0 ? '${transit.toString()}x Transit' : 'Direct'} ${tripDuration.inHours}h ${tripDuration.inMinutes.remainder(60)}m',
-                                    style: ThemeText.caption
+                                    style: TravelloTheme.caption
                                         .copyWith(fontWeight: FontWeight.bold),
                                   )
                                 ]),
@@ -183,7 +180,7 @@ class FlightCard extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(to.name,
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant)),
                                   Padding(
@@ -191,12 +188,12 @@ class FlightCard extends StatelessWidget {
                                         const EdgeInsets.symmetric(vertical: 1),
                                     child: Text(
                                       to.code,
-                                      style: ThemeText.subtitle.copyWith(
+                                      style: TravelloTheme.subtitle.copyWith(
                                           fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                   Text(DateFormat.jm().format(arrival),
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant)),
                                 ]),
@@ -209,17 +206,17 @@ class FlightCard extends StatelessWidget {
               /// PRICE AND LABEL
               Divider(color: cardColor),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child:
                     Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                         borderRadius: ThemeRadius.xsmall,
-                        color: colorScheme(context).secondaryContainer),
+                        color: TravelloTheme.secondaryMainContainer),
                     child: label != null
                         ? Text(label!,
-                            style: ThemeText.caption.copyWith(
+                            style: TravelloTheme.caption.copyWith(
                                 fontWeight: FontWeight.w500,
                                 color: colorScheme(context).onSurface))
                         : Container(),
@@ -239,18 +236,18 @@ class FlightCard extends StatelessWidget {
                   discount > 0
                       ? Text('\$${price.toStringAsFixed(0)}',
                           textAlign: TextAlign.end,
-                          style: ThemeText.paragraph.copyWith(
+                          style: TravelloTheme.paragraph.copyWith(
                               color: colorScheme(context).onSurfaceVariant,
                               decoration: TextDecoration.lineThrough,
                               height: 1))
                       : Container(),
-                  SizedBox(
-                    width: spacingUnit(1),
+                  const SizedBox(
+                    width: 8,
                   ),
                   Text('\$${price - price * discount / 100}',
                       textAlign: TextAlign.end,
-                      style: ThemeText.subtitle.copyWith(
-                          color: colorScheme(context).primary,
+                      style: TravelloTheme.subtitle.copyWith(
+                          color: TravelloTheme.primaryMain,
                           fontWeight: FontWeight.bold,
                           height: 1)),
                 ]),
@@ -268,9 +265,9 @@ class FlightCard extends StatelessWidget {
                           Icon(Icons.edit,
                               color: colorScheme(context).onPrimaryContainer,
                               size: 14),
-                          SizedBox(width: spacingUnit(1)),
+                          const SizedBox(width: 8),
                           Text('EDIT',
-                              style: ThemeText.paragraph.copyWith(
+                              style: TravelloTheme.paragraph.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color:
                                       colorScheme(context).onPrimaryContainer))

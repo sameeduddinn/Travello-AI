@@ -1,9 +1,6 @@
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_tooltip/overlay_tooltip.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class MTooltip extends StatelessWidget {
   final TooltipController controller;
@@ -27,11 +24,11 @@ class MTooltip extends StatelessWidget {
     return Container(
       width: size.width * .7,
       decoration: BoxDecoration(
-        color: colorScheme(context).surface,
+        color: TravelloTheme.paperLight,
         borderRadius: BorderRadius.circular(10),
       ),
-      padding: EdgeInsets.all(spacingUnit(1)),
-      margin: EdgeInsets.all(spacingUnit(1)),
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.all(8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -39,7 +36,7 @@ class MTooltip extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(child: Text(title, style: ThemeText.paragraph)),
+              Expanded(child: Text(title, style: TravelloTheme.paragraph)),
               Opacity(
                 opacity: totalLength == 1 ? 0 : 1,
                 child: Padding(
@@ -93,7 +90,7 @@ class MTooltip extends StatelessWidget {
                   child: const Text('Prev'),
                 ),
               ),
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               FilledButton(
                 onPressed: () {
                   controller.next();

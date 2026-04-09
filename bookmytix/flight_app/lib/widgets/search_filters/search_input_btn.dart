@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class SearchInputBtn extends StatelessWidget {
   const SearchInputBtn({
@@ -27,7 +25,7 @@ class SearchInputBtn extends StatelessWidget {
       },
       child: Container(
         height: 50,
-        padding: EdgeInsets.all(spacingUnit(1)),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           boxShadow: shadow ? [ThemeShade.shadeSoft(context)] : null,
           color: shadow ? colorScheme.surface : colorScheme.outline.withValues(alpha: 0.5),
@@ -35,7 +33,7 @@ class SearchInputBtn extends StatelessWidget {
         ),
         child: Row(crossAxisAlignment: CrossAxisAlignment.center, mainAxisAlignment: MainAxisAlignment.start, children: [
           const Icon(Icons.search),
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           Expanded(child: Text(title, style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant))),
           onCancel != null ? InkWell(
             onTap: onCancel,

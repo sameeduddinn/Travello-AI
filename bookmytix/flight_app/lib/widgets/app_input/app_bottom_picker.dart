@@ -1,9 +1,7 @@
 import 'package:flight_app/models/list_item.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
 import 'package:flutter/material.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class BottomPickerRadio extends StatefulWidget {
   const BottomPickerRadio({
@@ -46,9 +44,9 @@ class _BottomPickerRadioState extends State<BottomPickerRadio> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: colorScheme(context).surface,
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+      decoration: const BoxDecoration(
+        color: TravelloTheme.paperLight,
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -57,7 +55,7 @@ class _BottomPickerRadioState extends State<BottomPickerRadio> {
             const VSpace(),
             Text(
               widget.title ?? '',
-              style: ThemeText.subtitle2,
+              style: TravelloTheme.subtitle2,
             ),
             const SizedBox(
               height: 10,
@@ -65,7 +63,7 @@ class _BottomPickerRadioState extends State<BottomPickerRadio> {
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
-                color: colorScheme(context).surface,
+                color: TravelloTheme.paperLight,
               ),
               child: Column(
                 children: [

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 /// ✨ ENTERPRISE-GRADE SERVICE TABS
 /// Premium tab selector for Flight | Train | Hotel services
@@ -116,10 +115,10 @@ class _ServiceTabsState extends State<ServiceTabs>
               width: tabWidth,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [
-                      ThemePalette.primaryMain,
-                      ThemePalette.primaryDark,
+                      TravelloTheme.primaryMain,
+                      TravelloTheme.primaryDark,
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -127,7 +126,7 @@ class _ServiceTabsState extends State<ServiceTabs>
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(
-                      color: ThemePalette.primaryMain.withValues(alpha: 0.45),
+                      color: TravelloTheme.primaryMain.withValues(alpha: 0.45),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -188,7 +187,7 @@ class _ServiceTabsState extends State<ServiceTabs>
                                 size: 22,
                               ),
                             ),
-                            SizedBox(height: spacingUnit(0.5)),
+                            const SizedBox(height: 4),
                             Text(
                               service['label'],
                               style: TextStyle(

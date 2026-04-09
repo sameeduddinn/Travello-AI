@@ -2,13 +2,13 @@ import 'dart:math';
 
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/models/hotel.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
 import 'package:flight_app/utils/wishlist_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 const _gold = Color(0xFFD4AF37);
 const _goldDark = Color(0xFFB8935C);
@@ -128,8 +128,8 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
                 if (!_isGuestMode)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                          spacingUnit(2), spacingUnit(2), spacingUnit(2), 0),
+                      padding: const EdgeInsets.fromLTRB(
+                          16, 16, 16, 0),
                       child: _buildCityBanner(),
                     ),
                   ),
@@ -137,8 +137,8 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
                 // ── Stats row ─────────────────────────────────────────
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                        spacingUnit(2), spacingUnit(2), spacingUnit(2), 0),
+                    padding: const EdgeInsets.fromLTRB(
+                        16, 16, 16, 0),
                     child: _buildStatsRow(),
                   ),
                 ),
@@ -147,7 +147,7 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
                 _filtered.isEmpty
                     ? SliverFillRemaining(child: _buildEmpty())
                     : SliverPadding(
-                        padding: EdgeInsets.all(spacingUnit(2)),
+                        padding: const EdgeInsets.all(16),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
@@ -161,7 +161,7 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
 
                               return Padding(
                                 padding:
-                                    EdgeInsets.only(bottom: spacingUnit(2)),
+                                    const EdgeInsets.only(bottom: 16),
                                 child: _HotelDealCard(
                                   hotel: h,
                                   nights: _nights,
@@ -198,8 +198,8 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
 
   Widget _buildCityBanner() {
     return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(2), vertical: spacingUnit(1.2)),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 16, vertical: 9.6),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFD4AF37), Color(0xFFB8935C)],
@@ -210,7 +210,7 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
       ),
       child: Row(children: [
         const Icon(Icons.location_on, color: Colors.white, size: 18),
-        SizedBox(width: spacingUnit(1)),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
             'Showing hotels in $_userOriginCityName',
@@ -225,15 +225,15 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
   Widget _buildFilterBar() {
     return Container(
       color: _gold,
-      padding: EdgeInsets.fromLTRB(
-          spacingUnit(2), 0, spacingUnit(2), spacingUnit(1.5)),
+      padding: const EdgeInsets.fromLTRB(
+          16, 0, 16, 12),
       child: Row(children: [
         _filterChip('All'),
-        SizedBox(width: spacingUnit(1)),
+        const SizedBox(width: 8),
         _filterChip('5-Star'),
-        SizedBox(width: spacingUnit(1)),
+        const SizedBox(width: 8),
         _filterChip('4-Star'),
-        SizedBox(width: spacingUnit(1)),
+        const SizedBox(width: 8),
         _filterChip('3-Star'),
       ]),
     );
@@ -269,8 +269,8 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
     final fourStar = base.where((h) => h.category.contains('4')).length;
 
     return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(2), vertical: spacingUnit(1.5)),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -307,13 +307,13 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
     return Center(
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Icon(Icons.hotel_outlined, size: 64, color: Colors.grey.shade400),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         Text('No hotels found in $_userOriginCityName',
             style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF6B7280))),
-        SizedBox(height: spacingUnit(1)),
+        const SizedBox(height: 8),
         const Text('Try updating your home city in Settings',
             style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
       ]),

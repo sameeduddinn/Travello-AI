@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class AppTextfieldFormBuilder extends StatefulWidget {
   const AppTextfieldFormBuilder({
@@ -69,7 +66,7 @@ class _AppTextfieldFormBuilderState extends State<AppTextfieldFormBuilder> {
         return Colors.red[400]!;
       } else {
         if (boxFocus) {
-          return ThemePalette.primaryMain;
+          return TravelloTheme.primaryMain;
         } else {
           return Theme.of(context).colorScheme.surfaceDim;
         }
@@ -91,8 +88,8 @@ class _AppTextfieldFormBuilderState extends State<AppTextfieldFormBuilder> {
             padding: EdgeInsets.only(
               top: 4,
               bottom: 4,
-              left: widget.prefixIcon != null ? 0 : spacingUnit(2),
-              right: widget.suffix != null ? 0 : spacingUnit(2)
+              left: widget.prefixIcon != null ? 0 : 16,
+              right: widget.suffix != null ? 0 : 16
             ),
             child: FormBuilderTextField(
               key: widget.key,
@@ -119,7 +116,7 @@ class _AppTextfieldFormBuilderState extends State<AppTextfieldFormBuilder> {
         widget.errorText != null ?
           Padding(
             padding: const EdgeInsets.only(top: 4, left: 16),
-            child: Text(widget.errorText!, style: ThemeText.caption.copyWith(color: Colors.red[400]),)
+            child: Text(widget.errorText!, style: TravelloTheme.caption.copyWith(color: Colors.red[400]),)
           ) : Container()
       ],
     );

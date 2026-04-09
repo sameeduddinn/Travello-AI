@@ -5,11 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/app_input/app_textfield.dart';
 import 'package:flight_app/utils/auth_service.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ResetForm extends StatefulWidget {
   const ResetForm({super.key});
@@ -91,7 +89,7 @@ class _ResetFormState extends State<ResetForm> {
     _startTimer();
 
     Get.snackbar(
-      '📧 Verification Code Sent',
+      'Verification Code Sent',
       'A 6-digit code has been sent to ${_emailController.text}',
       backgroundColor: Colors.green.shade600,
       colorText: Colors.white,
@@ -111,7 +109,7 @@ class _ResetFormState extends State<ResetForm> {
         _currentStep = 3;
       });
       Get.snackbar(
-        '✅ Verification Successful',
+        'Verification Successful',
         'Please set your new password',
         backgroundColor: Colors.green.shade600,
         colorText: Colors.white,
@@ -123,7 +121,7 @@ class _ResetFormState extends State<ResetForm> {
       );
     } else {
       Get.snackbar(
-        '❌ Invalid Code',
+        'Invalid Code',
         'The verification code you entered is incorrect',
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
@@ -162,7 +160,7 @@ class _ResetFormState extends State<ResetForm> {
         _sendVerificationCode();
       } else {
         Get.snackbar(
-          '❌ Email Not Found',
+          'Email Not Found',
           'No account found with this email',
           backgroundColor: Colors.red.shade600,
           colorText: Colors.white,
@@ -193,7 +191,7 @@ class _ResetFormState extends State<ResetForm> {
 
       if (success) {
         Get.snackbar(
-          '✅ Password Changed',
+          'Password Changed',
           'Your password has been successfully changed',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
@@ -207,7 +205,7 @@ class _ResetFormState extends State<ResetForm> {
         Get.toNamed(AppLink.login);
       } else {
         Get.snackbar(
-          '❌ Reset Failed',
+          'Reset Failed',
           'Failed to reset password. Please try again.',
           backgroundColor: Colors.red.shade600,
           colorText: Colors.white,
@@ -270,11 +268,11 @@ class _ResetFormState extends State<ResetForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Forgot Password?', style: ThemeText.title2),
-          SizedBox(height: spacingUnit(1)),
+          const Text('Forgot Password?', style: TravelloTheme.title2),
+          const SizedBox(height: 8),
           Text(
             'Enter your email address and we\'ll send you a verification code',
-            style: ThemeText.headline
+            style: TravelloTheme.headline
                 .copyWith(color: colorScheme.onSurfaceVariant),
           ),
           const VSpace(),
@@ -306,7 +304,7 @@ class _ResetFormState extends State<ResetForm> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('SEND CODE', style: ThemeText.subtitle),
+                  : const Text('SEND CODE', style: TravelloTheme.subtitle),
             ),
           ),
           const VSpaceBig(),
@@ -319,12 +317,12 @@ class _ResetFormState extends State<ResetForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Verification Code', style: ThemeText.title2),
-        SizedBox(height: spacingUnit(1)),
+        const Text('Verification Code', style: TravelloTheme.title2),
+        const SizedBox(height: 8),
         Text(
           'Enter the 6-digit code sent to\n${_emailController.text}',
-          style:
-              ThemeText.headline.copyWith(color: colorScheme.onSurfaceVariant),
+          style: TravelloTheme.headline
+              .copyWith(color: colorScheme.onSurfaceVariant),
         ),
         const VSpace(),
         Row(
@@ -339,7 +337,7 @@ class _ResetFormState extends State<ResetForm> {
                 textAlign: TextAlign.center,
                 keyboardType: TextInputType.number,
                 maxLength: 1,
-                style: ThemeText.title2,
+                style: TravelloTheme.title2,
                 decoration: InputDecoration(
                   counterText: '',
                   filled: true,
@@ -375,7 +373,7 @@ class _ResetFormState extends State<ResetForm> {
               if (!_canResend)
                 Text(
                   'Resend code in $_remainingSeconds seconds',
-                  style: ThemeText.caption
+                  style: TravelloTheme.caption
                       .copyWith(color: colorScheme.onSurfaceVariant),
                 ),
               if (_canResend)
@@ -389,7 +387,7 @@ class _ResetFormState extends State<ResetForm> {
                   },
                   child: Text(
                     'Resend Code',
-                    style: ThemeText.subtitle.copyWith(
+                    style: TravelloTheme.subtitle.copyWith(
                       color: colorScheme.primary,
                       fontWeight: FontWeight.bold,
                     ),
@@ -413,7 +411,7 @@ class _ResetFormState extends State<ResetForm> {
               });
             },
             style: ThemeButton.btnBig,
-            child: const Text('CHANGE EMAIL', style: ThemeText.subtitle),
+            child: const Text('CHANGE EMAIL', style: TravelloTheme.subtitle),
           ),
         ),
         const VSpaceBig(),
@@ -427,11 +425,11 @@ class _ResetFormState extends State<ResetForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Create New Password', style: ThemeText.title2),
-          SizedBox(height: spacingUnit(1)),
+          const Text('Create New Password', style: TravelloTheme.title2),
+          const SizedBox(height: 8),
           Text(
             'Your new password must be different from previously used passwords',
-            style: ThemeText.headline
+            style: TravelloTheme.headline
                 .copyWith(color: colorScheme.onSurfaceVariant),
           ),
           const VSpace(),
@@ -501,7 +499,7 @@ class _ResetFormState extends State<ResetForm> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('RESET PASSWORD', style: ThemeText.subtitle),
+                  : const Text('RESET PASSWORD', style: TravelloTheme.subtitle),
             ),
           ),
           const VSpaceBig(),

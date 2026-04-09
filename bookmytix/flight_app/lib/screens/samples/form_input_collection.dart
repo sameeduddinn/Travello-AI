@@ -1,11 +1,10 @@
 import 'package:flight_app/models/list_item.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/picker.dart';
 import 'package:flight_app/widgets/app_button/back_icon_button.dart';
 import 'package:flight_app/widgets/app_input/app_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FormInputCollection extends StatefulWidget {
   const FormInputCollection({super.key});
@@ -90,13 +89,13 @@ class _FormInputCollectionState extends State<FormInputCollection> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Form Input Collection', style: ThemeText.subtitle,),
+        title: const Text('Form Input Collection', style: TravelloTheme.subtitle,),
         centerTitle: true,
         leading: BackIconButton(onTap: () {
           Get.back();
         }),
       ),
-      body: ListView(padding: EdgeInsets.all(spacingUnit(2)), children: [
+      body: ListView(padding: const EdgeInsets.all(16), children: [
         AppTextField(
           label: 'Text Field',
           onChanged: (_) => {},

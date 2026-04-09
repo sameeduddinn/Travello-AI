@@ -1,12 +1,8 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
 import 'package:flight_app/widgets/app_input/app_textfield.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FilterDate extends StatefulWidget {
   const FilterDate({super.key});
@@ -45,8 +41,8 @@ class _FilterDateState extends State<FilterDate> {
           );
         },
         child: Container(
-          margin: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
-          padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             borderRadius: ThemeRadius.medium,
             color: colorScheme(context).outline.withValues(alpha: 0.5)
@@ -57,22 +53,22 @@ class _FilterDateState extends State<FilterDate> {
               child: ListTile(
                 title: Row(children: [
                   Icon(Icons.calendar_month, color: colorScheme(context).onSurfaceVariant, size: 12),
-                  Text(' Date from', style: ThemeText.caption.copyWith(color: colorScheme(context).onSurfaceVariant))
+                  Text(' Date from', style: TravelloTheme.caption.copyWith(color: colorScheme(context).onSurfaceVariant))
                 ]),
                 contentPadding: const EdgeInsets.all(0),
-                subtitle: Text('22 May 2024', style: ThemeText.paragraph.copyWith(color: colorScheme(context).onSurface)),
+                subtitle: Text('22 May 2024', style: TravelloTheme.paragraph.copyWith(color: colorScheme(context).onSurface)),
               ),
             ),
-            Expanded(child: Container(alignment: Alignment.center, child: const Text('-', style: ThemeText.subtitle2,))),
+            Expanded(child: Container(alignment: Alignment.center, child: const Text('-', style: TravelloTheme.subtitle2,))),
             SizedBox(
               width: 120,
               child: ListTile(
                 title: Row(children: [
                   Icon(Icons.calendar_month, color: colorScheme(context).onSurfaceVariant, size: 12),
-                  Text(' Date to', style: ThemeText.caption.copyWith(color: colorScheme(context).onSurfaceVariant))
+                  Text(' Date to', style: TravelloTheme.caption.copyWith(color: colorScheme(context).onSurfaceVariant))
                 ]),
                 contentPadding: const EdgeInsets.all(0),
-                subtitle: Text('30 May 2024', style: ThemeText.paragraph.copyWith(color: colorScheme(context).onSurface)),
+                subtitle: Text('30 May 2024', style: TravelloTheme.paragraph.copyWith(color: colorScheme(context).onSurface)),
               ),
             ),
           ]),
@@ -91,13 +87,13 @@ class _FilterDateState extends State<FilterDate> {
             int index = entry.key;
 
             return Padding(
-              padding: EdgeInsets.only(left: index == 0 ? spacingUnit(1) : 0, right: spacingUnit(1)),
+              padding: EdgeInsets.only(left: index == 0 ? 8 : 0, right: 8),
               child: FilledButton(
                 onPressed: () {
                   setTag(item);
                 },
                 style: _tagFilter == item ? selectedStyle : buttonStyle,
-                child: Text(item, style: ThemeText.caption)
+                child: Text(item, style: TravelloTheme.caption)
               ),
             );
           }).toList()
@@ -140,16 +136,16 @@ class _SettingDatePickerState extends State<SettingDatePicker> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(children: [
         const GrabberIcon(),
         const VSpace(),
         /// Title
         Padding(
-          padding: EdgeInsets.only(
-            bottom: spacingUnit(2),
+          padding: const EdgeInsets.only(
+            bottom: 16,
           ),
-          child: Text('Select Date Range', textAlign: TextAlign.center, style: ThemeText.title2.copyWith(fontWeight: FontWeight.bold)),
+          child: Text('Select Date Range', textAlign: TextAlign.center, style: TravelloTheme.title2.copyWith(fontWeight: FontWeight.bold)),
         ),
         const VSpaceShort(),
       
@@ -189,7 +185,7 @@ class _SettingDatePickerState extends State<SettingDatePicker> {
               child: const Text('DISCARD'),
             ),
           ),
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           Expanded(
             flex: 1,
             child: FilledButton(

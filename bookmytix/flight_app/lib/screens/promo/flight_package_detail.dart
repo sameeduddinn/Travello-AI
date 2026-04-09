@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/models/flight_package.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
 import 'package:flight_app/utils/no_data.dart';
@@ -12,6 +11,7 @@ import 'package:flight_app/widgets/cards/package_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 const _gold = Color(0xFFD4AF37);
 const _goldLight = Color(0xFFFEF9EC);
@@ -168,8 +168,8 @@ class _PromoDetailState extends State<PromoDetail> {
                 if (!_isGuestMode)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                          spacingUnit(2), spacingUnit(2), spacingUnit(2), 0),
+                      padding: const EdgeInsets.fromLTRB(
+                          16, 16, 16, 0),
                       child: _buildCityBanner(),
                     ),
                   ),
@@ -177,8 +177,8 @@ class _PromoDetailState extends State<PromoDetail> {
                 // -- Stats row ---------------------------------------------
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                        spacingUnit(2), spacingUnit(2), spacingUnit(2), 0),
+                    padding: const EdgeInsets.fromLTRB(
+                        16, 16, 16, 0),
                     child: _buildStatsRow(),
                   ),
                 ),
@@ -187,7 +187,7 @@ class _PromoDetailState extends State<PromoDetail> {
                 _filtered.isEmpty
                     ? SliverFillRemaining(child: _buildEmpty())
                     : SliverPadding(
-                        padding: EdgeInsets.all(spacingUnit(2)),
+                        padding: const EdgeInsets.all(16),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
@@ -203,7 +203,7 @@ class _PromoDetailState extends State<PromoDetail> {
 
                               return Padding(
                                 padding:
-                                    EdgeInsets.only(bottom: spacingUnit(2)),
+                                    const EdgeInsets.only(bottom: 16),
                                 child: _FlightPackageCardItem(
                                   package: item,
                                   dateStr: dateStr,
@@ -230,8 +230,8 @@ class _PromoDetailState extends State<PromoDetail> {
 
   Widget _buildCityBanner() {
     return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(2), vertical: spacingUnit(1.2)),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 16, vertical: 9.6),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFD4AF37), Color(0xFFB8935C)],
@@ -242,7 +242,7 @@ class _PromoDetailState extends State<PromoDetail> {
       ),
       child: Row(children: [
         const Icon(Icons.location_on, color: Colors.white, size: 18),
-        SizedBox(width: spacingUnit(1)),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
             'Showing packages departing from $_userOriginCityName',
@@ -257,13 +257,13 @@ class _PromoDetailState extends State<PromoDetail> {
   Widget _buildFilterBar() {
     return Container(
       color: _gold,
-      padding: EdgeInsets.fromLTRB(
-          spacingUnit(2), 0, spacingUnit(2), spacingUnit(1.5)),
+      padding: const EdgeInsets.fromLTRB(
+          16, 0, 16, 12),
       child: Row(children: [
         _filterChip('All'),
-        SizedBox(width: spacingUnit(1)),
+        const SizedBox(width: 8),
         _filterChip('One-Way'),
-        SizedBox(width: spacingUnit(1)),
+        const SizedBox(width: 8),
         _filterChip('Round-Trip'),
       ]),
     );
@@ -312,8 +312,8 @@ class _PromoDetailState extends State<PromoDetail> {
     final roundTrip = base.where((p) => p.roundTrip).length;
 
     return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(2), vertical: spacingUnit(1.5)),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),

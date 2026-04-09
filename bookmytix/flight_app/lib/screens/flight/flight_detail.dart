@@ -5,10 +5,6 @@ import 'package:flight_app/models/plane.dart';
 import 'package:flight_app/models/trip.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/alert_info/alert_info.dart';
 import 'package:flight_app/widgets/app_button/back_icon_button.dart';
 import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
@@ -21,6 +17,7 @@ import 'package:flight_app/widgets/flight/flight_summary_wide.dart';
 import 'package:flight_app/widgets/flight/package_options.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightDetail extends StatefulWidget {
   const FlightDetail({super.key});
@@ -65,11 +62,11 @@ class _FlightDetailState extends State<FlightDetail> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: colorScheme(context).primaryContainer,
+        backgroundColor: TravelloTheme.primaryMainContainer,
         leading: BackIconButton(onTap: () {
           Get.back();
         }),
-        title: const Text('Flight Detail', style: ThemeText.subtitle),
+        title: const Text('Flight Detail', style: TravelloTheme.subtitle),
         actions: [
           IconButton(
               onPressed: () {
@@ -87,7 +84,7 @@ class _FlightDetailState extends State<FlightDetail> {
             alignment: Alignment.bottomCenter,
             width: double.infinity,
             height: 100,
-            color: colorScheme(context).primaryContainer,
+            color: TravelloTheme.primaryMainContainer,
           ),
 
           /// DECORATION ROUNDED
@@ -96,7 +93,7 @@ class _FlightDetailState extends State<FlightDetail> {
             left: -10,
             child: CustomPaint(
               painter: OvalShape(
-                  color: colorScheme(context).surfaceContainerLowest,
+                  color: TravelloTheme.paperLightContainerLowest,
                   width: MediaQuery.of(context).size.width + 20),
             ),
           ),
@@ -134,9 +131,9 @@ class _FlightDetailState extends State<FlightDetail> {
               },
             ),
             const VSpace(),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
-              child: const AlertInfo(
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: AlertInfo(
                   type: AlertType.warning,
                   text:
                       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis congue euismod elit'),
@@ -149,9 +146,9 @@ class _FlightDetailState extends State<FlightDetail> {
         elevation: 20,
         shadowColor: Colors.black,
         height: 80,
-        color: colorScheme(context).surface,
-        padding: EdgeInsets.symmetric(
-            horizontal: spacingUnit(2), vertical: spacingUnit(1)),
+        color: TravelloTheme.paperLight,
+        padding: const EdgeInsets.symmetric(
+            horizontal: 16, vertical: 8),
         child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -165,19 +162,19 @@ class _FlightDetailState extends State<FlightDetail> {
                 children: [
                   Text('\$$price',
                       textAlign: TextAlign.end,
-                      style: ThemeText.headline.copyWith(
+                      style: TravelloTheme.headline.copyWith(
                           color: colorScheme(context).onSurfaceVariant,
                           decoration: TextDecoration.lineThrough,
                           height: 1)),
                   Text('\$$_finalPrice',
                       textAlign: TextAlign.end,
-                      style: ThemeText.title.copyWith(
-                          color: colorScheme(context).primary,
+                      style: TravelloTheme.title.copyWith(
+                          color: TravelloTheme.primaryMain,
                           height: 1,
                           fontWeight: FontWeight.bold)),
                 ],
               ),
-              SizedBox(width: spacingUnit(3)),
+              const SizedBox(width: 24),
               Expanded(
                 child: SizedBox(
                   height: 50,
@@ -194,7 +191,7 @@ class _FlightDetailState extends State<FlightDetail> {
                       },
                       style: ThemeButton.btnBig.merge(ThemeButton.primary),
                       child:
-                          const Text('BOOK NOW', style: ThemeText.subtitle2)),
+                          const Text('BOOK NOW', style: TravelloTheme.subtitle2)),
                 ),
               )
             ]),

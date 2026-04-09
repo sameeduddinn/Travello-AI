@@ -1,9 +1,8 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/support_message_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class MessageForm extends StatefulWidget {
   const MessageForm({super.key});
@@ -76,7 +75,7 @@ class _MessageFormState extends State<MessageForm> {
     final cs = Theme.of(context).colorScheme;
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       child: Form(
         key: _formKey,
         child: Column(
@@ -84,18 +83,18 @@ class _MessageFormState extends State<MessageForm> {
           children: [
             // ── Info banner ────────────────────────────────────────────
             Container(
-              padding: EdgeInsets.all(spacingUnit(1.5)),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: ThemePalette.primaryMain.withValues(alpha: 0.08),
+                color: TravelloTheme.primaryMain.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: ThemePalette.primaryMain.withValues(alpha: 0.25)),
+                    color: TravelloTheme.primaryMain.withValues(alpha: 0.25)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.support_agent_rounded,
-                      color: ThemePalette.primaryMain, size: 22),
+                  const Icon(Icons.support_agent_rounded,
+                      color: TravelloTheme.primaryMain, size: 22),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -109,7 +108,7 @@ class _MessageFormState extends State<MessageForm> {
                 ],
               ),
             ),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
 
             // ── Topic dropdown ────────────────────────────────────────
             const _FieldLabel('Topic *'),
@@ -120,8 +119,8 @@ class _MessageFormState extends State<MessageForm> {
                   cs, Icons.category_outlined, 'Select a topic'),
               dropdownColor: cs.surface,
               borderRadius: BorderRadius.circular(12),
-              icon: Icon(Icons.keyboard_arrow_down_rounded,
-                  color: ThemePalette.primaryMain),
+              icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                  color: TravelloTheme.primaryMain),
               items: _topics
                   .map((t) => DropdownMenuItem(
                       value: t,
@@ -131,7 +130,7 @@ class _MessageFormState extends State<MessageForm> {
               onChanged: (v) => setState(() => _selectedTopic = v),
               validator: (v) => v == null ? 'Please select a topic' : null,
             ),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
 
             // ── Subject ────────────────────────────────────────────────
             const _FieldLabel('Subject *'),
@@ -146,7 +145,7 @@ class _MessageFormState extends State<MessageForm> {
                   ? 'Subject is required'
                   : null,
             ),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
 
             // ── Description ────────────────────────────────────────────
             const _FieldLabel('Message *'),
@@ -162,7 +161,7 @@ class _MessageFormState extends State<MessageForm> {
                   ? 'Please write at least 10 characters'
                   : null,
             ),
-            SizedBox(height: spacingUnit(2.5)),
+            const SizedBox(height: 20),
 
             // ── Submit button ──────────────────────────────────────────
             SizedBox(
@@ -171,7 +170,7 @@ class _MessageFormState extends State<MessageForm> {
               child: FilledButton.icon(
                 onPressed: _isSending ? null : _send,
                 style: FilledButton.styleFrom(
-                  backgroundColor: ThemePalette.primaryMain,
+                  backgroundColor: TravelloTheme.primaryMain,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.12),
                   shape: RoundedRectangleBorder(
@@ -192,7 +191,7 @@ class _MessageFormState extends State<MessageForm> {
                         letterSpacing: 0.5)),
               ),
             ),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             Center(
               child: Text(
                 'Your message will appear in Updates → Messages',
@@ -212,7 +211,7 @@ class _MessageFormState extends State<MessageForm> {
       hintStyle:
           TextStyle(color: cs.onSurface.withValues(alpha: 0.35), fontSize: 13),
       prefixIcon: Icon(icon,
-          size: 20, color: ThemePalette.primaryMain.withValues(alpha: 0.8)),
+          size: 20, color: TravelloTheme.primaryMain.withValues(alpha: 0.8)),
       filled: true,
       fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.45),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -226,7 +225,7 @@ class _MessageFormState extends State<MessageForm> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: ThemePalette.primaryMain, width: 1.5),
+        borderSide: const BorderSide(color: TravelloTheme.primaryMain, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

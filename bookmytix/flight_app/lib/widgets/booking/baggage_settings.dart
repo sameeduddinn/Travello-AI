@@ -1,11 +1,9 @@
 import 'package:flight_app/widgets/app_input/app_input_box.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
 import 'package:flight_app/widgets/app_input/app_input_number.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class BaggageSettings extends StatelessWidget {
   const BaggageSettings({
@@ -22,7 +20,7 @@ class BaggageSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       child: Wrap(children: [
         Column(children: [
           const GrabberIcon(),
@@ -30,7 +28,7 @@ class BaggageSettings extends StatelessWidget {
           const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(Icons.home_repair_service, size: 22),
             SizedBox(width: 8,),
-            Text('Adjust Baggage', style: ThemeText.subtitle2)
+            Text('Adjust Baggage', style: TravelloTheme.subtitle2)
           ],),
           const VSpaceShort(),
           AppInputBox(content: Row(children: [
@@ -38,10 +36,10 @@ class BaggageSettings extends StatelessWidget {
               contentPadding: EdgeInsets.all(0),
               minTileHeight: 0,
               minVerticalPadding: 0,
-              title: Text('Baggages', style: ThemeText.paragraph),
-              subtitle: Text('\$100/10Kg (Maximum 80Kg)', style: ThemeText.caption,),
+              title: Text('Baggages', style: TravelloTheme.paragraph),
+              subtitle: Text('\$100/10Kg (Maximum 80Kg)', style: TravelloTheme.caption,),
             )),
-            SizedBox(width: spacingUnit(1)),
+            const SizedBox(width: 8),
             AppInputNumber(
               onAdd: () {
                 if (baggageGroup[index] >= 80) {
@@ -65,7 +63,7 @@ class BaggageSettings extends StatelessWidget {
           ])),
           const VSpaceShort(),
           Padding(
-            padding: EdgeInsets.all(spacingUnit(1)),
+            padding: const EdgeInsets.all(8),
             child: SizedBox(
               width: double.infinity,
               child: FilledButton(
@@ -73,7 +71,7 @@ class BaggageSettings extends StatelessWidget {
                   Get.back();
                 },
                 style: ThemeButton.btnBig.merge(ThemeButton.tonalPrimary(context)),
-                child: Text('Done'.toUpperCase(), style: ThemeText.subtitle)
+                child: Text('Done'.toUpperCase(), style: TravelloTheme.subtitle)
               ),
             )
           ),

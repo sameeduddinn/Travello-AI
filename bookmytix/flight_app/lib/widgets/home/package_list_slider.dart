@@ -3,14 +3,13 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/wishlist_service.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/models/flight_package.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/cards/package_card.dart';
 import 'package:flight_app/widgets/title/title_action.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PackageListSlider extends StatefulWidget {
   const PackageListSlider({super.key});
@@ -212,11 +211,11 @@ class _PackageListSliderState extends State<PackageListSlider> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return SizedBox(
+      return const SizedBox(
         height: 220,
         child: Center(
           child: CircularProgressIndicator(
-            color: colorScheme(context).primary,
+            color: TravelloTheme.primaryMain,
           ),
         ),
       );
@@ -227,11 +226,11 @@ class _PackageListSliderState extends State<PackageListSlider> {
     // Show message if no packages from user's city
     if (packageList.isEmpty) {
       return Padding(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         child: Container(
-          padding: EdgeInsets.all(spacingUnit(3)),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: colorScheme(context).surfaceContainerHighest,
+            color: TravelloTheme.paperLightContainerHighest,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -239,9 +238,9 @@ class _PackageListSliderState extends State<PackageListSlider> {
               Icon(
                 Icons.flight_takeoff_outlined,
                 size: 48,
-                color: colorScheme(context).primary.withValues(alpha: 0.5),
+                color: TravelloTheme.primaryMain.withValues(alpha: 0.5),
               ),
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
               Text(
                 'No featured packages from $_userOriginCityName yet',
                 style: TextStyle(
@@ -249,7 +248,7 @@ class _PackageListSliderState extends State<PackageListSlider> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: spacingUnit(0.5)),
+              const SizedBox(height: 4),
               Text(
                 'Search for flights to explore all available routes',
                 style: TextStyle(
@@ -273,7 +272,7 @@ class _PackageListSliderState extends State<PackageListSlider> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Padding(
         padding: EdgeInsets.symmetric(
-            horizontal: isDesktop ? spacingUnit(8) : spacingUnit(2)),
+            horizontal: isDesktop ? spacingUnit(8) : 16),
         child: TitleAction(
             title: 'Featured Packages',
             textAction: 'See All',
@@ -281,7 +280,7 @@ class _PackageListSliderState extends State<PackageListSlider> {
               Get.toNamed(AppLink.promoDetail);
             }),
       ),
-      SizedBox(height: spacingUnit(2)),
+      const SizedBox(height: 16),
       SizedBox(
         width: double.infinity,
         height: cardHeight,
@@ -294,7 +293,7 @@ class _PackageListSliderState extends State<PackageListSlider> {
                   physics: const ClampingScrollPhysics(),
                   scrollDirection: Axis.horizontal,
                   padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? spacingUnit(8) : spacingUnit(2)),
+                      horizontal: isDesktop ? spacingUnit(8) : 16),
                   itemCount: packageList.length,
                   itemBuilder: ((context, index) {
                     FlightPackage item = packageList[index];
@@ -320,7 +319,7 @@ class _PackageListSliderState extends State<PackageListSlider> {
                       child: SizedBox(
                           width: cardWidth,
                           child: Padding(
-                            padding: EdgeInsets.only(right: spacingUnit(2)),
+                            padding: const EdgeInsets.only(right: 16),
                             child: PackageCard(
                                 image: item.img,
                                 label: item.label!,
@@ -348,7 +347,7 @@ class _PackageListSliderState extends State<PackageListSlider> {
                 top: 80,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: colorScheme(context).surface.withValues(alpha: 0.95),
+                    color: TravelloTheme.paperLight.withValues(alpha: 0.95),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -361,9 +360,9 @@ class _PackageListSliderState extends State<PackageListSlider> {
                   ),
                   child: IconButton(
                     onPressed: _scrollLeft,
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.arrow_back_ios_new,
-                      color: colorScheme(context).primary,
+                      color: TravelloTheme.primaryMain,
                       size: 20,
                     ),
                   ),
@@ -374,7 +373,7 @@ class _PackageListSliderState extends State<PackageListSlider> {
                 top: 80,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: colorScheme(context).surface.withValues(alpha: 0.95),
+                    color: TravelloTheme.paperLight.withValues(alpha: 0.95),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -387,9 +386,9 @@ class _PackageListSliderState extends State<PackageListSlider> {
                   ),
                   child: IconButton(
                     onPressed: _scrollRight,
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.arrow_forward_ios,
-                      color: colorScheme(context).primary,
+                      color: TravelloTheme.primaryMain,
                       size: 20,
                     ),
                   ),

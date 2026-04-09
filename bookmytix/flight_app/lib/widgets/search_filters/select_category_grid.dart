@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/models/category.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class SelectCategoryGrid extends StatelessWidget {
   const SelectCategoryGrid({super.key});
@@ -12,13 +10,13 @@ class SelectCategoryGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Padding(
-        padding: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
-        child: Text('Category Search', style: ThemeText.subtitle.copyWith(fontWeight: FontWeight.bold)),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Text('Category Search', style: TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.bold)),
       ),
       GridView.builder(
         shrinkWrap: true,
         physics: const ClampingScrollPhysics(),
-        padding: EdgeInsets.all(spacingUnit(1)),
+        padding: const EdgeInsets.all(8),
         itemCount: categoryList.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
@@ -38,7 +36,7 @@ class SelectCategoryGrid extends StatelessWidget {
                 color: item.color.withValues(alpha: 0.1)
               ),
               child: Padding(
-                padding: EdgeInsets.all(spacingUnit(1)),
+                padding: const EdgeInsets.all(8),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
                   Expanded(child: Text(item.name, style: TextStyle(fontWeight: FontWeight.bold, color: item.color))),
                   Image.asset(item.image, fit: BoxFit.contain, height: 30,)

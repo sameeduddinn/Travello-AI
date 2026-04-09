@@ -1,8 +1,6 @@
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/chat.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ChatInput extends StatefulWidget {
   const ChatInput({
@@ -47,15 +45,15 @@ class _ChatInputState extends State<ChatInput> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(
-        top: spacingUnit(1),
-        left: spacingUnit(1),
-        right: spacingUnit(1),
-        bottom: spacingUnit(3)
+      padding: const EdgeInsets.only(
+        top: 8,
+        left: 8,
+        right: 8,
+        bottom: 24
       ),
       height: 80,
       decoration: BoxDecoration(
-        color: colorScheme(context).surfaceContainerHighest,
+        color: TravelloTheme.paperLightContainerHighest,
       ),
       child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
         Expanded(
@@ -83,7 +81,7 @@ class _ChatInputState extends State<ChatInput> {
           },
           icon: const Icon(Icons.send, size: 24, color: Colors.white,),
           style: IconButton.styleFrom(
-            backgroundColor: ThemePalette.primaryMain
+            backgroundColor: TravelloTheme.primaryMain
           )
         )
       ]),

@@ -1,4 +1,3 @@
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/custom_tooltip.dart';
 import 'package:flight_app/widgets/bottom_navigation/bottom_nav_menu.dart';
 import 'package:flight_app/widgets/home/city_destinations/city_destinations_main.dart';
@@ -13,6 +12,7 @@ import 'package:flight_app/screens/home_railway.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_tooltip/overlay_tooltip.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -111,7 +111,7 @@ class _HomeState extends State<Home> {
               OverlayTooltipItem(
                   displayIndex: 1,
                   tooltip: (controller) => Padding(
-                        padding: EdgeInsets.all(spacingUnit(1)),
+                        padding: const EdgeInsets.all(8),
                         child: MTooltip(
                             title: 'Explore The Most Popular Places',
                             controller: controller),

@@ -1,8 +1,7 @@
 import 'package:flight_app/constants/image_api.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/decorations/rounded_deco_main.dart';
 import 'package:flutter/material.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class HomeBanner extends StatelessWidget {
   const HomeBanner({super.key});
@@ -15,7 +14,7 @@ class HomeBanner extends StatelessWidget {
           height: 450,
           width: MediaQuery.of(context).size.width,
           alignment: Alignment.center,
-          padding: EdgeInsets.all(spacingUnit(3)),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             image: DecorationImage(
               image: AssetImage(ImgApi.homeBanner),
@@ -40,10 +39,10 @@ class HomeBanner extends StatelessWidget {
             child: RoundedDecoMain(
               height: 70,
               bgDecoration: BoxDecoration(
-                color: colorScheme(context).surfaceContainerLowest,
+                color: TravelloTheme.paperLightContainerLowest,
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme(context).surfaceContainerLowest,
+                    color: TravelloTheme.paperLightContainerLowest,
                     blurRadius: 0.0,
                     spreadRadius: 0.0,
                     offset: const Offset(0, 2),

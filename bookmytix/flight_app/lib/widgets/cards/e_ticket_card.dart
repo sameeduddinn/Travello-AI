@@ -6,12 +6,9 @@ import 'package:flight_app/widgets/decorations/cut_deco.dart';
 import 'package:flight_app/widgets/decorations/dashed_border.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ETicketCard extends StatelessWidget {
   const ETicketCard({
@@ -37,10 +34,10 @@ class ETicketCard extends StatelessWidget {
 
     final User passengger = passengerList[2];
 
-    final TextStyle textBold = ThemeText.paragraph.copyWith(fontWeight: FontWeight.bold, color: Colors.black);
-    final TextStyle caption = ThemeText.caption.copyWith(color: Colors.black);
-    final TextStyle paragraph = ThemeText.caption.copyWith(color: Colors.black);
-    final TextStyle captionGrey = ThemeText.caption.copyWith(color: Colors.grey.shade700);
+    final TextStyle textBold = TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold, color: Colors.black);
+    final TextStyle caption = TravelloTheme.caption.copyWith(color: Colors.black);
+    final TextStyle paragraph = TravelloTheme.caption.copyWith(color: Colors.black);
+    final TextStyle captionGrey = TravelloTheme.caption.copyWith(color: Colors.grey.shade700);
     final Color grey = Colors.grey.shade700;
 
     return SizedBox(
@@ -64,7 +61,7 @@ class ETicketCard extends StatelessWidget {
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: spacingUnit(1), vertical: spacingUnit(1)),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Row(children: [
                   Image.network(
                     plane.logo,
@@ -77,21 +74,21 @@ class ETicketCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                       borderRadius: ThemeRadius.small,
-                      color: colorScheme(context).surfaceDim
+                      color: TravelloTheme.paperLightDim
                     ),
-                    child: Text(plane.classType, style: ThemeText.paragraph),
+                    child: Text(plane.classType, style: TravelloTheme.paragraph),
                   ),
                 ]),
               ),
-              SizedBox(height: spacingUnit(1)),
-              Text('Booking Code:', style: ThemeText.subtitle.copyWith(color: Colors.black)),
+              const SizedBox(height: 8),
+              Text('Booking Code:', style: TravelloTheme.subtitle.copyWith(color: Colors.black)),
               Container(
-                padding: EdgeInsets.symmetric(vertical: spacingUnit(1), horizontal: spacingUnit(2)),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 decoration: BoxDecoration(
                   color: Colors.lightBlue[50],
                   borderRadius: ThemeRadius.medium,
                 ),
-                child: Text('A1234J', style: ThemeText.title.copyWith(color: Colors.black, fontWeight: FontWeight.bold,))
+                child: Text('A1234J', style: TravelloTheme.title.copyWith(color: Colors.black, fontWeight: FontWeight.bold,))
               ),
               const VSpace(),
               LayoutBuilder(
@@ -106,7 +103,7 @@ class ETicketCard extends StatelessWidget {
           /// THUMBNAIL AND DESCRIPTIONS
           Container(
             height: _height * 0.5,
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             constraints: BoxConstraints(
               maxWidth: _maxWidth
             ),
@@ -132,7 +129,7 @@ class ETicketCard extends StatelessWidget {
               ]),
               const VSpace(),
               Container(
-                padding: EdgeInsets.all(spacingUnit(1)),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.lightBlue[50],
                   borderRadius: ThemeRadius.medium
@@ -148,7 +145,7 @@ class ETicketCard extends StatelessWidget {
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            border: Border.all(color: colorScheme(context).primaryContainer, width: 1),
+                            border: Border.all(color: TravelloTheme.primaryMainContainer, width: 1),
                             shape: BoxShape.circle
                           ),
                         ),
@@ -157,7 +154,7 @@ class ETicketCard extends StatelessWidget {
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            border: Border.all(color: colorScheme(context).primaryContainer, width: 1),
+                            border: Border.all(color: TravelloTheme.primaryMainContainer, width: 1),
                             shape: BoxShape.circle
                           ),
                         ),
@@ -166,15 +163,15 @@ class ETicketCard extends StatelessWidget {
                     
                     /// FLIGHT DETAILS
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Row(crossAxisAlignment: CrossAxisAlignment.center, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                         SizedBox(
                           width: 80,
                           child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                            Text(from.name, overflow: TextOverflow.ellipsis, style: ThemeText.headline.copyWith(color: grey)),
+                            Text(from.name, overflow: TextOverflow.ellipsis, style: TravelloTheme.headline.copyWith(color: grey)),
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 1),
-                              child: Text(from.code, style: ThemeText.subtitle.copyWith(fontWeight: FontWeight.bold, color: Colors.black),),
+                              child: Text(from.code, style: TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.bold, color: Colors.black),),
                             ),
                             Text(DateFormat.yMMMMd().format(depart), style: captionGrey),
                             Text(DateFormat.jm().format(depart), style: captionGrey),
@@ -182,7 +179,7 @@ class ETicketCard extends StatelessWidget {
                         ),
                         Expanded(
                           child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.center, children: [
-                            Text(plane.code, overflow: TextOverflow.ellipsis, style: ThemeText.paragraph.copyWith(fontWeight: FontWeight.bold, color: grey),),
+                            Text(plane.code, overflow: TextOverflow.ellipsis, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold, color: grey),),
                             Padding(
                               padding: const EdgeInsets.only(left: 2, right: 2, bottom: 4),
                               child: Icon(CupertinoIcons.airplane, size: 24, color: grey),
@@ -193,10 +190,10 @@ class ETicketCard extends StatelessWidget {
                         SizedBox(
                           width: 80,
                           child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                            Text(to.name, style: ThemeText.headline.copyWith(color: grey)),
+                            Text(to.name, style: TravelloTheme.headline.copyWith(color: grey)),
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 1),
-                              child: Text(to.code, style: ThemeText.subtitle.copyWith(fontWeight: FontWeight.bold, color: Colors.black),),
+                              child: Text(to.code, style: TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.bold, color: Colors.black),),
                             ),
                             Text(DateFormat.yMMMMd().format(arrival), style: captionGrey),
                             Text(DateFormat.jm().format(arrival), style: captionGrey),
@@ -239,7 +236,7 @@ class ETicketCard extends StatelessWidget {
         Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: _maxWidth),
-            child: CutDeco(color: ThemePalette.primaryDark, radius: 20)
+            child: const CutDeco(color: TravelloTheme.primaryDark, radius: 20)
           )
         ),
       ]),

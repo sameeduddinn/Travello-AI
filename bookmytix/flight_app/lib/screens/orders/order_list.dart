@@ -1,14 +1,11 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/models/booking.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/booking/tag_filter.dart';
 import 'package:flight_app/widgets/booking/ticket_list.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class OrderList extends StatelessWidget {
   const OrderList({super.key});
@@ -27,10 +24,10 @@ class OrderList extends StatelessWidget {
             pinned: true,
             toolbarHeight: 100,
             centerTitle: false,
-            backgroundColor: colorScheme(context).primary,
+            backgroundColor: TravelloTheme.primaryMain,
             automaticallyImplyLeading: false,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: EdgeInsets.all(spacingUnit(2)),
+              titlePadding: const EdgeInsets.all(16),
               background: Image.asset(
                 ImgApi.myTicketBanner,
                 fit: BoxFit.cover,
@@ -44,14 +41,14 @@ class OrderList extends StatelessWidget {
                 children: [
                   /// INFO
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: spacingUnit(2), vertical: spacingUnit(1)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('My Tickets', style: ThemeText.title.copyWith(color: Colors.white)),
+                            Text('My Tickets', style: TravelloTheme.title.copyWith(color: Colors.white)),
                             SizedBox(
                               width: 32,
                               height: 32,
@@ -60,7 +57,7 @@ class OrderList extends StatelessWidget {
                                   Get.toNamed(AppLink.orderHistory);
                                 },
                                 style: ThemeButton.iconBtn(context),
-                                icon: Icon(Icons.history, color: colorScheme(context).primary, size: 24)
+                                icon: const Icon(Icons.history, color: TravelloTheme.primaryMain, size: 24)
                               ),
                             )
                           ],
@@ -68,7 +65,7 @@ class OrderList extends StatelessWidget {
                         Text(
                           'All your active tickets and waiting for payment',
                           textAlign: TextAlign.start,
-                          style: ThemeText.headline.copyWith(color: Colors.white)
+                          style: TravelloTheme.headline.copyWith(color: Colors.white)
                         ),
                       ],
                     ),
@@ -79,22 +76,22 @@ class OrderList extends StatelessWidget {
                     width: double.infinity,
                     height: 70,
                     decoration: BoxDecoration(
-                      color: colorScheme(context).surfaceContainerLowest,
+                      color: TravelloTheme.paperLightContainerLowest,
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(16),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: colorScheme(context).surfaceContainerLowest,
+                          color: TravelloTheme.paperLightContainerLowest,
                           offset: const Offset(0, 2),
                           blurRadius: 0,
                           spreadRadius: 0
                         )
                       ],
                     ),
-                    child: Padding(
-                      padding: EdgeInsets.only(top: spacingUnit(3), bottom: spacingUnit(2)),
-                      child: const TagFilter(),
+                    child: const Padding(
+                      padding: EdgeInsets.only(top: 24, bottom: 16),
+                      child: TagFilter(),
                     )
                   )
                 ],
@@ -106,10 +103,10 @@ class OrderList extends StatelessWidget {
           SliverToBoxAdapter(
             child: Column(
               children: [
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 TicketList(bookingList: bookingList.sublist(0, 2)),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: () {

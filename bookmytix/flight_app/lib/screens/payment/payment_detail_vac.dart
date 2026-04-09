@@ -4,14 +4,11 @@ import 'package:flight_app/widgets/payment/payment_guide.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_timer_countdown/flutter_timer_countdown.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/alert_info/alert_info.dart';
 import 'package:flight_app/widgets/app_input/app_input_box.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
 import 'package:flight_app/widgets/counter/counter_down.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PaymentDetailVac extends StatelessWidget {
   const PaymentDetailVac({super.key});
@@ -35,7 +32,7 @@ class PaymentDetailVac extends StatelessWidget {
             )
           ],
           centerTitle: true,
-          title: const Text('Payment', style: ThemeText.subtitle),
+          title: const Text('Payment', style: TravelloTheme.subtitle),
         ),
         body: Center(
           child: ConstrainedBox(
@@ -67,12 +64,12 @@ class PaymentDetailVac extends StatelessWidget {
               Expanded(
                 child: ListView(
                   shrinkWrap: true,
-                  padding: EdgeInsets.all(spacingUnit(2)),
+                  padding: const EdgeInsets.all(16),
                   children: [
                     PaperCard(
                         flat: true,
                         content: Padding(
-                          padding: EdgeInsets.all(spacingUnit(2)),
+                          padding: const EdgeInsets.all(16),
                           child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -88,9 +85,9 @@ class PaymentDetailVac extends StatelessWidget {
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text('098765432112345',
-                                          style: ThemeText.title.copyWith(
+                                          style: TravelloTheme.title.copyWith(
                                               fontWeight: FontWeight.bold)),
-                                      SizedBox(width: spacingUnit(1)),
+                                      const SizedBox(width: 8),
                                       IconButton(
                                           icon: const Icon(Icons.copy),
                                           onPressed: () {})
@@ -102,13 +99,13 @@ class PaymentDetailVac extends StatelessWidget {
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text('Total amount + tax 12%: ',
-                                          style: ThemeText.paragraph.copyWith(
+                                          style: TravelloTheme.paragraph.copyWith(
                                               color: colorScheme(context)
                                                   .onSurfaceVariant)),
                                       Text(
                                         '\$630',
-                                        style: ThemeText.title2.copyWith(
-                                            color: ThemePalette.primaryMain,
+                                        style: TravelloTheme.title2.copyWith(
+                                            color: TravelloTheme.primaryMain,
                                             fontWeight: FontWeight.bold),
                                       ),
                                     ]),
@@ -118,10 +115,10 @@ class PaymentDetailVac extends StatelessWidget {
                     AppInputBox(
                         content: ListTile(
                       contentPadding: const EdgeInsets.all(0),
-                      leading: Icon(Icons.help_outline,
-                          color: ThemePalette.primaryMain),
-                      title: Text('Need guide for this transfer method?',
-                          style: TextStyle(color: ThemePalette.primaryMain)),
+                      leading: const Icon(Icons.help_outline,
+                          color: TravelloTheme.primaryMain),
+                      title: const Text('Need guide for this transfer method?',
+                          style: TextStyle(color: TravelloTheme.primaryMain)),
                       trailing: const Icon(Icons.arrow_forward_ios),
                       onTap: () {
                         showModalBottomSheet<dynamic>(
@@ -139,26 +136,26 @@ class PaymentDetailVac extends StatelessWidget {
               /// ACTION BUTTON
               Padding(
                 padding: EdgeInsets.only(
-                    top: spacingUnit(1),
+                    top: 8,
                     bottom: spacingUnit(5),
-                    left: spacingUnit(2),
-                    right: spacingUnit(2)),
+                    left: 16,
+                    right: 16),
                 child: Column(
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       const Text(
                         'By continuing, you agree with the',
-                        style: ThemeText.caption,
+                        style: TravelloTheme.caption,
                       ),
                       InkWell(
                           onTap: () {
                             Get.toNamed(AppLink.terms);
                           },
                           child: Text(' Terms and Conditions',
-                              style: ThemeText.caption
-                                  .copyWith(color: ThemePalette.primaryMain))),
+                              style: TravelloTheme.caption
+                                  .copyWith(color: TravelloTheme.primaryMain))),
                     ]),
-                    SizedBox(height: spacingUnit(1)),
+                    const SizedBox(height: 8),
                     Row(
                       children: <Widget>[
                         Expanded(
@@ -170,7 +167,7 @@ class PaymentDetailVac extends StatelessWidget {
                                   .merge(ThemeButton.outlinedPrimary(context)),
                               child: const Text('BACK')),
                         ),
-                        SizedBox(width: spacingUnit(1)),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: FilledButton(
                               onPressed: () {

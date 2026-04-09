@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TitleIconCard extends StatelessWidget {
   const TitleIconCard({
@@ -24,8 +23,8 @@ class TitleIconCard extends StatelessWidget {
     return PaperCard(flat: flat, content: Column(children: [
       ListTile(
         leading: Icon(icon),
-        title: Text(title, style: ThemeText.title2),
-        subtitle: desc != null ? Text(desc!, style: ThemeText.paragraph,) : null,
+        title: Text(title, style: TravelloTheme.title2),
+        subtitle: desc != null ? Text(desc!, style: TravelloTheme.paragraph,) : null,
       ),
       const LineList(),
       content

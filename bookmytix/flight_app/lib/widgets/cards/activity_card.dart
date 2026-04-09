@@ -1,7 +1,5 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ActivityCard extends StatelessWidget {
   const ActivityCard({
@@ -22,8 +20,8 @@ class ActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding: EdgeInsets.only(
-        left: spacingUnit(2),
+      contentPadding: const EdgeInsets.only(
+        left: 16,
       ),
       leading: Container(
         width: 20,
@@ -33,16 +31,16 @@ class ActivityCard extends StatelessWidget {
           color: color,
           border: Border.all(
             width: 4,
-            color: colorScheme(context).surface
+            color: TravelloTheme.paperLight
           )
         ),
       ),
-      title: Text(time, style: ThemeText.caption.copyWith(fontWeight: FontWeight.bold)),
+      title: Text(time, style: TravelloTheme.caption.copyWith(fontWeight: FontWeight.bold)),
       subtitle: Row(
         children: [
           Icon(icon, color: color, size: 16),
           const SizedBox(width: 4),
-          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,  style: ThemeText.headline.copyWith(color: isHighlighted ? Colors.orange : colorScheme(context).onSurface)),
+          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,  style: TravelloTheme.headline.copyWith(color: isHighlighted ? Colors.orange : colorScheme(context).onSurface)),
         ],
       ),
     );

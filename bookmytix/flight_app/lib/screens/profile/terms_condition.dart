@@ -1,8 +1,6 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TermsCondition extends StatelessWidget {
   const TermsCondition({super.key});
@@ -15,37 +13,37 @@ class TermsCondition extends StatelessWidget {
           onPressed: () => Get.back(),
           icon: const Icon(Icons.arrow_back_ios_new),
         ),
-        title: const Text('Terms & Conditions', style: ThemeText.subtitle),
+        title: const Text('Terms & Conditions', style: TravelloTheme.subtitle),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(spacingUnit(3)),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Travello AI – Terms & Conditions',
-              style: ThemeText.title.copyWith(
-                color: ThemePalette.primaryDark,
+              style: TravelloTheme.title.copyWith(
+                color: TravelloTheme.primaryDark,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             Text(
               'Last Updated: March 2026',
-              style: ThemeText.caption.copyWith(color: Colors.grey),
+              style: TravelloTheme.caption.copyWith(color: Colors.grey),
             ),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
             Text(
               'Welcome to Travello AI, an AI-powered travel booking platform for Pakistan domestic travel services. By using our platform, you agree to these terms and conditions.',
-              style: ThemeText.paragraph.copyWith(
+              style: TravelloTheme.paragraph.copyWith(
                 height: 1.6,
                 color: Colors.grey.shade700,
               ),
             ),
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
             
             _buildSection(
               '1. About Travello AI',
@@ -309,26 +307,26 @@ class TermsCondition extends StatelessWidget {
               '• 9:00 AM - 9:00 PM for general inquiries',
             ),
             
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
             
             Container(
-              padding: EdgeInsets.all(spacingUnit(2)),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: ThemePalette.primaryLight.withOpacity(0.1),
+                color: TravelloTheme.primaryLight.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: ThemePalette.primaryMain.withOpacity(0.3)),
+                border: Border.all(color: TravelloTheme.primaryMain.withOpacity(0.3)),
               ),
               child: Text(
                 'By using Travello AI, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.',
-                style: ThemeText.paragraph.copyWith(
+                style: TravelloTheme.paragraph.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: ThemePalette.primaryDark,
+                  color: TravelloTheme.primaryDark,
                 ),
                 textAlign: TextAlign.center,
               ),
             ),
             
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -337,21 +335,21 @@ class TermsCondition extends StatelessWidget {
 
   Widget _buildSection(String title, String content) {
     return Padding(
-      padding: EdgeInsets.only(bottom: spacingUnit(3)),
+      padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: ThemeText.subtitle.copyWith(
+            style: TravelloTheme.subtitle.copyWith(
               fontWeight: FontWeight.bold,
-              color: ThemePalette.primaryDark,
+              color: TravelloTheme.primaryDark,
             ),
           ),
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
           Text(
             content,
-            style: ThemeText.paragraph.copyWith(
+            style: TravelloTheme.paragraph.copyWith(
               height: 1.6,
               color: Colors.grey.shade700,
             ),

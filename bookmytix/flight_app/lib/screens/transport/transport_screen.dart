@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/models/transport.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TransportScreen extends StatefulWidget {
   const TransportScreen({super.key});
@@ -49,24 +47,24 @@ class _TransportScreenState extends State<TransportScreen> {
           // Header Banner
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(spacingUnit(3)),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  colorScheme(context).primary,
-                  colorScheme(context).primary.withValues(alpha: 0.7),
+                  TravelloTheme.primaryMain,
+                  TravelloTheme.primaryMain.withValues(alpha: 0.7),
                 ],
               ),
             ),
-            child: Column(
+            child: const Column(
               children: [
-                const Icon(
+                Icon(
                   Icons.directions_car,
                   size: 48,
                   color: Colors.white,
                 ),
-                SizedBox(height: spacingUnit(1)),
-                const Text(
+                SizedBox(height: 8),
+                Text(
                   'Book Your Ride',
                   style: TextStyle(
                     fontSize: 24,
@@ -74,8 +72,8 @@ class _TransportScreenState extends State<TransportScreen> {
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: spacingUnit(0.5)),
-                const Text(
+                SizedBox(height: 4),
+                Text(
                   'Safe and reliable transport across Pakistan',
                   style: TextStyle(
                     fontSize: 14,
@@ -88,7 +86,7 @@ class _TransportScreenState extends State<TransportScreen> {
 
           // Search/Filter Panel
           Container(
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -109,7 +107,7 @@ class _TransportScreenState extends State<TransportScreen> {
                     children: PakistanTransport.getTransportTypes().map((type) {
                       final isSelected = _selectedType == type;
                       return Padding(
-                        padding: EdgeInsets.only(right: spacingUnit(1)),
+                        padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
                           label: Text(type),
                           selected: isSelected,
@@ -121,7 +119,7 @@ class _TransportScreenState extends State<TransportScreen> {
                               _loadTransports();
                             }
                           },
-                          selectedColor: colorScheme(context).primary,
+                          selectedColor: TravelloTheme.primaryMain,
                           labelStyle: TextStyle(
                             color: isSelected ? Colors.white : Colors.black87,
                             fontWeight: FontWeight.w600,
@@ -132,7 +130,7 @@ class _TransportScreenState extends State<TransportScreen> {
                   ),
                 ),
 
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // City and Passengers
                 Row(
@@ -162,12 +160,12 @@ class _TransportScreenState extends State<TransportScreen> {
                         },
                       ),
                     ),
-                    SizedBox(width: spacingUnit(2)),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Passengers', style: ThemeText.caption),
+                          const Text('Passengers', style: TravelloTheme.caption),
                           Container(
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.grey.shade300),
@@ -187,7 +185,7 @@ class _TransportScreenState extends State<TransportScreen> {
                                 ),
                                 Text(
                                   '$_passengers',
-                                  style: ThemeText.subtitle.copyWith(
+                                  style: TravelloTheme.subtitle.copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -207,7 +205,7 @@ class _TransportScreenState extends State<TransportScreen> {
                   ],
                 ),
 
-                SizedBox(height: spacingUnit(1.5)),
+                const SizedBox(height: 12),
 
                 // Distance Slider (for price estimation)
                 Column(
@@ -215,7 +213,7 @@ class _TransportScreenState extends State<TransportScreen> {
                   children: [
                     Text(
                       'Estimated Distance: ${_estimatedDistance.toStringAsFixed(1)} km',
-                      style: ThemeText.caption
+                      style: TravelloTheme.caption
                           .copyWith(fontWeight: FontWeight.w600),
                     ),
                     Slider(
@@ -262,10 +260,10 @@ class _TransportScreenState extends State<TransportScreen> {
                           size: 64,
                           color: Colors.grey.shade400,
                         ),
-                        SizedBox(height: spacingUnit(2)),
+                        const SizedBox(height: 16),
                         Text(
                           'No transport available',
-                          style: ThemeText.subtitle.copyWith(
+                          style: TravelloTheme.subtitle.copyWith(
                             color: Colors.grey.shade600,
                           ),
                         ),
@@ -273,7 +271,7 @@ class _TransportScreenState extends State<TransportScreen> {
                     ),
                   )
                 : ListView.builder(
-                    padding: EdgeInsets.all(spacingUnit(2)),
+                    padding: const EdgeInsets.all(16),
                     itemCount: _availableTransports.length,
                     itemBuilder: (context, index) {
                       final transport = _availableTransports[index];
@@ -293,7 +291,7 @@ class _TransportScreenState extends State<TransportScreen> {
             : transport.calculatePrice(_estimatedDistance);
 
     return Card(
-      margin: EdgeInsets.only(bottom: spacingUnit(2)),
+      margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -304,7 +302,7 @@ class _TransportScreenState extends State<TransportScreen> {
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: EdgeInsets.all(spacingUnit(2)),
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               // Vehicle Image
@@ -326,7 +324,7 @@ class _TransportScreenState extends State<TransportScreen> {
                 ),
               ),
 
-              SizedBox(width: spacingUnit(2)),
+              const SizedBox(width: 16),
 
               // Details
               Expanded(
@@ -336,29 +334,29 @@ class _TransportScreenState extends State<TransportScreen> {
                     // Name and Type
                     Text(
                       transport.name,
-                      style: ThemeText.subtitle.copyWith(
+                      style: TravelloTheme.subtitle.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
                       transport.vehicleModel,
-                      style: ThemeText.caption,
+                      style: TravelloTheme.caption,
                     ),
 
-                    SizedBox(height: spacingUnit(1)),
+                    const SizedBox(height: 8),
 
                     // Features Row
                     Row(
                       children: [
                         if (transport.isAC)
                           _buildFeatureChip(Icons.ac_unit, 'AC'),
-                        SizedBox(width: spacingUnit(0.5)),
+                        const SizedBox(width: 4),
                         _buildFeatureChip(
                           Icons.person,
                           '${transport.seatingCapacity}',
                         ),
                         if (transport.driverRating > 0) ...[
-                          SizedBox(width: spacingUnit(0.5)),
+                          const SizedBox(width: 4),
                           _buildFeatureChip(
                             Icons.star,
                             transport.driverRating.toString(),
@@ -367,7 +365,7 @@ class _TransportScreenState extends State<TransportScreen> {
                       ],
                     ),
 
-                    SizedBox(height: spacingUnit(1)),
+                    const SizedBox(height: 8),
 
                     // Price
                     Row(
@@ -379,10 +377,10 @@ class _TransportScreenState extends State<TransportScreen> {
                             children: [
                               Text(
                                 'PKR ${estimatedPrice.toStringAsFixed(0)}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: colorScheme(context).primary,
+                                  color: TravelloTheme.primaryMain,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -390,7 +388,7 @@ class _TransportScreenState extends State<TransportScreen> {
                                 Text(
                                   'PKR ${transport.pricePerKm}/km',
                                   style:
-                                      ThemeText.caption.copyWith(fontSize: 10),
+                                      TravelloTheme.caption.copyWith(fontSize: 10),
                                 ),
                             ],
                           ),
@@ -401,11 +399,11 @@ class _TransportScreenState extends State<TransportScreen> {
                             _showBookingDialog(transport, estimatedPrice);
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: colorScheme(context).primary,
+                            backgroundColor: TravelloTheme.primaryMain,
                             foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: spacingUnit(2),
-                              vertical: spacingUnit(1),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
                             ),
                           ),
                           child: const Text('Book'),
@@ -425,7 +423,7 @@ class _TransportScreenState extends State<TransportScreen> {
   Widget _buildFeatureChip(IconData icon, String label) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: spacingUnit(0.8),
+        horizontal: 6.4,
         vertical: spacingUnit(0.4),
       ),
       decoration: BoxDecoration(
@@ -467,7 +465,7 @@ class _TransportScreenState extends State<TransportScreen> {
                     prefixIcon: Icon(Icons.my_location),
                   ),
                 ),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
                 TextField(
                   controller: dropoffController,
                   decoration: const InputDecoration(
@@ -475,7 +473,7 @@ class _TransportScreenState extends State<TransportScreen> {
                     prefixIcon: Icon(Icons.location_on),
                   ),
                 ),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
                 TextField(
                   controller: phoneController,
                   keyboardType: TextInputType.phone,
@@ -484,11 +482,11 @@ class _TransportScreenState extends State<TransportScreen> {
                     prefixIcon: Icon(Icons.phone),
                   ),
                 ),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
                 Container(
-                  padding: EdgeInsets.all(spacingUnit(2)),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: colorScheme(context).primary.withValues(alpha: 0.1),
+                    color: TravelloTheme.primaryMain.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
@@ -499,18 +497,18 @@ class _TransportScreenState extends State<TransportScreen> {
                           const Text('Estimated Fare:'),
                           Text(
                             'PKR ${estimatedPrice.toStringAsFixed(0)}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: colorScheme(context).primary,
+                              color: TravelloTheme.primaryMain,
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: spacingUnit(0.5)),
+                      const SizedBox(height: 4),
                       Text(
                         'Actual fare may vary based on traffic and route',
-                        style: ThemeText.caption.copyWith(fontSize: 10),
+                        style: TravelloTheme.caption.copyWith(fontSize: 10),
                       ),
                     ],
                   ),
@@ -540,7 +538,7 @@ class _TransportScreenState extends State<TransportScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme(context).primary,
+                backgroundColor: TravelloTheme.primaryMain,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Confirm Booking'),

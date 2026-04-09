@@ -1,8 +1,7 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ContactList extends StatelessWidget {
   const ContactList({super.key});
@@ -23,22 +22,22 @@ class ContactList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       children: [
         // ── Header info ────────────────────────────────────────────────
         Container(
-          padding: EdgeInsets.all(spacingUnit(1.5)),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: ThemePalette.primaryMain.withValues(alpha: 0.08),
+            color: TravelloTheme.primaryMain.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: ThemePalette.primaryMain.withValues(alpha: 0.25)),
+                color: TravelloTheme.primaryMain.withValues(alpha: 0.25)),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.headset_mic_outlined,
-                  color: ThemePalette.primaryMain, size: 22),
+              const Icon(Icons.headset_mic_outlined,
+                  color: TravelloTheme.primaryMain, size: 22),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -55,7 +54,7 @@ class ContactList extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
 
         // ── Contact cards ──────────────────────────────────────────────
         _ContactCard(

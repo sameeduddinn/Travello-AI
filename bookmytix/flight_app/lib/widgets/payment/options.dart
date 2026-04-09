@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/expanded_section.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
 import 'package:flight_app/widgets/payment/bank_list.dart';
 import 'package:flight_app/widgets/payment/wallet_list.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PaymentOptions extends StatefulWidget {
   const PaymentOptions({super.key, required this.paymentMethod, required this.setPaymentMethod});
@@ -21,11 +19,11 @@ class _PaymentOptionsState extends State<PaymentOptions> {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: EdgeInsets.symmetric(horizontal: spacingUnit(1), vertical: spacingUnit(2)),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
       shrinkWrap: true,
       physics: const ClampingScrollPhysics(),
       children: [
-        const Text('Choose Payment Method', textAlign: TextAlign.center, style: ThemeText.subtitle),
+        const Text('Choose Payment Method', textAlign: TextAlign.center, style: TravelloTheme.subtitle),
         const VSpaceShort(),
         /// CREDIT CARD
         InkWell(
@@ -37,15 +35,15 @@ class _PaymentOptionsState extends State<PaymentOptions> {
             colouredBorder: widget.paymentMethod == 'credit-card',
             content: ListTile(
               leading: Icon(Icons.credit_card, size: 36, color: colorScheme(context).onPrimaryContainer),
-              title: const Text('Credit Card', style: ThemeText.subtitle),
-              subtitle: const Text('Payment with credit card', style: ThemeText.paragraph),
+              title: const Text('Credit Card', style: TravelloTheme.subtitle),
+              subtitle: const Text('Payment with credit card', style: TravelloTheme.paragraph),
               trailing: widget.paymentMethod == 'credit-card' ?
-                Icon(Icons.check_circle, color: ThemePalette.primaryMain)
+                const Icon(Icons.check_circle, color: TravelloTheme.primaryMain)
                 : Icon(Icons.circle_outlined, color: colorScheme(context).outline),
             )
           ),
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
 
         /// E-WALLET
         PaymentExpanded(
@@ -58,7 +56,7 @@ class _PaymentOptionsState extends State<PaymentOptions> {
           },
           child: const WalletList()
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
 
         /// VIRTUAL ACCOUNT
         PaymentExpanded(
@@ -71,7 +69,7 @@ class _PaymentOptionsState extends State<PaymentOptions> {
           },
           child: const BankList()
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
 
         /// TRANSFER BANK
         PaymentExpanded(
@@ -166,8 +164,8 @@ class _PaymentExpandedState extends State<PaymentExpanded> with SingleTickerProv
           children: [
             ListTile(
               leading: Icon(widget.icon, size: 36, color: colorScheme(context).onPrimaryContainer),
-              title: Text(widget.title, style: ThemeText.subtitle),
-              subtitle: Text(widget.subtitle, style: ThemeText.paragraph),
+              title: Text(widget.title, style: TravelloTheme.subtitle),
+              subtitle: Text(widget.subtitle, style: TravelloTheme.paragraph),
               trailing: RotationTransition(
                 turns: Tween(begin: 0.0, end: 0.25).animate(animation),
                 child: Icon(Icons.arrow_forward_ios_outlined, size: 24, color: colorScheme(context).onSurfaceVariant)

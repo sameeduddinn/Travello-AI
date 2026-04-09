@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 /// ✨ ENTERPRISE-GRADE DYNAMIC HERO SECTION
-/// Premium hero component with:
-/// - Dynamic background images
-/// - Smooth crossfade transitions
-/// - Dark gradient overlay (60% opacity)
-/// - Responsive typography
-/// - High contrast accessibility
+
 class HeroSection extends StatelessWidget {
   final String serviceType;
   final VoidCallback? onCtaTap;
@@ -32,7 +26,7 @@ class HeroSection extends StatelessWidget {
             const Color(0xFF0D1A0D).withValues(alpha: 0.72),
             const Color(0xFF1A3A1A).withValues(alpha: 0.45),
           ],
-          'accentColor': ThemePalette.primaryMain,
+          'accentColor': TravelloTheme.primaryMain,
         };
       case 'hotel':
         return {
@@ -44,7 +38,7 @@ class HeroSection extends StatelessWidget {
             const Color(0xFF1A0A00).withValues(alpha: 0.72),
             const Color(0xFF3D1F00).withValues(alpha: 0.45),
           ],
-          'accentColor': ThemePalette.primaryMain,
+          'accentColor': TravelloTheme.primaryMain,
         };
       case 'flight':
       default:
@@ -57,7 +51,7 @@ class HeroSection extends StatelessWidget {
             const Color(0xFF1A0E00).withValues(alpha: 0.72),
             const Color(0xFF3D2B00).withValues(alpha: 0.45),
           ],
-          'accentColor': ThemePalette.primaryMain,
+          'accentColor': TravelloTheme.primaryMain,
         };
     }
   }
@@ -125,9 +119,9 @@ class HeroSection extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            ThemePalette.primaryMain.withValues(alpha: 0.0),
-                            ThemePalette.primaryMain.withValues(alpha: 0.55),
-                            ThemePalette.primaryMain.withValues(alpha: 0.0),
+                            TravelloTheme.primaryMain.withValues(alpha: 0.0),
+                            TravelloTheme.primaryMain.withValues(alpha: 0.55),
+                            TravelloTheme.primaryMain.withValues(alpha: 0.0),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(2),
@@ -169,7 +163,7 @@ class HeroSection extends StatelessWidget {
                     ),
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // Subtitle
                   TweenAnimationBuilder<double>(
@@ -241,10 +235,10 @@ class HeroSection extends StatelessWidget {
           vertical: spacingUnit(isMobile ? 1.5 : 2),
         ),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: [
-              ThemePalette.primaryMain,
-              ThemePalette.primaryDark,
+              TravelloTheme.primaryMain,
+              TravelloTheme.primaryDark,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -252,7 +246,7 @@ class HeroSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: ThemePalette.primaryMain.withValues(alpha: 0.45),
+              color: TravelloTheme.primaryMain.withValues(alpha: 0.45),
               blurRadius: 22,
               offset: const Offset(0, 10),
             ),
@@ -275,7 +269,7 @@ class HeroSection extends StatelessWidget {
                 letterSpacing: 0.5,
               ),
             ),
-            SizedBox(width: spacingUnit(1.5)),
+            const SizedBox(width: 12),
             const Icon(
               Icons.arrow_forward_rounded,
               color: Colors.white,

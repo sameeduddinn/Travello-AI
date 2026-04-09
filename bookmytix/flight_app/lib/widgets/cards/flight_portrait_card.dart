@@ -1,11 +1,8 @@
 import 'package:flight_app/models/plane.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/decorations/cut_deco.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightPortraitCard extends StatefulWidget {
   const FlightPortraitCard(
@@ -55,11 +52,11 @@ class _FlightPortraitCardState extends State<FlightPortraitCard> {
           decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                    color: colorScheme(context).primaryContainer, width: 1),
+                    color: TravelloTheme.primaryMainContainer, width: 1),
                 left: BorderSide(
-                    color: colorScheme(context).primaryContainer, width: 1),
+                    color: TravelloTheme.primaryMainContainer, width: 1),
                 right: BorderSide(
-                    color: colorScheme(context).primaryContainer, width: 1),
+                    color: TravelloTheme.primaryMainContainer, width: 1),
               ),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(14),
@@ -76,29 +73,29 @@ class _FlightPortraitCardState extends State<FlightPortraitCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
-                          padding: EdgeInsets.only(
-                              left: spacingUnit(1),
-                              right: spacingUnit(1),
-                              top: spacingUnit(1)),
+                          padding: const EdgeInsets.only(
+                              left: 8,
+                              right: 8,
+                              top: 8),
                           child: RichText(
                               text: TextSpan(children: [
                             TextSpan(
                                 text: widget.from,
-                                style: ThemeText.paragraph.copyWith(
+                                style: TravelloTheme.paragraph.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme(context).onSurface)),
                             TextSpan(
                                 text: ' to',
-                                style: ThemeText.paragraph.copyWith(
+                                style: TravelloTheme.paragraph.copyWith(
                                     color: colorScheme(context).onSurface)),
                           ])),
                         ),
                         Padding(
                           padding:
-                              EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+                              const EdgeInsets.symmetric(horizontal: 8),
                           child: Text(widget.to,
                               textAlign: TextAlign.start,
-                              style: ThemeText.subtitle
+                              style: TravelloTheme.subtitle
                                   .copyWith(fontWeight: FontWeight.bold)),
                         ),
                       ]),
@@ -107,15 +104,15 @@ class _FlightPortraitCardState extends State<FlightPortraitCard> {
                           width: 45,
                           height: 45,
                           padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                              color: colorScheme(context).secondary,
-                              borderRadius: const BorderRadius.only(
+                          decoration: const BoxDecoration(
+                              color: TravelloTheme.secondaryMain,
+                              borderRadius: BorderRadius.only(
                                   bottomLeft: Radius.circular(60),
                                   topRight: Radius.circular(14))),
                           child: Text(widget.label!,
                               textAlign: TextAlign.end,
-                              style: ThemeText.caption.copyWith(
-                                  color: ThemePalette.primaryMain,
+                              style: TravelloTheme.caption.copyWith(
+                                  color: TravelloTheme.primaryMain,
                                   fontWeight: FontWeight.bold)))
                       : Container()
                 ]),
@@ -123,7 +120,7 @@ class _FlightPortraitCardState extends State<FlightPortraitCard> {
             /// DATE AND PRICE
             Padding(
               padding:
-                  EdgeInsets.symmetric(horizontal: spacingUnit(1), vertical: 4),
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -134,19 +131,19 @@ class _FlightPortraitCardState extends State<FlightPortraitCard> {
                           widget.roundTrip
                               ? Text(
                                   'Round-trip',
-                                  style: ThemeText.caption.copyWith(
+                                  style: TravelloTheme.caption.copyWith(
                                       color: colorScheme(context)
                                           .onSurfaceVariant),
                                 )
                               : Text(
                                   'One-way',
-                                  style: ThemeText.caption.copyWith(
+                                  style: TravelloTheme.caption.copyWith(
                                       color: colorScheme(context)
                                           .onSurfaceVariant),
                                 ),
                           Text(
                             widget.date,
-                            style: ThemeText.caption.copyWith(
+                            style: TravelloTheme.caption.copyWith(
                                 color: colorScheme(context).onSurfaceVariant),
                           )
                         ]),
@@ -154,11 +151,11 @@ class _FlightPortraitCardState extends State<FlightPortraitCard> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text('Start from',
-                            style: ThemeText.caption.copyWith(
+                            style: TravelloTheme.caption.copyWith(
                                 color: colorScheme(context).onSurfaceVariant)),
                         Text('₨${widget.price.toStringAsFixed(0)}',
-                            style: ThemeText.subtitle.copyWith(
-                                color: colorScheme(context).primary,
+                            style: TravelloTheme.subtitle.copyWith(
+                                color: TravelloTheme.primaryMain,
                                 fontWeight: FontWeight.bold,
                                 height: 1.1))
                       ],
@@ -174,17 +171,17 @@ class _FlightPortraitCardState extends State<FlightPortraitCard> {
         /// BOTTOM PROPERTIES
         widget.plane != null
             ? Container(
-                padding: EdgeInsets.all(spacingUnit(1)),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                          color: colorScheme(context).primaryContainer,
+                          color: TravelloTheme.primaryMainContainer,
                           width: 1),
                       left: BorderSide(
-                          color: colorScheme(context).primaryContainer,
+                          color: TravelloTheme.primaryMainContainer,
                           width: 1),
                       right: BorderSide(
-                          color: colorScheme(context).primaryContainer,
+                          color: TravelloTheme.primaryMainContainer,
                           width: 1),
                     ),
                     borderRadius: const BorderRadius.only(
@@ -211,7 +208,7 @@ class _FlightPortraitCardState extends State<FlightPortraitCard> {
                     _travelMode == 'railway'
                         ? 'Pakistan Railways • Economy'
                         : '${widget.plane!.name} • Economy',
-                    style: ThemeText.caption,
+                    style: TravelloTheme.caption,
                   ),
                 ]),
               )

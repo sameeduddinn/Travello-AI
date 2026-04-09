@@ -1,10 +1,8 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/list_item.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/picker.dart';
 import 'package:change_case/change_case.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class SorterDateDistance extends StatefulWidget {
   const SorterDateDistance({
@@ -99,7 +97,7 @@ class _SorterDateDistanceState extends State<SorterDateDistance> {
       child: Row(children: [
         const Icon(Icons.swap_vert, size: 16),
         const SizedBox(width: 2),
-        Text('Sort By ${sortbyTemp.toCapitalCase()}', style: ThemeText.caption),
+        Text('Sort By ${sortbyTemp.toCapitalCase()}', style: TravelloTheme.caption),
         const SizedBox(width: 2),
         Icon(Icons.arrow_drop_down, color: colorScheme(context).onSurface, size: 16),
       ])

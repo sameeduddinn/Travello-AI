@@ -4,17 +4,13 @@ import 'package:flight_app/models/city.dart';
 import 'package:flight_app/models/trip.dart';
 import 'package:flight_app/models/voucher.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/cards/flight_card.dart';
 import 'package:flight_app/widgets/payment/voucher_list.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/payment/options.dart';
 import 'package:flight_app/widgets/stepper/step_progress.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PaymentMethod extends StatefulWidget {
   const PaymentMethod({super.key});
@@ -108,7 +104,7 @@ class _PaymentMethodState extends State<PaymentMethod> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
-        backgroundColor: colorScheme(context).surface,
+        backgroundColor: TravelloTheme.paperLight,
       );
     }
 
@@ -121,7 +117,7 @@ class _PaymentMethodState extends State<PaymentMethod> {
             },
             icon: const Icon(Icons.arrow_back_ios_new)),
         centerTitle: true,
-        title: const Text('Payment', style: ThemeText.subtitle),
+        title: const Text('Payment', style: TravelloTheme.subtitle),
       ),
       body: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         StepProgress(activeIndex: 3, items: bookingSteps),
@@ -130,7 +126,7 @@ class _PaymentMethodState extends State<PaymentMethod> {
           shrinkWrap: true,
           children: [
             Padding(
-              padding: EdgeInsets.all(spacingUnit(1)),
+              padding: const EdgeInsets.all(8),
               child: FlightCard(
                 from: cityList[1],
                 to: cityList[2],
@@ -150,7 +146,7 @@ class _PaymentMethodState extends State<PaymentMethod> {
         )),
         Container(
           width: double.infinity,
-          color: colorScheme(context).surface,
+          color: TravelloTheme.paperLight,
           child: Column(
             children: [
               /// VOUCHER INFO
@@ -159,9 +155,9 @@ class _PaymentMethodState extends State<PaymentMethod> {
                   showVoucherList();
                 },
                 child: Container(
-                    color: colorScheme(context).secondaryContainer,
-                    padding: EdgeInsets.symmetric(
-                        horizontal: spacingUnit(1), vertical: spacingUnit(1)),
+                    color: TravelloTheme.secondaryMainContainer,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 8),
                     child: _selectedVouchers.isNotEmpty
                         ? Row(children: [
                             Wrap(
@@ -185,7 +181,7 @@ class _PaymentMethodState extends State<PaymentMethod> {
                                             width: 1, color: item.color)),
                                     child: Text(
                                       item.title,
-                                      style: ThemeText.caption,
+                                      style: TravelloTheme.caption,
                                       overflow: TextOverflow.ellipsis,
                                     ));
                               }).toList(),
@@ -193,12 +189,12 @@ class _PaymentMethodState extends State<PaymentMethod> {
                             _selectedVouchers.length > 2
                                 ? Text(
                                     '${_selectedVouchers.length - 2} more...',
-                                    style: ThemeText.caption,
+                                    style: TravelloTheme.caption,
                                   )
                                 : Container(),
                             const Spacer(),
                             Text('CHANGE',
-                                style: ThemeText.paragraph.copyWith(
+                                style: TravelloTheme.paragraph.copyWith(
                                     color: colorScheme(context)
                                         .onSecondaryContainer,
                                     fontWeight: FontWeight.bold)),
@@ -209,15 +205,15 @@ class _PaymentMethodState extends State<PaymentMethod> {
                                 size: 11),
                           ])
                         : Row(children: [
-                            Icon(Icons.discount,
-                                color: colorScheme(context).primary, size: 11),
+                            const Icon(Icons.discount,
+                                color: TravelloTheme.primaryMain, size: 11),
                             const SizedBox(width: 4),
                             Text('5 Vouchers Available',
-                                style: ThemeText.paragraph
+                                style: TravelloTheme.paragraph
                                     .copyWith(fontWeight: FontWeight.bold)),
                             const Spacer(),
                             Text('USE VOUCHERS',
-                                style: ThemeText.paragraph.copyWith(
+                                style: TravelloTheme.paragraph.copyWith(
                                     color: colorScheme(context)
                                         .onSecondaryContainer,
                                     fontWeight: FontWeight.bold)),
@@ -232,10 +228,10 @@ class _PaymentMethodState extends State<PaymentMethod> {
               /// TOTAL PRICE AND ACTION BUTTON
               Padding(
                 padding: EdgeInsets.only(
-                    top: spacingUnit(1),
+                    top: 8,
                     bottom: spacingUnit(5),
-                    left: spacingUnit(2),
-                    right: spacingUnit(2)),
+                    left: 16,
+                    right: 16),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -249,14 +245,14 @@ class _PaymentMethodState extends State<PaymentMethod> {
                         Text(
                           'PKR ${finalPrice.toStringAsFixed(0)}',
                           textAlign: TextAlign.end,
-                          style: ThemeText.title.copyWith(
-                              color: colorScheme(context).primary,
+                          style: TravelloTheme.title.copyWith(
+                              color: TravelloTheme.primaryMain,
                               height: 1,
                               fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
-                    SizedBox(width: spacingUnit(4)),
+                    const SizedBox(width: 32),
                     Expanded(
                       child: FilledButton(
                           onPressed: () {
@@ -267,7 +263,7 @@ class _PaymentMethodState extends State<PaymentMethod> {
                           },
                           style: ThemeButton.btnBig.merge(ThemeButton.primary),
                           child: const Text('CONTINUE',
-                              style: ThemeText.subtitle2)),
+                              style: TravelloTheme.subtitle2)),
                     ),
                   ],
                 ),

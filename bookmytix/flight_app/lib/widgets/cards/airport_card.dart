@@ -1,10 +1,7 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/shimmer_preloader.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class AirportCard extends StatelessWidget {
   const AirportCard({
@@ -25,7 +22,7 @@ class AirportCard extends StatelessWidget {
     return PaperCard(
       flat: true,
       content: Padding(
-        padding: EdgeInsets.all(spacingUnit(1)),
+        padding: const EdgeInsets.all(8),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -37,11 +34,11 @@ class AirportCard extends StatelessWidget {
                 children: [
                   Text(
                     '$name ($code)',
-                    style: ThemeText.subtitle2,
+                    style: TravelloTheme.subtitle2,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: spacingUnit(0.5)),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       Icon(
@@ -52,7 +49,7 @@ class AirportCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         location,
-                        style: ThemeText.paragraph,
+                        style: TravelloTheme.paragraph,
                       )
                     ],
                   ),

@@ -1,9 +1,8 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/controllers/notification_controller.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 List<Widget> homeActionGroup(BuildContext context, bool isFixed) {
   return [
@@ -11,7 +10,7 @@ List<Widget> homeActionGroup(BuildContext context, bool isFixed) {
       final ctrl = Get.find<NotificationController>();
       final n = ctrl.unreadCount.value;
       return Badge.count(
-        backgroundColor: ThemePalette.primaryMain,
+        backgroundColor: TravelloTheme.primaryMain,
         textColor: Colors.black,
         count: n,
         isLabelVisible: n > 0,
@@ -41,7 +40,7 @@ List<Widget> homeActionGroup(BuildContext context, bool isFixed) {
 Widget iconBtn(
     BuildContext context, IconData icon, bool isFixed, void Function() onTap) {
   return Padding(
-    padding: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+    padding: const EdgeInsets.symmetric(horizontal: 8),
     child: Container(
       width: 40,
       height: 40,
@@ -49,7 +48,7 @@ Widget iconBtn(
           borderRadius: const BorderRadius.all(Radius.circular(32)),
           color: isFixed
               ? colorScheme(context).outline
-              : colorScheme(context).surface),
+              : TravelloTheme.paperLight),
       child: IconButton(
         onPressed: onTap,
         icon: Icon(

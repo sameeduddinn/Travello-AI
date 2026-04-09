@@ -1,10 +1,9 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class AccountInfo extends StatefulWidget {
   const AccountInfo({super.key});
@@ -61,13 +60,13 @@ class _AccountInfoState extends State<AccountInfo> {
         // ── Gold header banner with avatar ──────────────────────────
         Container(
           width: double.infinity,
-          padding: EdgeInsets.fromLTRB(spacingUnit(2.5), spacingUnit(2),
-              spacingUnit(2.5), spacingUnit(2.5)),
+          padding: const EdgeInsets.fromLTRB(20, 16,
+              20, 20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                ThemePalette.primaryMain,
-                ThemePalette.primaryMain.withValues(alpha: 0.78),
+                TravelloTheme.primaryMain,
+                TravelloTheme.primaryMain.withValues(alpha: 0.78),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -94,15 +93,15 @@ class _AccountInfoState extends State<AccountInfo> {
                     _isLoading || _userName.isEmpty
                         ? '?'
                         : _userName[0].toUpperCase(),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
-                      color: ThemePalette.primaryMain,
+                      color: TravelloTheme.primaryMain,
                     ),
                   ),
                 ),
               ),
-              SizedBox(width: spacingUnit(1.5)),
+              const SizedBox(width: 12),
               Expanded(
                 child: _isLoading
                     ? const SizedBox(
@@ -149,8 +148,8 @@ class _AccountInfoState extends State<AccountInfo> {
 
         // ── Info rows ───────────────────────────────────────────────
         Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(2.5), vertical: spacingUnit(1.5)),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 20, vertical: 12),
           child: Column(
             children: [
               _InfoRow(
@@ -181,8 +180,8 @@ class _AccountInfoState extends State<AccountInfo> {
         // ── Action buttons ─────────────────────────────────────────
         if (!_isGuest) ...[
           Padding(
-            padding: EdgeInsets.fromLTRB(
-                spacingUnit(2.5), 0, spacingUnit(2.5), spacingUnit(1.5)),
+            padding: const EdgeInsets.fromLTRB(
+                20, 0, 20, 12),
             child: Column(
               children: [
                 _ActionButton(
@@ -194,9 +193,9 @@ class _AccountInfoState extends State<AccountInfo> {
                     await Get.toNamed(AppLink.editProfile);
                     _loadCurrentUser();
                   },
-                  color: ThemePalette.primaryMain,
+                  color: TravelloTheme.primaryMain,
                 ),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 _ActionButton(
                   icon: Icons.lock_outline,
                   label: 'Change Password',
@@ -213,8 +212,8 @@ class _AccountInfoState extends State<AccountInfo> {
           ),
         ] else ...[
           Padding(
-            padding: EdgeInsets.fromLTRB(
-                spacingUnit(2.5), 0, spacingUnit(2.5), spacingUnit(2)),
+            padding: const EdgeInsets.fromLTRB(
+                20, 0, 20, 16),
             child: SizedBox(
               width: double.infinity,
               height: 50,
@@ -227,7 +226,7 @@ class _AccountInfoState extends State<AccountInfo> {
                 label: const Text('Sign In to Your Account',
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 style: FilledButton.styleFrom(
-                  backgroundColor: ThemePalette.primaryMain,
+                  backgroundColor: TravelloTheme.primaryMain,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -258,7 +257,7 @@ class _InfoRow extends StatelessWidget {
         children: [
           Icon(icon,
               size: 20,
-              color: ThemePalette.primaryMain.withValues(alpha: 0.85)),
+              color: TravelloTheme.primaryMain.withValues(alpha: 0.85)),
           const SizedBox(width: 12),
           Text(label,
               style:

@@ -1,11 +1,8 @@
 import 'package:flight_app/models/booking.dart';
 import 'package:flight_app/models/list_item.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
 import 'package:flutter/material.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 final List<ListItem> selectedPackageList = [
   ListItem(
@@ -34,7 +31,7 @@ class PassengerDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       child: Wrap(children: [
         Column(children: [
           const GrabberIcon(),
@@ -42,38 +39,38 @@ class PassengerDetail extends StatelessWidget {
           const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(Icons.person, size: 22),
             SizedBox(width: 8,),
-            Text('Passenger Detail', style: ThemeText.subtitle)
+            Text('Passenger Detail', style: TravelloTheme.subtitle)
           ],),
           const VSpace(),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('Name', style: ThemeText.paragraph.copyWith(color: colorScheme(context).onSurfaceVariant)),
-            Text('${passengerList[0].title} ${passengerList[0].name}', style: ThemeText.paragraphBold),
+            Text('Name', style: TravelloTheme.paragraph.copyWith(color: colorScheme(context).onSurfaceVariant)),
+            Text('${passengerList[0].title} ${passengerList[0].name}', style: TravelloTheme.paragraphBold),
           ]),
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('Pasport ID', style: ThemeText.paragraph.copyWith(color: colorScheme(context).onSurfaceVariant)),
-            Text(passengerList[0].idCard, style: ThemeText.paragraphBold),
+            Text('Pasport ID', style: TravelloTheme.paragraph.copyWith(color: colorScheme(context).onSurfaceVariant)),
+            Text(passengerList[0].idCard, style: TravelloTheme.paragraphBold),
           ]),
           const VSpace(),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Column(children: [
-              Text('BAGGAGE', style: ThemeText.caption.copyWith(color: colorScheme(context).onSurfaceVariant)),
-              Text('${passengerList[0].baggage} Kg', style: ThemeText.subtitle2,)
+              Text('BAGGAGE', style: TravelloTheme.caption.copyWith(color: colorScheme(context).onSurfaceVariant)),
+              Text('${passengerList[0].baggage} Kg', style: TravelloTheme.subtitle2,)
             ]),
             Column(children: [
-              Text('SEAT', style: ThemeText.caption.copyWith(color: colorScheme(context).onSurfaceVariant)),
-              Text('${passengerList[0].seat}', style: ThemeText.subtitle2,)
+              Text('SEAT', style: TravelloTheme.caption.copyWith(color: colorScheme(context).onSurfaceVariant)),
+              Text('${passengerList[0].seat}', style: TravelloTheme.subtitle2,)
             ]),
             Column(children: [
-              Text('TYPE', style: ThemeText.caption.copyWith(color: colorScheme(context).onSurfaceVariant)),
-              Text(passengerList[0].type!.toUpperCase(), style: ThemeText.subtitle2,)
+              Text('TYPE', style: TravelloTheme.caption.copyWith(color: colorScheme(context).onSurfaceVariant)),
+              Text(passengerList[0].type!.toUpperCase(), style: TravelloTheme.subtitle2,)
             ]),
           ]),
           const VSpace(),
           Container(
-            padding: EdgeInsets.symmetric(vertical: spacingUnit(1), horizontal: spacingUnit(2)),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             decoration: BoxDecoration(
-              color: colorScheme(context).surfaceDim,
+              color: TravelloTheme.paperLightDim,
               borderRadius: ThemeRadius.medium
             ),
             child: ListView.builder(
@@ -84,8 +81,8 @@ class PassengerDetail extends StatelessWidget {
                 final item = selectedPackageList[index];
                 return ListTile(
                   leading: Icon(item.icon, size: 16, color: colorScheme(context).onSecondaryContainer),
-                  title: Text(item.label, style: ThemeText.paragraph),
-                  trailing: Text('\$${item.value}', style: ThemeText.paragraph.copyWith(color: colorScheme(context).onSurface)),
+                  title: Text(item.label, style: TravelloTheme.paragraph),
+                  trailing: Text('\$${item.value}', style: TravelloTheme.paragraph.copyWith(color: colorScheme(context).onSurface)),
                   contentPadding: const EdgeInsets.all(0),
                   minTileHeight: 0,
                 );

@@ -1,12 +1,9 @@
 import 'package:flight_app/models/plane.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
 import 'package:flight_app/widgets/title/title_basic.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FilterFlightForm extends StatelessWidget {
   const FilterFlightForm({
@@ -31,7 +28,7 @@ class FilterFlightForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       child: Column(children: [
         const GrabberIcon(),
         const VSpaceShort(),
@@ -44,12 +41,12 @@ class FilterFlightForm extends StatelessWidget {
             Row(
               children: [
                 const Icon(Icons.price_change_outlined),
-                const Text(' Range Price:', style: ThemeText.subtitle2),
-                SizedBox(width: spacingUnit(1)),
-                Text('\$${priceRange.start.round()} - \$${priceRange.end.round()}', style: ThemeText.subtitle2.copyWith(color: colorScheme(context).onSecondaryContainer))
+                const Text(' Range Price:', style: TravelloTheme.subtitle2),
+                const SizedBox(width: 8),
+                Text('\$${priceRange.start.round()} - \$${priceRange.end.round()}', style: TravelloTheme.subtitle2.copyWith(color: colorScheme(context).onSecondaryContainer))
               ],
             ),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             RangeSlider(
               values: priceRange,
               max: 1000,
@@ -68,14 +65,14 @@ class FilterFlightForm extends StatelessWidget {
             const Row(
               children: [
                 Icon(Icons.timeline_sharp),
-                Text(' Transits', style: ThemeText.subtitle2),
+                Text(' Transits', style: TravelloTheme.subtitle2),
               ],
             ),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                SizedBox(width: spacingUnit(2)),
+                const SizedBox(width: 16),
                 Row(
                   children: [
                     Checkbox(
@@ -91,7 +88,7 @@ class FilterFlightForm extends StatelessWidget {
                     const Text('Direct'),
                   ],
                 ),
-                SizedBox(width: spacingUnit(1)),
+                const SizedBox(width: 8),
                 Row(
                   children: [
                     Checkbox(
@@ -107,7 +104,7 @@ class FilterFlightForm extends StatelessWidget {
                     const Text('1 Stop'),
                   ],
                 ),
-                SizedBox(width: spacingUnit(1)),
+                const SizedBox(width: 8),
                 Row(
                   children: [
                     Checkbox(
@@ -131,12 +128,12 @@ class FilterFlightForm extends StatelessWidget {
             Row(
               children: [
                 const Icon(Icons.access_time),
-                const Text(' Maximum Trip Duration:', style: ThemeText.subtitle2),
-                SizedBox(width: spacingUnit(1)),
-                Text('$duration hours', style: ThemeText.subtitle2.copyWith(color: colorScheme(context).onSecondaryContainer))
+                const Text(' Maximum Trip Duration:', style: TravelloTheme.subtitle2),
+                const SizedBox(width: 8),
+                Text('$duration hours', style: TravelloTheme.subtitle2.copyWith(color: colorScheme(context).onSecondaryContainer))
               ],
             ),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             
             Slider(
               value: duration,
@@ -153,10 +150,10 @@ class FilterFlightForm extends StatelessWidget {
             const Row(
               children: [
                 Icon(Icons.flight),
-                Text(' Airlines', style: ThemeText.subtitle2),
+                Text(' Airlines', style: TravelloTheme.subtitle2),
               ],
             ),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             ListView.builder(
               shrinkWrap: true,
               physics: const ClampingScrollPhysics(),
@@ -185,7 +182,7 @@ class FilterFlightForm extends StatelessWidget {
           ]),
         ),
         Padding(
-          padding: EdgeInsets.all(spacingUnit(1)),
+          padding: const EdgeInsets.all(8),
           child: SizedBox(
             width: double.infinity,
             child: FilledButton(
@@ -193,7 +190,7 @@ class FilterFlightForm extends StatelessWidget {
                 Get.back();
               },
               style: ThemeButton.btnBig.merge(ThemeButton.tonalPrimary(context)),
-              child: Text('Done'.toUpperCase(), style: ThemeText.subtitle)
+              child: Text('Done'.toUpperCase(), style: TravelloTheme.subtitle)
             ),
           )
         ),

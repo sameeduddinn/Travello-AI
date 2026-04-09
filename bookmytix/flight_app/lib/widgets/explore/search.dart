@@ -1,9 +1,7 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class SearchExplore extends StatelessWidget {
   const SearchExplore({super.key});
@@ -13,7 +11,7 @@ class SearchExplore extends StatelessWidget {
     return Container(
         height: 80,
         decoration:
-            BoxDecoration(color: colorScheme(context).surfaceContainerLowest),
+            BoxDecoration(color: TravelloTheme.paperLightContainerLowest),
         child: Stack(alignment: Alignment.bottomCenter, children: [
           /// SEARCH BOX
           InkWell(
@@ -22,18 +20,18 @@ class SearchExplore extends StatelessWidget {
             },
             child: Container(
                 height: 50,
-                margin: EdgeInsets.symmetric(
-                    horizontal: spacingUnit(3), vertical: spacingUnit(2)),
-                padding: EdgeInsets.all(spacingUnit(1)),
+                margin: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                     borderRadius: ThemeRadius.medium,
                     color: colorScheme(context).outline),
-                child: Row(
+                child: const Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Icon(Icons.search),
-                      SizedBox(width: spacingUnit(1)),
-                      const Text('Search Flights or Packages')
+                      Icon(Icons.search),
+                      SizedBox(width: 8),
+                      Text('Search Flights or Packages')
                     ])),
           ),
         ]));

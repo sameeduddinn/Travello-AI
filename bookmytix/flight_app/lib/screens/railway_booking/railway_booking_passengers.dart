@@ -1,15 +1,13 @@
 import 'package:flight_app/models/booking.dart';
 import 'package:flight_app/models/train.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/booking/passenger_form.dart';
 import 'package:flight_app/widgets/railway_booking/train_info.dart';
 import 'package:flight_app/widgets/stepper/step_progress.dart';
 import 'package:flight_app/widgets/flight/info_header.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class RailwayBookingPassengers extends StatelessWidget {
   const RailwayBookingPassengers({super.key});
@@ -50,15 +48,15 @@ class RailwayBookingPassengers extends StatelessWidget {
             child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: ThemeSize.sm),
           child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: PassengerForm(totalPassengers: totalPassengers)),
         )),
         Padding(
-          padding: EdgeInsets.only(
-              left: spacingUnit(2),
-              right: spacingUnit(2),
-              top: spacingUnit(1),
-              bottom: spacingUnit(4)),
+          padding: const EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 8,
+              bottom: 32),
           child: Container(
             height: 50,
             width: double.infinity,
@@ -68,7 +66,7 @@ class RailwayBookingPassengers extends StatelessWidget {
                   Get.toNamed('/railway-booking-facilities', arguments: args);
                 },
                 style: ThemeButton.btnBig.merge(ThemeButton.primary),
-                child: const Text('CONTINUE', style: ThemeText.subtitle2)),
+                child: const Text('CONTINUE', style: TravelloTheme.subtitle2)),
           ),
         ),
       ]),

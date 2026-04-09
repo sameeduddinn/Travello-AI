@@ -4,15 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/app_input/app_textfield.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
 import 'package:flight_app/widgets/user/saved_credentials_dialog.dart';
 import 'package:flight_app/widgets/onboarding/city_selection_sheet.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -57,7 +55,7 @@ class _LoginFormState extends State<LoginForm> {
                 });
 
                 Get.snackbar(
-                  '✨ Credentials Loaded',
+                  'Credentials Loaded',
                   'Click Continue to login',
                   backgroundColor: Colors.green.shade600,
                   colorText: Colors.white,
@@ -77,7 +75,7 @@ class _LoginFormState extends State<LoginForm> {
                 });
 
                 Get.snackbar(
-                  'ℹ️ Login Manually',
+                  'Login Manually',
                   'Enter your credentials to login',
                   backgroundColor: Colors.blue.shade600,
                   colorText: Colors.white,
@@ -104,6 +102,54 @@ class _LoginFormState extends State<LoginForm> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+    final Widget fallbackGoogleMark = ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (bounds) => const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFF4285F4), // Blue
+          Color(0xFF34A853), // Green
+          Color(0xFFFBBC05), // Yellow
+          Color(0xFFEA4335), // Red
+        ],
+      ).createShader(bounds),
+      child: const FaIcon(
+        FontAwesomeIcons.google,
+        size: 18,
+      ),
+    );
+
+    final Widget googleMark = googleBrandIconUrl.isNotEmpty
+        ? Image.network(
+            googleBrandIconUrl,
+            width: 18,
+            height: 18,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => fallbackGoogleMark,
+            loadingBuilder: (context, child, progress) =>
+                progress == null ? child : fallbackGoogleMark,
+          )
+        : fallbackGoogleMark;
+
+    const Widget fallbackAppleMark = FaIcon(
+      FontAwesomeIcons.apple,
+      size: 20,
+      color: Colors.black,
+    );
+
+    final Widget appleMark = appleBrandIconUrl.isNotEmpty
+        ? Image.network(
+            appleBrandIconUrl,
+            width: 20,
+            height: 20,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => fallbackAppleMark,
+            loadingBuilder: (context, child, progress) =>
+                progress == null ? child : fallbackAppleMark,
+          )
+        : fallbackAppleMark;
 
     return FormBuilder(
       key: _loginKey,
@@ -319,12 +365,12 @@ class _LoginFormState extends State<LoginForm> {
                     ],
                   ),
                 ),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
                 // Brand name
                 Text(
                   branding.name,
-                  style: ThemeText.headline.copyWith(
-                    color: ThemePalette.primaryMain,
+                  style: TravelloTheme.headline.copyWith(
+                    color: TravelloTheme.primaryMain,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                     letterSpacing: 2,
@@ -335,7 +381,7 @@ class _LoginFormState extends State<LoginForm> {
                 // Main heading
                 Text(
                   'Welcome Back!',
-                  style: ThemeText.title.copyWith(
+                  style: TravelloTheme.title.copyWith(
                     fontSize: 34,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
@@ -343,11 +389,11 @@ class _LoginFormState extends State<LoginForm> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 // Subtitle
                 Text(
                   'Login to continue your journey',
-                  style: ThemeText.headline.copyWith(
+                  style: TravelloTheme.headline.copyWith(
                     color: colorScheme.onSurfaceVariant,
                     fontSize: 15,
                   ),
@@ -356,11 +402,11 @@ class _LoginFormState extends State<LoginForm> {
               ],
             ),
           ),
-          SizedBox(height: spacingUnit(3)),
+          const SizedBox(height: 24),
 
           /// DEMO CREDENTIALS HINT
           Container(
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -395,7 +441,7 @@ class _LoginFormState extends State<LoginForm> {
                     children: [
                       Text(
                         'Try Demo Account',
-                        style: ThemeText.subtitle.copyWith(
+                        style: TravelloTheme.subtitle.copyWith(
                           color: colorScheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -403,7 +449,7 @@ class _LoginFormState extends State<LoginForm> {
                       const SizedBox(height: 4),
                       Text(
                         'Username: John Doe | Password: 0123456789',
-                        style: ThemeText.caption.copyWith(
+                        style: TravelloTheme.caption.copyWith(
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
                           fontSize: 13,
                         ),
@@ -414,7 +460,7 @@ class _LoginFormState extends State<LoginForm> {
               ],
             ),
           ),
-          SizedBox(height: spacingUnit(3)),
+          const SizedBox(height: 24),
 
           /// INPUT FIELD
           FormBuilderField(
@@ -467,7 +513,7 @@ class _LoginFormState extends State<LoginForm> {
                   // Show cookie/save confirmation message
                   if (_rememberMe) {
                     Get.snackbar(
-                      '🔒 Credentials Saved',
+                      'Credentials Saved',
                       'Your login information will be securely saved for faster access next time',
                       backgroundColor: Colors.green.shade600,
                       colorText: Colors.white,
@@ -480,7 +526,7 @@ class _LoginFormState extends State<LoginForm> {
                     );
                   } else {
                     Get.snackbar(
-                      '🔓 Credentials Cleared',
+                      'Credentials Cleared',
                       'Your saved login information has been removed',
                       backgroundColor: Colors.orange.shade600,
                       colorText: Colors.white,
@@ -493,7 +539,7 @@ class _LoginFormState extends State<LoginForm> {
                   }
                 },
               ),
-              const Text('Remember Me', style: ThemeText.caption),
+              const Text('Remember Me', style: TravelloTheme.caption),
               const Spacer(),
               InkWell(
                 onTap: () {
@@ -501,7 +547,7 @@ class _LoginFormState extends State<LoginForm> {
                 },
                 child: Text(
                   'Forgot Password?',
-                  style: ThemeText.caption.copyWith(
+                  style: TravelloTheme.caption.copyWith(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.bold,
                   ),
@@ -531,6 +577,8 @@ class _LoginFormState extends State<LoginForm> {
                             password: formData['password'],
                           );
 
+                          if (!context.mounted) return;
+
                           setState(() {
                             _isLoading = false;
                           });
@@ -546,9 +594,11 @@ class _LoginFormState extends State<LoginForm> {
                               await AuthService.clearRememberMe();
                             }
 
+                            if (!context.mounted) return;
+
                             // Show success message with animation
                             Get.snackbar(
-                              '✅ Login Successful',
+                              'Login Successful',
                               'Welcome back, ${user['name']}!',
                               backgroundColor: Colors.green.shade600,
                               colorText: Colors.white,
@@ -564,7 +614,9 @@ class _LoginFormState extends State<LoginForm> {
                             final hasCity =
                                 await LocationPreferenceService.hasOriginCity();
 
-                            if (!hasCity && mounted) {
+                            if (!context.mounted) return;
+
+                            if (!hasCity) {
                               // Show city selection bottom sheet for personalization
                               showModalBottomSheet(
                                 context: context,
@@ -585,7 +637,7 @@ class _LoginFormState extends State<LoginForm> {
                           } else {
                             // Show error message with better styling
                             Get.snackbar(
-                              '❌ Login Failed',
+                              'Login Failed',
                               'Invalid credentials. Please check your email/phone and password.',
                               backgroundColor: Colors.red.shade600,
                               colorText: Colors.white,
@@ -600,7 +652,7 @@ class _LoginFormState extends State<LoginForm> {
                         }
                       },
                 style: ThemeButton.btnBig.merge(FilledButton.styleFrom(
-                  backgroundColor: ThemePalette.primaryMain,
+                  backgroundColor: TravelloTheme.primaryMain,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -615,7 +667,7 @@ class _LoginFormState extends State<LoginForm> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2.5, color: Colors.white))
                     : Text('CONTINUE',
-                        style: ThemeText.subtitle.copyWith(
+                        style: TravelloTheme.subtitle.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.5,
@@ -625,7 +677,7 @@ class _LoginFormState extends State<LoginForm> {
 
           /// DIVIDER WITH "OR" - PROFESSIONAL STYLE
           Padding(
-            padding: EdgeInsets.symmetric(vertical: spacingUnit(2)),
+            padding: const EdgeInsets.symmetric(vertical: 16),
             child: Row(
               children: [
                 Expanded(
@@ -642,11 +694,11 @@ class _LoginFormState extends State<LoginForm> {
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: spacingUnit(3)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: spacingUnit(2),
-                      vertical: spacingUnit(0.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
                     ),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHighest
@@ -659,7 +711,7 @@ class _LoginFormState extends State<LoginForm> {
                     ),
                     child: Text(
                       'OR CONTINUE WITH',
-                      style: ThemeText.caption.copyWith(
+                      style: TravelloTheme.caption.copyWith(
                         color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 1.2,
@@ -717,7 +769,7 @@ class _LoginFormState extends State<LoginForm> {
                 onTap: () {
                   // TODO: Implement Google Sign In
                   Get.snackbar(
-                    '🚀 Coming Soon',
+                    'Coming Soon',
                     'Google Sign In will be available soon!',
                     backgroundColor: Colors.blue.shade600,
                     colorText: Colors.white,
@@ -730,7 +782,7 @@ class _LoginFormState extends State<LoginForm> {
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -749,102 +801,13 @@ class _LoginFormState extends State<LoginForm> {
                           ],
                         ),
                         child: Center(
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // Google logo using custom design with official colors
-                              Container(
-                                width: 22,
-                                height: 22,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                                child: Stack(
-                                  children: [
-                                    // Blue section (top-right)
-                                    Positioned(
-                                      top: 0,
-                                      right: 0,
-                                      child: Container(
-                                        width: 11,
-                                        height: 11,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF4285F4),
-                                          borderRadius: BorderRadius.only(
-                                            topRight: Radius.circular(2),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    // Red section (top-left)
-                                    Positioned(
-                                      top: 0,
-                                      left: 0,
-                                      child: Container(
-                                        width: 11,
-                                        height: 11,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFEA4335),
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(2),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    // Yellow section (bottom-left)
-                                    Positioned(
-                                      bottom: 0,
-                                      left: 0,
-                                      child: Container(
-                                        width: 11,
-                                        height: 11,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFFBBC05),
-                                          borderRadius: BorderRadius.only(
-                                            bottomLeft: Radius.circular(2),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    // Green section (bottom-right)
-                                    Positioned(
-                                      bottom: 0,
-                                      right: 0,
-                                      child: Container(
-                                        width: 11,
-                                        height: 11,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF34A853),
-                                          borderRadius: BorderRadius.only(
-                                            bottomRight: Radius.circular(2),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    // White "G" overlay
-                                    const Center(
-                                      child: Text(
-                                        'G',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w900,
-                                          color: Colors.white,
-                                          fontFamily: 'Arial',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                          child: googleMark,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         'Continue with Google',
-                        style: ThemeText.subtitle.copyWith(
+                        style: TravelloTheme.subtitle.copyWith(
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.3,
                         ),
@@ -855,7 +818,7 @@ class _LoginFormState extends State<LoginForm> {
               ),
             ),
           ),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
 
           /// APPLE LOGIN - PREMIUM STYLE
           Container(
@@ -889,7 +852,7 @@ class _LoginFormState extends State<LoginForm> {
                 onTap: () {
                   // TODO: Implement Apple Sign In
                   Get.snackbar(
-                    '🚀 Coming Soon',
+                    'Coming Soon',
                     'Apple Sign In will be available soon!',
                     backgroundColor: Colors.grey.shade100,
                     colorText: Colors.black87,
@@ -902,7 +865,7 @@ class _LoginFormState extends State<LoginForm> {
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -922,106 +885,12 @@ class _LoginFormState extends State<LoginForm> {
                             ),
                           ],
                         ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.apple,
-                            size: 22,
-                            color: Colors.black,
-                          ),
-                        ),
+                        child: Center(child: appleMark),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         'Continue with Apple',
-                        style: ThemeText.subtitle.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: spacingUnit(1.5)),
-
-          /// FACEBOOK LOGIN - PREMIUM STYLE
-          Container(
-            width: double.infinity,
-            height: 56,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFFE7F3FF),
-                  const Color(0xFFD0E7FF).withValues(alpha: 0.5),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(
-                color: const Color(0xFF1877F2).withValues(alpha: 0.2),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF1877F2).withValues(alpha: 0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  // TODO: Implement Facebook Sign In
-                  Get.snackbar(
-                    '🚀 Coming Soon',
-                    'Facebook Sign In will be available soon!',
-                    backgroundColor: Colors.blue.shade800,
-                    colorText: Colors.white,
-                    snackPosition: SnackPosition.TOP,
-                    duration: const Duration(seconds: 2),
-                    icon: const Icon(Icons.info_outline, color: Colors.white),
-                    borderRadius: 10,
-                    margin: const EdgeInsets.all(10),
-                  );
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1877F2),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF1877F2)
-                                  .withValues(alpha: 0.3),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.facebook,
-                            size: 22,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Continue with Facebook',
-                        style: ThemeText.subtitle.copyWith(
+                        style: TravelloTheme.subtitle.copyWith(
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.3,
                         ),
@@ -1043,11 +912,11 @@ class _LoginFormState extends State<LoginForm> {
               child: Text.rich(
                 TextSpan(
                   text: 'Don\'t have an account? ',
-                  style: ThemeText.caption.copyWith(fontSize: 15),
+                  style: TravelloTheme.caption.copyWith(fontSize: 15),
                   children: [
                     TextSpan(
                       text: 'Sign Up Now',
-                      style: ThemeText.caption.copyWith(
+                      style: TravelloTheme.caption.copyWith(
                         fontSize: 15,
                         color: colorScheme.primary,
                         fontWeight: FontWeight.bold,

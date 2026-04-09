@@ -1,11 +1,10 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/screens/railway/train_results_screen.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/railway/train_seat_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Screen
@@ -301,13 +300,13 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
           Container(height: 1, color: const Color(0xFFE0E0E0)), // Light divider
           Expanded(
             child: ListView(
-              padding: EdgeInsets.all(spacingUnit(2)),
+              padding: const EdgeInsets.all(16),
               children: [
                 // ── Departure Section ──
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Departure', style: ThemeText.sectionHeading),
+                    Text('Departure', style: TravelloTheme.sectionHeading),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
@@ -318,21 +317,21 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                       ),
                       child: Text(
                         'Direct - Duration: ${_isRoundTrip ? _outboundTrain!.duration : _train.duration}',
-                        style: ThemeText.durationBadge,
+                        style: TravelloTheme.durationBadge,
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: spacingUnit(1.2)),
+                const SizedBox(height: 9.6),
                 _buildTrainCard(context),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // Return train card for round trips
                 if (_isRoundTrip && _returnTrain != null) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Return', style: ThemeText.sectionHeading),
+                      Text('Return', style: TravelloTheme.sectionHeading),
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
@@ -344,14 +343,14 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                         ),
                         child: Text(
                           'Direct - Duration: ${_returnTrain!.duration}',
-                          style: ThemeText.durationBadge,
+                          style: TravelloTheme.durationBadge,
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: spacingUnit(1.2)),
+                  const SizedBox(height: 9.6),
                   _buildReturnTrainCard(context),
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                 ],
 
                 // ── Seat Selection Section ──
@@ -359,7 +358,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Select Your Seats',
-                        style: ThemeText.selectSeatHeading),
+                        style: TravelloTheme.selectSeatHeading),
                     if (_isRoundTrip)
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -382,7 +381,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                       ),
                   ],
                 ),
-                SizedBox(height: spacingUnit(1.2)),
+                const SizedBox(height: 9.6),
                 TrainSeatPicker(
                   key: ValueKey('journey_$_currentJourneyIndex'),
                   trainClass: _isRoundTrip
@@ -398,7 +397,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                     _currentJourneyIndex == 0 &&
                     _areAllSeatsSelected())
                   Padding(
-                    padding: EdgeInsets.only(top: spacingUnit(2)),
+                    padding: const EdgeInsets.only(top: 16),
                     child: DSButton(
                       label: 'NEXT: SELECT RETURN SEATS',
                       trailingIcon: Icons.arrow_forward_rounded,
@@ -412,7 +411,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                   ),
                 if (_isRoundTrip && _currentJourneyIndex == 1)
                   Padding(
-                    padding: EdgeInsets.only(top: spacingUnit(2)),
+                    padding: const EdgeInsets.only(top: 16),
                     child: DSButton(
                       label: 'BACK TO OUTBOUND SEATS',
                       leadingIcon: Icons.arrow_back_rounded,
@@ -424,9 +423,9 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                       color: const Color(0xFFB3B3B3),
                     ),
                   ),
-                SizedBox(height: spacingUnit(3)),
+                const SizedBox(height: 24),
                 _buildTransferSection(context),
-                SizedBox(height: spacingUnit(10)),
+                const SizedBox(height: 80),
               ],
             ),
           ),
@@ -462,9 +461,9 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
         children: [
           // ── Header ──
           Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(2),
-              vertical: spacingUnit(1.5),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
             ),
             decoration: const BoxDecoration(
               color: Color(0x14D4AF37), // gold at 8% opacity
@@ -481,7 +480,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                   child: const Icon(Icons.directions_car_rounded,
                       color: Colors.white, size: 20),
                 ),
-                SizedBox(width: spacingUnit(1.5)),
+                const SizedBox(width: 12),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,12 +542,12 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
             crossFadeState: _transferAdded
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
-            firstChild: Padding(
+            firstChild: const Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(2),
-                vertical: spacingUnit(1.2),
+                horizontal: 16,
+                vertical: 9.6,
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.info_outline_rounded,
                       size: 14, color: Color(0xFF999999)),
@@ -561,7 +560,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
               ),
             ),
             secondChild: Padding(
-              padding: EdgeInsets.all(spacingUnit(2)),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -574,7 +573,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                       color: Color(0xFF333333),
                     ),
                   ),
-                  SizedBox(height: spacingUnit(1)),
+                  const SizedBox(height: 8),
                   Row(
                     children: vehicles.map((v) {
                       final selected = _transferVehicleType == v['type'];
@@ -585,11 +584,11 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
                             margin: EdgeInsets.only(
-                              right: v['type'] != 'Van' ? spacingUnit(1) : 0,
+                              right: v['type'] != 'Van' ? 8 : 0,
                             ),
-                            padding: EdgeInsets.symmetric(
-                              vertical: spacingUnit(1.2),
-                              horizontal: spacingUnit(0.5),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 9.6,
+                              horizontal: 4,
                             ),
                             decoration: BoxDecoration(
                               color: selected
@@ -653,7 +652,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                     }).toList(),
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // ── Pickup location ──
                   const Text(
@@ -664,7 +663,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                       color: Color(0xFF333333),
                     ),
                   ),
-                  SizedBox(height: spacingUnit(0.8)),
+                  const SizedBox(height: 6.4),
                   TextField(
                     controller: _transferPickupCtrl,
                     decoration: InputDecoration(
@@ -698,13 +697,13 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                         const TextStyle(fontSize: 13, color: Color(0xFF222222)),
                   ),
 
-                  SizedBox(height: spacingUnit(1.5)),
+                  const SizedBox(height: 12),
 
                   // ── Info banner ──
                   Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: spacingUnit(1.5),
-                      vertical: spacingUnit(1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF0F9F0),
@@ -849,7 +848,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
             ? Colors.orange
             : Colors.blue;
     return Container(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5), // Light card
         borderRadius: BorderRadius.circular(14),
@@ -865,14 +864,14 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(spacingUnit(1.2)),
+            padding: const EdgeInsets.all(9.6),
             decoration: BoxDecoration(
               color: const Color(0xFFF5E6D3),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.train, color: Color(0xFFD4AF37), size: 22),
           ),
-          SizedBox(width: spacingUnit(1.5)),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -880,19 +879,19 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                 Text(
                   _train.trainName,
                   style:
-                      ThemeText.subtitle.copyWith(fontWeight: FontWeight.bold),
+                      TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
                   '${_train.trainNumber}  ·  ${_train.departureTime} → ${_train.arrivalTime}',
-                  style: ThemeText.caption
+                  style: TravelloTheme.caption
                       .copyWith(color: const Color(0xFFB3B3B3)),
                 ),
               ],
             ),
           ),
           Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(1.5), vertical: spacingUnit(0.5)),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: classColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
@@ -923,7 +922,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
             : Colors.blue;
 
     return Container(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5), // Light card
         borderRadius: BorderRadius.circular(14),
@@ -939,14 +938,14 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(spacingUnit(1.2)),
+            padding: const EdgeInsets.all(9.6),
             decoration: BoxDecoration(
               color: const Color(0xFFF5E6D3),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.train, color: Color(0xFFD4AF37), size: 22),
           ),
-          SizedBox(width: spacingUnit(1.5)),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -954,19 +953,19 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                 Text(
                   _returnTrain!.trainName,
                   style:
-                      ThemeText.subtitle.copyWith(fontWeight: FontWeight.bold),
+                      TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
                   '${_returnTrain!.trainNumber}  ·  ${_returnTrain!.departureTime} → ${_returnTrain!.arrivalTime}',
-                  style: ThemeText.caption
+                  style: TravelloTheme.caption
                       .copyWith(color: const Color(0xFFB3B3B3)),
                 ),
               ],
             ),
           ),
           Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(1.5), vertical: spacingUnit(0.5)),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: classColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
@@ -1042,14 +1041,14 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(spacingUnit(2.5), spacingUnit(2),
-              spacingUnit(2.5), spacingUnit(2)),
+          padding: const EdgeInsets.fromLTRB(20, 16,
+              20, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // ── price breakdown ──
               Container(
-                padding: EdgeInsets.all(spacingUnit(1.8)),
+                padding: const EdgeInsets.all(14.4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF5F5F5), // Light surface
                   borderRadius: BorderRadius.circular(12),
@@ -1073,7 +1072,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                       if (_outboundSeatSelections
                           .where((s) => s['seatName'].toString().isNotEmpty)
                           .isNotEmpty) ...[
-                        SizedBox(height: spacingUnit(1.2)),
+                        const SizedBox(height: 9.6),
                         _priceRow(
                           context,
                           icon: Icons.event_seat,
@@ -1087,7 +1086,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                       if (_returnSeatSelections
                           .where((s) => s['seatName'].toString().isNotEmpty)
                           .isNotEmpty) ...[
-                        SizedBox(height: spacingUnit(1.2)),
+                        const SizedBox(height: 9.6),
                         _priceRow(
                           context,
                           icon: Icons.event_seat,
@@ -1103,7 +1102,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                       if (_seatSelections
                           .where((s) => s['seatName'].toString().isNotEmpty)
                           .isNotEmpty) ...[
-                        SizedBox(height: spacingUnit(1.2)),
+                        const SizedBox(height: 9.6),
                         _priceRow(
                           context,
                           icon: Icons.event_seat,
@@ -1119,7 +1118,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                 ),
               ),
 
-              SizedBox(height: spacingUnit(1.8)),
+              const SizedBox(height: 14.4),
 
               // ── grand total + continue button ──
               Row(
@@ -1159,7 +1158,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                       ],
                     ),
                   ),
-                  SizedBox(width: spacingUnit(2)),
+                  const SizedBox(width: 16),
                   DSButton(
                     label: 'CONTINUE',
                     trailingIcon: Icons.arrow_forward_rounded,
@@ -1188,14 +1187,14 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
     return Row(
       children: [
         Container(
-          padding: EdgeInsets.all(spacingUnit(0.8)),
+          padding: const EdgeInsets.all(6.4),
           decoration: BoxDecoration(
             color: Colors.grey.shade200,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 16, color: const Color(0xFFB3B3B3)),
         ),
-        SizedBox(width: spacingUnit(1.2)),
+        const SizedBox(width: 9.6),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

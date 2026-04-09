@@ -1,9 +1,6 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class RoundTripTab extends StatelessWidget {
   const RoundTripTab(
@@ -15,9 +12,9 @@ class RoundTripTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: spacingUnit(2),
-        vertical: spacingUnit(1),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 8,
       ),
       child: Row(children: [
         Expanded(
@@ -27,14 +24,14 @@ class RoundTripTab extends StatelessWidget {
           },
           child: Container(
             padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(1),
+              horizontal: 8,
               vertical: spacingUnit(0.75),
             ),
             decoration: BoxDecoration(
               borderRadius: ThemeRadius.medium,
               color: tabMenuIndex == 0
-                  ? colorScheme(context).primaryContainer
-                  : colorScheme(context).surfaceDim,
+                  ? TravelloTheme.primaryMainContainer
+                  : TravelloTheme.paperLightDim,
             ),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Icon(FontAwesomeIcons.planeDeparture,
@@ -42,9 +39,9 @@ class RoundTripTab extends StatelessWidget {
                   color: tabMenuIndex == 0
                       ? colorScheme(context).onPrimaryContainer
                       : colorScheme(context).onSurface),
-              SizedBox(width: spacingUnit(2)),
+              const SizedBox(width: 16),
               Text('Departure',
-                  style: ThemeText.subtitle.copyWith(
+                  style: TravelloTheme.subtitle.copyWith(
                       color: tabMenuIndex == 0
                           ? colorScheme(context).onPrimaryContainer
                           : colorScheme(context).onSurface))
@@ -61,14 +58,14 @@ class RoundTripTab extends StatelessWidget {
           },
           child: Container(
             padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(1),
+              horizontal: 8,
               vertical: spacingUnit(0.75),
             ),
             decoration: BoxDecoration(
               borderRadius: ThemeRadius.medium,
               color: tabMenuIndex == 1
-                  ? colorScheme(context).primaryContainer
-                  : colorScheme(context).surfaceDim,
+                  ? TravelloTheme.primaryMainContainer
+                  : TravelloTheme.paperLightDim,
             ),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Icon(FontAwesomeIcons.planeArrival,
@@ -76,9 +73,9 @@ class RoundTripTab extends StatelessWidget {
                   color: tabMenuIndex == 1
                       ? colorScheme(context).onPrimaryContainer
                       : colorScheme(context).onSurface),
-              SizedBox(width: spacingUnit(2)),
+              const SizedBox(width: 16),
               Text('Return',
-                  style: ThemeText.subtitle.copyWith(
+                  style: TravelloTheme.subtitle.copyWith(
                       color: tabMenuIndex == 1
                           ? colorScheme(context).onPrimaryContainer
                           : colorScheme(context).onSurface))

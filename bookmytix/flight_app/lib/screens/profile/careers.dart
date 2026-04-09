@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class Careers extends StatelessWidget {
   const Careers({super.key});
@@ -15,49 +13,49 @@ class Careers extends StatelessWidget {
           onPressed: () => Get.back(),
           icon: const Icon(Icons.arrow_back_ios_new),
         ),
-        title: const Text('Careers', style: ThemeText.subtitle),
+        title: const Text('Careers', style: TravelloTheme.subtitle),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(spacingUnit(3)),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Join Our Team',
-              style: ThemeText.title.copyWith(
-                color: ThemePalette.primaryDark,
+              style: TravelloTheme.title.copyWith(
+                color: TravelloTheme.primaryDark,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
             Text(
               'Build the future of travel with Travello AI',
-              style: ThemeText.subtitle.copyWith(
+              style: TravelloTheme.subtitle.copyWith(
                 color: Colors.grey.shade600,
               ),
             ),
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
             _buildSection(
               'Why Work With Us?',
-              '🚀 **Innovation**: Work on cutting-edge AI and travel technology\n\n'
-                  '💡 **Impact**: Help millions of travelers plan better journeys\n\n'
-                  '🌱 **Growth**: Continuous learning and career development\n\n'
-                  '🤝 **Culture**: Collaborative and inclusive environment\n\n'
-                  '💰 **Benefits**: Competitive salary, health insurance, and perks\n\n'
-                  '🏖️ **Work-Life Balance**: Flexible hours and remote options',
+              '**Innovation**: Work on cutting-edge AI and travel technology\n\n'
+                  '**Impact**: Help millions of travelers plan better journeys\n\n'
+                  '**Growth**: Continuous learning and career development\n\n'
+                  '**Culture**: Collaborative and inclusive environment\n\n'
+                  '**Benefits**: Competitive salary, health insurance, and perks\n\n'
+                  '**Work-Life Balance**: Flexible hours and remote options',
             ),
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
             Text(
               'Open Positions',
-              style: ThemeText.subtitle.copyWith(
+              style: TravelloTheme.subtitle.copyWith(
                 fontWeight: FontWeight.bold,
-                color: ThemePalette.primaryDark,
+                color: TravelloTheme.primaryDark,
               ),
             ),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
             _buildJobCard(
               'Senior Flutter Developer',
               'Engineering',
@@ -100,14 +98,14 @@ class Careers extends StatelessWidget {
               'Karachi, Pakistan',
               Icons.campaign,
             ),
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
             _buildSection(
               'Application Process',
-              '1️⃣ **Submit Application**: Send your resume to careers@travelloai.com\n\n'
-                  '2️⃣ **Initial Screening**: Our HR team will review your profile\n\n'
-                  '3️⃣ **Technical Assessment**: Complete a relevant skills test\n\n'
-                  '4️⃣ **Interviews**: Meet with team leads and managers\n\n'
-                  '5️⃣ **Offer**: Receive and accept your offer letter',
+              '1. **Submit Application**: Send your resume to careers@travelloai.com\n\n'
+                  '2. **Initial Screening**: Our HR team will review your profile\n\n'
+                  '3. **Technical Assessment**: Complete a relevant skills test\n\n'
+                  '4. **Interviews**: Meet with team leads and managers\n\n'
+                  '5. **Offer**: Receive and accept your offer letter',
             ),
             _buildSection(
               'Internship Program',
@@ -115,11 +113,11 @@ class Careers extends StatelessWidget {
             ),
             _buildSection(
               'Contact HR',
-              '📧 Email: careers@travelloai.com\n'
-                  '📞 Phone: +92 (21) 1234-5678\n'
-                  '📍 Office: Karachi, Pakistan',
+              'Email: careers@travelloai.com\n'
+                  'Phone: +92 (21) 1234-5678\n'
+                  'Office: Karachi, Pakistan',
             ),
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -128,21 +126,21 @@ class Careers extends StatelessWidget {
 
   Widget _buildSection(String title, String content) {
     return Padding(
-      padding: EdgeInsets.only(bottom: spacingUnit(3)),
+      padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: ThemeText.subtitle.copyWith(
+            style: TravelloTheme.subtitle.copyWith(
               fontWeight: FontWeight.bold,
-              color: ThemePalette.primaryDark,
+              color: TravelloTheme.primaryDark,
             ),
           ),
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
           Text(
             content,
-            style: ThemeText.paragraph.copyWith(
+            style: TravelloTheme.paragraph.copyWith(
               height: 1.6,
               color: Colors.grey.shade700,
             ),
@@ -160,8 +158,8 @@ class Careers extends StatelessWidget {
     IconData icon,
   ) {
     return Container(
-      margin: EdgeInsets.only(bottom: spacingUnit(2)),
-      padding: EdgeInsets.all(spacingUnit(2)),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -180,27 +178,27 @@ class Careers extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: ThemePalette.primaryLight.withOpacity(0.2),
+              color: TravelloTheme.primaryLight.withOpacity(0.2),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: ThemePalette.primaryMain, size: 28),
+            child: Icon(icon, color: TravelloTheme.primaryMain, size: 28),
           ),
-          SizedBox(width: spacingUnit(2)),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: ThemeText.subtitle2.copyWith(
+                  style: TravelloTheme.subtitle2.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: ThemePalette.primaryDark,
+                    color: TravelloTheme.primaryDark,
                   ),
                 ),
-                SizedBox(height: spacingUnit(0.5)),
+                const SizedBox(height: 4),
                 Text(
                   '$department • $type',
-                  style: ThemeText.caption.copyWith(
+                  style: TravelloTheme.caption.copyWith(
                     color: Colors.grey.shade600,
                   ),
                 ),
@@ -209,10 +207,10 @@ class Careers extends StatelessWidget {
                   children: [
                     Icon(Icons.location_on,
                         size: 14, color: Colors.grey.shade500),
-                    SizedBox(width: spacingUnit(0.5)),
+                    const SizedBox(width: 4),
                     Text(
                       location,
-                      style: ThemeText.caption.copyWith(
+                      style: TravelloTheme.caption.copyWith(
                         color: Colors.grey.shade500,
                       ),
                     ),

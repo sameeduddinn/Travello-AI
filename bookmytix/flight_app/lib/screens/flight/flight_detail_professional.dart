@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
 import 'package:flight_app/app/app_link.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightDetailProfessional extends StatelessWidget {
   const FlightDetailProfessional({super.key});
@@ -42,10 +40,10 @@ class FlightDetailProfessional extends StatelessWidget {
           children: [
             // Flight summary card
             Container(
-              margin: EdgeInsets.all(spacingUnit(2)),
-              padding: EdgeInsets.all(spacingUnit(2)),
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colorScheme(context).surface,
+                color: TravelloTheme.paperLight,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -62,9 +60,9 @@ class FlightDetailProfessional extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: spacingUnit(1.5),
-                          vertical: spacingUnit(0.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -88,7 +86,7 @@ class FlightDetailProfessional extends StatelessWidget {
                               size: 14,
                               color: Colors.white,
                             ),
-                            SizedBox(width: spacingUnit(0.5)),
+                            const SizedBox(width: 4),
                             Text(
                               flight.badge,
                               style: const TextStyle(
@@ -102,7 +100,7 @@ class FlightDetailProfessional extends StatelessWidget {
                       ),
                     ),
 
-                  if (flight.badge.isNotEmpty) SizedBox(height: spacingUnit(2)),
+                  if (flight.badge.isNotEmpty) const SizedBox(height: 16),
 
                   // Airline info
                   Row(
@@ -111,7 +109,7 @@ class FlightDetailProfessional extends StatelessWidget {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: colorScheme(context).primaryContainer,
+                          color: TravelloTheme.primaryMainContainer,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(
@@ -121,18 +119,18 @@ class FlightDetailProfessional extends StatelessWidget {
                           ),
                         ),
                       ),
-                      SizedBox(width: spacingUnit(2)),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               flight.airlineName,
-                              style: ThemeText.title2,
+                              style: TravelloTheme.title2,
                             ),
                             Text(
                               '${flight.airlineCode} • ${flight.cabinClass}',
-                              style: ThemeText.caption,
+                              style: TravelloTheme.caption,
                             ),
                           ],
                         ),
@@ -140,7 +138,7 @@ class FlightDetailProfessional extends StatelessWidget {
                     ],
                   ),
 
-                  SizedBox(height: spacingUnit(3)),
+                  const SizedBox(height: 24),
 
                   // Flight timeline
                   Row(
@@ -152,15 +150,15 @@ class FlightDetailProfessional extends StatelessWidget {
                           children: [
                             Text(
                               flight.departureTime,
-                              style: ThemeText.title2,
+                              style: TravelloTheme.title2,
                             ),
                             Text(
                               searchParams['fromAirport']?.code ?? 'DEP',
-                              style: ThemeText.subtitle,
+                              style: TravelloTheme.subtitle,
                             ),
                             Text(
                               searchParams['fromAirport']?.city ?? 'Departure',
-                              style: ThemeText.caption,
+                              style: TravelloTheme.caption,
                             ),
                           ],
                         ),
@@ -170,28 +168,28 @@ class FlightDetailProfessional extends StatelessWidget {
                       Expanded(
                         child: Column(
                           children: [
-                            Icon(
+                            const Icon(
                               CupertinoIcons.airplane,
-                              color: colorScheme(context).primary,
+                              color: TravelloTheme.primaryMain,
                             ),
-                            SizedBox(height: spacingUnit(0.5)),
+                            const SizedBox(height: 4),
                             Text(
                               flight.duration,
-                              style: ThemeText.caption,
+                              style: TravelloTheme.caption,
                             ),
-                            SizedBox(height: spacingUnit(0.5)),
+                            const SizedBox(height: 4),
                             Container(
                               height: 2,
-                              color: colorScheme(context).primary,
-                              margin: EdgeInsets.symmetric(
-                                  horizontal: spacingUnit(2)),
+                              color: TravelloTheme.primaryMain,
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 16),
                             ),
-                            SizedBox(height: spacingUnit(0.5)),
+                            const SizedBox(height: 4),
                             Text(
                               flight.stops == 0
                                   ? 'Non-stop'
                                   : '${flight.stops} ${flight.stops == 1 ? 'stop' : 'stops'}',
-                              style: ThemeText.caption,
+                              style: TravelloTheme.caption,
                             ),
                           ],
                         ),
@@ -204,15 +202,15 @@ class FlightDetailProfessional extends StatelessWidget {
                           children: [
                             Text(
                               flight.arrivalTime,
-                              style: ThemeText.title2,
+                              style: TravelloTheme.title2,
                             ),
                             Text(
                               searchParams['toAirport']?.code ?? 'ARR',
-                              style: ThemeText.subtitle,
+                              style: TravelloTheme.subtitle,
                             ),
                             Text(
                               searchParams['toAirport']?.city ?? 'Arrival',
-                              style: ThemeText.caption,
+                              style: TravelloTheme.caption,
                             ),
                           ],
                         ),
@@ -226,8 +224,8 @@ class FlightDetailProfessional extends StatelessWidget {
             // Layover details (if stops > 0)
             if (flight.stops > 0)
               Container(
-                margin: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
-                padding: EdgeInsets.all(spacingUnit(2)),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -238,15 +236,15 @@ class FlightDetailProfessional extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    const Row(
                       children: [
-                        const Icon(
+                        Icon(
                           CupertinoIcons.info_circle,
                           color: Colors.orange,
                           size: 20,
                         ),
-                        SizedBox(width: spacingUnit(1)),
-                        const Text(
+                        SizedBox(width: 8),
+                        Text(
                           'Layover Information',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -255,13 +253,13 @@ class FlightDetailProfessional extends StatelessWidget {
                         ),
                       ],
                     ),
-                    SizedBox(height: spacingUnit(1)),
+                    const SizedBox(height: 8),
                     ...flight.stopCities.asMap().entries.map((entry) {
                       return Padding(
-                        padding: EdgeInsets.only(top: spacingUnit(0.5)),
+                        padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           '• Stop ${entry.key + 1}: ${entry.value} (2h 30m layover)',
-                          style: ThemeText.caption,
+                          style: TravelloTheme.caption,
                         ),
                       );
                     }),
@@ -269,7 +267,7 @@ class FlightDetailProfessional extends StatelessWidget {
                 ),
               ),
 
-            if (flight.stops > 0) SizedBox(height: spacingUnit(2)),
+            if (flight.stops > 0) const SizedBox(height: 16),
 
             // Baggage information
             _buildInfoSection(
@@ -282,7 +280,7 @@ class FlightDetailProfessional extends StatelessWidget {
               ],
             ),
 
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
 
             // Cancellation policy
             _buildInfoSection(
@@ -302,7 +300,7 @@ class FlightDetailProfessional extends StatelessWidget {
               ],
             ),
 
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
 
             // Fare breakdown
             _buildInfoSection(
@@ -328,7 +326,7 @@ class FlightDetailProfessional extends StatelessWidget {
                   'Taxes & Fees',
                   'PKR ${(flight.price * 0.15).toStringAsFixed(0)}',
                 ),
-                Divider(height: spacingUnit(2)),
+                const Divider(height: 16),
                 _buildInfoRow(
                   'Total',
                   'PKR ${flight.price.toStringAsFixed(0)}',
@@ -337,16 +335,16 @@ class FlightDetailProfessional extends StatelessWidget {
               ],
             ),
 
-            SizedBox(height: spacingUnit(10)),
+            const SizedBox(height: 80),
           ],
         ),
       ),
 
       // Continue button
       bottomNavigationBar: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: colorScheme(context).surface,
+          color: TravelloTheme.paperLight,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.1),
@@ -366,11 +364,11 @@ class FlightDetailProfessional extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Total Price', style: ThemeText.caption),
+                        const Text('Total Price', style: TravelloTheme.caption),
                         Text(
                           'PKR ${flight.price.toStringAsFixed(0)}',
-                          style: ThemeText.title2.copyWith(
-                            color: colorScheme(context).primary,
+                          style: TravelloTheme.title2.copyWith(
+                            color: TravelloTheme.primaryMain,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -392,11 +390,11 @@ class FlightDetailProfessional extends StatelessWidget {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme(context).primary,
+                      backgroundColor: TravelloTheme.primaryMain,
                       foregroundColor: colorScheme(context).onPrimary,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: spacingUnit(4),
-                        vertical: spacingUnit(2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -426,10 +424,10 @@ class FlightDetailProfessional extends StatelessWidget {
     List<Widget> children,
   ) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
-      padding: EdgeInsets.all(spacingUnit(2)),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme(context).surface,
+        color: TravelloTheme.paperLight,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -446,17 +444,17 @@ class FlightDetailProfessional extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: colorScheme(context).primary,
+                color: TravelloTheme.primaryMain,
                 size: 20,
               ),
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               Text(
                 title,
-                style: ThemeText.subtitle.copyWith(fontWeight: FontWeight.bold),
+                style: TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           ...children,
         ],
       ),
@@ -465,7 +463,7 @@ class FlightDetailProfessional extends StatelessWidget {
 
   Widget _buildInfoRow(String label, String value, {bool isTotal = false}) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: spacingUnit(0.5)),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -473,13 +471,13 @@ class FlightDetailProfessional extends StatelessWidget {
             label,
             style: isTotal
                 ? const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
-                : ThemeText.caption,
+                : TravelloTheme.caption,
           ),
           Text(
             value,
             style: isTotal
                 ? const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
-                : ThemeText.subtitle,
+                : TravelloTheme.subtitle,
           ),
         ],
       ),

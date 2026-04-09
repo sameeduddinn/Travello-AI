@@ -1,14 +1,12 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flight_app/widgets/app_button/back_icon_button.dart';
 import 'package:flight_app/widgets/profile/reward_list.dart';
 import 'package:flight_app/widgets/profile/tag_fliter_reward.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/cards/point_card.dart';
 import 'package:flight_app/widgets/notifications/notif_block.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class Rewards extends StatelessWidget {
   const Rewards({super.key});
@@ -36,15 +34,15 @@ class Rewards extends StatelessWidget {
         ),
         child: Column(children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               const Icon(Icons.wallet_giftcard, color: Colors.white, size: 24),
               const SizedBox(width: 4),
-              Text('Youre in Gold Member', style: ThemeText.title2.copyWith(color: Colors.white)),
+              Text('Youre in Gold Member', style: TravelloTheme.title2.copyWith(color: Colors.white)),
             ]),
           ),
           Padding(
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             child: PointCard(
               color: gold,
               title: 'Points'.toUpperCase(),
@@ -69,7 +67,7 @@ class Rewards extends StatelessWidget {
                 VSpaceShort(),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text('Redeem your point with for exciting rewards', textAlign: TextAlign.center, style: ThemeText.subtitle,),
+                  child: Text('Redeem your point with for exciting rewards', textAlign: TextAlign.center, style: TravelloTheme.subtitle,),
                 ),
                 Padding(
                   padding: EdgeInsets.all(8.0),

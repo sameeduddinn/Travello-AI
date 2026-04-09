@@ -1,8 +1,5 @@
 import 'package:flight_app/models/list_item.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/picker.dart';
 import 'package:flight_app/widgets/alert_info/alert_info.dart';
 import 'package:flight_app/widgets/app_button/back_icon_button.dart';
@@ -10,6 +7,7 @@ import 'package:flight_app/widgets/app_input/app_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class AddPassengger extends StatefulWidget {
   const AddPassengger({super.key});
@@ -117,7 +115,7 @@ class _AddPassenggerState extends State<AddPassengger> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Text('Add New Passengger', style: ThemeText.subtitle),
+        title: const Text('Add New Passengger', style: TravelloTheme.subtitle),
         leading: BackIconButton(onTap: () {
           Get.back();
         }),
@@ -129,7 +127,7 @@ class _AddPassenggerState extends State<AddPassengger> {
           Expanded(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: ThemeSize.sm),
-              child: ListView(padding: EdgeInsets.all(spacingUnit(2)), shrinkWrap: true, physics: const ClampingScrollPhysics(), children: [
+              child: ListView(padding: const EdgeInsets.all(16), shrinkWrap: true, physics: const ClampingScrollPhysics(), children: [
                 const AlertInfo(type: AlertType.info, text: 'Please fill the data information for new passenges.'),
                 const VSpaceShort(),
                 AppTextField(
@@ -166,7 +164,7 @@ class _AddPassenggerState extends State<AddPassengger> {
                       errorText: _isNotValid ? 'Please fill ID type' : null,
                     ),
                   ),
-                  SizedBox(width: spacingUnit(1)),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: AppTextField(
                       label: 'ID Number',
@@ -194,11 +192,11 @@ class _AddPassenggerState extends State<AddPassengger> {
           Center(
             child: Container(
               constraints: BoxConstraints(maxWidth: ThemeSize.sm),
-              padding: EdgeInsets.only(
-                left: spacingUnit(2),
-                right: spacingUnit(2),
-                top: spacingUnit(1),
-                bottom: spacingUnit(4)
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 8,
+                bottom: 32
               ),
               child: SizedBox(
                 height: 50,
@@ -214,7 +212,7 @@ class _AddPassenggerState extends State<AddPassengger> {
                     }
                   },
                   style: ThemeButton.btnBig.merge(ThemeButton.primary),
-                  child: const Text('SAVE', style: ThemeText.subtitle2)
+                  child: const Text('SAVE', style: TravelloTheme.subtitle2)
                 ),
               ),
             ),

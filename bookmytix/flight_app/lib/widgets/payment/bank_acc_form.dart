@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/list_item.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/picker.dart';
 import 'package:flight_app/widgets/app_input/app_textfield.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class BankAccForm extends StatefulWidget {
   const BankAccForm({super.key});
@@ -68,12 +68,12 @@ class _BankAccFormState extends State<BankAccForm> {
           openPicker(context);
         },
       ),
-      SizedBox(height: spacingUnit(2)),
+      const SizedBox(height: 16),
       AppTextField(
         label: 'Account Name',
         onChanged: (_) {},
       ),
-      SizedBox(height: spacingUnit(2)),
+      const SizedBox(height: 16),
       AppTextField(
         label: 'Account Number',
         onChanged: (_) {},

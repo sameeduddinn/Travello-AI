@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/models/hotel.dart';
 import 'package:flight_app/models/room_type.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 /// Hotel Checkout — Step 4 in hotel booking flow.
 /// Review page shown between Guest Details and Payment.
@@ -102,7 +101,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = colorScheme(context).primary;
+    const primary = TravelloTheme.primaryMain;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -129,8 +128,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
           // ── Progress Bar ────────────────────────────────────────────────
           Container(
             color: Colors.white,
-            padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(2), vertical: spacingUnit(1.5)),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 12),
             child: const Row(
               children: [
                 _HStep(num: 1, label: 'Hotel', done: true),
@@ -151,48 +150,48 @@ class _HotelCheckoutState extends State<HotelCheckout> {
           // ── Scrollable Body ─────────────────────────────────────────────
           Expanded(
             child: ListView(
-              padding: EdgeInsets.all(spacingUnit(2)),
+              padding: const EdgeInsets.all(16),
               children: [
                 // 1. Hotel Details
                 _buildSectionHeader(Icons.hotel, 'Hotel Details', primary),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 _buildHotelDetails(primary),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // 2. Stay Details
                 _buildSectionHeader(
                     Icons.calendar_month, 'Stay Details', primary),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 _buildStayDetails(primary),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // 3. Price Breakdown
                 _buildSectionHeader(
                     Icons.receipt_long_outlined, 'Price Breakdown', primary),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 _buildPriceBreakdown(primary),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // 4. Guest Details
                 if (_guestsData.isNotEmpty) ...[
                   _buildSectionHeader(
                       Icons.people_outline, 'Guest Details', primary),
-                  SizedBox(height: spacingUnit(1)),
+                  const SizedBox(height: 8),
                   _buildGuestDetails(primary),
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                 ],
 
                 // 5. Rules & Policy
                 _buildRulesAndPolicy(primary),
-                SizedBox(height: spacingUnit(3)),
+                const SizedBox(height: 24),
               ],
             ),
           ),
 
           // ── Bottom Button ────────────────────────────────────────────────
           Container(
-            padding: EdgeInsets.fromLTRB(spacingUnit(2), spacingUnit(1.5),
-                spacingUnit(2), spacingUnit(2.5)),
+            padding: const EdgeInsets.fromLTRB(16, 12,
+                16, 20),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -225,7 +224,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
   Widget _buildSectionHeader(IconData icon, String title, Color primary) {
     return Row(children: [
       Icon(icon, color: primary, size: 20),
-      SizedBox(width: spacingUnit(1)),
+      const SizedBox(width: 8),
       Text(title,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
     ]);
@@ -321,8 +320,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
         // ── Room type section ────────────────────────────────────────────
         if (_roomType != null) ...[
           Padding(
-            padding: EdgeInsets.fromLTRB(
-                spacingUnit(2), spacingUnit(1.5), spacingUnit(2), 0),
+            padding: const EdgeInsets.fromLTRB(
+                16, 12, 16, 0),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Divider(color: Colors.grey.shade200),
@@ -339,7 +338,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(spacingUnit(1.5)),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                     color: primary.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(10),
@@ -354,7 +353,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                       Text(_roomType!.description,
                           style: TextStyle(
                               fontSize: 12, color: Colors.grey.shade600)),
-                      SizedBox(height: spacingUnit(1)),
+                      const SizedBox(height: 8),
                       Wrap(spacing: 16, runSpacing: 4, children: [
                         _chip(Icons.people_outline,
                             '${_roomType!.maxOccupancy} guests'),
@@ -371,12 +370,12 @@ class _HotelCheckoutState extends State<HotelCheckout> {
         // Refundable badge
         if (_hotel.isRefundable) ...[
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(children: [
-              SizedBox(height: spacingUnit(1.5)),
+              const SizedBox(height: 12),
               Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: spacingUnit(1.5), vertical: spacingUnit(1)),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                     color: Colors.green.shade50,
                     borderRadius: BorderRadius.circular(8),
@@ -409,8 +408,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
         // Amenities
         if (_hotel.amenities.isNotEmpty) ...[
           Padding(
-            padding: EdgeInsets.fromLTRB(spacingUnit(2), spacingUnit(1.5),
-                spacingUnit(2), spacingUnit(2)),
+            padding: const EdgeInsets.fromLTRB(16, 12,
+                16, 16),
             child: Wrap(
               spacing: 16,
               runSpacing: 4,
@@ -419,7 +418,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
             ),
           ),
         ] else
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
       ]),
     );
   }
@@ -482,7 +481,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
   // ── 2. Stay Details ───────────────────────────────────────────────────────
   Widget _buildStayDetails(Color primary) {
     return Container(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       decoration: _card(),
       child: Column(children: [
         // Check-in / Check-out
@@ -544,11 +543,11 @@ class _HotelCheckoutState extends State<HotelCheckout> {
             ]),
           ),
         ]),
-        SizedBox(height: spacingUnit(1.5)),
+        const SizedBox(height: 12),
         // Nights · Rooms · Guests strip
         Container(
-          padding: EdgeInsets.symmetric(
-              vertical: spacingUnit(1.5), horizontal: spacingUnit(1)),
+          padding: const EdgeInsets.symmetric(
+              vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
               color: primary.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(12)),
@@ -596,8 +595,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
             return Column(children: [
               if (i > 0) Divider(height: 1, color: Colors.grey.shade200),
               Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: spacingUnit(2), vertical: spacingUnit(1.5)),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
                 child: Row(children: [
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -606,7 +605,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                         shape: BoxShape.circle),
                     child: Icon(Icons.person, color: primary, size: 18),
                   ),
-                  SizedBox(width: spacingUnit(1.5)),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -643,7 +642,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
           if (_extrasIncluded.isNotEmpty) ...[
             Divider(height: 1, color: Colors.grey.shade200),
             Padding(
-              padding: EdgeInsets.all(spacingUnit(1.5)),
+              padding: const EdgeInsets.all(12),
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -673,7 +672,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
   // ── 4. Price Breakdown ────────────────────────────────────────────────────
   Widget _buildPriceBreakdown(Color primary) {
     return Container(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
@@ -682,11 +681,11 @@ class _HotelCheckoutState extends State<HotelCheckout> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Icon(Icons.hotel, color: primary, size: 18),
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           const Text('Fare Breakdown',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
         ]),
-        SizedBox(height: spacingUnit(1.5)),
+        const SizedBox(height: 12),
         _priceRow(
             'Room Rate',
             'PKR ${fmt.format((_roomType?.pricePerNight ?? _hotel.pricePerNight).round())}/night × $_nights nights × $_rooms rooms',
@@ -723,10 +722,10 @@ class _HotelCheckoutState extends State<HotelCheckout> {
             'PKR ${fmt.format((800 * _rooms).round())}',
           ),
         ],
-        SizedBox(height: spacingUnit(1)),
+        const SizedBox(height: 8),
         Container(
-          padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(1.5), vertical: spacingUnit(1.5)),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
               color: primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10)),
@@ -744,7 +743,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
   }
 
   Widget _priceRow(String label, String sub, String value) => Padding(
-        padding: EdgeInsets.symmetric(vertical: spacingUnit(0.6)),
+        padding: const EdgeInsets.symmetric(vertical: 4.8),
         child: Row(children: [
           Expanded(
             child:
@@ -794,17 +793,17 @@ class _HotelCheckoutState extends State<HotelCheckout> {
           children: [
             // Header
             Padding(
-              padding: EdgeInsets.all(spacingUnit(2.5)),
+              padding: const EdgeInsets.all(20),
               child: Row(children: [
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                      color: ThemePalette.primaryMain.withValues(alpha: 0.12),
+                      color: TravelloTheme.primaryMain.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10)),
-                  child: Icon(Icons.policy_rounded,
-                      color: ThemePalette.primaryMain, size: 22),
+                  child: const Icon(Icons.policy_rounded,
+                      color: TravelloTheme.primaryMain, size: 22),
                 ),
-                SizedBox(width: spacingUnit(1.5)),
+                const SizedBox(width: 12),
                 const Text('Review Policies',
                     style: TextStyle(
                         fontSize: 17,
@@ -829,8 +828,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
 
             // T&C checkbox
             Padding(
-              padding: EdgeInsets.fromLTRB(spacingUnit(2.5), spacingUnit(2),
-                  spacingUnit(2.5), spacingUnit(2.5)),
+              padding: const EdgeInsets.fromLTRB(20, 16,
+                  20, 20),
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -851,14 +850,14 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                                 height: 24,
                                 decoration: BoxDecoration(
                                   color: _agreeToTerms
-                                      ? ThemePalette.primaryMain
+                                      ? TravelloTheme.primaryMain
                                       : Colors.white,
                                   borderRadius: BorderRadius.circular(6),
                                   border: Border.all(
                                     color: _showTermsError
                                         ? Colors.red.shade400
                                         : _agreeToTerms
-                                            ? ThemePalette.primaryMain
+                                            ? TravelloTheme.primaryMain
                                             : Colors.grey.shade400,
                                     width: 2,
                                   ),
@@ -868,7 +867,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                                         size: 16, color: Colors.white)
                                     : null,
                               ),
-                              SizedBox(width: spacingUnit(1.5)),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Padding(
                                   padding: const EdgeInsets.only(top: 2),
@@ -916,11 +915,11 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                       ),
                     ),
                     if (_showTermsError) ...[
-                      SizedBox(height: spacingUnit(1)),
+                      const SizedBox(height: 8),
                       Row(children: [
                         Icon(Icons.error_outline_rounded,
                             size: 16, color: Colors.red.shade600),
-                        SizedBox(width: spacingUnit(0.7)),
+                        const SizedBox(width: 5.6),
                         Text('Please accept Terms & Conditions to continue',
                             style: TextStyle(
                                 fontSize: 12,
@@ -942,8 +941,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(2.5), vertical: spacingUnit(2)),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 20, vertical: 16),
           child: Row(children: [
             Container(
               padding: const EdgeInsets.all(8),
@@ -952,7 +951,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                   borderRadius: BorderRadius.circular(8)),
               child: Icon(icon, size: 20, color: const Color(0xFFB3B3B3)),
             ),
-            SizedBox(width: spacingUnit(1.5)),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(title,
                   style: const TextStyle(
@@ -1039,8 +1038,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                   borderRadius: BorderRadius.circular(2)),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(spacingUnit(3), spacingUnit(1),
-                  spacingUnit(1), spacingUnit(2)),
+              padding: const EdgeInsets.fromLTRB(24, 8,
+                  8, 16),
               child: Row(children: [
                 Expanded(
                   child: Text(title,
@@ -1061,13 +1060,13 @@ class _HotelCheckoutState extends State<HotelCheckout> {
             Expanded(
               child: SingleChildScrollView(
                 controller: scrollController,
-                padding: EdgeInsets.all(spacingUnit(3)),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: items
                         .map((item) => Padding(
                               padding:
-                                  EdgeInsets.only(bottom: spacingUnit(2.5)),
+                                  const EdgeInsets.only(bottom: 20),
                               child: _policySection(item.title, item.body),
                             ))
                         .toList()),
@@ -1088,7 +1087,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                   fontWeight: FontWeight.w700,
                   color: Colors.black87,
                   letterSpacing: -0.3)),
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
           Text(content,
               style: const TextStyle(
                   fontSize: 14,
@@ -1148,7 +1147,7 @@ class _HStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gold = colorScheme(context).primary;
+    const gold = TravelloTheme.primaryMain;
     return Column(children: [
       Container(
         width: 28,
@@ -1187,7 +1186,7 @@ class _HStepLine extends StatelessWidget {
       child: Container(
           height: 2,
           margin: const EdgeInsets.only(bottom: 18),
-          color: done ? colorScheme(context).primary : const Color(0xFFE0E0E0)),
+          color: done ? TravelloTheme.primaryMain : const Color(0xFFE0E0E0)),
     );
   }
 }

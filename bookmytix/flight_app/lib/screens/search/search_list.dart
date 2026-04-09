@@ -1,12 +1,11 @@
 ﻿import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/models/railway_station.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/search_history_service.dart';
 import 'package:flight_app/widgets/search_filters/search_input.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 const _gold = Color(0xFFD4AF37);
 const _goldLight = Color(0xFFFEF9EC);
@@ -22,15 +21,15 @@ class _Chip {
 }
 
 const _popularSearches = [
-  _Chip('KHI → LHE', 'flight'),
-  _Chip('LHE → ISB', 'flight'),
+  _Chip('KHI -> LHE', 'flight'),
+  _Chip('LHE -> ISB', 'flight'),
   _Chip('Karachi Express', 'train'),
   _Chip('Shalimar Express', 'train'),
   _Chip('Hotels in Lahore', 'hotel'),
   _Chip('PIA Flights', 'flight'),
   _Chip('Hotels in Karachi', 'hotel'),
   _Chip('Tezgam', 'train'),
-  _Chip('ISB → KHI', 'flight'),
+  _Chip('ISB -> KHI', 'flight'),
   _Chip('Hotels Murree', 'hotel'),
 ];
 
@@ -57,22 +56,24 @@ const _trainRoutes = [
 ];
 
 class _Dest {
-  final String name, emoji, tagline;
+  final String name, tagline;
+  final IconData icon;
   final Color color;
-  const _Dest(this.name, this.emoji, this.tagline, this.color);
+  const _Dest(this.name, this.icon, this.tagline, this.color);
 }
 
 const _destinations = [
-  _Dest('Hunza', '🏔', 'Northern Gem', Color(0xFF4A90D9)),
-  _Dest('Skardu', '🏔', 'Mountain Paradise', Color(0xFF2E7D32)),
-  _Dest('Murree', '⛰', 'Hill Station', Color(0xFF6A1B9A)),
-  _Dest('Lahore', '🕌', 'City of Gardens', Color(0xFFE65100)),
-  _Dest('Karachi', '🌊', 'City of Lights', Color(0xFF0277BD)),
-  _Dest('Islamabad', '🌿', 'Capital City', Color(0xFF1B5E20)),
-  _Dest('Swat', '🌸', 'Switzerland of East', Color(0xFFAD1457)),
-  _Dest('Peshawar', '🏛', 'City of Flowers', Color(0xFF4E342E)),
-  _Dest('Quetta', '🌵', 'Fruit Basket', Color(0xFF558B2F)),
-  _Dest('Naran', '🏕', 'Kaghan Valley', Color(0xFF00695C)),
+  _Dest('Hunza', Icons.terrain, 'Northern Gem', Color(0xFF4A90D9)),
+  _Dest('Skardu', Icons.terrain, 'Mountain Paradise', Color(0xFF2E7D32)),
+  _Dest('Murree', Icons.terrain, 'Hill Station', Color(0xFF6A1B9A)),
+  _Dest('Lahore', Icons.account_balance, 'City of Gardens', Color(0xFFE65100)),
+  _Dest('Karachi', Icons.waves, 'City of Lights', Color(0xFF0277BD)),
+  _Dest('Islamabad', Icons.eco, 'Capital City', Color(0xFF1B5E20)),
+  _Dest('Swat', Icons.local_florist, 'Switzerland of East', Color(0xFFAD1457)),
+  _Dest(
+      'Peshawar', Icons.account_balance, 'City of Flowers', Color(0xFF4E342E)),
+  _Dest('Quetta', Icons.landscape, 'Fruit Basket', Color(0xFF558B2F)),
+  _Dest('Naran', Icons.park, 'Kaghan Valley', Color(0xFF00695C)),
 ];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -205,7 +206,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
     }
 
     if (stations.isNotEmpty) {
-      items.add(SizedBox(height: airports.isNotEmpty ? spacingUnit(2) : 0));
+      items.add(SizedBox(height: airports.isNotEmpty ? 16 : 0));
       items.add(_sectionLabel('Railway Stations', Icons.train, _trainGreen));
       for (final s in stations) {
         items.add(_resultTile(
@@ -221,18 +222,17 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
     }
 
     return ListView(
-      padding: EdgeInsets.symmetric(
-          vertical: spacingUnit(1), horizontal: spacingUnit(2)),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       children: items,
     );
   }
 
   Widget _sectionLabel(String label, IconData icon, Color color) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(0, spacingUnit(1.5), 0, spacingUnit(0.75)),
+      padding: EdgeInsets.fromLTRB(0, 12, 0, spacingUnit(0.75)),
       child: Row(children: [
         Icon(icon, size: 14, color: color),
-        SizedBox(width: spacingUnit(0.5)),
+        const SizedBox(width: 4),
         Text(label.toUpperCase(),
             style: TextStyle(
                 fontSize: 11,
@@ -245,11 +245,11 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
 
   Widget _directionHint(String cityName, String code) {
     return Padding(
-      padding: EdgeInsets.only(left: 56, bottom: spacingUnit(0.5)),
+      padding: const EdgeInsets.only(left: 56, bottom: 4),
       child: Row(children: [
         _miniChip('From $code', Icons.flight_takeoff, _flightBlue,
             () => _navigate(cityName, 'flight')),
-        SizedBox(width: spacingUnit(1)),
+        const SizedBox(width: 8),
         _miniChip('To $code', Icons.flight_land, const Color(0xFF8B5CF6),
             () => _navigate(cityName, 'flight')),
       ]),
@@ -300,16 +300,16 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
                 color: iconBg, borderRadius: BorderRadius.circular(10)),
             child: Icon(icon, color: iconColor, size: 22),
           ),
-          SizedBox(width: spacingUnit(1.5)),
+          const SizedBox(width: 12),
           Expanded(
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 Text(title,
-                    style: ThemeText.subtitle
+                    style: TravelloTheme.subtitle
                         .copyWith(fontWeight: FontWeight.w700)),
                 Text(subtitle,
-                    style: ThemeText.caption
+                    style: TravelloTheme.caption
                         .copyWith(color: Colors.grey.shade500)),
               ])),
           Container(
@@ -330,16 +330,18 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
   Widget _buildNoResults() {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(spacingUnit(4)),
+        padding: const EdgeInsets.all(32),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(Icons.search_off, size: 64, color: Colors.grey.shade300),
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
           Text('No results for "${_textRef.text}"',
-              style: ThemeText.subtitle.copyWith(color: Colors.grey.shade600),
+              style:
+                  TravelloTheme.subtitle.copyWith(color: Colors.grey.shade600),
               textAlign: TextAlign.center),
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
           Text('Try a city, airport code, or train station',
-              style: ThemeText.caption.copyWith(color: Colors.grey.shade400),
+              style:
+                  TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
               textAlign: TextAlign.center),
         ]),
       ),
@@ -355,27 +357,27 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
       const Divider(height: 1, color: Color(0xFFE5E7EB)),
       Expanded(
         child: ListView(
-          padding: EdgeInsets.all(spacingUnit(2)),
+          padding: const EdgeInsets.all(16),
           children: [
             _buildPopularSearches(),
-            SizedBox(height: spacingUnit(2.5)),
+            const SizedBox(height: 20),
             _buildHintCards(),
-            SizedBox(height: spacingUnit(2.5)),
+            const SizedBox(height: 20),
             _buildQuickBook(),
-            SizedBox(height: spacingUnit(2.5)),
+            const SizedBox(height: 20),
             if (_history.isNotEmpty) ...[
               _buildRecentSearches(),
-              SizedBox(height: spacingUnit(2.5)),
+              const SizedBox(height: 20),
             ],
             _buildHeader('Popular Routes', Icons.local_fire_department,
                 Colors.red.shade600),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
             _buildPopularRoutes(),
-            SizedBox(height: spacingUnit(2.5)),
+            const SizedBox(height: 20),
             _buildHeader('Popular Destinations', Icons.explore, _gold),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
             _buildDestinations(),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -434,7 +436,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
               fontWeight: FontWeight.w700,
               color: Colors.grey.shade500,
               letterSpacing: 1.2)),
-      SizedBox(height: spacingUnit(1.5)),
+      const SizedBox(height: 12),
       Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -499,7 +501,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
                 'Business class seats'
               ],
               AppLink.flightSearchHome)),
-      SizedBox(width: spacingUnit(1)),
+      const SizedBox(width: 8),
       Expanded(
           child: _hintCard(
               'TRAINS & HOTELS',
@@ -521,7 +523,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: () => Get.toNamed(route),
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(1.5)),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(12),
@@ -530,7 +532,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Icon(icon, size: 13, color: accent),
-            SizedBox(width: spacingUnit(0.5)),
+            const SizedBox(width: 4),
             Text(title,
                 style: TextStyle(
                     fontSize: 10,
@@ -538,7 +540,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
                     color: accent,
                     letterSpacing: 0.6)),
           ]),
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
           ...hints.map((h) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Row(
@@ -566,14 +568,14 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
   Widget _buildQuickBook() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _buildHeader('Quick Book', Icons.bolt, _gold),
-      SizedBox(height: spacingUnit(1.5)),
+      const SizedBox(height: 12),
       Row(children: [
         _quickBtn('Flights', Icons.flight, _flightBlue, const Color(0xFFEFF6FF),
             AppLink.flightSearchHome),
-        SizedBox(width: spacingUnit(1.5)),
+        const SizedBox(width: 12),
         _quickBtn('Trains', Icons.train, _trainGreen, const Color(0xFFF0FDF4),
             AppLink.trainSearchHome),
-        SizedBox(width: spacingUnit(1.5)),
+        const SizedBox(width: 12),
         _quickBtn(
             'Hotels', Icons.hotel, _goldDark, _goldLight, AppLink.hotelSearch),
       ]),
@@ -586,7 +588,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
       child: GestureDetector(
         onTap: () => Get.toNamed(route),
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: spacingUnit(2)),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
             color: bg,
             borderRadius: BorderRadius.circular(12),
@@ -620,7 +622,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
                   fontSize: 12, color: _gold, fontWeight: FontWeight.w600)),
         ),
       ]),
-      SizedBox(height: spacingUnit(1.5)),
+      const SizedBox(height: 12),
       Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -689,9 +691,9 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
           ],
         ),
       ),
-      SizedBox(height: spacingUnit(1.5)),
+      const SizedBox(height: 12),
       SizedBox(
-        height: 68.0 * 3 + spacingUnit(1) * 2,
+        height: 68.0 * 3 + 8 * 2,
         child: TabBarView(
           controller: _routeTab,
           children: [
@@ -710,7 +712,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
       itemCount: routes.length > 3 ? 3 : routes.length,
-      separatorBuilder: (_, __) => SizedBox(height: spacingUnit(1)),
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         final r = routes[i];
         return GestureDetector(
@@ -742,7 +744,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
                     color: accent,
                     size: 18),
               ),
-              SizedBox(width: spacingUnit(1.5)),
+              const SizedBox(width: 12),
               Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -769,7 +771,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                             color: bg, borderRadius: BorderRadius.circular(4)),
-                        child: Text('${r.fromCode}→${r.toCode}',
+                        child: Text('${r.fromCode}->${r.toCode}',
                             style: TextStyle(
                                 fontSize: 10,
                                 color: accent,
@@ -817,8 +819,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: d.color.withValues(alpha: 0.2)),
               ),
-              child: Center(
-                  child: Text(d.emoji, style: const TextStyle(fontSize: 24))),
+              child: Center(child: Icon(d.icon, size: 24, color: d.color)),
             ),
             const SizedBox(height: 4),
             Text(d.name,
@@ -846,7 +847,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
       Icon(icon, size: 17, color: iconColor),
       SizedBox(width: spacingUnit(0.75)),
       Text(title,
-          style: ThemeText.subtitle.copyWith(
+          style: TravelloTheme.subtitle.copyWith(
               fontWeight: FontWeight.w800,
               fontSize: 15,
               color: const Color(0xFF111827))),

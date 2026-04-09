@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:change_case/change_case.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/shimmer_preloader.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PromoCard extends StatelessWidget {
   const PromoCard({
@@ -53,22 +50,22 @@ class PromoCard extends StatelessWidget {
             right: 8,
             child: CircleAvatar(
               radius: 12,
-              backgroundColor: colorScheme(context).surface,
-              child: Icon(Icons.favorite, size: 16, color: ThemePalette.tertiaryMain),
+              backgroundColor: TravelloTheme.paperLight,
+              child: Icon(Icons.favorite, size: 16, color: TravelloTheme.tertiaryMain),
             ),
           ) : Container(),
         ]),
 
         /// EVENT PROPERTIES
-        Padding(padding: EdgeInsets.symmetric(vertical: spacingUnit(1)),
+        Padding(padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: colorScheme(context).primaryContainer,
+                color: TravelloTheme.primaryMainContainer,
                 borderRadius: ThemeRadius.medium
               ),
-              child: Text('$point POINT', style: ThemeText.caption.copyWith(fontWeight: FontWeight.bold))
+              child: Text('$point POINT', style: TravelloTheme.caption.copyWith(fontWeight: FontWeight.bold))
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -77,9 +74,9 @@ class PromoCard extends StatelessWidget {
                 borderRadius: ThemeRadius.medium
               ),
               child: Row(children: [
-                Icon(Icons.access_time_outlined, size: 12, color: colorScheme(context).surface),
+                const Icon(Icons.access_time_outlined, size: 12, color: TravelloTheme.paperLight),
                 const SizedBox(width: 2),
-                Text(time, style: ThemeText.caption.copyWith(color: colorScheme(context).surface)),
+                Text(time, style: TravelloTheme.caption.copyWith(color: TravelloTheme.paperLight)),
               ],)
             ),
           ]),
@@ -89,7 +86,7 @@ class PromoCard extends StatelessWidget {
           height: 60,
           child: Text(
             title.toCapitalCase(),
-            style: ThemeText.subtitle2,
+            style: TravelloTheme.subtitle2,
             overflow: TextOverflow.ellipsis,
             maxLines: 2,
           )

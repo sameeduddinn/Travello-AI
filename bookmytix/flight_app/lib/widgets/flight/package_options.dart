@@ -1,9 +1,6 @@
 import 'package:flight_app/models/list_item.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 final List<ListItem> packageList = [
   ListItem(
@@ -84,11 +81,11 @@ class _PackageOptionsState extends State<PackageOptions> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Additional Packages', style: ThemeText.subtitle2),
+          const Text('Additional Packages', style: TravelloTheme.subtitle2),
           const VSpaceShort(),
           Container(
             padding: const EdgeInsets.all(1),
@@ -102,7 +99,7 @@ class _PackageOptionsState extends State<PackageOptions> {
             child: Column(
               children: [
                 Padding(
-                  padding: EdgeInsets.all(spacingUnit(2)),
+                  padding: const EdgeInsets.all(16),
                   child: ListView.builder(
                     padding: const EdgeInsets.all(0),
                     shrinkWrap: true,
@@ -111,7 +108,7 @@ class _PackageOptionsState extends State<PackageOptions> {
                     itemBuilder: (context, index) {
                       final ListItem item = packageList[index];
                       return CheckboxListTile(
-                        contentPadding: EdgeInsets.only(bottom: spacingUnit(1)),
+                        contentPadding: const EdgeInsets.only(bottom: 8),
                         title: Row(children: [
                           Expanded(
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -119,14 +116,14 @@ class _PackageOptionsState extends State<PackageOptions> {
                                 children: [
                                   Icon(item.icon, size: 16, color: colorScheme(context).onSecondaryContainer),
                                   const SizedBox(width: 4,),
-                                  Text(item.label, style: ThemeText.paragraph.copyWith(fontWeight: FontWeight.bold)),
+                                  Text(item.label, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold)),
                                 ],
                               ),
-                              Text(item.text!, style: ThemeText.caption)
+                              Text(item.text!, style: TravelloTheme.caption)
                             ]),
                           ),
-                          SizedBox(width: spacingUnit(2)),
-                          Text('+\$${item.value}', textAlign: TextAlign.end, style: ThemeText.headline.copyWith(fontWeight: FontWeight.bold),)
+                          const SizedBox(width: 16),
+                          Text('+\$${item.value}', textAlign: TextAlign.end, style: TravelloTheme.headline.copyWith(fontWeight: FontWeight.bold),)
                         ]),
                         value: _selectedPackages.contains(item),
                         onChanged: (bool? newValue) {
@@ -154,8 +151,8 @@ class _PackageOptionsState extends State<PackageOptions> {
                   child: Container(
                     width: double.infinity,
                     alignment: Alignment.center,
-                    padding: EdgeInsets.only(bottom: spacingUnit(2)),
-                    child: Text(_showAll ? 'Show Fewer' : 'Show More Packages', style: ThemeText.paragraph.copyWith(color: colorScheme(context).onSecondaryContainer, fontWeight: FontWeight.bold),)
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(_showAll ? 'Show Fewer' : 'Show More Packages', style: TravelloTheme.paragraph.copyWith(color: colorScheme(context).onSecondaryContainer, fontWeight: FontWeight.bold),)
                   ),
                 )
               ],

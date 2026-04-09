@@ -2,14 +2,12 @@ import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/controllers/payment_form_controller.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/widgets/design_system_animated_price.dart';
 import 'package:flight_app/widgets/design_system_page_fade.dart';
 import 'package:flight_app/widgets/payment/credit_card_info.dart';
 import 'package:flight_app/widgets/payment/identity_form.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PaymentDetailCC extends StatefulWidget {
   const PaymentDetailCC({super.key});
@@ -61,7 +59,7 @@ class _PaymentDetailCCState extends State<PaymentDetailCC> {
           ),
         ],
         centerTitle: true,
-        title: const Text('Payment', style: ThemeText.subtitle),
+        title: const Text('Payment', style: TravelloTheme.subtitle),
       ),
       body: DSPageFade(
         child: Center(
@@ -73,20 +71,20 @@ class _PaymentDetailCCState extends State<PaymentDetailCC> {
                 Expanded(
                   child: SingleChildScrollView(
                     controller: _scrollCtrl,
-                    padding: EdgeInsets.all(spacingUnit(2)),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _sectionLabel('CARD INFORMATION'),
-                        SizedBox(height: spacingUnit(1.5)),
+                        const SizedBox(height: 12),
                         const CreditCardInfo(),
-                        SizedBox(height: spacingUnit(3)),
+                        const SizedBox(height: 24),
                         _sectionLabel('PASSENGER INFORMATION'),
-                        SizedBox(height: spacingUnit(1.5)),
+                        const SizedBox(height: 12),
                         const IdentityForm(),
-                        SizedBox(height: spacingUnit(2)),
+                        const SizedBox(height: 16),
                         _securityBadge(),
-                        SizedBox(height: spacingUnit(2)),
+                        const SizedBox(height: 16),
                       ],
                     ),
                   ),
@@ -95,7 +93,7 @@ class _PaymentDetailCCState extends State<PaymentDetailCC> {
                 // ── Sticky CTA bar ────────────────────────────────────────────
                 Container(
                   decoration: BoxDecoration(
-                    color: colorScheme(context).surfaceContainerLowest,
+                    color: TravelloTheme.paperLightContainerLowest,
                     border: Border(
                       top: BorderSide(
                         color: colorScheme(context)
@@ -111,11 +109,11 @@ class _PaymentDetailCCState extends State<PaymentDetailCC> {
                       ),
                     ],
                   ),
-                  padding: EdgeInsets.only(
-                    top: spacingUnit(2),
-                    bottom: spacingUnit(4),
-                    left: spacingUnit(2),
-                    right: spacingUnit(2),
+                  padding: const EdgeInsets.only(
+                    top: 16,
+                    bottom: 32,
+                    left: 16,
+                    right: 16,
                   ),
                   child: Column(
                     children: [
@@ -124,14 +122,14 @@ class _PaymentDetailCCState extends State<PaymentDetailCC> {
                         children: [
                           Text(
                             'Total (incl. taxes)',
-                            style: ThemeText.paragraph.copyWith(
+                            style: TravelloTheme.paragraph.copyWith(
                               color: colorScheme(context).onSurfaceVariant,
                             ),
                           ),
                           const DSAnimatedPrice(amount: 630),
                         ],
                       ),
-                      SizedBox(height: spacingUnit(1.5)),
+                      const SizedBox(height: 12),
                       Row(
                         children: [
                           Expanded(
@@ -140,7 +138,7 @@ class _PaymentDetailCCState extends State<PaymentDetailCC> {
                               onTap: () => Get.back(),
                             ),
                           ),
-                          SizedBox(width: spacingUnit(1.5)),
+                          const SizedBox(width: 12),
                           Expanded(
                             flex: 2,
                             child: Obx(() => DSButton(
@@ -166,10 +164,10 @@ class _PaymentDetailCCState extends State<PaymentDetailCC> {
 
   Widget _sectionLabel(String text) => Text(
         text,
-        style: ThemeText.caption.copyWith(
+        style: TravelloTheme.caption.copyWith(
           fontWeight: FontWeight.w700,
           letterSpacing: 1.2,
-          color: ThemePalette.primaryMain,
+          color: TravelloTheme.primaryMain,
         ),
       );
 
@@ -191,7 +189,7 @@ class _PaymentDetailCCState extends State<PaymentDetailCC> {
             Expanded(
               child: Text(
                 '256-bit SSL encrypted  ·  PCI DSS Level 1 compliant',
-                style: ThemeText.caption.copyWith(
+                style: TravelloTheme.caption.copyWith(
                   color: const Color(0xFF065F46),
                   fontWeight: FontWeight.w500,
                 ),

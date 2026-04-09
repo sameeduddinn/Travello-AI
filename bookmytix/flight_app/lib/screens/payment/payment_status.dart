@@ -6,9 +6,6 @@ import 'package:flight_app/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:intl/intl.dart';
 import 'package:confetti/confetti.dart';
 import 'dart:math' show pi;
@@ -21,6 +18,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  🎯 PROFESSIONAL PAYMENT SUCCESS PAGE
@@ -2066,41 +2064,41 @@ class _PaymentStatusState extends State<PaymentStatus>
                       child: SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
                         child: Padding(
-                          padding: EdgeInsets.all(spacingUnit(2)),
+                          padding: const EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               // 2️⃣ Success Header with Animation
                               _buildSuccessHeader(context),
-                              SizedBox(height: spacingUnit(2.5)),
+                              const SizedBox(height: 20),
 
                               // 3️⃣ Booking Reference & PNR
                               _buildBookingReference(context),
-                              SizedBox(height: spacingUnit(2)),
+                              const SizedBox(height: 16),
 
                               // 4️⃣ Transaction Details
                               _buildTransactionDetails(context),
-                              SizedBox(height: spacingUnit(2)),
+                              const SizedBox(height: 16),
 
                               // 5️⃣ E-Ticket & QR Code Section
                               _buildETicketSection(context),
-                              SizedBox(height: spacingUnit(2)),
+                              const SizedBox(height: 16),
 
                               // 6️⃣ Payment Summary
                               _buildPaymentSummary(context),
-                              SizedBox(height: spacingUnit(2)),
+                              const SizedBox(height: 16),
 
                               // 7️⃣ Important Travel Information
                               _buildTravelInformation(context),
-                              SizedBox(height: spacingUnit(2)),
+                              const SizedBox(height: 16),
 
                               // 8️⃣ AI Smart Add-ons
                               _buildSmartAddons(context),
-                              SizedBox(height: spacingUnit(2)),
+                              const SizedBox(height: 16),
 
                               // 🔟 Action Buttons
                               _buildActionButtons(context),
-                              SizedBox(height: spacingUnit(2)),
+                              const SizedBox(height: 16),
                             ],
                           ),
                         ),
@@ -2141,7 +2139,7 @@ class _PaymentStatusState extends State<PaymentStatus>
     final isTrain =
         (_bookingData['bookingType'] as String? ?? 'flight') == 'train';
     final appBarColor =
-        isTrain ? const Color(0xFFD4AF37) : colorScheme(context).primary;
+        isTrain ? const Color(0xFFD4AF37) : TravelloTheme.primaryMain;
     return AppBar(
       elevation: 0,
       backgroundColor: appBarColor,
@@ -2175,7 +2173,7 @@ class _PaymentStatusState extends State<PaymentStatus>
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Container(
-          padding: EdgeInsets.all(spacingUnit(3)),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             gradient: LinearGradient(
@@ -2227,7 +2225,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                   );
                 },
               ),
-              SizedBox(height: spacingUnit(2)),
+              const SizedBox(height: 16),
 
               const Text(
                 'Payment Success',
@@ -2238,12 +2236,12 @@ class _PaymentStatusState extends State<PaymentStatus>
                   letterSpacing: 0.5,
                 ),
               ),
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
 
               Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: spacingUnit(3),
-                  vertical: spacingUnit(1.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -2265,7 +2263,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                   ),
                 ),
               ),
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
 
               Text(
                 'Your booking is confirmed!',
@@ -2286,7 +2284,7 @@ class _PaymentStatusState extends State<PaymentStatus>
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -2301,15 +2299,15 @@ class _PaymentStatusState extends State<PaymentStatus>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(
                   Icons.confirmation_number_outlined,
-                  color: colorScheme(context).primary,
+                  color: TravelloTheme.primaryMain,
                   size: 20,
                 ),
-                SizedBox(width: spacingUnit(1)),
-                const Text(
+                SizedBox(width: 8),
+                Text(
                   'Booking Reference',
                   style: TextStyle(
                     fontSize: 16,
@@ -2319,11 +2317,11 @@ class _PaymentStatusState extends State<PaymentStatus>
                 ),
               ],
             ),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
 
             // PNR with Copy Button
             Container(
-              padding: EdgeInsets.all(spacingUnit(1.5)),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(12),
@@ -2361,7 +2359,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                       decoration: BoxDecoration(
                         color: _copyingPnr
                             ? _statusColor('success')
-                            : colorScheme(context).primary,
+                            : TravelloTheme.primaryMain,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -2385,7 +2383,7 @@ class _PaymentStatusState extends State<PaymentStatus>
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -2409,7 +2407,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                 color: Colors.black87,
               ),
             ),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
             _detailRow('Date:', _bookingData['date'] ?? 'N/A'),
             _divider(),
             _detailRow(
@@ -2470,7 +2468,7 @@ class _PaymentStatusState extends State<PaymentStatus>
   Widget _detailRow(String label, String value,
       {bool isBold = false, Color? valueColor}) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: spacingUnit(0.5)),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -2497,7 +2495,7 @@ class _PaymentStatusState extends State<PaymentStatus>
 
   Widget _divider() {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: spacingUnit(1)),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Container(
         height: 1,
         decoration: BoxDecoration(
@@ -3108,16 +3106,16 @@ class _PaymentStatusState extends State<PaymentStatus>
                               strokeWidth: 2, color: Colors.white),
                         ),
                       )
-                    : Row(
+                    : const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                            const Icon(Icons.train_rounded,
+                            Icon(Icons.train_rounded,
                                 color: Colors.white, size: 18),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Flexible(
                               child: Text('VIEW & DOWNLOAD TICKET',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,
                                       fontSize: 13,
@@ -3628,7 +3626,7 @@ class _PaymentStatusState extends State<PaymentStatus>
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -3646,15 +3644,15 @@ class _PaymentStatusState extends State<PaymentStatus>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
+                const Row(
                   children: [
                     Icon(
                       Icons.account_balance_wallet_outlined,
-                      color: colorScheme(context).primary,
+                      color: TravelloTheme.primaryMain,
                       size: 20,
                     ),
-                    SizedBox(width: spacingUnit(1)),
-                    const Text(
+                    SizedBox(width: 8),
+                    Text(
                       'Payment Summary',
                       style: TextStyle(
                         fontSize: 16,
@@ -3672,7 +3670,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                 ),
               ],
             ),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
             _paymentDetailRow(
                 'Payment Method', _bookingData['paymentMethod'] ?? 'N/A'),
             _paymentDetailRow(
@@ -3681,9 +3679,9 @@ class _PaymentStatusState extends State<PaymentStatus>
               'Date',
               DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now()),
             ),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             Container(
-              padding: EdgeInsets.all(spacingUnit(1.5)),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: _statusColor('success').withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
@@ -3698,7 +3696,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                     color: _statusColor('success'),
                     size: 18,
                   ),
-                  SizedBox(width: spacingUnit(1)),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Payment verified and processed securely',
@@ -3720,7 +3718,7 @@ class _PaymentStatusState extends State<PaymentStatus>
 
   Widget _paymentDetailRow(String label, String value) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: spacingUnit(0.7)),
+      padding: const EdgeInsets.symmetric(vertical: 5.6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -4131,7 +4129,7 @@ class _PaymentStatusState extends State<PaymentStatus>
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(1.5)),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -4149,15 +4147,15 @@ class _PaymentStatusState extends State<PaymentStatus>
             _quickActionButton(
               icon: Icons.history,
               label: 'Order History',
-              color: ThemePalette.tertiaryDark,
-              bgColor: ThemePalette.tertiaryLight,
+              color: TravelloTheme.tertiaryDark,
+              bgColor: TravelloTheme.tertiaryLight,
               onTap: () => Get.toNamed(AppLink.orderHistory),
             ),
             _quickActionButton(
               icon: Icons.share_outlined,
               label: 'Share',
-              color: ThemePalette.primaryDark,
-              bgColor: ThemePalette.primaryLight,
+              color: TravelloTheme.primaryDark,
+              bgColor: TravelloTheme.primaryLight,
               onTap: _shareTicket,
             ),
           ],
@@ -4177,9 +4175,9 @@ class _PaymentStatusState extends State<PaymentStatus>
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(1.5),
-          vertical: spacingUnit(1),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 8,
         ),
         child: Column(
           children: [
@@ -4226,8 +4224,8 @@ class _PaymentStatusState extends State<PaymentStatus>
             ),
           ),
           SizedBox(
-            height: ThemeBreakpoints.smUp(context) ? 0 : spacingUnit(2),
-            width: ThemeBreakpoints.smUp(context) ? spacingUnit(2) : 0,
+            height: ThemeBreakpoints.smUp(context) ? 0 : 16,
+            width: ThemeBreakpoints.smUp(context) ? 16 : 0,
           ),
           SizedBox(
             width: ThemeBreakpoints.smUp(context) ? 250 : double.infinity,
@@ -4249,7 +4247,7 @@ class _PaymentStatusState extends State<PaymentStatus>
     final isTrain =
         (_bookingData['bookingType'] as String? ?? 'flight') == 'train';
     final stepColor =
-        isTrain ? const Color(0xFFD4AF37) : colorScheme(context).primary;
+        isTrain ? const Color(0xFFD4AF37) : TravelloTheme.primaryMain;
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Container(
@@ -4461,7 +4459,7 @@ class _PaymentStatusState extends State<PaymentStatus>
               decoration: BoxDecoration(
                 color: isRailway
                     ? const Color(0xFF2E7D32)
-                    : colorScheme(context).primary,
+                    : TravelloTheme.primaryMain,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -4483,7 +4481,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                       fontWeight: FontWeight.w900,
                       color: isRailway
                           ? const Color(0xFF2E7D32)
-                          : colorScheme(context).primary,
+                          : TravelloTheme.primaryMain,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -6622,15 +6620,15 @@ class _PaymentStatusState extends State<PaymentStatus>
 
   // ── Loading Skeleton ──
   Widget _buildLoadingSkeleton() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation(colorScheme(context).primary),
+            valueColor: AlwaysStoppedAnimation(TravelloTheme.primaryMain),
           ),
-          SizedBox(height: spacingUnit(2)),
-          const Text(
+          SizedBox(height: 16),
+          Text(
             'Loading booking details...',
             style: TextStyle(
               fontSize: 14,

@@ -1,9 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/range_date_picker.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class HotelSearchScreen extends StatefulWidget {
   const HotelSearchScreen({super.key});
@@ -175,9 +173,9 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
         minChildSize: 0.4,
         expand: false,
         builder: (ctx, sc) => Container(
-          decoration: BoxDecoration(
-            color: colorScheme(context).surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: const BoxDecoration(
+            color: TravelloTheme.paperLight,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             children: [
@@ -189,14 +187,14 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                     color: Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(2)),
               ),
-              Padding(
+              const Padding(
                 padding: EdgeInsets.symmetric(
-                    horizontal: spacingUnit(2), vertical: spacingUnit(1)),
+                    horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
-                    Icon(Icons.search, color: colorScheme(context).primary),
-                    const SizedBox(width: 8),
-                    const Text('Select Destination',
+                    Icon(Icons.search, color: TravelloTheme.primaryMain),
+                    SizedBox(width: 8),
+                    Text('Select Destination',
                         style: TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
                   ],
@@ -211,17 +209,17 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                     return ListTile(
                       leading: Icon(Icons.location_on,
                           color: isSel
-                              ? colorScheme(context).primary
+                              ? TravelloTheme.primaryMain
                               : const Color(0xFFD4AF37)),
                       title: Text(e.key,
                           style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color:
-                                  isSel ? colorScheme(context).primary : null)),
+                                  isSel ? TravelloTheme.primaryMain : null)),
                       subtitle: Text(e.value),
                       trailing: isSel
-                          ? Icon(Icons.check_circle,
-                              color: colorScheme(context).primary)
+                          ? const Icon(Icons.check_circle,
+                              color: TravelloTheme.primaryMain)
                           : null,
                       onTap: () {
                         setState(() => _selectedCity = e.key);
@@ -298,15 +296,15 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
     return Scaffold(
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(
-              spacingUnit(2), 0, spacingUnit(2), spacingUnit(2)),
+          padding: const EdgeInsets.fromLTRB(
+              16, 0, 16, 16),
           child: ElevatedButton.icon(
             onPressed: _search,
             icon: const Icon(Icons.search),
             label: const Text('Search Hotels',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme(context).primary,
+              backgroundColor: TravelloTheme.primaryMain,
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 52),
               shape: RoundedRectangleBorder(
@@ -362,12 +360,12 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                     builder: (context, constraints) {
                       return Padding(
                         padding: EdgeInsets.only(
-                          left: spacingUnit(2.5),
-                          right: spacingUnit(2.5),
+                          left: 20,
+                          right: 20,
                           top: constraints.maxHeight > 120
-                              ? spacingUnit(3)
-                              : spacingUnit(2),
-                          bottom: spacingUnit(1),
+                              ? 24
+                              : 16,
+                          bottom: 8,
                         ),
                         child: SlideTransition(
                           position: _slideAnimation,
@@ -457,13 +455,13 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // Destination card
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: colorScheme(context).surface,
+                    color: TravelloTheme.paperLight,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -477,24 +475,24 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                     onTap: _showCityPicker,
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
-                      padding: EdgeInsets.all(spacingUnit(2)),
+                      padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
                           const Icon(Icons.location_on,
                               color: Color(0xFFD4AF37)),
-                          SizedBox(width: spacingUnit(2)),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text('Destination',
-                                    style: ThemeText.caption),
-                                SizedBox(height: spacingUnit(0.5)),
+                                    style: TravelloTheme.caption),
+                                const SizedBox(height: 4),
                                 Text(
                                   _selectedCity != null
                                       ? '$_selectedCity, ${_cityProvinceMap[_selectedCity]}'
                                       : 'Select destination',
-                                  style: ThemeText.subtitle,
+                                  style: TravelloTheme.subtitle,
                                 ),
                               ],
                             ),
@@ -505,13 +503,13 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                   ),
                 ),
 
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // Check-in card
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: colorScheme(context).surface,
+                    color: TravelloTheme.paperLight,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -525,27 +523,27 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                     onTap: _selectCheckIn,
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
-                      padding: EdgeInsets.all(spacingUnit(2)),
+                      padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
                           const Icon(Icons.calendar_today,
                               color: Color(0xFFD4AF37), size: 20),
-                          SizedBox(width: spacingUnit(2)),
+                          const SizedBox(width: 16),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text('Check-in Date',
-                                  style: ThemeText.caption),
-                              SizedBox(height: spacingUnit(0.5)),
+                                  style: TravelloTheme.caption),
+                              const SizedBox(height: 4),
                               Text(
                                 _checkInDate == null
                                     ? 'Select date'
                                     : '${_checkInDate!.day} ${_monthName(_checkInDate!.month)} ${_checkInDate!.year}',
-                                style: ThemeText.subtitle,
+                                style: TravelloTheme.subtitle,
                               ),
                               if (_checkInDate != null)
                                 Text(_dayName(_checkInDate!.weekday),
-                                    style: ThemeText.caption),
+                                    style: TravelloTheme.caption),
                             ],
                           ),
                         ],
@@ -554,13 +552,13 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                   ),
                 ),
 
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // Check-out card
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: colorScheme(context).surface,
+                    color: TravelloTheme.paperLight,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -574,28 +572,28 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                     onTap: _selectCheckOut,
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
-                      padding: EdgeInsets.all(spacingUnit(2)),
+                      padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
                           const Icon(Icons.calendar_today,
                               color: Color(0xFFD4AF37), size: 20),
-                          SizedBox(width: spacingUnit(2)),
+                          const SizedBox(width: 16),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text('Check-out Date',
-                                  style: ThemeText.caption),
-                              SizedBox(height: spacingUnit(0.5)),
+                                  style: TravelloTheme.caption),
+                              const SizedBox(height: 4),
                               Text(
                                 _checkOutDate == null
                                     ? 'Select date'
                                     : '${_checkOutDate!.day} ${_monthName(_checkOutDate!.month)} ${_checkOutDate!.year}',
-                                style: ThemeText.subtitle,
+                                style: TravelloTheme.subtitle,
                               ),
                               if (_checkOutDate != null)
                                 Text(
                                     '$_nights ${_nights == 1 ? 'night' : 'nights'}',
-                                    style: ThemeText.caption),
+                                    style: TravelloTheme.caption),
                             ],
                           ),
                         ],
@@ -604,11 +602,11 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                   ),
                 ),
 
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // Guests & Rooms — two side-by-side cards
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
                       // Passengers card
@@ -617,9 +615,9 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                           onTap: _showGuestsRooms,
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
-                            padding: EdgeInsets.all(spacingUnit(2)),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: colorScheme(context).surface,
+                              color: TravelloTheme.paperLight,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
@@ -639,33 +637,33 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                                             .primary
                                             .withValues(alpha: 0.7),
                                         size: 18),
-                                    SizedBox(width: spacingUnit(0.5)),
+                                    const SizedBox(width: 4),
                                     const Text('Guests',
-                                        style: ThemeText.caption),
+                                        style: TravelloTheme.caption),
                                   ],
                                 ),
-                                SizedBox(height: spacingUnit(0.5)),
+                                const SizedBox(height: 4),
                                 Text(
                                   '$_adults ${_adults == 1 ? 'Guest' : 'Guests'}',
-                                  style: ThemeText.subtitle,
+                                  style: TravelloTheme.subtitle,
                                 ),
                                 Text('A: $_adults, C: $_children, R: $_rooms',
-                                    style: ThemeText.caption),
+                                    style: TravelloTheme.caption),
                               ],
                             ),
                           ),
                         ),
                       ),
-                      SizedBox(width: spacingUnit(2)),
+                      const SizedBox(width: 16),
                       // Rooms card
                       Expanded(
                         child: InkWell(
                           onTap: _showGuestsRooms,
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
-                            padding: EdgeInsets.all(spacingUnit(2)),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: colorScheme(context).surface,
+                              color: TravelloTheme.paperLight,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
@@ -685,18 +683,18 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                                             .primary
                                             .withValues(alpha: 0.7),
                                         size: 18),
-                                    SizedBox(width: spacingUnit(0.5)),
+                                    const SizedBox(width: 4),
                                     const Text('Rooms',
-                                        style: ThemeText.caption),
+                                        style: TravelloTheme.caption),
                                   ],
                                 ),
-                                SizedBox(height: spacingUnit(0.5)),
+                                const SizedBox(height: 4),
                                 Text(
                                   '$_rooms ${_rooms == 1 ? 'Room' : 'Rooms'}',
-                                  style: ThemeText.subtitle,
+                                  style: TravelloTheme.subtitle,
                                 ),
                                 const Text('Tap to change',
-                                    style: ThemeText.caption),
+                                    style: TravelloTheme.caption),
                               ],
                             ),
                           ),
@@ -706,12 +704,12 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                   ),
                 ),
 
-                SizedBox(height: spacingUnit(3)),
+                const SizedBox(height: 24),
 
                 // ── Recent Searches ──────────────────────────────────
                 if (_recentSearches.isNotEmpty) ...[
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -721,9 +719,9 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                         TextButton(
                           onPressed: () =>
                               setState(() => _recentSearches.clear()),
-                          child: Text('Clear all',
+                          child: const Text('Clear all',
                               style: TextStyle(
-                                  color: colorScheme(context).primary,
+                                  color: TravelloTheme.primaryMain,
                                   fontSize: 13)),
                         ),
                       ],
@@ -731,9 +729,9 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                   ),
                   SizedBox(height: spacingUnit(0.75)),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Wrap(
-                      spacing: spacingUnit(1),
+                      spacing: 8,
                       runSpacing: spacingUnit(0.75),
                       alignment: WrapAlignment.start,
                       children: _recentSearches.map((s) {
@@ -746,7 +744,7 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color: colorScheme(context).surface,
+                              color: TravelloTheme.paperLight,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(color: Colors.grey.shade300),
                               boxShadow: [
@@ -760,9 +758,9 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.history,
+                                const Icon(Icons.history,
                                     size: 15,
-                                    color: colorScheme(context).primary),
+                                    color: TravelloTheme.primaryMain),
                                 const SizedBox(width: 5),
                                 Text(
                                   s['info'] != null
@@ -780,7 +778,7 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                   ),
                 ],
 
-                SizedBox(height: spacingUnit(4)),
+                const SizedBox(height: 32),
               ],
             ),
           ),
@@ -864,26 +862,26 @@ class _GuestsRoomsSheetState extends State<_GuestsRoomsSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: colorScheme(context).surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: const BoxDecoration(
+        color: TravelloTheme.paperLight,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: EdgeInsets.fromLTRB(
-          spacingUnit(3), spacingUnit(1), spacingUnit(3), spacingUnit(3)),
+      padding: const EdgeInsets.fromLTRB(
+          24, 8, 24, 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 40,
             height: 4,
-            margin: EdgeInsets.only(bottom: spacingUnit(2)),
+            margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
                 color: Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(2)),
           ),
           const Text('Guests & Rooms',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
           _row('Adults', 'Age 18+', _adults, () {
             if (_adults > 1) setState(() => _adults--);
           }, () {
@@ -901,7 +899,7 @@ class _GuestsRoomsSheetState extends State<_GuestsRoomsSheet> {
           }, () {
             if (_rooms < 5) setState(() => _rooms++);
           }),
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -910,7 +908,7 @@ class _GuestsRoomsSheetState extends State<_GuestsRoomsSheet> {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme(context).primary,
+                backgroundColor: TravelloTheme.primaryMain,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: spacingUnit(1.75)),
                 shape: RoundedRectangleBorder(
@@ -941,9 +939,9 @@ class _Btn extends StatelessWidget {
         height: 32,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: colorScheme(context).primary),
+          border: Border.all(color: TravelloTheme.primaryMain),
         ),
-        child: Icon(icon, size: 16, color: colorScheme(context).primary),
+        child: Icon(icon, size: 16, color: TravelloTheme.primaryMain),
       ),
     );
   }

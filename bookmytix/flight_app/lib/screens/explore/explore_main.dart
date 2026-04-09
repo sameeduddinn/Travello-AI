@@ -2,12 +2,11 @@ import 'package:flight_app/widgets/home/package_list_slider.dart';
 import 'package:flight_app/widgets/home/promo_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/explore/banner.dart';
 import 'package:flight_app/widgets/explore/header.dart';
 import 'package:flight_app/widgets/explore/explore_category_filter.dart';
 import 'package:flight_app/widgets/explore/explore_destinations_section.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ExploreMain extends StatefulWidget {
   const ExploreMain({super.key});
@@ -44,8 +43,8 @@ class _ExploreMainState extends State<ExploreMain> {
                 children: [
                   /// CATEGORY FILTER CHIPS
                   Container(
-                    color: colorScheme(context).surfaceContainerLowest,
-                    padding: EdgeInsets.only(bottom: spacingUnit(1)),
+                    color: TravelloTheme.paperLightContainerLowest,
+                    padding: const EdgeInsets.only(bottom: 8),
                     child: ExploreCategoryFilter(
                       selected: _selectedCategory,
                       onSelect: (cat) =>
@@ -59,7 +58,7 @@ class _ExploreMainState extends State<ExploreMain> {
             /// CONTENT BELOW STICKY HEADER
             sliver: SliverList(
                 delegate: SliverChildListDelegate([
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
 
               /// ── DESTINATION GRID (filterable, Pakistan only) ──
               ExploreDestinationsSection(
@@ -68,11 +67,11 @@ class _ExploreMainState extends State<ExploreMain> {
 
               /// ── FEATURED PACKAGES ──
               const PackageListSlider(),
-              SizedBox(height: spacingUnit(3)),
+              const SizedBox(height: 24),
 
               /// ── PROMOTIONS ──
               const PromoSlider(),
-              SizedBox(height: spacingUnit(3)),
+              const SizedBox(height: 24),
             ]))),
       ],
     ));

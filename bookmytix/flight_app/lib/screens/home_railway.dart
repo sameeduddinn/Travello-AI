@@ -2,10 +2,6 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/controllers/notification_controller.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/widgets/bottom_navigation/bottom_nav_menu.dart';
 import 'package:flight_app/widgets/home/city_destinations/city_destinations_main.dart';
@@ -16,6 +12,7 @@ import 'package:flight_app/widgets/home/quick_search_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class HomeRailway extends StatefulWidget {
   const HomeRailway({super.key});
@@ -88,6 +85,9 @@ class _HomeRailwayState extends State<HomeRailway> {
 
   @override
   Widget build(BuildContext context) {
+    final String avatarUrl =
+        (_userAvatar.isEmpty ? userDummy.avatar : _userAvatar).trim();
+
     return Scaffold(
       bottomNavigationBar: const BottomNavMenu(),
       body: CustomScrollView(
@@ -102,7 +102,7 @@ class _HomeRailwayState extends State<HomeRailway> {
             scrolledUnderElevation: 0.0,
             backgroundColor: Colors.transparent,
             automaticallyImplyLeading: false,
-            titleSpacing: spacingUnit(1),
+            titleSpacing: 8,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: BoxDecoration(
@@ -122,7 +122,7 @@ class _HomeRailwayState extends State<HomeRailway> {
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: EdgeInsets.all(spacingUnit(2)),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -150,13 +150,35 @@ class _HomeRailwayState extends State<HomeRailway> {
               child: Row(children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundImage: NetworkImage(
-                      _userAvatar.isEmpty ? userDummy.avatar : _userAvatar),
+                  backgroundColor: TravelloTheme.paperLightContainerHighest,
+                  child: ClipOval(
+                    child: avatarUrl.isNotEmpty
+                        ? Image.network(
+                            avatarUrl,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Center(
+                              child: Icon(
+                                Icons.person,
+                                color: TravelloTheme.textMuted,
+                                size: 24,
+                              ),
+                            ),
+                          )
+                        : const Center(
+                            child: Icon(
+                              Icons.person,
+                              color: TravelloTheme.textMuted,
+                              size: 24,
+                            ),
+                          ),
+                  ),
                 ),
-                SizedBox(width: spacingUnit(1)),
+                const SizedBox(width: 8),
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(_userName,
-                      style: ThemeText.title2.copyWith(
+                      style: TravelloTheme.title2.copyWith(
                           color: _isFixed
                               ? colorScheme(context).onSurface
                               : Colors.white)),
@@ -166,8 +188,7 @@ class _HomeRailwayState extends State<HomeRailway> {
                           vertical: 0, horizontal: 4),
                       decoration: BoxDecoration(
                         borderRadius: ThemeRadius.small,
-                        color:
-                            colorScheme(context).surface.withValues(alpha: 0.8),
+                        color: TravelloTheme.paperLight.withValues(alpha: 0.8),
                       ),
                       child: Row(
                         children: [
@@ -193,7 +214,7 @@ class _HomeRailwayState extends State<HomeRailway> {
                 final ctrl = Get.find<NotificationController>();
                 final n = ctrl.unreadCount.value;
                 return Badge.count(
-                  backgroundColor: ThemePalette.primaryMain,
+                  backgroundColor: TravelloTheme.primaryMain,
                   textColor: Colors.black,
                   count: n,
                   isLabelVisible: n > 0,
@@ -234,9 +255,9 @@ class _HomeRailwayState extends State<HomeRailway> {
                           ? 800
                           : double.infinity,
                     ),
-                    margin: EdgeInsets.symmetric(
-                      horizontal: spacingUnit(2),
-                      vertical: spacingUnit(1),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -265,9 +286,9 @@ class _HomeRailwayState extends State<HomeRailway> {
                         },
                         borderRadius: BorderRadius.circular(20),
                         child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: spacingUnit(3),
-                            vertical: spacingUnit(2.5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 20,
                           ),
                           child: Row(
                             children: [
@@ -283,23 +304,23 @@ class _HomeRailwayState extends State<HomeRailway> {
                                   size: 28,
                                 ),
                               ),
-                              SizedBox(width: spacingUnit(2)),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'Book Your Train',
-                                      style: ThemeText.title2.copyWith(
+                                      style: TravelloTheme.title2.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 18,
                                       ),
                                     ),
-                                    SizedBox(height: spacingUnit(0.5)),
+                                    const SizedBox(height: 4),
                                     Text(
                                       'Search trains & reserve your seat',
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                         color:
                                             Colors.white.withValues(alpha: 0.9),
                                         fontSize: 12,
@@ -328,17 +349,17 @@ class _HomeRailwayState extends State<HomeRailway> {
                   ),
                 ),
 
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // Quick Search Bar
                 const QuickSearchBar(),
 
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // Quick Access Features
                 const QuickAccessFeatures(),
 
-                SizedBox(height: spacingUnit(3)),
+                const SizedBox(height: 24),
 
                 // Popular Destinations
                 const CityDestinations(),
@@ -365,7 +386,7 @@ class _HomeRailwayState extends State<HomeRailway> {
   Widget _iconBtn(BuildContext context, IconData icon, bool isFixed,
       void Function() onTap) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Container(
         width: 40,
         height: 40,
@@ -373,7 +394,7 @@ class _HomeRailwayState extends State<HomeRailway> {
             borderRadius: const BorderRadius.all(Radius.circular(32)),
             color: isFixed
                 ? colorScheme(context).outline
-                : colorScheme(context).surface),
+                : TravelloTheme.paperLight),
         child: IconButton(
           onPressed: onTap,
           icon: Icon(

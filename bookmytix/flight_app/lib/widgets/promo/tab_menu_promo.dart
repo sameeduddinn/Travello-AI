@@ -1,7 +1,6 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/widgets/tab_menu/menu.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TabMenuPromo extends StatelessWidget {
   const TabMenuPromo({super.key, required this.onSelect, required this.current});
@@ -12,8 +11,8 @@ class TabMenuPromo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
-      color: colorScheme(context).surfaceContainerLowest,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      color: TravelloTheme.paperLightContainerLowest,
       child: TabMenu(
         onSelect: onSelect,
         current: current,

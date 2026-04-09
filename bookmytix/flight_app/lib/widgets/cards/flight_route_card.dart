@@ -1,9 +1,7 @@
 import 'package:flight_app/models/airport.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 enum RouteType {
   depart, arrival, transit
@@ -38,18 +36,18 @@ class FlightRouteCard extends StatelessWidget {
 
     return ListTile(
       contentPadding: EdgeInsets.only(
-        left: mini ? 20 : spacingUnit(2),
-        bottom: spacingUnit(1)
+        left: mini ? 20 : 16,
+        bottom: 8
       ),
       leading: Container(
         width: mini ? 10: 20,
         height: mini ? 10 : 20,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: colorScheme(context).primary,
+          color: TravelloTheme.primaryMain,
           border: Border.all(
             width: mini ? 2 : 4,
-            color: colorScheme(context).surface
+            color: TravelloTheme.paperLight
           )
         ),
       ),
@@ -57,14 +55,14 @@ class FlightRouteCard extends StatelessWidget {
         children: [
           Icon(iconType(type), size: 16),
           const SizedBox(width: 4),
-          Text(time, style: ThemeText.headline),
+          Text(time, style: TravelloTheme.headline),
         ],
       ),
       subtitle: airport != null ? Text(
         '${airport!.location} - ${airport!.name} (${airport!.code})',
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: ThemeText.paragraph
+        style: TravelloTheme.paragraph
       ) : Container(),
     );
   }

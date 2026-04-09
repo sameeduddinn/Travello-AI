@@ -6,8 +6,6 @@ import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/utils/design_system_formatters.dart';
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/format_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +13,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 // â”€â”€â”€ nationality list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const List<String> _kCountries = [
@@ -544,9 +543,8 @@ class _BookingPassengersState extends State<BookingPassengers> {
   // â”€â”€ app bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    final scheme = colorScheme(context);
     return AppBar(
-      backgroundColor: scheme.primary,
+      backgroundColor: TravelloTheme.primaryMain,
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
@@ -653,8 +651,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
   // ── flight info card ────────────────────────────────────────────────────────
 
   Widget _buildFlightInfo(BuildContext context) {
-    final scheme = colorScheme(context);
-    final primary = scheme.primary;
+    const primary = TravelloTheme.primaryMain;
     final depDate = DateFormat('dd MMM').format(_departureDate);
     final arrDate = DateFormat('dd MMM')
         .format(_departureDate.add(const Duration(hours: 3)));
@@ -1031,8 +1028,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
       return const SizedBox.shrink();
     }
 
-    final scheme = colorScheme(context);
-    final primary = scheme.primary;
+    const primary = TravelloTheme.primaryMain;
     final depDate = DateFormat('dd MMM').format(_returnDate!);
     final arrDate =
         DateFormat('dd MMM').format(_returnDate!.add(const Duration(hours: 3)));
@@ -1406,10 +1402,10 @@ class _BookingPassengersState extends State<BookingPassengers> {
 
   Widget _buildPassengerPage(BuildContext context, int i) {
     final p = _passengers[i];
-    final scheme = colorScheme(context);
     return SingleChildScrollView(
+      primary: false,
       controller: _currentPage == i ? _scrollController : null,
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       child: Form(
         key: _formKeys[i],
         child: Column(
@@ -1426,7 +1422,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
             ),
             const SizedBox(height: 12),
             _buildFlightInfo(context),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
 
             // Return flight card for round trips
             if (_isRoundTrip && _returnFlight != null) ...[
@@ -1440,7 +1436,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
               ),
               const SizedBox(height: 12),
               _buildReturnFlightCard(context),
-              SizedBox(height: spacingUnit(2)),
+              const SizedBox(height: 16),
             ],
 
             const Text(
@@ -1455,10 +1451,10 @@ class _BookingPassengersState extends State<BookingPassengers> {
               'Passenger ${_currentPage + 1} of $_totalPassengers',
               style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
             ),
-            SizedBox(height: spacingUnit(1.6)),
+            const SizedBox(height: 12.8),
             Container(
               decoration: BoxDecoration(
-                color: scheme.surface,
+                color: TravelloTheme.paperLight,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.grey.shade200),
                 boxShadow: [
@@ -1474,25 +1470,25 @@ class _BookingPassengersState extends State<BookingPassengers> {
                 children: [
                   // header
                   Container(
-                    padding: EdgeInsets.fromLTRB(spacingUnit(2), spacingUnit(2),
-                        spacingUnit(2), spacingUnit(1.5)),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                     decoration: BoxDecoration(
-                      color: scheme.primary.withValues(alpha: 0.04),
+                      color: TravelloTheme.primaryMain.withValues(alpha: 0.04),
                       borderRadius:
                           const BorderRadius.vertical(top: Radius.circular(16)),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(spacingUnit(0.8)),
+                          padding: const EdgeInsets.all(6.4),
                           decoration: BoxDecoration(
-                            color: scheme.primary.withValues(alpha: 0.12),
+                            color: TravelloTheme.primaryMain
+                                .withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(Icons.person,
-                              color: scheme.primary, size: 18),
+                          child: const Icon(Icons.person,
+                              color: TravelloTheme.primaryMain, size: 18),
                         ),
-                        SizedBox(width: spacingUnit(1.2)),
+                        const SizedBox(width: 9.6),
                         Text(_passengerLabel(i),
                             style: const TextStyle(
                                 fontSize: 18,
@@ -1503,29 +1499,30 @@ class _BookingPassengersState extends State<BookingPassengers> {
                   ),
 
                   Padding(
-                    padding: EdgeInsets.all(spacingUnit(2)),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // info banner
                         Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: spacingUnit(1.5),
-                              vertical: spacingUnit(1.2)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 9.6),
                           decoration: BoxDecoration(
-                            color: scheme.primary.withValues(alpha: 0.05),
+                            color: TravelloTheme.primaryMain
+                                .withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(10),
-                            border: Border(
-                              left: BorderSide(color: scheme.primary, width: 3),
+                            border: const Border(
+                              left: BorderSide(
+                                  color: TravelloTheme.primaryMain, width: 3),
                             ),
                           ),
-                          child: Row(
+                          child: const Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Icon(Icons.info_outline,
-                                  color: scheme.primary, size: 16),
-                              SizedBox(width: spacingUnit(1)),
-                              const Expanded(
+                                  color: TravelloTheme.primaryMain, size: 16),
+                              SizedBox(width: 8),
+                              Expanded(
                                 child: Text(
                                   'Your name must be entered exactly as it appears on your government-issued ID.',
                                   style: TextStyle(fontSize: 12),
@@ -1534,15 +1531,15 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             ],
                           ),
                         ),
-                        SizedBox(height: spacingUnit(2)),
+                        const SizedBox(height: 16),
 
                         // salutation
                         _sectionLabel('Title'),
-                        SizedBox(height: spacingUnit(0.8)),
+                        const SizedBox(height: 6.4),
                         Row(
                           children: ['Mr', 'Mrs', 'Miss'].map((t) {
                             return Padding(
-                              padding: EdgeInsets.only(right: spacingUnit(2.5)),
+                              padding: const EdgeInsets.only(right: 20),
                               child: GestureDetector(
                                 onTap: () => setState(() => p.salutation = t),
                                 child: Row(
@@ -1556,12 +1553,12 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                         groupValue: p.salutation,
                                         onChanged: (v) =>
                                             setState(() => p.salutation = v!),
-                                        activeColor: scheme.primary,
+                                        activeColor: TravelloTheme.primaryMain,
                                         materialTapTargetSize:
                                             MaterialTapTargetSize.shrinkWrap,
                                       ),
                                     ),
-                                    SizedBox(width: spacingUnit(0.6)),
+                                    const SizedBox(width: 4.8),
                                     Text(t,
                                         style: const TextStyle(
                                             fontSize: 14,
@@ -1573,7 +1570,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             );
                           }).toList(),
                         ),
-                        SizedBox(height: spacingUnit(2)),
+                        const SizedBox(height: 16),
 
                         // first + last name
                         LayoutBuilder(
@@ -1606,7 +1603,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                       return null;
                                     },
                                   ),
-                                  SizedBox(height: spacingUnit(2)),
+                                  const SizedBox(height: 16),
                                   _buildTextField(
                                     label: 'Last Name',
                                     controller: p.lastNameCtrl,
@@ -1660,7 +1657,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                     return null;
                                   },
                                 )),
-                                SizedBox(width: spacingUnit(1.5)),
+                                const SizedBox(width: 12),
                                 Expanded(
                                     child: _buildTextField(
                                   label: 'Last Name',
@@ -1689,7 +1686,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             );
                           },
                         ),
-                        SizedBox(height: spacingUnit(2)),
+                        const SizedBox(height: 16),
 
                         // nationality + date of birth
                         LayoutBuilder(
@@ -1709,7 +1706,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                     showError:
                                         p.submitted && p.nationality == null,
                                   ),
-                                  SizedBox(height: spacingUnit(2)),
+                                  const SizedBox(height: 16),
                                   _buildDatePicker(
                                     context: context,
                                     label: 'Date of Birth',
@@ -1766,7 +1763,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                   showError:
                                       p.submitted && p.nationality == null,
                                 )),
-                                SizedBox(width: spacingUnit(1.5)),
+                                const SizedBox(width: 12),
                                 Expanded(
                                     child: _buildDatePicker(
                                   context: context,
@@ -1811,13 +1808,13 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             );
                           },
                         ),
-                        SizedBox(height: spacingUnit(2)),
+                        const SizedBox(height: 16),
 
                         // ══════ ADULTS: CNIC/PASSPORT SELECTOR (Pakistan Only) ══════
                         if (p.nationality == 'Pakistan' && i < _adults) ...[
                           // Document Type Selector for Adults
                           Container(
-                            padding: EdgeInsets.all(spacingUnit(2)),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.circular(12),
@@ -1839,7 +1836,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                       color:
                                           Theme.of(context).colorScheme.primary,
                                     ),
-                                    SizedBox(width: spacingUnit(1)),
+                                    const SizedBox(width: 8),
                                     const Text(
                                       'Travel Document Type',
                                       style: TextStyle(
@@ -1850,7 +1847,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: spacingUnit(0.5)),
+                                const SizedBox(height: 4),
                                 const Text(
                                   'Adults (18+) can use CNIC or Passport',
                                   style: TextStyle(
@@ -1858,22 +1855,20 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                     color: Color(0xFFB3B3B3),
                                   ),
                                 ),
-                                SizedBox(height: spacingUnit(1.5)),
+                                const SizedBox(height: 12),
                                 LayoutBuilder(
                                   builder: (context, constraints) {
                                     final isMobile = constraints.maxWidth < 500;
-                                    final spacing = isMobile
-                                        ? spacingUnit(1)
-                                        : spacingUnit(1.5);
+                                    final spacing = isMobile ? 8 : 12;
 
                                     final cnicButton = InkWell(
                                       onTap: () => setState(
                                           () => p.documentType = 'CNIC'),
                                       borderRadius: BorderRadius.circular(8),
                                       child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: spacingUnit(2),
-                                          vertical: spacingUnit(1.5),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 12,
                                         ),
                                         decoration: BoxDecoration(
                                           color: p.documentType == 'CNIC'
@@ -1915,7 +1910,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                       .onSurface
                                                       .withOpacity(0.5),
                                             ),
-                                            SizedBox(width: spacingUnit(1)),
+                                            const SizedBox(width: 8),
                                             Text(
                                               'CNIC',
                                               style: TextStyle(
@@ -1943,9 +1938,9 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                           () => p.documentType = 'Passport'),
                                       borderRadius: BorderRadius.circular(8),
                                       child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: spacingUnit(2),
-                                          vertical: spacingUnit(1.5),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 12,
                                         ),
                                         decoration: BoxDecoration(
                                           color: p.documentType == 'Passport'
@@ -1988,7 +1983,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                           .onSurface
                                                           .withOpacity(0.5),
                                             ),
-                                            SizedBox(width: spacingUnit(1)),
+                                            const SizedBox(width: 8),
                                             Text(
                                               'Passport',
                                               style: TextStyle(
@@ -2018,7 +2013,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                             CrossAxisAlignment.stretch,
                                         children: [
                                           cnicButton,
-                                          SizedBox(height: spacing),
+                                          SizedBox(height: spacing.toDouble()),
                                           passportButton,
                                         ],
                                       );
@@ -2027,7 +2022,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                     return Row(
                                       children: [
                                         Expanded(child: cnicButton),
-                                        SizedBox(width: spacing),
+                                        SizedBox(width: spacing.toDouble()),
                                         Expanded(child: passportButton),
                                       ],
                                     );
@@ -2036,7 +2031,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               ],
                             ),
                           ),
-                          SizedBox(height: spacingUnit(2)),
+                          const SizedBox(height: 16),
                         ],
 
                         // ══════ ADULTS: CNIC FIELDS ══════
@@ -2081,12 +2076,12 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               return null;
                             },
                           ),
-                          SizedBox(height: spacingUnit(1)),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Icon(Icons.info_outline,
                                   size: 14, color: Colors.blue.shade700),
-                              SizedBox(width: spacingUnit(0.5)),
+                              const SizedBox(width: 4),
                               const Expanded(
                                 child: Text(
                                   'CNIC is valid for Pakistani adults (18+ years)',
@@ -2098,14 +2093,14 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               ),
                             ],
                           ),
-                          SizedBox(height: spacingUnit(2)),
+                          const SizedBox(height: 16),
                         ],
 
                         // ══════ CHILDREN/INFANTS: B-FORM SELECTOR ══════
                         if (p.nationality == 'Pakistan' && i >= _adults) ...[
                           // Document Type Selector for Children/Infants
                           Container(
-                            padding: EdgeInsets.all(spacingUnit(2)),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.circular(12),
@@ -2127,7 +2122,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                       color:
                                           Theme.of(context).colorScheme.primary,
                                     ),
-                                    SizedBox(width: spacingUnit(1)),
+                                    const SizedBox(width: 8),
                                     const Text(
                                       'Travel Document Type',
                                       style: TextStyle(
@@ -2138,7 +2133,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: spacingUnit(0.5)),
+                                const SizedBox(height: 4),
                                 Text(
                                   i >= _adults + _children
                                       ? 'Infants require B-Form or Passport'
@@ -2148,7 +2143,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                     color: Color(0xFFB3B3B3),
                                   ),
                                 ),
-                                SizedBox(height: spacingUnit(1.5)),
+                                const SizedBox(height: 12),
                                 Row(
                                   children: [
                                     Expanded(
@@ -2157,9 +2152,9 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                             () => p.documentType = 'B-Form'),
                                         borderRadius: BorderRadius.circular(8),
                                         child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: spacingUnit(2),
-                                            vertical: spacingUnit(1.5),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
                                           ),
                                           decoration: BoxDecoration(
                                             color: p.documentType == 'B-Form'
@@ -2202,7 +2197,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                             .onSurface
                                                             .withOpacity(0.5),
                                               ),
-                                              SizedBox(width: spacingUnit(1)),
+                                              const SizedBox(width: 8),
                                               Text(
                                                 'B-Form',
                                                 style: TextStyle(
@@ -2226,16 +2221,16 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                         ),
                                       ),
                                     ),
-                                    SizedBox(width: spacingUnit(1.5)),
+                                    const SizedBox(width: 12),
                                     Expanded(
                                       child: InkWell(
                                         onTap: () => setState(
                                             () => p.documentType = 'Passport'),
                                         borderRadius: BorderRadius.circular(8),
                                         child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: spacingUnit(2),
-                                            vertical: spacingUnit(1.5),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
                                           ),
                                           decoration: BoxDecoration(
                                             color: p.documentType == 'Passport'
@@ -2280,7 +2275,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                             .onSurface
                                                             .withOpacity(0.5),
                                               ),
-                                              SizedBox(width: spacingUnit(1)),
+                                              const SizedBox(width: 8),
                                               Text(
                                                 'Passport',
                                                 style: TextStyle(
@@ -2309,7 +2304,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               ],
                             ),
                           ),
-                          SizedBox(height: spacingUnit(2)),
+                          const SizedBox(height: 16),
                         ],
 
                         // ══════ CHILDREN/INFANTS: B-FORM FIELDS ══════
@@ -2354,12 +2349,12 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               return null;
                             },
                           ),
-                          SizedBox(height: spacingUnit(1)),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Icon(Icons.info_outline,
                                   size: 14, color: Colors.blue.shade700),
-                              SizedBox(width: spacingUnit(0.5)),
+                              const SizedBox(width: 4),
                               const Expanded(
                                 child: Text(
                                   'B-Form (Form-B) is issued by NADRA for Pakistani children under 18 years',
@@ -2371,7 +2366,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               ),
                             ],
                           ),
-                          SizedBox(height: spacingUnit(2)),
+                          const SizedBox(height: 16),
                         ],
 
                         // ══════ ALL PAKISTANIS: PASSPORT FIELDS ══════
@@ -2446,7 +2441,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                   },
                                 ),
                               ),
-                              SizedBox(width: spacingUnit(1.5)),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: _buildDropdown(
                                   label: 'Issuing Country',
@@ -2462,7 +2457,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               ),
                             ],
                           ),
-                          SizedBox(height: spacingUnit(2)),
+                          const SizedBox(height: 16),
                           Row(
                             children: [
                               Expanded(
@@ -2480,7 +2475,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                       p.passportIssuanceDate == null,
                                 ),
                               ),
-                              SizedBox(width: spacingUnit(1.5)),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: _buildDatePicker(
                                   context: context,
@@ -2509,7 +2504,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               ),
                             ],
                           ),
-                          SizedBox(height: spacingUnit(2)),
+                          const SizedBox(height: 16),
                         ],
 
                         // ══════ NON-PAKISTANI NATIONALS: PASSPORT REQUIRED ══════
@@ -2566,7 +2561,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                   return null;
                                 },
                               )),
-                              SizedBox(width: spacingUnit(1.5)),
+                              const SizedBox(width: 12),
                               Expanded(
                                   child: _buildDropdown(
                                 label: 'Passport Issuing Country',
@@ -2581,7 +2576,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               )),
                             ],
                           ),
-                          SizedBox(height: spacingUnit(2)),
+                          const SizedBox(height: 16),
                           Row(
                             children: [
                               Expanded(
@@ -2598,7 +2593,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                 showError: p.submitted &&
                                     p.passportIssuanceDate == null,
                               )),
-                              SizedBox(width: spacingUnit(1.5)),
+                              const SizedBox(width: 12),
                               Expanded(
                                   child: _buildDatePicker(
                                 context: context,
@@ -2626,7 +2621,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               )),
                             ],
                           ),
-                          SizedBox(height: spacingUnit(2)),
+                          const SizedBox(height: 16),
                         ],
                         // save details
                         GestureDetector(
@@ -2655,7 +2650,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                           .remove('saved_passenger_data_$i');
                                     }
                                   },
-                                  activeColor: scheme.primary,
+                                  activeColor: TravelloTheme.primaryMain,
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(4)),
                                   side: BorderSide(
@@ -2664,20 +2659,20 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                       MaterialTapTargetSize.shrinkWrap,
                                 ),
                               ),
-                              SizedBox(width: spacingUnit(1)),
+                              const SizedBox(width: 8),
                               const Text('Save Details for future use',
                                   style: TextStyle(fontSize: 13)),
                             ],
                           ),
                         ),
-                        SizedBox(height: spacingUnit(1.5)),
+                        const SizedBox(height: 12),
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: spacingUnit(12)),
+            const SizedBox(height: 96),
           ],
         ),
       ),
@@ -2687,9 +2682,9 @@ class _BookingPassengersState extends State<BookingPassengers> {
   // â”€â”€ contact page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildContactPage(BuildContext context) {
-    final scheme = colorScheme(context);
     return SingleChildScrollView(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      primary: false,
+      padding: const EdgeInsets.all(16),
       child: Form(
         key: _formKeys[_totalPassengers],
         child: Column(
@@ -2697,7 +2692,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: scheme.surface,
+                color: TravelloTheme.paperLight,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.grey.shade200),
                 boxShadow: [
@@ -2713,25 +2708,25 @@ class _BookingPassengersState extends State<BookingPassengers> {
                 children: [
                   // header
                   Container(
-                    padding: EdgeInsets.fromLTRB(spacingUnit(2), spacingUnit(2),
-                        spacingUnit(2), spacingUnit(1.5)),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                     decoration: BoxDecoration(
-                      color: scheme.primary.withValues(alpha: 0.04),
+                      color: TravelloTheme.primaryMain.withValues(alpha: 0.04),
                       borderRadius:
                           const BorderRadius.vertical(top: Radius.circular(16)),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(spacingUnit(0.8)),
+                          padding: const EdgeInsets.all(6.4),
                           decoration: BoxDecoration(
-                            color: scheme.primary.withValues(alpha: 0.12),
+                            color: TravelloTheme.primaryMain
+                                .withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(Icons.contact_phone_outlined,
-                              color: scheme.primary, size: 18),
+                          child: const Icon(Icons.contact_phone_outlined,
+                              color: TravelloTheme.primaryMain, size: 18),
                         ),
-                        SizedBox(width: spacingUnit(1.2)),
+                        const SizedBox(width: 9.6),
                         const Text('Contact Details',
                             style: TextStyle(
                                 fontSize: 18,
@@ -2741,15 +2736,14 @@ class _BookingPassengersState extends State<BookingPassengers> {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.all(spacingUnit(2)),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // info banner
                         Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: spacingUnit(1.5),
-                              vertical: spacingUnit(1.2)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 9.6),
                           decoration: BoxDecoration(
                             color: Colors.orange.withValues(alpha: 0.07),
                             borderRadius: BorderRadius.circular(10),
@@ -2763,7 +2757,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             children: [
                               Icon(Icons.info_outline,
                                   color: Colors.orange.shade600, size: 16),
-                              SizedBox(width: spacingUnit(1)),
+                              const SizedBox(width: 8),
                               const Expanded(
                                 child: Text(
                                   'Booking confirmation and e-ticket will be sent to this contact.',
@@ -2773,7 +2767,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             ],
                           ),
                         ),
-                        SizedBox(height: spacingUnit(2)),
+                        const SizedBox(height: 16),
                         DSInputField(
                           label: 'Full Name',
                           controller: _contactNameCtrl,
@@ -2794,7 +2788,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             return null;
                           },
                         ),
-                        SizedBox(height: spacingUnit(1.8)),
+                        const SizedBox(height: 14.4),
                         DSInputField(
                           label: 'Email Address',
                           controller: _contactEmailCtrl,
@@ -2803,7 +2797,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                           keyboardType: TextInputType.emailAddress,
                           validator: DSValidators.email,
                         ),
-                        SizedBox(height: spacingUnit(1.8)),
+                        const SizedBox(height: 14.4),
                         DSInputField(
                           label: 'Phone Number',
                           controller: _contactPhoneCtrl,
@@ -2828,22 +2822,22 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             return null;
                           },
                         ),
-                        SizedBox(height: spacingUnit(1.5)),
+                        const SizedBox(height: 12),
                       ],
                     ),
                   ),
                   // Emergency Contact Section
                   Container(
-                    margin: EdgeInsets.only(top: spacingUnit(2)),
-                    decoration: BoxDecoration(
-                      color: scheme.surface,
+                    margin: const EdgeInsets.only(top: 16),
+                    decoration: const BoxDecoration(
+                      color: TravelloTheme.paperLight,
                       borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(16)),
+                          BorderRadius.vertical(top: Radius.circular(16)),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(spacingUnit(0.8)),
+                          padding: const EdgeInsets.all(6.4),
                           decoration: BoxDecoration(
                             color: Colors.red.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
@@ -2851,7 +2845,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                           child: Icon(Icons.emergency_outlined,
                               color: Colors.red.shade700, size: 18),
                         ),
-                        SizedBox(width: spacingUnit(1.2)),
+                        const SizedBox(width: 9.6),
                         const Text('Emergency Contact',
                             style: TextStyle(
                                 fontSize: 18,
@@ -2861,15 +2855,14 @@ class _BookingPassengersState extends State<BookingPassengers> {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.all(spacingUnit(2)),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // info banner
                         Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: spacingUnit(1.5),
-                              vertical: spacingUnit(1.2)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 9.6),
                           decoration: BoxDecoration(
                             color: Colors.red.withValues(alpha: 0.07),
                             borderRadius: BorderRadius.circular(10),
@@ -2878,13 +2871,13 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                   color: Colors.red.shade400, width: 3),
                             ),
                           ),
-                          child: Row(
+                          child: const Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(Icons.info_outline,
+                              Icon(Icons.info_outline,
                                   color: Color(0xFFD4AF37), size: 16),
-                              SizedBox(width: spacingUnit(1)),
-                              const Expanded(
+                              SizedBox(width: 8),
+                              Expanded(
                                 child: Text(
                                   'Emergency contact will be notified in case of any urgent situation.',
                                   style: TextStyle(
@@ -2894,7 +2887,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             ],
                           ),
                         ),
-                        SizedBox(height: spacingUnit(2)),
+                        const SizedBox(height: 16),
                         DSInputField(
                           label: 'Full Name',
                           controller: _emergencyNameCtrl,
@@ -2917,7 +2910,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             return null;
                           },
                         ),
-                        SizedBox(height: spacingUnit(1.8)),
+                        const SizedBox(height: 14.4),
                         DSInputField(
                           label: 'Relationship',
                           controller: _emergencyRelationCtrl,
@@ -2938,7 +2931,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             return null;
                           },
                         ),
-                        SizedBox(height: spacingUnit(1.8)),
+                        const SizedBox(height: 14.4),
                         DSInputField(
                           label: 'Email Address (Optional)',
                           controller: _emergencyEmailCtrl,
@@ -2951,7 +2944,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             return DSValidators.email(v);
                           },
                         ),
-                        SizedBox(height: spacingUnit(1.8)),
+                        const SizedBox(height: 14.4),
                         DSInputField(
                           label: 'Phone Number',
                           controller: _emergencyPhoneCtrl,
@@ -2978,14 +2971,14 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             return null;
                           },
                         ),
-                        SizedBox(height: spacingUnit(1.5)),
+                        const SizedBox(height: 12),
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: spacingUnit(12)),
+            const SizedBox(height: 96),
           ],
         ),
       ),
@@ -2995,10 +2988,9 @@ class _BookingPassengersState extends State<BookingPassengers> {
   // â”€â”€ bottom bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildBottomBar(BuildContext context) {
-    final scheme = colorScheme(context);
     return Container(
       decoration: BoxDecoration(
-        color: scheme.surface,
+        color: TravelloTheme.paperLight,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
@@ -3009,8 +3001,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(2), vertical: spacingUnit(1.5)),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Expanded(
@@ -3023,10 +3014,10 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             fontSize: 11, color: Colors.grey.shade500)),
                     Text(
                       formatPKR(_calculateTotalPrice()),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: scheme.primary,
+                        color: TravelloTheme.primaryMain,
                       ),
                     ),
                     Text(
@@ -3077,7 +3068,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
       children: [
         if (showLabel && label.isNotEmpty) ...[
           _sectionLabel(label),
-          SizedBox(height: spacingUnit(0.7)),
+          const SizedBox(height: 5.6),
         ],
         TextFormField(
           controller: controller,
@@ -3098,8 +3089,8 @@ class _BookingPassengersState extends State<BookingPassengers> {
             prefixIcon: Icon(icon, size: 18, color: Colors.grey.shade500),
             filled: true,
             fillColor: Colors.grey.shade50,
-            contentPadding: EdgeInsets.symmetric(
-                vertical: spacingUnit(1.4), horizontal: spacingUnit(1.5)),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 11.2, horizontal: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: Colors.grey.shade300),
@@ -3110,8 +3101,8 @@ class _BookingPassengersState extends State<BookingPassengers> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide:
-                  BorderSide(color: colorScheme(context).primary, width: 1.5),
+              borderSide: const BorderSide(
+                  color: TravelloTheme.primaryMain, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -3137,7 +3128,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionLabel(label),
-        SizedBox(height: spacingUnit(0.7)),
+        const SizedBox(height: 5.6),
         GestureDetector(
           onTap: () async {
             final result = await showModalBottomSheet<String>(
@@ -3156,7 +3147,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
           },
           child: Container(
             height: 50,
-            padding: EdgeInsets.symmetric(horizontal: spacingUnit(1.5)),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: hasError ? Colors.red.shade50 : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(10),
@@ -3171,14 +3162,14 @@ class _BookingPassengersState extends State<BookingPassengers> {
                     size: 18,
                     color:
                         hasError ? Colors.red.shade400 : Colors.grey.shade500),
-                SizedBox(width: spacingUnit(1)),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     value ?? hint,
                     style: TextStyle(
                       fontSize: 13,
                       color: value != null
-                          ? ThemePalette.primaryMain
+                          ? TravelloTheme.primaryMain
                           : (hasError
                               ? Colors.red.shade300
                               : Colors.grey.shade400),
@@ -3221,7 +3212,6 @@ class _BookingPassengersState extends State<BookingPassengers> {
     DateTime? initialPickerDate,
     String? Function(DateTime?)? validator,
   }) {
-    final scheme = colorScheme(context);
     final isExpiringSoon = highlightExpiry &&
         value != null &&
         value.isBefore(DateTime.now().add(const Duration(days: 180)));
@@ -3232,7 +3222,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionLabel(label),
-        SizedBox(height: spacingUnit(0.7)),
+        const SizedBox(height: 5.6),
         GestureDetector(
           onTap: () async {
             final picked = await showDatePicker(
@@ -3248,7 +3238,8 @@ class _BookingPassengersState extends State<BookingPassengers> {
               lastDate: lastDate,
               builder: (ctx, child) => Theme(
                 data: Theme.of(ctx).copyWith(
-                  colorScheme: ColorScheme.light(primary: scheme.primary),
+                  colorScheme: const ColorScheme.light(
+                      primary: TravelloTheme.primaryMain),
                 ),
                 child: child!,
               ),
@@ -3257,7 +3248,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
           },
           child: Container(
             height: 50,
-            padding: EdgeInsets.symmetric(horizontal: spacingUnit(1.5)),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: displayError
                   ? Colors.red.shade50
@@ -3283,7 +3274,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                         : isExpiringSoon
                             ? Colors.orange.shade600
                             : Colors.grey.shade500),
-                SizedBox(width: spacingUnit(1)),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     value != null
@@ -3403,7 +3394,6 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.7,
@@ -3467,8 +3457,10 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                       style: TextStyle(
                           fontWeight:
                               isSel ? FontWeight.bold : FontWeight.normal)),
-                  trailing:
-                      isSel ? Icon(Icons.check, color: scheme.primary) : null,
+                  trailing: isSel
+                      ? const Icon(Icons.check,
+                          color: TravelloTheme.primaryMain)
+                      : null,
                   onTap: () => Navigator.pop(context, c),
                 );
               },

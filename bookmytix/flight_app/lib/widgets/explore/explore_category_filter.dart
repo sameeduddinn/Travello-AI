@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 /// Category chip filter bar - Wego / Expedia style
 class ExploreCategoryFilter extends StatelessWidget {
@@ -34,32 +33,32 @@ class ExploreCategoryFilter extends StatelessWidget {
         ),
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.symmetric(
-            horizontal: spacingUnit(2),
-            vertical: spacingUnit(0.5),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 4,
           ),
           itemCount: categories.length,
           itemBuilder: (context, i) {
             final cat = categories[i];
             final isActive = selected == cat['label'];
             return Padding(
-              padding: EdgeInsets.only(right: spacingUnit(1)),
+              padding: const EdgeInsets.only(right: 8),
               child: GestureDetector(
                 onTap: () => onSelect(cat['label'] as String),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: spacingUnit(2),
-                    vertical: spacingUnit(0.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? ThemePalette.primaryMain
-                        : colorScheme(context).surfaceContainerHighest,
+                        ? TravelloTheme.primaryMain
+                        : TravelloTheme.paperLightContainerHighest,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
                       color: isActive
-                          ? ThemePalette.primaryMain
+                          ? TravelloTheme.primaryMain
                           : colorScheme(context).outline.withValues(alpha: 0.4),
                     ),
                   ),
@@ -75,7 +74,7 @@ class ExploreCategoryFilter extends StatelessWidget {
                                 .onSurface
                                 .withValues(alpha: 0.7),
                       ),
-                      SizedBox(width: spacingUnit(0.5)),
+                      const SizedBox(width: 4),
                       Text(
                         cat['label'] as String,
                         style: TextStyle(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/general_list.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class WalletList extends StatefulWidget {
   const WalletList({super.key});
@@ -31,14 +30,14 @@ class _WalletListState extends State<WalletList> {
       itemBuilder: ((BuildContext context, int index){
         final GeneralList item = _banks[index];
         return ListTile(
-          title: Text(item.text!, style: ThemeText.subtitle2),
-          subtitle: Text(item.desc ?? 'Not Connected', style: ThemeText.paragraph),
+          title: Text(item.text!, style: TravelloTheme.subtitle2),
+          subtitle: Text(item.desc ?? 'Not Connected', style: TravelloTheme.paragraph),
           leading: CircleAvatar(
             radius: 20,
             backgroundImage: AssetImage(item.thumb),
           ),
           trailing: _selected == item.value ?
-            Icon(Icons.check_circle, color: ThemePalette.primaryMain)
+            const Icon(Icons.check_circle, color: TravelloTheme.primaryMain)
             : Icon(Icons.circle_outlined, color: colorScheme(context).outline),
           onTap: () {
             setState(() {

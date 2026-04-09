@@ -1,9 +1,8 @@
 import 'package:flight_app/models/flight_route.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/cards/flight_route_card.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightRoutesHorizontal extends StatelessWidget {
   const FlightRoutesHorizontal({
@@ -21,14 +20,14 @@ class FlightRoutesHorizontal extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const VSpaceShort(),
-          Text(title, style: ThemeText.subtitle),
-          if (dateLabel != null) Text(dateLabel!, style: ThemeText.caption),
-          SizedBox(height: spacingUnit(1)),
+          Text(title, style: TravelloTheme.subtitle),
+          if (dateLabel != null) Text(dateLabel!, style: TravelloTheme.caption),
+          const SizedBox(height: 8),
           SizedBox(
             height: 80,
             child: ListView.builder(

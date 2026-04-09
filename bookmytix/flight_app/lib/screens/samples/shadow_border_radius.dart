@@ -1,11 +1,7 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/app_button/back_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ShadowBorderRadius extends StatelessWidget {
   const ShadowBorderRadius({super.key});
@@ -14,18 +10,18 @@ class ShadowBorderRadius extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Button Collection', style: ThemeText.subtitle,),
+        title: const Text('Button Collection', style: TravelloTheme.subtitle,),
         centerTitle: true,
         leading: BackIconButton(onTap: () {
           Get.back();
         }),
       ),
-      body: ListView(padding: EdgeInsets.all(spacingUnit(2)), children: [
+      body: ListView(padding: const EdgeInsets.all(16), children: [
         Container(
           height: 100,
-          padding: EdgeInsets.all(spacingUnit(2)),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colorScheme(context).primaryContainer,
+            color: TravelloTheme.primaryMainContainer,
             boxShadow: [ThemeShade.shadeSoft(context)],
             borderRadius: ThemeRadius.small,
           ),
@@ -34,9 +30,9 @@ class ShadowBorderRadius extends StatelessWidget {
         const VSpace(),
         Container(
           height: 100,
-          padding: EdgeInsets.all(spacingUnit(2)),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colorScheme(context).primaryContainer,
+            color: TravelloTheme.primaryMainContainer,
             boxShadow: [ThemeShade.shadeMedium(context)],
             borderRadius: ThemeRadius.medium,
           ),
@@ -45,9 +41,9 @@ class ShadowBorderRadius extends StatelessWidget {
         const VSpace(),
         Container(
           height: 100,
-          padding: EdgeInsets.all(spacingUnit(2)),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colorScheme(context).primaryContainer,
+            color: TravelloTheme.primaryMainContainer,
             boxShadow: [ThemeShade.shadeHard(context)],
             borderRadius: ThemeRadius.big,
           ),

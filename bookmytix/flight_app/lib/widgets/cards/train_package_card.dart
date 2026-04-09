@@ -1,12 +1,9 @@
 import 'package:change_case/change_case.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/shimmer_preloader.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
 import 'package:flight_app/widgets/decorations/dashed_border.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TrainPackageCard extends StatelessWidget {
   const TrainPackageCard({
@@ -70,16 +67,16 @@ class TrainPackageCard extends StatelessWidget {
                   width: 60,
                   height: 60,
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: colorScheme(context).secondary,
-                    borderRadius: const BorderRadius.only(
+                  decoration: const BoxDecoration(
+                    color: TravelloTheme.secondaryMain,
+                    borderRadius: BorderRadius.only(
                       bottomRight: Radius.circular(60),
                     ),
                   ),
                   child: Text(
                     label,
                     textAlign: TextAlign.start,
-                    style: ThemeText.paragraphBold
+                    style: TravelloTheme.paragraphBold
                         .copyWith(color: const Color(0xFF000000)),
                   ),
                 ),
@@ -90,7 +87,7 @@ class TrainPackageCard extends StatelessWidget {
 
         /// PROPERTIES
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Column(
             children: [
               const SizedBox(height: 100),
@@ -104,7 +101,7 @@ class TrainPackageCard extends StatelessWidget {
                       Flexible(
                           child: Text(from,
                               overflow: TextOverflow.ellipsis,
-                              style: ThemeText.subtitle)),
+                              style: TravelloTheme.subtitle)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Icon(
@@ -117,7 +114,7 @@ class TrainPackageCard extends StatelessWidget {
                       Flexible(
                           child: Text(to,
                               overflow: TextOverflow.ellipsis,
-                              style: ThemeText.subtitle)),
+                              style: TravelloTheme.subtitle)),
                     ]),
                   ),
 
@@ -138,7 +135,7 @@ class TrainPackageCard extends StatelessWidget {
                                     child: Text(
                                       date,
                                       overflow: TextOverflow.ellipsis,
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant),
                                     ),
@@ -213,13 +210,13 @@ class TrainPackageCard extends StatelessWidget {
                             children: [
                               Text(
                                 'Start from',
-                                style: ThemeText.caption.copyWith(
+                                style: TravelloTheme.caption.copyWith(
                                     color:
                                         colorScheme(context).onSurfaceVariant),
                               ),
                               Text('Rs.${price.toStringAsFixed(0)}',
-                                  style: ThemeText.title2.copyWith(
-                                      color: colorScheme(context).primary,
+                                  style: TravelloTheme.title2.copyWith(
+                                      color: TravelloTheme.primaryMain,
                                       fontWeight: FontWeight.bold,
                                       height: 1.1)),
                             ],
@@ -239,14 +236,14 @@ class TrainPackageCard extends StatelessWidget {
                       child: Text(
                         '$trainName $trainNumber · $trainClass',
                         overflow: TextOverflow.ellipsis,
-                        style: ThemeText.caption,
+                        style: TravelloTheme.caption,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       duration,
-                      style: ThemeText.caption.copyWith(
-                          color: colorScheme(context).primary,
+                      style: TravelloTheme.caption.copyWith(
+                          color: TravelloTheme.primaryMain,
                           fontWeight: FontWeight.w600),
                     ),
                   ]),

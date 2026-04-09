@@ -1,7 +1,5 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ButtonTab extends StatelessWidget {
   const ButtonTab({super.key, required this.isSelected, required this.text, required this.onSelect});
@@ -17,13 +15,13 @@ class ButtonTab extends StatelessWidget {
         onSelect();
       },
       style: FilledButton.styleFrom(
-        backgroundColor: isSelected ? colorScheme(context).primaryContainer : Colors.transparent,
+        backgroundColor: isSelected ? TravelloTheme.primaryMainContainer : Colors.transparent,
         foregroundColor: isSelected ? colorScheme(context).onPrimaryContainer : colorScheme(context).onSurface,
         shape: RoundedRectangleBorder(
           borderRadius: ThemeRadius.medium
         )
       ),
-      child: Text(text, style: ThemeText.paragraph.copyWith(fontWeight: FontWeight.bold),),
+      child: Text(text, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold),),
     );
   }
 }

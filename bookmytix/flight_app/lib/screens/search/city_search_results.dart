@@ -1,13 +1,9 @@
 import 'package:flight_app/models/city.dart';
 import 'package:flight_app/models/trip.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/cards/flight_portrait_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class CitySearchResults extends StatefulWidget {
   const CitySearchResults({super.key});
@@ -99,7 +95,7 @@ class _CitySearchResultsState extends State<CitySearchResults>
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 cityName,
-                style: ThemeText.title2.copyWith(
+                style: TravelloTheme.title2.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
@@ -111,7 +107,7 @@ class _CitySearchResultsState extends State<CitySearchResults>
                     selectedCity!.photos[0],
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(
-                      color: colorScheme(context).primary,
+                      color: TravelloTheme.primaryMain,
                     ),
                   ),
                   Container(
@@ -138,10 +134,10 @@ class _CitySearchResultsState extends State<CitySearchResults>
           // Quick Stats
           SliverToBoxAdapter(
             child: Container(
-              margin: EdgeInsets.all(spacingUnit(2)),
-              padding: EdgeInsets.all(spacingUnit(2)),
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colorScheme(context).surfaceContainerLow,
+                color: TravelloTheme.paperLightContainerLow,
                 borderRadius: ThemeRadius.medium,
                 boxShadow: [ThemeShade.shadeSoft(context)],
               ),
@@ -177,9 +173,9 @@ class _CitySearchResultsState extends State<CitySearchResults>
             delegate: _SliverAppBarDelegate(
               TabBar(
                 controller: _tabController,
-                labelColor: colorScheme(context).primary,
+                labelColor: TravelloTheme.primaryMain,
                 unselectedLabelColor: colorScheme(context).onSurfaceVariant,
-                indicatorColor: colorScheme(context).primary,
+                indicatorColor: TravelloTheme.primaryMain,
                 tabs: const [
                   Tab(text: 'Departures'),
                   Tab(text: 'Arrivals'),
@@ -209,18 +205,18 @@ class _CitySearchResultsState extends State<CitySearchResults>
       BuildContext context, IconData icon, String value, String label) {
     return Column(
       children: [
-        Icon(icon, color: colorScheme(context).primary, size: 28),
-        SizedBox(height: spacingUnit(0.5)),
+        Icon(icon, color: TravelloTheme.primaryMain, size: 28),
+        const SizedBox(height: 4),
         Text(
           value,
-          style: ThemeText.title.copyWith(
+          style: TravelloTheme.title.copyWith(
             fontWeight: FontWeight.bold,
-            color: colorScheme(context).primary,
+            color: TravelloTheme.primaryMain,
           ),
         ),
         Text(
           label,
-          style: ThemeText.caption.copyWith(
+          style: TravelloTheme.caption.copyWith(
             color: colorScheme(context).onSurfaceVariant,
           ),
         ),
@@ -239,10 +235,10 @@ class _CitySearchResultsState extends State<CitySearchResults>
               size: 64,
               color: colorScheme(context).outlineVariant,
             ),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
             Text(
               emptyMessage,
-              style: ThemeText.subtitle.copyWith(
+              style: TravelloTheme.subtitle.copyWith(
                 color: colorScheme(context).onSurfaceVariant,
               ),
             ),
@@ -252,12 +248,12 @@ class _CitySearchResultsState extends State<CitySearchResults>
     }
 
     return ListView.builder(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       itemCount: flights.length,
       itemBuilder: (context, index) {
         final trip = flights[index];
         return Padding(
-          padding: EdgeInsets.only(bottom: spacingUnit(2)),
+          padding: const EdgeInsets.only(bottom: 16),
           child: FlightPortraitCard(
             from: trip.from.code,
             to: trip.to.code,
@@ -286,7 +282,7 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: colorScheme(context).surface,
+      color: TravelloTheme.paperLight,
       child: _tabBar,
     );
   }

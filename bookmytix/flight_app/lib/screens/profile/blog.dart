@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class Blog extends StatelessWidget {
   const Blog({super.key});
@@ -15,31 +13,31 @@ class Blog extends StatelessWidget {
           onPressed: () => Get.back(),
           icon: const Icon(Icons.arrow_back_ios_new),
         ),
-        title: const Text('Blog', style: ThemeText.subtitle),
+        title: const Text('Blog', style: TravelloTheme.subtitle),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(spacingUnit(3)),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Travel Insights & Tips',
-              style: ThemeText.title.copyWith(
-                color: ThemePalette.primaryDark,
+              style: TravelloTheme.title.copyWith(
+                color: TravelloTheme.primaryDark,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             Text(
               'Stay updated with latest travel trends, destinations, and tips',
-              style: ThemeText.paragraph.copyWith(
+              style: TravelloTheme.paragraph.copyWith(
                 color: Colors.grey.shade600,
               ),
             ),
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
             _buildBlogCard(
               'Top 10 Tourist Destinations in Pakistan 2026',
               'Discover the most beautiful and must-visit places in Pakistan, from mountain peaks to historical sites.',
@@ -96,17 +94,17 @@ class Blog extends StatelessWidget {
               '4 min read',
               Icons.luggage,
             ),
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
             Center(
               child: Text(
                 'More articles coming soon...',
-                style: ThemeText.caption.copyWith(
+                style: TravelloTheme.caption.copyWith(
                   color: Colors.grey.shade500,
                   fontStyle: FontStyle.italic,
                 ),
               ),
             ),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -122,7 +120,7 @@ class Blog extends StatelessWidget {
     IconData icon,
   ) {
     return Container(
-      margin: EdgeInsets.only(bottom: spacingUnit(2.5)),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -140,9 +138,9 @@ class Blog extends StatelessWidget {
         children: [
           // Header with Icon
           Container(
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: ThemePalette.primaryLight.withOpacity(0.1),
+              color: TravelloTheme.primaryLight.withOpacity(0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -154,26 +152,26 @@ class Blog extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: ThemePalette.primaryMain.withOpacity(0.2),
+                    color: TravelloTheme.primaryMain.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, color: ThemePalette.primaryMain, size: 24),
+                  child: Icon(icon, color: TravelloTheme.primaryMain, size: 24),
                 ),
-                SizedBox(width: spacingUnit(1.5)),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         category,
-                        style: ThemeText.caption.copyWith(
-                          color: ThemePalette.primaryMain,
+                        style: TravelloTheme.caption.copyWith(
+                          color: TravelloTheme.primaryMain,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
                         '$date • $readTime',
-                        style: ThemeText.caption.copyWith(
+                        style: TravelloTheme.caption.copyWith(
                           color: Colors.grey.shade500,
                           fontSize: 11,
                         ),
@@ -187,44 +185,44 @@ class Blog extends StatelessWidget {
 
           // Content
           Padding(
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: ThemeText.subtitle2.copyWith(
+                  style: TravelloTheme.subtitle2.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: ThemePalette.primaryDark,
+                    color: TravelloTheme.primaryDark,
                     height: 1.3,
                   ),
                 ),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 Text(
                   description,
-                  style: ThemeText.paragraph.copyWith(
+                  style: TravelloTheme.paragraph.copyWith(
                     color: Colors.grey.shade600,
                     height: 1.5,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: spacingUnit(1.5)),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text(
                       'Read More',
-                      style: ThemeText.paragraph.copyWith(
-                        color: ThemePalette.primaryMain,
+                      style: TravelloTheme.paragraph.copyWith(
+                        color: TravelloTheme.primaryMain,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(width: spacingUnit(0.5)),
-                    Icon(
+                    const SizedBox(width: 4),
+                    const Icon(
                       Icons.arrow_forward,
                       size: 16,
-                      color: ThemePalette.primaryMain,
+                      color: TravelloTheme.primaryMain,
                     ),
                   ],
                 ),

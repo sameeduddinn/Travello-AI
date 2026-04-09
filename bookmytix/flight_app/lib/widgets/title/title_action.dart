@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TitleAction extends StatelessWidget {
   const TitleAction({
@@ -27,25 +24,25 @@ class TitleAction extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: size == 'small' ? ThemeText.subtitle2 : ThemeText.subtitle),
+            Text(title, style: size == 'small' ? TravelloTheme.subtitle2 : TravelloTheme.subtitle),
             const SizedBox(height: 4),
             desc != null ? Text(desc!, overflow: TextOverflow.ellipsis,) : Container(),
           ],
         ),
       ),
-      SizedBox(width: spacingUnit(2)),
+      const SizedBox(width: 16),
       size == 'small' ? TextButton(
         onPressed: () => {
           onTap()
         },
         style: ThemeButton.btnSmall,
-        child: Text(textAction, style: ThemeText.paragraph.copyWith(height: 1))
+        child: Text(textAction, style: TravelloTheme.paragraph.copyWith(height: 1))
       ) : FilledButton(
         onPressed: () => {
           onTap()
         },
         style: ThemeButton.btnSmall.merge(ThemeButton.tonalPrimary(context)),
-        child: Text(textAction, style: ThemeText.paragraph.copyWith(height: 1))
+        child: Text(textAction, style: TravelloTheme.paragraph.copyWith(height: 1))
       )
     ]);
   }
@@ -72,18 +69,18 @@ class TitleActionSetting extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: ThemeText.subtitle),
+            Text(title, style: TravelloTheme.subtitle),
             const SizedBox(height: 4),
             desc != null ? Text(desc!, overflow: TextOverflow.ellipsis,) : Container(),
           ],
         ),
       ),
-      SizedBox(width: spacingUnit(2)),
+      const SizedBox(width: 16),
       TextButton(
         onPressed: () => {
           onTap()
         },
-        child: Text(textAction, style: ThemeText.paragraph.copyWith(fontWeight: FontWeight.bold, color: ThemePalette.primaryMain))
+        child: Text(textAction, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold, color: TravelloTheme.primaryMain))
       )
     ]);
   }

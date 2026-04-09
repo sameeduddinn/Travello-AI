@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/search_history_service.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TagHistory extends StatefulWidget {
   const TagHistory({super.key, this.onTagTap});
@@ -53,13 +51,13 @@ class _TagHistoryState extends State<TagHistory> {
     }
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Search History',
-              style: ThemeText.subtitle.copyWith(fontWeight: FontWeight.bold)),
-          SizedBox(height: spacingUnit(1.5)),
+              style: TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
           Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -82,7 +80,7 @@ class _TagHistoryState extends State<TagHistory> {
                                 color: Theme.of(context)
                                     .colorScheme
                                     .surfaceContainerHighest),
-                            child: Text(item, style: ThemeText.paragraph),
+                            child: Text(item, style: TravelloTheme.paragraph),
                           ),
                         ),
                       ))
@@ -109,13 +107,13 @@ class TagTrending extends StatelessWidget {
     ];
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Trending Search',
-              style: ThemeText.subtitle.copyWith(fontWeight: FontWeight.bold)),
-          SizedBox(height: spacingUnit(1.5)),
+              style: TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
           Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -147,7 +145,7 @@ class TagTrending extends StatelessWidget {
                                       .onPrimaryContainer),
                               const SizedBox(width: 4),
                               Text(item,
-                                  style: ThemeText.paragraph.copyWith(
+                                  style: TravelloTheme.paragraph.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onPrimaryContainer))

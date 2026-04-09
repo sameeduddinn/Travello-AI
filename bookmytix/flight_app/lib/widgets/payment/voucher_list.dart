@@ -1,13 +1,11 @@
 import 'package:flight_app/models/voucher.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
 import 'package:flight_app/widgets/app_input/app_textfield.dart';
 import 'package:flight_app/widgets/cards/voucher_card.dart';
 import 'package:flight_app/widgets/title/title_basic.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class VoucherList extends StatelessWidget {
   const VoucherList({super.key, required this.selectedVouchers, required this.onSelected});
@@ -19,7 +17,7 @@ class VoucherList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           const GrabberIcon(),
@@ -36,7 +34,7 @@ class VoucherList extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: () {},
                     style: ThemeButton.btnSmall.merge(ThemeButton.outlinedPrimary(context)),
-                    child: const Text('USE CODE', style: ThemeText.caption),
+                    child: const Text('USE CODE', style: TravelloTheme.caption),
                   ),
                 ),
               ),
@@ -52,7 +50,7 @@ class VoucherList extends StatelessWidget {
                   return Container(
                     width: double.infinity,
                     height: 100,
-                    padding: EdgeInsets.only(bottom: spacingUnit(2)),
+                    padding: const EdgeInsets.only(bottom: 16),
                     child: VoucherCard(
                       title: item.title,
                       desc: item.desc,
@@ -82,7 +80,7 @@ class VoucherList extends StatelessWidget {
                   return Container(
                     width: double.infinity,
                     height: 100,
-                    padding: EdgeInsets.only(bottom: spacingUnit(2)),
+                    padding: const EdgeInsets.only(bottom: 16),
                     child: VoucherCard(
                       title: item.title,
                       desc: item.desc,
@@ -98,7 +96,7 @@ class VoucherList extends StatelessWidget {
             ]),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(vertical: spacingUnit(1)),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: SizedBox(
               width: double.infinity,
               child: FilledButton(
@@ -106,7 +104,7 @@ class VoucherList extends StatelessWidget {
                   Get.back();
                 },
                 style: ThemeButton.btnBig.merge(ThemeButton.tonalPrimary(context)),
-                child: const Text('DONE', style: ThemeText.subtitle2)
+                child: const Text('DONE', style: TravelloTheme.subtitle2)
               ),
             ),
           ),

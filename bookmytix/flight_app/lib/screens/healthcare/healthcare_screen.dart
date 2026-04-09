@@ -1,10 +1,7 @@
 import 'package:flight_app/models/hospital.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
-import 'package:get/route_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class HealthcareScreen extends StatefulWidget {
   const HealthcareScreen({super.key});
@@ -113,7 +110,7 @@ class _HealthcareScreenState extends State<HealthcareScreen>
               child: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new,
                     color: Color(0xFFD4AF37), size: 18),
-                onPressed: () => Get.back(),
+                onPressed: () => Navigator.of(context).maybePop(),
               ),
             ),
             flexibleSpace: FlexibleSpaceBar(
@@ -229,13 +226,13 @@ class _HealthcareScreenState extends State<HealthcareScreen>
               children: [
                 // Emergency Contacts Section
                 Padding(
-                  padding: EdgeInsets.all(spacingUnit(2)),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Emergency Hotlines',
-                        style: ThemeText.title.copyWith(fontSize: 16),
+                        style: TravelloTheme.title.copyWith(fontSize: 16),
                       ),
                       const SizedBox(height: 12),
                       ...emergencyContacts.map((contact) {
@@ -252,7 +249,7 @@ class _HealthcareScreenState extends State<HealthcareScreen>
                             ),
                             title: Text(
                               contact.service,
-                              style: ThemeText.subtitle,
+                              style: TravelloTheme.subtitle,
                             ),
                             trailing: FilledButton.icon(
                               onPressed: () => _makePhoneCall(contact.number),
@@ -273,17 +270,17 @@ class _HealthcareScreenState extends State<HealthcareScreen>
 
                 // City Selector
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Nearby Hospitals',
-                        style: ThemeText.title.copyWith(fontSize: 16),
+                        style: TravelloTheme.title.copyWith(fontSize: 16),
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: _selectedCity,
+                        initialValue: _selectedCity,
                         dropdownColor: Colors.white,
                         style: const TextStyle(
                           color: Color(0xFFD4AF37),
@@ -336,7 +333,7 @@ class _HealthcareScreenState extends State<HealthcareScreen>
                 // Hospitals List
                 if (_hospitals.isEmpty)
                   Padding(
-                    padding: EdgeInsets.all(spacingUnit(4)),
+                    padding: const EdgeInsets.all(32),
                     child: Center(
                       child: Column(
                         children: [
@@ -348,7 +345,7 @@ class _HealthcareScreenState extends State<HealthcareScreen>
                           const SizedBox(height: 16),
                           const Text(
                             'No hospitals found',
-                            style: ThemeText.subtitle,
+                            style: TravelloTheme.subtitle,
                           ),
                         ],
                       ),
@@ -364,7 +361,7 @@ class _HealthcareScreenState extends State<HealthcareScreen>
                     );
                   }),
 
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -386,13 +383,13 @@ class _HospitalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: spacingUnit(2),
-        vertical: spacingUnit(0.5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 4,
       ),
       child: Card(
         child: Padding(
-          padding: EdgeInsets.all(spacingUnit(2)),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -401,7 +398,7 @@ class _HospitalCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: colorScheme(context).primaryContainer,
+                      color: TravelloTheme.primaryMainContainer,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -417,7 +414,7 @@ class _HospitalCard extends StatelessWidget {
                       children: [
                         Text(
                           hospital.name,
-                          style: ThemeText.subtitle,
+                          style: TravelloTheme.subtitle,
                         ),
                         const SizedBox(height: 4),
                         Row(
@@ -433,7 +430,7 @@ class _HospitalCard extends StatelessWidget {
                               ),
                               child: Text(
                                 hospital.type,
-                                style: ThemeText.caption.copyWith(
+                                style: TravelloTheme.caption.copyWith(
                                   color:
                                       colorScheme(context).onTertiaryContainer,
                                   fontSize: 11,
@@ -453,7 +450,7 @@ class _HospitalCard extends StatelessWidget {
                                 ),
                                 child: Text(
                                   '24/7 Emergency',
-                                  style: ThemeText.caption.copyWith(
+                                  style: TravelloTheme.caption.copyWith(
                                     color: Colors.red.shade900,
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -480,7 +477,7 @@ class _HospitalCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       hospital.address,
-                      style: ThemeText.caption,
+                      style: TravelloTheme.caption,
                     ),
                   ),
                 ],
@@ -496,8 +493,8 @@ class _HospitalCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     '${hospital.distance.toStringAsFixed(1)} km away',
-                    style: ThemeText.caption.copyWith(
-                      color: colorScheme(context).primary,
+                    style: TravelloTheme.caption.copyWith(
+                      color: TravelloTheme.primaryMain,
                     ),
                   ),
                 ],

@@ -1,14 +1,10 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/models/city.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/shimmer_preloader.dart';
 import 'package:flight_app/widgets/title/title_basic.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class CityDestinationsGrid extends StatelessWidget {
   const CityDestinationsGrid({super.key});
@@ -54,15 +50,15 @@ class CityDestinationsGrid extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-          horizontal: screenWidth > 1200 ? spacingUnit(8) : spacingUnit(2)),
+          horizontal: screenWidth > 1200 ? spacingUnit(8) : 16),
       decoration: BoxDecoration(
-          color: colorScheme(context).surfaceContainerLowest,
+          color: TravelloTheme.paperLightContainerLowest,
           borderRadius: ThemeRadius.medium),
       child: Column(
         children: [
           const TitleBasic(title: 'Popular Destinations'),
-          SizedBox(
-            height: spacingUnit(2),
+          const SizedBox(
+            height: 16,
           ),
           GridView.builder(
               padding: const EdgeInsets.all(0),
@@ -77,6 +73,8 @@ class CityDestinationsGrid extends StatelessWidget {
               itemCount: recomendedCityList.length,
               itemBuilder: (context, index) {
                 final City item = recomendedCityList[index];
+                final String photoUrl =
+                    item.photos.isNotEmpty ? item.photos.first : '';
                 return GestureDetector(
                     onTap: () {
                       Get.toNamed(AppLink.flightSearchHome, arguments: {
@@ -97,7 +95,7 @@ class CityDestinationsGrid extends StatelessWidget {
                             child: ClipRRect(
                               borderRadius: ThemeRadius.medium,
                               child: Image.network(
-                                item.photos[0],
+                                photoUrl,
                                 fit: BoxFit.cover,
                                 loadingBuilder: (BuildContext context,
                                     Widget child,
@@ -108,13 +106,23 @@ class CityDestinationsGrid extends StatelessWidget {
                                       height: 60,
                                       child: ShimmerPreloader());
                                 },
+                                errorBuilder: (_, __, ___) => Container(
+                                  color:
+                                      TravelloTheme.paperLightContainerHighest,
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.image_not_supported_outlined,
+                                    color: TravelloTheme.textMuted,
+                                    size: 18,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                          SizedBox(height: spacingUnit(1)),
+                          const SizedBox(height: 8),
                           Text(item.name,
                               overflow: TextOverflow.ellipsis,
-                              style: ThemeText.paragraph)
+                              style: TravelloTheme.paragraph)
                         ]));
               }),
         ],

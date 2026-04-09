@@ -53,9 +53,9 @@ class NotificationService {
       type: 'success',
       category: 'flight',
       tag: _airlineTag(airline),
-      title: '$airline $flightNumber — Booking Confirmed ✓',
+      title: '$airline $flightNumber - Booking Confirmed',
       subtitle:
-          '$fromCode → $toCode · $date, $departure · $seatClass · PNR: $pnr',
+          '$fromCode -> $toCode | $date, $departure | $seatClass | PNR: $pnr',
       date: 'Just now',
       isRead: false,
     ));
@@ -65,9 +65,9 @@ class NotificationService {
       type: 'info',
       category: 'flight',
       tag: _airlineTag(airline),
-      title: 'Online check-in now open — $airline $flightNumber',
+      title: 'Online check-in now open - $airline $flightNumber',
       subtitle:
-          '$fromCode → $toCode · Dep $departure on $date · Check-in closes 1 hr before departure',
+          '$fromCode -> $toCode | Dep $departure on $date | Check-in closes 1 hr before departure',
       date: 'Just now',
       isRead: false,
     ));
@@ -77,9 +77,9 @@ class NotificationService {
       type: 'warning',
       category: 'flight',
       tag: 'Reminder',
-      title: 'Leave home 3 hrs before your flight ✈',
+      title: 'Leave home 3 hrs before your flight',
       subtitle:
-          '$airline $flightNumber · $fromCode → $toCode · $date at $departure — allow time for check-in, security & boarding',
+          '$airline $flightNumber | $fromCode -> $toCode | $date at $departure - allow time for check-in, security and boarding',
       date: 'Just now',
       isRead: false,
     ));
@@ -93,10 +93,10 @@ class NotificationService {
         type: 'warning',
         category: 'flight',
         tag: _airlineTag(airline),
-        title: '24-hr Return Flight Reminder — $retFlight',
+        title: '24-hr Return Flight Reminder - $retFlight',
         subtitle:
-            '$toCode → $fromCode · $returnDate${returnDeparture != null ? " at $returnDeparture" : ""} · '
-            'Check-in open. Don\'t forget: baggage allowance, travel docs & CNIC.',
+            '$toCode -> $fromCode | $returnDate${returnDeparture != null ? " at $returnDeparture" : ""} | '
+            'Check-in open. Do not forget: baggage allowance, travel docs and CNIC.',
         date: 'Just now',
         isRead: false,
       ));
@@ -106,10 +106,10 @@ class NotificationService {
         type: 'info',
         category: 'flight',
         tag: _airlineTag(airline),
-        title: '🧳 Pack return baggage before boarding — $retFlight',
+        title: 'Pack return baggage before boarding - $retFlight',
         subtitle:
-            'Your return flight $toCode → $fromCode departs $returnDate${returnDeparture != null ? " at $returnDeparture" : ""}. '
-            'Confirm your baggage allowance, avoid overweight fees & pack essentials 24 hrs in advance.',
+            'Your return flight $toCode -> $fromCode departs $returnDate${returnDeparture != null ? " at $returnDeparture" : ""}. '
+            'Confirm your baggage allowance, avoid overweight fees and pack essentials 24 hrs in advance.',
         date: 'Just now',
         isRead: false,
       ));
@@ -128,9 +128,9 @@ class NotificationService {
       type: 'info',
       category: 'flight',
       tag: _airlineTag(airline),
-      title: '$airline $flightNumber — Online check-in open',
+      title: '$airline $flightNumber - Online check-in open',
       subtitle:
-          '$fromCode → $toCode · Dep. $departure · Check-in closes 1 hr before departure',
+          '$fromCode -> $toCode | Dep. $departure | Check-in closes 1 hr before departure',
       date: 'Just now',
       isRead: false,
     ));
@@ -155,9 +155,9 @@ class NotificationService {
       type: 'success',
       category: 'train',
       tag: 'Train',
-      title: 'Pakistan Railways — Ticket Confirmed ✓',
+      title: 'Pakistan Railways - Ticket Confirmed',
       subtitle:
-          '$trainName · $fromStation → $toStation · $date, $departure · $seatClass · Coach $coach, Seat $seat · PNR: $pnr',
+          '$trainName | $fromStation -> $toStation | $date, $departure | $seatClass | Coach $coach, Seat $seat | PNR: $pnr',
       date: 'Just now',
       isRead: false,
     ));
@@ -167,9 +167,9 @@ class NotificationService {
       type: 'info',
       category: 'train',
       tag: 'Train',
-      title: 'Arrive at station 30 min early — $trainName',
+      title: 'Arrive at station 30 min early - $trainName',
       subtitle:
-          '$fromStation → $toStation · $date at $departure · Carry CNIC. Platform announced 15 min before departure.',
+          '$fromStation -> $toStation | $date at $departure | Carry CNIC. Platform announced 15 min before departure.',
       date: 'Just now',
       isRead: false,
     ));
@@ -179,9 +179,9 @@ class NotificationService {
       type: 'warning',
       category: 'train',
       tag: 'Reminder',
-      title: 'Plan your journey to $fromStation station 🚉',
+      title: 'Plan your journey to $fromStation station',
       subtitle:
-          '$trainName departs $date at $departure — check traffic and leave home early to avoid missing your train.',
+          '$trainName departs $date at $departure - check traffic and leave home early to avoid missing your train.',
       date: 'Just now',
       isRead: false,
     ));
@@ -202,9 +202,9 @@ class NotificationService {
       type: 'success',
       category: 'hotel',
       tag: 'Hotel',
-      title: '$hotelName — Booking Confirmed ✓',
+      title: '$hotelName - Booking Confirmed',
       subtitle:
-          '$city · $roomType · Check-in: $checkIn · Check-out: $checkOut · Ref: $bookingRef',
+          '$city | $roomType | Check-in: $checkIn | Check-out: $checkOut | Ref: $bookingRef',
       date: 'Just now',
       isRead: false,
     ));
@@ -214,7 +214,7 @@ class NotificationService {
       type: 'info',
       category: 'hotel',
       tag: 'Hotel',
-      title: 'Hotel check-in reminder — $hotelName',
+      title: 'Hotel check-in reminder - $hotelName',
       subtitle:
           'Check-in $checkIn at 14:00. Early check-in subject to availability. Carry valid CNIC/Passport. Ref: $bookingRef',
       date: 'Just now',
@@ -226,9 +226,9 @@ class NotificationService {
       type: 'warning',
       category: 'hotel',
       tag: 'Reminder',
-      title: 'Plan your journey to $hotelName 🏨',
+      title: 'Plan your journey to $hotelName',
       subtitle:
-          'Check-in $checkIn — book a cab or reserve transport in advance to reach the hotel on time.',
+          'Check-in $checkIn - book a cab or reserve transport in advance to reach the hotel on time.',
       date: 'Just now',
       isRead: false,
     ));
@@ -243,7 +243,7 @@ class NotificationService {
       type: 'info',
       category: 'hotel',
       tag: 'Hotel',
-      title: '$hotelName — Check-in Reminder',
+      title: '$hotelName - Check-in Reminder',
       subtitle:
           'Check-in today at $checkInTime. Please carry valid CNIC or Passport. Ref: $bookingRef',
       date: 'Just now',

@@ -1,9 +1,4 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/app_input/app_textfield.dart';
 import 'package:flight_app/widgets/search_filters/passengger_class.dart';
 import 'package:flight_app/widgets/search_filters/city_selector_dropdown.dart';
@@ -11,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class SearchFlightForm extends StatefulWidget {
   const SearchFlightForm({super.key, required this.roundTrip});
@@ -124,8 +120,8 @@ class _SearchFlightFormState extends State<SearchFlightForm> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-        padding: EdgeInsets.symmetric(
-            vertical: spacingUnit(2), horizontal: spacingUnit(2)),
+        padding: const EdgeInsets.symmetric(
+            vertical: 16, horizontal: 16),
         child: ListView(
             shrinkWrap: true,
             padding: const EdgeInsets.all(0),
@@ -149,7 +145,7 @@ class _SearchFlightFormState extends State<SearchFlightForm> {
                             },
                             prefixIcon: FontAwesomeIcons.planeDeparture),
                       ),
-                      SizedBox(width: spacingUnit(1)),
+                      const SizedBox(width: 8),
                       InkWell(
                         onTap: () {
                           setState(() {
@@ -177,10 +173,10 @@ class _SearchFlightFormState extends State<SearchFlightForm> {
                   ),
                   if (_showFromDropdown && _flyingFromRef.text.isNotEmpty)
                     Container(
-                      margin: EdgeInsets.only(top: spacingUnit(1)),
+                      margin: const EdgeInsets.only(top: 8),
                       constraints: const BoxConstraints(maxHeight: 300),
                       decoration: BoxDecoration(
-                        color: colorScheme(context).surface,
+                        color: TravelloTheme.paperLight,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
@@ -203,7 +199,7 @@ class _SearchFlightFormState extends State<SearchFlightForm> {
                     ),
                 ],
               ),
-              SizedBox(height: spacingUnit(2)),
+              const SizedBox(height: 16),
               Column(
                 children: [
                   AppTextField(
@@ -219,10 +215,10 @@ class _SearchFlightFormState extends State<SearchFlightForm> {
                       prefixIcon: FontAwesomeIcons.planeArrival),
                   if (_showToDropdown && _flyingToRef.text.isNotEmpty)
                     Container(
-                      margin: EdgeInsets.only(top: spacingUnit(1)),
+                      margin: const EdgeInsets.only(top: 8),
                       constraints: const BoxConstraints(maxHeight: 300),
                       decoration: BoxDecoration(
-                        color: colorScheme(context).surface,
+                        color: TravelloTheme.paperLight,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
@@ -245,7 +241,7 @@ class _SearchFlightFormState extends State<SearchFlightForm> {
                     ),
                 ],
               ),
-              SizedBox(height: spacingUnit(2)),
+              const SizedBox(height: 16),
               AppTextField(
                 label: 'Departure Date',
                 onChanged: (_) => {},
@@ -258,7 +254,7 @@ class _SearchFlightFormState extends State<SearchFlightForm> {
               ),
               widget.roundTrip
                   ? Padding(
-                      padding: EdgeInsets.only(top: spacingUnit(1)),
+                      padding: const EdgeInsets.only(top: 8),
                       child: AppTextField(
                         label: 'Return Date',
                         onChanged: (_) => {},
@@ -271,7 +267,7 @@ class _SearchFlightFormState extends State<SearchFlightForm> {
                       ),
                     )
                   : Container(),
-              SizedBox(height: spacingUnit(2)),
+              const SizedBox(height: 16),
               AppTextField(
                 label: 'Passenger and Class',
                 onChanged: (_) => {},
@@ -280,7 +276,7 @@ class _SearchFlightFormState extends State<SearchFlightForm> {
                 controller: _passenggerClassRef,
                 onTap: _showBottomSheet,
               ),
-              SizedBox(height: spacingUnit(2)),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -294,7 +290,7 @@ class _SearchFlightFormState extends State<SearchFlightForm> {
                     style: ThemeButton.btnBig.merge(ThemeButton.primary),
                     child: Text('SEARCH FLIGHTS',
                         style:
-                            ThemeText.subtitle.copyWith(color: Colors.white))),
+                            TravelloTheme.subtitle.copyWith(color: Colors.white))),
               ),
             ]));
   }

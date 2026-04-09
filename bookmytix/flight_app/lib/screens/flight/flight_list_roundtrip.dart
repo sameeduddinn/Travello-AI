@@ -1,7 +1,6 @@
 import 'package:flight_app/models/city.dart';
 import 'package:flight_app/models/plane.dart';
 import 'package:flight_app/models/trip.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flight_app/widgets/flight/info_header.dart';
 import 'package:flight_app/widgets/flight/flight_trip_list.dart';
 import 'package:flight_app/widgets/flight/round_trip_review.dart';
@@ -207,7 +206,7 @@ class _FlightListRoundtripState extends State<FlightListRoundtrip> {
           /// DATE PICKER
           const FilterDateSlider(),
           Divider(
-            color: colorScheme(context).outline,
+            color: Theme.of(context).colorScheme.outline,
           ),
 
           /// FLIGHT LIST

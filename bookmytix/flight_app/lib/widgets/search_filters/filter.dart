@@ -1,11 +1,8 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/list_item.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/picker.dart';
 import 'package:change_case/change_case.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class Filter extends StatefulWidget {
   const Filter({
@@ -186,7 +183,7 @@ class _FilterState extends State<Filter> {
         scrollDirection: Axis.horizontal,
         children: [
           /// FILTER BY CATEGORY
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           FilledButton(
             onPressed: () {
               openCategoryPicker(context);
@@ -195,14 +192,14 @@ class _FilterState extends State<Filter> {
             child: Row(children: [
               const Icon(Icons.grid_view_outlined, size: 16),
               const SizedBox(width: 2),
-              Text('Category: ${categoryTemp.toCapitalCase()}', style: ThemeText.caption),
+              Text('Category: ${categoryTemp.toCapitalCase()}', style: TravelloTheme.caption),
               const SizedBox(width: 2),
               Icon(Icons.arrow_drop_down, color: colorScheme(context).onSurface, size: 16),
             ])
           ),
 
           /// SORT BY DATA AND DISTANCE
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           FilledButton(
             onPressed: () {
               openSortPicker(context);
@@ -211,56 +208,56 @@ class _FilterState extends State<Filter> {
             child: Row(children: [
               const Icon(Icons.swap_vert, size: 16),
               const SizedBox(width: 2),
-              Text('Sort By ${sortbyTemp.toCapitalCase()}', style: ThemeText.caption),
+              Text('Sort By ${sortbyTemp.toCapitalCase()}', style: TravelloTheme.caption),
               const SizedBox(width: 2),
               Icon(Icons.arrow_drop_down, color: colorScheme(context).onSurface, size: 16),
             ])
           ),
           
           /// TAG FILTERS
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           FilledButton(
             onPressed: () {},
             style: buttonStyle,
             child: const Row(children: [
               Icon(Icons.history, size: 16),
               SizedBox(width: 2),
-              Text('Expired Promo', style: ThemeText.caption),
+              Text('Expired Promo', style: TravelloTheme.caption),
             ])
           ),
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           FilledButton(
             onPressed: () {
               filterByDistance(50);
             },
             style: _tagFilter == '50' ? selectedStyle : buttonStyle,
-            child: const Text('50M', style: ThemeText.caption)
+            child: const Text('50M', style: TravelloTheme.caption)
           ),
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           FilledButton(
             onPressed: () {
               filterByDistance(20);
             },
             style: _tagFilter == '20' ? selectedStyle : buttonStyle,
-            child: const Text('20M', style: ThemeText.caption)
+            child: const Text('20M', style: TravelloTheme.caption)
           ),
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           FilledButton(
             onPressed: () {},
             style: buttonStyle,
-            child: const Text('Yesterday', style: ThemeText.caption)
+            child: const Text('Yesterday', style: TravelloTheme.caption)
           ),
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           FilledButton(
             onPressed: () {},
             style: buttonStyle,
-            child: const Text('This Week', style: ThemeText.caption)
+            child: const Text('This Week', style: TravelloTheme.caption)
           ),
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           FilledButton(
             onPressed: () {},
             style: buttonStyle,
-            child: const Text('Last Week', style: ThemeText.caption)
+            child: const Text('Last Week', style: TravelloTheme.caption)
           ),
         ]
       ),

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/chat.dart';
 import 'package:flight_app/constants/app_constants.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ChatMessage extends StatelessWidget {
   const ChatMessage({
@@ -71,13 +70,13 @@ class ChatBuble extends StatelessWidget {
               Row(mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start, children: [
                 Text(isMe ? 'Me' : name, style: const TextStyle(fontWeight: FontWeight.bold),),
                 const SizedBox(width: 8),
-                Text(date, style: ThemeText.caption),
+                Text(date, style: TravelloTheme.caption),
               ]),
               Container(
                 padding: const EdgeInsets.all(8),
                 margin: const EdgeInsets.only(bottom: 4),
                 decoration: BoxDecoration(
-                  color: isMe ? colorScheme(context).surface : colorScheme(context).primaryContainer,
+                  color: isMe ? TravelloTheme.paperLight : TravelloTheme.primaryMainContainer,
                   borderRadius: BorderRadius.only(
                     topLeft: isMe ? const Radius.circular(29) : const Radius.circular(0),
                     topRight: isMe ? const Radius.circular(0) : const Radius.circular(20),
@@ -86,7 +85,7 @@ class ChatBuble extends StatelessWidget {
                   ),
                   border: Border.all(
                     width: 1,
-                    color: isMe ? ThemePalette.primaryMain : colorScheme(context).primaryContainer
+                    color: isMe ? TravelloTheme.primaryMain : TravelloTheme.primaryMainContainer
                   )
                 ),
                 child: Text(message)

@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/models/hotel.dart';
 import 'package:flight_app/models/room_type.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class HotelDetailScreen extends StatefulWidget {
   const HotelDetailScreen({super.key});
@@ -1236,7 +1234,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                 children: [
                   // Hotel Name and Info
                   Padding(
-                    padding: EdgeInsets.all(spacingUnit(2)),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1253,9 +1251,9 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                               ),
                             ),
                             Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: spacingUnit(1.5),
-                                vertical: spacingUnit(0.5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
                               ),
                               decoration: BoxDecoration(
                                 color: colorScheme(context)
@@ -1265,55 +1263,55 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                               ),
                               child: Text(
                                 hotel.category,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
-                                  color: colorScheme(context).primary,
+                                  color: TravelloTheme.primaryMain,
                                 ),
                               ),
                             ),
                           ],
                         ),
 
-                        SizedBox(height: spacingUnit(1)),
+                        const SizedBox(height: 8),
 
                         // Location
                         Row(
                           children: [
                             const Icon(Icons.location_on,
                                 size: 18, color: Color(0xFFB3B3B3)),
-                            SizedBox(width: spacingUnit(0.5)),
+                            const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 hotel.address,
                                 style:
-                                    ThemeText.subtitle.copyWith(fontSize: 13),
+                                    TravelloTheme.subtitle.copyWith(fontSize: 13),
                               ),
                             ),
                           ],
                         ),
 
-                        SizedBox(height: spacingUnit(0.5)),
+                        const SizedBox(height: 4),
 
                         Row(
                           children: [
-                            SizedBox(width: spacingUnit(3)),
+                            const SizedBox(width: 24),
                             Text(
                               '${hotel.distanceFromCenter.toStringAsFixed(1)} km from city center',
-                              style: ThemeText.caption.copyWith(fontSize: 13),
+                              style: TravelloTheme.caption.copyWith(fontSize: 13),
                             ),
                           ],
                         ),
 
-                        SizedBox(height: spacingUnit(1.5)),
+                        const SizedBox(height: 12),
 
                         // Rating and Reviews
                         Row(
                           children: [
                             Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: spacingUnit(1.5),
-                                  vertical: spacingUnit(1)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8),
                               decoration: BoxDecoration(
                                 color: Colors.orange,
                                 borderRadius: BorderRadius.circular(12),
@@ -1322,7 +1320,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                                 children: [
                                   const Icon(Icons.star,
                                       size: 18, color: Colors.white),
-                                  SizedBox(width: spacingUnit(0.5)),
+                                  const SizedBox(width: 4),
                                   Text(
                                     hotel.rating.toString(),
                                     style: const TextStyle(
@@ -1334,13 +1332,13 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                                 ],
                               ),
                             ),
-                            SizedBox(width: spacingUnit(1.5)),
+                            const SizedBox(width: 12),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   _getRatingText(hotel.rating),
-                                  style: ThemeText.subtitle.copyWith(
+                                  style: TravelloTheme.subtitle.copyWith(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                   ),
@@ -1348,7 +1346,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                                 Text(
                                   '${hotel.totalReviews} reviews',
                                   style:
-                                      ThemeText.caption.copyWith(fontSize: 13),
+                                      TravelloTheme.caption.copyWith(fontSize: 13),
                                 ),
                               ],
                             ),
@@ -1366,7 +1364,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                     child: TabBar(
                       controller: _tabController,
                       isScrollable: true,
-                      labelColor: colorScheme(context).primary,
+                      labelColor: TravelloTheme.primaryMain,
                       unselectedLabelColor: Colors.grey,
                       labelStyle: const TextStyle(
                         fontSize: 14,
@@ -1376,7 +1374,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                         fontSize: 14,
                         fontWeight: FontWeight.normal,
                       ),
-                      indicatorColor: colorScheme(context).primary,
+                      indicatorColor: TravelloTheme.primaryMain,
                       indicatorWeight: 3,
                       tabs: const [
                         Tab(text: 'Overview'),
@@ -1407,7 +1405,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
 
       // Bottom Bar
       bottomNavigationBar: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
@@ -1430,12 +1428,12 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                       // No room selected — show hint only
                       Text(
                         'Select a room',
-                        style: ThemeText.caption.copyWith(
+                        style: TravelloTheme.caption.copyWith(
                           fontSize: 13,
                           color: Colors.grey.shade500,
                         ),
                       ),
-                      SizedBox(height: spacingUnit(0.5)),
+                      const SizedBox(height: 4),
                       Text(
                         'to see price',
                         style: TextStyle(
@@ -1457,15 +1455,15 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                           children: [
                             Text(
                               'PKR ${fmt.format(pricePerNight.round())}/night × $numberOfNights ${numberOfNights == 1 ? 'night' : 'nights'}',
-                              style: ThemeText.caption.copyWith(fontSize: 12),
+                              style: TravelloTheme.caption.copyWith(fontSize: 12),
                             ),
-                            SizedBox(height: spacingUnit(0.5)),
+                            const SizedBox(height: 4),
                             Text(
                               'PKR ${fmt.format(roomTotal.round())} total',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: colorScheme(context).primary,
+                                color: TravelloTheme.primaryMain,
                               ),
                             ),
                           ],
@@ -1475,7 +1473,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                   ],
                 ),
               ),
-              SizedBox(width: spacingUnit(2)),
+              const SizedBox(width: 16),
               DSButton(
                 label: selectedRoom == null ? 'Select a Room' : 'Book Now',
                 trailingIcon: Icons.arrow_forward_rounded,
@@ -1494,18 +1492,18 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
   // Overview Tab
   Widget _buildOverviewTab() {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Booking Summary Card
           Container(
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme(context).primary.withValues(alpha: 0.1),
+              color: TravelloTheme.primaryMain.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: colorScheme(context).primary.withValues(alpha: 0.3),
+                color: TravelloTheme.primaryMain.withValues(alpha: 0.3),
               ),
             ),
             child: Column(
@@ -1517,11 +1515,11 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Check-in',
-                              style: ThemeText.caption.copyWith(fontSize: 13)),
-                          SizedBox(height: spacingUnit(0.5)),
+                              style: TravelloTheme.caption.copyWith(fontSize: 13)),
+                          const SizedBox(height: 4),
                           Text(
                             DateFormat('EEE, MMM d').format(checkInDate),
-                            style: ThemeText.subtitle.copyWith(
+                            style: TravelloTheme.subtitle.copyWith(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -1529,19 +1527,19 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                         ],
                       ),
                     ),
-                    Icon(Icons.arrow_forward,
-                        color: colorScheme(context).primary),
-                    SizedBox(width: spacingUnit(1)),
+                    const Icon(Icons.arrow_forward,
+                        color: TravelloTheme.primaryMain),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Check-out',
-                              style: ThemeText.caption.copyWith(fontSize: 13)),
-                          SizedBox(height: spacingUnit(0.5)),
+                              style: TravelloTheme.caption.copyWith(fontSize: 13)),
+                          const SizedBox(height: 4),
                           Text(
                             DateFormat('EEE, MMM d').format(checkOutDate),
-                            style: ThemeText.subtitle.copyWith(
+                            style: TravelloTheme.subtitle.copyWith(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -1551,7 +1549,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                     ),
                   ],
                 ),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
@@ -1559,11 +1557,11 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Duration',
-                              style: ThemeText.caption.copyWith(fontSize: 13)),
-                          SizedBox(height: spacingUnit(0.5)),
+                              style: TravelloTheme.caption.copyWith(fontSize: 13)),
+                          const SizedBox(height: 4),
                           Text(
                             '$numberOfNights ${numberOfNights == 1 ? 'Night' : 'Nights'}',
-                            style: ThemeText.subtitle.copyWith(
+                            style: TravelloTheme.subtitle.copyWith(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -1576,11 +1574,11 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Guests',
-                              style: ThemeText.caption.copyWith(fontSize: 13)),
-                          SizedBox(height: spacingUnit(0.5)),
+                              style: TravelloTheme.caption.copyWith(fontSize: 13)),
+                          const SizedBox(height: 4),
                           Text(
                             '$guests ${guests == 1 ? 'Guest' : 'Guests'}, $rooms ${rooms == 1 ? 'Room' : 'Rooms'}',
-                            style: ThemeText.subtitle.copyWith(
+                            style: TravelloTheme.subtitle.copyWith(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -1594,17 +1592,17 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
             ),
           ),
 
-          SizedBox(height: spacingUnit(3)),
+          const SizedBox(height: 24),
 
           // About Section
-          const Text('About This Hotel', style: ThemeText.title2),
-          SizedBox(height: spacingUnit(1)),
+          const Text('About This Hotel', style: TravelloTheme.title2),
+          const SizedBox(height: 8),
           Text(
             hotel.description,
-            style: ThemeText.paragraph.copyWith(fontSize: 14),
+            style: TravelloTheme.paragraph.copyWith(fontSize: 14),
           ),
 
-          SizedBox(height: spacingUnit(10)),
+          const SizedBox(height: 80),
         ],
       ),
     );
@@ -1613,20 +1611,20 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
   // Rooms Tab
   Widget _buildRoomsTab() {
     return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        left: spacingUnit(2),
-        right: spacingUnit(2),
-        top: spacingUnit(2),
-        bottom: spacingUnit(12), // Extra padding for bottom nav
+      padding: const EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: 96, // Extra padding for bottom nav
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Choose Your Room',
-            style: ThemeText.title2,
+            style: TravelloTheme.title2,
           ),
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
           ...availableRooms.map((room) => _buildRoomCard(room)),
         ],
       ),
@@ -1639,16 +1637,16 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
     final roomTotalPrice = room.pricePerNight * numberOfNights * rooms;
 
     return Container(
-      margin: EdgeInsets.only(bottom: spacingUnit(2)),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color:
-              isSelected ? colorScheme(context).primary : Colors.grey.shade300,
+              isSelected ? TravelloTheme.primaryMain : Colors.grey.shade300,
           width: isSelected ? 2 : 1,
         ),
         color: isSelected
-            ? colorScheme(context).primary.withValues(alpha: 0.05)
+            ? TravelloTheme.primaryMain.withValues(alpha: 0.05)
             : Colors.white,
       ),
       child: Column(
@@ -1676,79 +1674,79 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
           ),
 
           Padding(
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Room Name
                 Text(
                   room.name,
-                  style: ThemeText.subtitle.copyWith(
+                  style: TravelloTheme.subtitle.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
                 ),
 
-                SizedBox(height: spacingUnit(0.5)),
+                const SizedBox(height: 4),
 
                 // Room Description
                 Text(
                   room.description,
-                  style: ThemeText.caption.copyWith(fontSize: 13),
+                  style: TravelloTheme.caption.copyWith(fontSize: 13),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
 
-                SizedBox(height: spacingUnit(1.5)),
+                const SizedBox(height: 12),
 
                 // Room Details
                 Row(
                   children: [
-                    Icon(Icons.people,
-                        size: 18, color: colorScheme(context).primary),
-                    SizedBox(width: spacingUnit(0.5)),
+                    const Icon(Icons.people,
+                        size: 18, color: TravelloTheme.primaryMain),
+                    const SizedBox(width: 4),
                     Text('${room.maxOccupancy} guests',
-                        style: ThemeText.caption.copyWith(fontSize: 13)),
-                    SizedBox(width: spacingUnit(2)),
-                    Icon(Icons.bed,
-                        size: 18, color: colorScheme(context).primary),
-                    SizedBox(width: spacingUnit(0.5)),
+                        style: TravelloTheme.caption.copyWith(fontSize: 13)),
+                    const SizedBox(width: 16),
+                    const Icon(Icons.bed,
+                        size: 18, color: TravelloTheme.primaryMain),
+                    const SizedBox(width: 4),
                     Text(room.bedType,
-                        style: ThemeText.caption.copyWith(fontSize: 13)),
+                        style: TravelloTheme.caption.copyWith(fontSize: 13)),
                   ],
                 ),
 
-                SizedBox(height: spacingUnit(0.5)),
+                const SizedBox(height: 4),
 
                 Row(
                   children: [
-                    Icon(Icons.aspect_ratio,
-                        size: 18, color: colorScheme(context).primary),
-                    SizedBox(width: spacingUnit(0.5)),
+                    const Icon(Icons.aspect_ratio,
+                        size: 18, color: TravelloTheme.primaryMain),
+                    const SizedBox(width: 4),
                     Text('${room.sizeInSqFt} sq ft',
-                        style: ThemeText.caption.copyWith(fontSize: 13)),
+                        style: TravelloTheme.caption.copyWith(fontSize: 13)),
                     if (room.hasCityView) ...[
-                      SizedBox(width: spacingUnit(2)),
-                      Icon(Icons.visibility,
-                          size: 18, color: colorScheme(context).primary),
-                      SizedBox(width: spacingUnit(0.5)),
+                      const SizedBox(width: 16),
+                      const Icon(Icons.visibility,
+                          size: 18, color: TravelloTheme.primaryMain),
+                      const SizedBox(width: 4),
                       Text('City view',
-                          style: ThemeText.caption.copyWith(fontSize: 13)),
+                          style: TravelloTheme.caption.copyWith(fontSize: 13)),
                     ],
                   ],
                 ),
 
-                SizedBox(height: spacingUnit(1.5)),
+                const SizedBox(height: 12),
 
                 // Amenities
                 Wrap(
-                  spacing: spacingUnit(1),
-                  runSpacing: spacingUnit(0.5),
+                  spacing: 8,
+                  runSpacing: 4,
                   children: room.amenities.take(4).map((amenity) {
                     return Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: spacingUnit(1),
-                        vertical: spacingUnit(0.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
@@ -1762,7 +1760,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                   }).toList(),
                 ),
 
-                SizedBox(height: spacingUnit(1.5)),
+                const SizedBox(height: 12),
 
                 // Cancellation Policy
                 Row(
@@ -1772,7 +1770,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                       size: 16,
                       color: room.isRefundable ? Colors.green : Colors.orange,
                     ),
-                    SizedBox(width: spacingUnit(0.5)),
+                    const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         room.cancellationPolicy,
@@ -1787,7 +1785,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                   ],
                 ),
 
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // Price and Button
                 Row(
@@ -1799,17 +1797,17 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                         children: [
                           Text(
                             'PKR ${room.pricePerNight.toStringAsFixed(0)}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: colorScheme(context).primary,
+                              color: TravelloTheme.primaryMain,
                             ),
                           ),
                           Text(
                             rooms > 1
                                 ? 'PKR ${NumberFormat('#,##0').format(room.pricePerNight.round())}/night × $numberOfNights nights × $rooms rooms = PKR ${NumberFormat('#,##0').format(roomTotalPrice.round())}'
                                 : 'PKR ${NumberFormat('#,##0').format(room.pricePerNight.round())}/night × $numberOfNights ${numberOfNights == 1 ? 'night' : 'nights'} = PKR ${NumberFormat('#,##0').format(roomTotalPrice.round())} total',
-                            style: ThemeText.caption.copyWith(fontSize: 12),
+                            style: TravelloTheme.caption.copyWith(fontSize: 12),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 2,
                           ),
@@ -1842,17 +1840,17 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isSelected
-                            ? colorScheme(context).primary
+                            ? TravelloTheme.primaryMain
                             : Colors.white,
                         foregroundColor: isSelected
                             ? Colors.white
-                            : colorScheme(context).primary,
-                        side: BorderSide(
-                          color: colorScheme(context).primary,
+                            : TravelloTheme.primaryMain,
+                        side: const BorderSide(
+                          color: TravelloTheme.primaryMain,
                         ),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: spacingUnit(2),
-                          vertical: spacingUnit(1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
                       ),
                       child: Text(
@@ -1865,7 +1863,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
 
                 if (room.roomsAvailable <= 3)
                   Padding(
-                    padding: EdgeInsets.only(top: spacingUnit(1)),
+                    padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       'Only ${room.roomsAvailable} rooms left!',
                       style: TextStyle(
@@ -1886,19 +1884,19 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
   // Amenities Tab
   Widget _buildAmenitiesTab() {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Hotel Amenities', style: ThemeText.title2),
-          SizedBox(height: spacingUnit(2)),
+          const Text('Hotel Amenities', style: TravelloTheme.title2),
+          const SizedBox(height: 16),
           Wrap(
-            spacing: spacingUnit(2),
-            runSpacing: spacingUnit(2),
+            spacing: 16,
+            runSpacing: 16,
             children: hotel.amenities.map((amenity) {
               return Container(
                 width: MediaQuery.of(context).size.width * 0.42,
-                padding: EdgeInsets.all(spacingUnit(1.5)),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
@@ -1909,13 +1907,13 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                     Icon(
                       _getAmenityIcon(amenity),
                       size: 22,
-                      color: colorScheme(context).primary,
+                      color: TravelloTheme.primaryMain,
                     ),
-                    SizedBox(width: spacingUnit(1)),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         amenity,
-                        style: ThemeText.caption.copyWith(
+                        style: TravelloTheme.caption.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -1926,7 +1924,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
               );
             }).toList(),
           ),
-          SizedBox(height: spacingUnit(10)),
+          const SizedBox(height: 80),
         ],
       ),
     );
@@ -1935,15 +1933,15 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
   // Reviews Tab
   Widget _buildReviewsTab() {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Overall Rating
           Container(
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme(context).primary.withValues(alpha: 0.1),
+              color: TravelloTheme.primaryMain.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -1952,31 +1950,31 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                   children: [
                     Text(
                       hotel.rating.toString(),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
-                        color: colorScheme(context).primary,
+                        color: TravelloTheme.primaryMain,
                       ),
                     ),
-                    const Text('out of 5', style: ThemeText.caption),
+                    const Text('out of 5', style: TravelloTheme.caption),
                   ],
                 ),
-                SizedBox(width: spacingUnit(3)),
+                const SizedBox(width: 24),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         _getRatingText(hotel.rating),
-                        style: ThemeText.subtitle.copyWith(
+                        style: TravelloTheme.subtitle.copyWith(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
-                      SizedBox(height: spacingUnit(0.5)),
+                      const SizedBox(height: 4),
                       Text(
                         'Based on ${hotel.totalReviews} reviews',
-                        style: ThemeText.caption.copyWith(fontSize: 13),
+                        style: TravelloTheme.caption.copyWith(fontSize: 13),
                       ),
                     ],
                   ),
@@ -1985,11 +1983,11 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
             ),
           ),
 
-          SizedBox(height: spacingUnit(3)),
+          const SizedBox(height: 24),
 
           // Rating Breakdown
-          const Text('Rating Breakdown', style: ThemeText.title2),
-          SizedBox(height: spacingUnit(1.5)),
+          const Text('Rating Breakdown', style: TravelloTheme.title2),
+          const SizedBox(height: 12),
 
           _buildRatingBar('Cleanliness', 4.6),
           _buildRatingBar('Service', 4.4),
@@ -1997,11 +1995,11 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
           _buildRatingBar('Facilities', 4.3),
           _buildRatingBar('Value for Money', 4.2),
 
-          SizedBox(height: spacingUnit(3)),
+          const SizedBox(height: 24),
 
           // Sample Reviews
-          const Text('Recent Reviews', style: ThemeText.title2),
-          SizedBox(height: spacingUnit(1.5)),
+          const Text('Recent Reviews', style: TravelloTheme.title2),
+          const SizedBox(height: 12),
 
           _buildReviewCard(
             'Excellent Stay',
@@ -2027,7 +2025,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
             '1 week ago',
           ),
 
-          SizedBox(height: spacingUnit(10)),
+          const SizedBox(height: 80),
         ],
       ),
     );
@@ -2035,14 +2033,14 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
 
   Widget _buildRatingBar(String category, double rating) {
     return Padding(
-      padding: EdgeInsets.only(bottom: spacingUnit(1.5)),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           SizedBox(
             width: 120,
             child: Text(
               category,
-              style: ThemeText.caption.copyWith(fontSize: 13),
+              style: TravelloTheme.caption.copyWith(fontSize: 13),
             ),
           ),
           Expanded(
@@ -2052,16 +2050,16 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                 value: rating / 5,
                 minHeight: 8,
                 backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  colorScheme(context).primary,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  TravelloTheme.primaryMain,
                 ),
               ),
             ),
           ),
-          SizedBox(width: spacingUnit(1)),
+          const SizedBox(width: 8),
           Text(
             rating.toString(),
-            style: ThemeText.caption.copyWith(
+            style: TravelloTheme.caption.copyWith(
               fontWeight: FontWeight.bold,
               fontSize: 13,
             ),
@@ -2079,8 +2077,8 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
     String time,
   ) {
     return Container(
-      margin: EdgeInsets.only(bottom: spacingUnit(2)),
-      padding: EdgeInsets.all(spacingUnit(2)),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
@@ -2093,7 +2091,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: colorScheme(context).primary,
+                backgroundColor: TravelloTheme.primaryMain,
                 child: Text(
                   author[0],
                   style: const TextStyle(
@@ -2102,29 +2100,29 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                   ),
                 ),
               ),
-              SizedBox(width: spacingUnit(1.5)),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       author,
-                      style: ThemeText.subtitle.copyWith(
+                      style: TravelloTheme.subtitle.copyWith(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
                     ),
                     Text(
                       time,
-                      style: ThemeText.caption.copyWith(fontSize: 12),
+                      style: TravelloTheme.caption.copyWith(fontSize: 12),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: spacingUnit(1),
-                  vertical: spacingUnit(0.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.orange,
@@ -2133,7 +2131,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
                 child: Row(
                   children: [
                     const Icon(Icons.star, size: 14, color: Colors.white),
-                    SizedBox(width: spacingUnit(0.5)),
+                    const SizedBox(width: 4),
                     Text(
                       rating.toString(),
                       style: const TextStyle(
@@ -2147,18 +2145,18 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
               ),
             ],
           ),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Text(
             title,
-            style: ThemeText.subtitle.copyWith(
+            style: TravelloTheme.subtitle.copyWith(
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
           ),
-          SizedBox(height: spacingUnit(0.5)),
+          const SizedBox(height: 4),
           Text(
             review,
-            style: ThemeText.paragraph.copyWith(fontSize: 13),
+            style: TravelloTheme.paragraph.copyWith(fontSize: 13),
           ),
         ],
       ),
@@ -2168,12 +2166,12 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
   // Policies Tab
   Widget _buildPoliciesTab() {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Hotel Policies', style: ThemeText.title2),
-          SizedBox(height: spacingUnit(2)),
+          const Text('Hotel Policies', style: TravelloTheme.title2),
+          const SizedBox(height: 16),
           _buildPolicyItem(
             Icons.check_circle,
             'Cancellation',
@@ -2222,7 +2220,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
             'Children',
             'Children of all ages are welcome. Children under 12 years stay free when using existing beds.',
           ),
-          SizedBox(height: spacingUnit(10)),
+          const SizedBox(height: 80),
         ],
       ),
     );
@@ -2231,27 +2229,27 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
   // Helper: Build Policy Item
   Widget _buildPolicyItem(IconData icon, String title, String description) {
     return Padding(
-      padding: EdgeInsets.only(bottom: spacingUnit(2)),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 24, color: colorScheme(context).primary),
-          SizedBox(width: spacingUnit(1.5)),
+          Icon(icon, size: 24, color: TravelloTheme.primaryMain),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: ThemeText.subtitle.copyWith(
+                  style: TravelloTheme.subtitle.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
                 ),
-                SizedBox(height: spacingUnit(0.5)),
+                const SizedBox(height: 4),
                 Text(
                   description,
-                  style: ThemeText.caption.copyWith(fontSize: 13),
+                  style: TravelloTheme.caption.copyWith(fontSize: 13),
                 ),
               ],
             ),

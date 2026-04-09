@@ -1,13 +1,12 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/models/trip.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/app_button/tag_button.dart';
 import 'package:flight_app/widgets/cards/flight_portrait_card.dart';
 import 'package:flight_app/widgets/title/title_action.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightListDouble extends StatefulWidget {
   const FlightListDouble({super.key});
@@ -145,7 +144,7 @@ class _FlightListDoubleState extends State<FlightListDouble> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Padding(
         padding: EdgeInsets.symmetric(
-            horizontal: isDesktop ? spacingUnit(8) : spacingUnit(2)),
+            horizontal: isDesktop ? spacingUnit(8) : 16),
         child: TitleAction(
             title: 'Top Destinations',
             textAction: 'Find More',
@@ -153,12 +152,12 @@ class _FlightListDoubleState extends State<FlightListDouble> {
               Get.toNamed(AppLink.flightList);
             }),
       ),
-      SizedBox(height: spacingUnit(2)),
+      const SizedBox(height: 16),
 
       /// TAGS
       Padding(
         padding:
-            EdgeInsets.only(left: isDesktop ? spacingUnit(8) : spacingUnit(2)),
+            EdgeInsets.only(left: isDesktop ? spacingUnit(8) : 16),
         child: SizedBox(
           height: 25,
           child: ListView.builder(
@@ -168,7 +167,7 @@ class _FlightListDoubleState extends State<FlightListDouble> {
             shrinkWrap: true,
             itemBuilder: (context, index) {
               return Padding(
-                  padding: EdgeInsets.only(right: spacingUnit(1)),
+                  padding: const EdgeInsets.only(right: 8),
                   child: TagButton(
                     text: tags[index],
                     size: BtnSize.small,
@@ -183,7 +182,7 @@ class _FlightListDoubleState extends State<FlightListDouble> {
           ),
         ),
       ),
-      SizedBox(height: spacingUnit(2)),
+      const SizedBox(height: 16),
 
       /// FLIGHT ITEMS - Single Row Horizontal Scroller with Arrows
       SizedBox(
@@ -191,7 +190,7 @@ class _FlightListDoubleState extends State<FlightListDouble> {
         child: displayFlights.isEmpty
             ? Center(
                 child: Padding(
-                  padding: EdgeInsets.all(spacingUnit(4)),
+                  padding: const EdgeInsets.all(32),
                   child: Text(
                     'No flights available for ${tags[_selected]}',
                     style:
@@ -205,14 +204,14 @@ class _FlightListDoubleState extends State<FlightListDouble> {
                     controller: _scrollController,
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
-                    padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount:
                         displayFlights.length > 10 ? 10 : displayFlights.length,
                     itemBuilder: (context, index) {
                       Trip item = displayFlights[index];
 
                       return Padding(
-                        padding: EdgeInsets.only(right: spacingUnit(1.5)),
+                        padding: const EdgeInsets.only(right: 12),
                         child: SizedBox(
                           width: 220,
                           child: GestureDetector(
@@ -243,7 +242,7 @@ class _FlightListDoubleState extends State<FlightListDouble> {
                   // LEFT ARROW BUTTON
                   if (_showLeftArrow)
                     Positioned(
-                      left: spacingUnit(1),
+                      left: 8,
                       top: 0,
                       bottom: 0,
                       child: Align(
@@ -265,9 +264,9 @@ class _FlightListDoubleState extends State<FlightListDouble> {
                           ),
                           child: IconButton(
                             onPressed: _scrollLeft,
-                            icon: Icon(
+                            icon: const Icon(
                               Icons.arrow_back_ios_new,
-                              color: colorScheme(context).primary,
+                              color: TravelloTheme.primaryMain,
                               size: 20,
                             ),
                           ),
@@ -278,7 +277,7 @@ class _FlightListDoubleState extends State<FlightListDouble> {
                   // RIGHT ARROW BUTTON
                   if (_showRightArrow)
                     Positioned(
-                      right: spacingUnit(1),
+                      right: 8,
                       top: 0,
                       bottom: 0,
                       child: Align(
@@ -300,9 +299,9 @@ class _FlightListDoubleState extends State<FlightListDouble> {
                           ),
                           child: IconButton(
                             onPressed: _scrollRight,
-                            icon: Icon(
+                            icon: const Icon(
                               Icons.arrow_forward_ios,
-                              color: colorScheme(context).primary,
+                              color: TravelloTheme.primaryMain,
                               size: 20,
                             ),
                           ),

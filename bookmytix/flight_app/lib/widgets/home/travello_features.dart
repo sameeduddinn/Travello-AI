@@ -1,9 +1,7 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TravelloFeatures extends StatelessWidget {
   const TravelloFeatures({super.key});
@@ -26,21 +24,21 @@ class TravelloFeatures extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'Travello AI Features',
-                style: ThemeText.title2,
+                style: TravelloTheme.title2,
               ),
               Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: spacingUnit(1),
-                  vertical: spacingUnit(0.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: colorScheme(context).primaryContainer,
+                  color: TravelloTheme.primaryMainContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -54,7 +52,7 @@ class TravelloFeatures extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       'All-in-One',
-                      style: ThemeText.caption.copyWith(
+                      style: TravelloTheme.caption.copyWith(
                         color: colorScheme(context).onPrimaryContainer,
                         fontWeight: FontWeight.bold,
                       ),
@@ -67,7 +65,7 @@ class TravelloFeatures extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         GridView.builder(
-          padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -150,7 +148,7 @@ class _FeatureCard extends StatelessWidget {
               ),
               // Content
               Padding(
-                padding: EdgeInsets.all(spacingUnit(1.5)),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -162,7 +160,7 @@ class _FeatureCard extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       title,
-                      style: ThemeText.subtitle.copyWith(
+                      style: TravelloTheme.subtitle.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
@@ -170,7 +168,7 @@ class _FeatureCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       desc,
-                      style: ThemeText.caption,
+                      style: TravelloTheme.caption,
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -194,7 +192,7 @@ class _FeatureCard extends StatelessWidget {
                     ),
                     child: Text(
                       'Soon',
-                      style: ThemeText.caption.copyWith(
+                      style: TravelloTheme.caption.copyWith(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),

@@ -2,9 +2,9 @@ import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/utils/no_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/notification.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/notifications/filters.dart';
 import 'package:flight_app/widgets/notifications/notif_item.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class NotificationsList extends StatefulWidget {
   const NotificationsList({super.key});
@@ -47,7 +47,7 @@ class _NotificationsListState extends State<NotificationsList> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text('${_filteredItems.length} Notifications'),
             ),
             TextButton(
@@ -70,7 +70,7 @@ class _NotificationsListState extends State<NotificationsList> {
 
         /// FILTER
         Padding(
-          padding: EdgeInsets.symmetric(vertical: spacingUnit(2)),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: NotificationFilters(
             selected: _selectedFilter,
             onChangeFilter: handleFilter,
@@ -85,7 +85,7 @@ class _NotificationsListState extends State<NotificationsList> {
                     shrinkWrap: true,
                     physics: const ClampingScrollPhysics(),
                     itemCount: _filteredItems.length,
-                    padding: EdgeInsets.only(bottom: spacingUnit(3)),
+                    padding: const EdgeInsets.only(bottom: 24),
                     itemBuilder: ((BuildContext context, int index) {
                       NotificationModel item = _filteredItems[index];
                       return NotifItem(

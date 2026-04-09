@@ -1,13 +1,11 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/custom_tooltip.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:overlay_tooltip/overlay_tooltip.dart';
 import 'package:zoom_tap_animation/zoom_tap_animation.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class BottomNavMenu extends StatelessWidget {
   const BottomNavMenu({super.key});
@@ -15,6 +13,23 @@ class BottomNavMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String currentRoute = Get.currentRoute;
+    final bool hasTooltipScaffold =
+        context.findAncestorWidgetOfExactType<OverlayTooltipScaffold>() != null;
+
+    final Widget myBookingButton = Container(
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: TravelloTheme.paperLight,
+      ),
+      child: MenuItem(
+        title: 'My Booking',
+        icon: CupertinoIcons.tickets_fill,
+        isActive: currentRoute == AppLink.myTicket,
+        onTap: () {
+          Get.toNamed(AppLink.myTicket);
+        },
+      ),
+    );
 
     return BottomAppBar(
         elevation: 20,
@@ -48,30 +63,23 @@ class BottomNavMenu extends StatelessWidget {
                     onTap: () {
                       Get.toNamed(AppLink.aiAssistant);
                     }),
-                OverlayTooltipItem(
-                  displayIndex: 3,
-                  tooltip: (controller) => Padding(
-                    padding: const EdgeInsets.only(right: 15),
-                    child: MTooltip(
-                        title:
-                            'Your scheduled booking tiket will be listed here.',
-                        controller: controller),
-                  ),
-                  tooltipVerticalPosition: TooltipVerticalPosition.TOP,
-                  tooltipHorizontalPosition: TooltipHorizontalPosition.CENTER,
-                  child: Container(
-                    decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: colorScheme(context).surface),
-                    child: MenuItem(
-                        title: 'My Booking',
-                        icon: CupertinoIcons.tickets_fill,
-                        isActive: currentRoute == AppLink.myTicket,
-                        onTap: () {
-                          Get.toNamed(AppLink.myTicket);
-                        }),
-                  ),
-                ),
+                hasTooltipScaffold
+                    ? OverlayTooltipItem(
+                        displayIndex: 3,
+                        tooltip: (controller) => Padding(
+                          padding: const EdgeInsets.only(right: 15),
+                          child: MTooltip(
+                            title:
+                                'Your scheduled booking tiket will be listed here.',
+                            controller: controller,
+                          ),
+                        ),
+                        tooltipVerticalPosition: TooltipVerticalPosition.TOP,
+                        tooltipHorizontalPosition:
+                            TooltipHorizontalPosition.CENTER,
+                        child: myBookingButton,
+                      )
+                    : myBookingButton,
                 MenuItem(
                     title: 'Profile',
                     icon: CupertinoIcons.person_fill,
@@ -111,22 +119,22 @@ class MenuItem extends StatelessWidget {
               children: [
                 Icon(icon,
                     color: isActive
-                        ? ThemePalette.primaryMain
+                        ? TravelloTheme.primaryMain
                         : Theme.of(context).colorScheme.onSurface),
                 Text(title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: ThemeText.caption),
+                    style: TravelloTheme.caption),
                 isActive
                     ? Container(
                         width: 6,
                         height: 6,
                         margin: const EdgeInsets.only(top: 2),
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                             borderRadius: ThemeRadius.big,
-                            color: ThemePalette.primaryMain),
+                            color: TravelloTheme.primaryMain),
                       )
-                    : Container()
+                    : const SizedBox.shrink()
               ]),
         ),
       ),

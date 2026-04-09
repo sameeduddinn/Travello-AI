@@ -8,13 +8,11 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flight_app/utils/column_row_utils.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
 import 'package:flight_app/services/notification_service.dart';
 import 'package:flight_app/utils/booking_service.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class HotelBookingConfirmation extends StatefulWidget {
   const HotelBookingConfirmation({super.key});
@@ -197,7 +195,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
 
   @override
   Widget build(BuildContext context) {
-    final primary = colorScheme(context).primary;
+    const primary = TravelloTheme.primaryMain;
     final isFromList = bookingData['_isFromList'] == true;
 
     final checkIn = bookingData['checkInDate'] as DateTime?;
@@ -247,13 +245,13 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
               children: [
                 _buildProgressBar(context, primary),
                 Padding(
-                  padding: EdgeInsets.all(spacingUnit(2)),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
                       _buildSuccessHeader(context, totalPrice),
-                      SizedBox(height: spacingUnit(2)),
+                      const SizedBox(height: 16),
                       _buildBookingReference(context, primary),
-                      SizedBox(height: spacingUnit(2)),
+                      const SizedBox(height: 16),
                       _buildDetailTransaction(
                           context,
                           basePrice,
@@ -263,14 +261,14 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                           extrasTotal,
                           totalPrice,
                           transactionId),
-                      SizedBox(height: spacingUnit(2)),
+                      const SizedBox(height: 16),
                       _buildPaymentSummary(context, primary, totalPrice,
                           transactionId, extrasIncluded),
-                      SizedBox(height: spacingUnit(2)),
+                      const SizedBox(height: 16),
                       _buildPreStayChecklist(context, primary),
-                      SizedBox(height: spacingUnit(2)),
+                      const SizedBox(height: 16),
                       _buildActionButtons(context, primary),
-                      SizedBox(height: spacingUnit(3)),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -308,8 +306,8 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     const goldColor = Color(0xFFD4AF37);
     return Container(
       color: Colors.white,
-      padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(1.5), vertical: spacingUnit(1.5)),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 12, vertical: 12),
       child: const Row(
         children: [
           _ProgStep(num: 1, label: 'Hotel', done: true, primary: goldColor),
@@ -335,7 +333,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
       child: FadeTransition(
         opacity: _fadeAnim,
         child: Container(
-          padding: EdgeInsets.all(spacingUnit(3)),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             gradient: const LinearGradient(
@@ -376,17 +374,17 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                   ),
                 ),
               ),
-              SizedBox(height: spacingUnit(2)),
+              const SizedBox(height: 16),
               const Text('Payment Success',
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5)),
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
               Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: spacingUnit(3), vertical: spacingUnit(1.5)),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
@@ -403,7 +401,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                         fontSize: 32,
                         fontWeight: FontWeight.bold)),
               ),
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
               Text('Your hotel reservation is confirmed!',
                   style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.9),
@@ -419,18 +417,18 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     return FadeTransition(
       opacity: _fadeAnim,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: _card(),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Icon(Icons.confirmation_number_outlined, color: primary, size: 20),
-            SizedBox(width: spacingUnit(1)),
+            const SizedBox(width: 8),
             const Text('Booking Reference',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ]),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Container(
-            padding: EdgeInsets.all(spacingUnit(1.5)),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
                 color: Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(12),
@@ -487,7 +485,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     return FadeTransition(
       opacity: _fadeAnim,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: _card(),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('DETAIL TRANSACTION',
@@ -496,7 +494,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
                   color: Colors.black87)),
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
           _row('Date:', DateFormat('dd MMM yyyy').format(DateTime.now())),
           _div(),
           _row('Transaction Number:', txnId),
@@ -525,16 +523,16 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     return FadeTransition(
       opacity: _fadeAnim,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: _card(),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Icon(Icons.bed, color: primary, size: 20),
-            SizedBox(width: spacingUnit(1)),
+            const SizedBox(width: 8),
             const Text('Hotel Details',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ]),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
@@ -548,7 +546,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                     )
                   : _hotelPlaceholder(),
             ),
-            SizedBox(width: spacingUnit(1.5)),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -603,19 +601,19 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     return FadeTransition(
       opacity: _fadeAnim,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: _card(),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Icon(Icons.bed, color: primary, size: 20),
-            SizedBox(width: spacingUnit(1)),
+            const SizedBox(width: 8),
             const Text('Room Type',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ]),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(spacingUnit(1.5)),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
                 color: Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(10),
@@ -628,7 +626,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
               const SizedBox(height: 4),
               Text(roomType.description ?? '',
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
               Row(children: [
                 Icon(Icons.people_outline,
                     size: 14, color: Colors.grey.shade600),
@@ -672,16 +670,16 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     return FadeTransition(
       opacity: _fadeAnim,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: _card(),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Icon(Icons.calendar_month, color: primary, size: 20),
-            SizedBox(width: spacingUnit(1)),
+            const SizedBox(width: 8),
             const Text('Stay Details',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ]),
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
           // Check-in / Check-out row
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(
@@ -730,11 +728,11 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
               ]),
             ),
           ]),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           // Nights / Rooms / Guests strip
           Container(
-            padding: EdgeInsets.symmetric(
-                vertical: spacingUnit(1.5), horizontal: spacingUnit(1)),
+            padding: const EdgeInsets.symmetric(
+                vertical: 12, horizontal: 8),
             decoration: BoxDecoration(
                 color: primary.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12)),
@@ -788,16 +786,16 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     return FadeTransition(
       opacity: _fadeAnim,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: _card(),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Icon(Icons.people_outline, color: primary, size: 20),
-            SizedBox(width: spacingUnit(1)),
+            const SizedBox(width: 8),
             const Text('Guest Information',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ]),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           ...guestsData.asMap().entries.map((e) {
             final g = e.value as Map;
             final name = g['firstName'] != null
@@ -805,7 +803,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                 : (g['fullName'] ?? 'Guest ${e.key + 1}');
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
-              padding: EdgeInsets.all(spacingUnit(1.5)),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                   color: Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(10),
@@ -818,7 +816,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                       shape: BoxShape.circle),
                   child: Icon(Icons.person, color: primary, size: 18),
                 ),
-                SizedBox(width: spacingUnit(1.5)),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -851,13 +849,13 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     return FadeTransition(
       opacity: _fadeAnim,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: _card(),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Row(children: [
               Icon(Icons.receipt_long_outlined, color: primary, size: 20),
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               const Text('Payment Summary',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ]),
@@ -870,16 +868,16 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                       fontWeight: FontWeight.w600)),
             ),
           ]),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           _row('Payment Method', 'Card'),
           _div(),
           _row('Transaction ID', txnId),
           _div(),
           _row('Date',
               DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now())),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Container(
-            padding: EdgeInsets.all(spacingUnit(1.5)),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
                 color: const Color(0xFF10B981).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
@@ -898,9 +896,9 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
             ]),
           ),
           if (extras.isNotEmpty) ...[
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
             Divider(color: Colors.grey.shade200),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             Text('Extras Included',
                 style: TextStyle(
                     fontSize: 13,
@@ -1084,7 +1082,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     return Column(
       children: [
         _buildSmartAddons(context),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
         FadeTransition(
           opacity: _fadeAnim,
           child: ColRow(
@@ -1102,8 +1100,8 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                 ),
               ),
               SizedBox(
-                height: ThemeBreakpoints.smUp(context) ? 0 : spacingUnit(2),
-                width: ThemeBreakpoints.smUp(context) ? spacingUnit(2) : 0,
+                height: ThemeBreakpoints.smUp(context) ? 0 : 16,
+                width: ThemeBreakpoints.smUp(context) ? 16 : 0,
               ),
               SizedBox(
                 width: ThemeBreakpoints.smUp(context) ? 250 : double.infinity,
@@ -1117,7 +1115,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
             ],
           ),
         ),
-        SizedBox(height: spacingUnit(1.5)),
+        const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
@@ -1220,7 +1218,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     return FadeTransition(
       opacity: _fadeAnim,
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(1.5)),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -1238,15 +1236,15 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
             _quickActionButton(
               icon: Icons.history,
               label: 'Order History',
-              color: ThemePalette.tertiaryDark,
-              bgColor: ThemePalette.tertiaryLight,
+              color: TravelloTheme.tertiaryDark,
+              bgColor: TravelloTheme.tertiaryLight,
               onTap: () => Get.toNamed(AppLink.orderHistory),
             ),
             _quickActionButton(
               icon: Icons.share_outlined,
               label: 'Share',
-              color: ThemePalette.primaryDark,
-              bgColor: ThemePalette.primaryLight,
+              color: TravelloTheme.primaryDark,
+              bgColor: TravelloTheme.primaryLight,
               onTap: _shareHotelBooking,
             ),
           ],
@@ -1266,9 +1264,9 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(1.5),
-          vertical: spacingUnit(1),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 8,
         ),
         child: Column(
           children: [
@@ -3150,7 +3148,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
       );
 
   Widget _row(String label, String value, {bool bold = false}) => Padding(
-        padding: EdgeInsets.symmetric(vertical: spacingUnit(0.5)),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child:
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text(label,
@@ -3170,7 +3168,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
       );
 
   Widget _div() => Padding(
-        padding: EdgeInsets.symmetric(vertical: spacingUnit(1)),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Divider(color: Colors.grey.shade200, height: 1),
       );
 }

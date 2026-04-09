@@ -3,11 +3,6 @@ import 'package:flight_app/models/city.dart';
 import 'package:flight_app/models/flight_route.dart';
 import 'package:flight_app/models/plane.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
 import 'package:flight_app/widgets/alert_info/alert_info.dart';
 import 'package:flight_app/widgets/booking/choose_passengger.dart';
@@ -20,6 +15,7 @@ import 'package:flight_app/widgets/flight/flight_summary_wide.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class OrderDetail extends StatefulWidget {
   const OrderDetail({super.key});
@@ -46,16 +42,16 @@ class _OrderDetailState extends State<OrderDetail> {
         case BookStatus.canceled:
           return Colors.grey;
         default:
-          return colorScheme(context).primary;
+          return TravelloTheme.primaryMain;
       }
     }
 
     void showTicketSettings() async {
       Get.bottomSheet(
         StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
-          return Padding(
-            padding: EdgeInsets.all(spacingUnit(2)),
-            child: const Wrap(
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Wrap(
               children: [
                 SizedBox(height: 30,),
                 GrabberIcon(),
@@ -68,7 +64,7 @@ class _OrderDetailState extends State<OrderDetail> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
-        backgroundColor: colorScheme(context).surface,
+        backgroundColor: TravelloTheme.paperLight,
       );
     }
 
@@ -76,7 +72,7 @@ class _OrderDetailState extends State<OrderDetail> {
       Get.bottomSheet(
         StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
           return Padding(
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             child: const Wrap(
               alignment: WrapAlignment.center,
               children: [
@@ -91,7 +87,7 @@ class _OrderDetailState extends State<OrderDetail> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
-        backgroundColor: colorScheme(context).surface,
+        backgroundColor: TravelloTheme.paperLight,
       );
     }
 
@@ -105,7 +101,7 @@ class _OrderDetailState extends State<OrderDetail> {
           icon: const Icon(Icons.arrow_back_ios_new)
         ),
         centerTitle: true,
-        title: const Text('Ticket Detail', style: ThemeText.subtitle),
+        title: const Text('Ticket Detail', style: TravelloTheme.subtitle),
         actions: const [
           TicketSettingsPopup()
         ],
@@ -119,12 +115,12 @@ class _OrderDetailState extends State<OrderDetail> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
               const VSpaceShort(),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Check in available in', textAlign: TextAlign.start, style: ThemeText.caption.copyWith(color: colorScheme(context).onSurfaceVariant)),
+                      Text('Check in available in', textAlign: TextAlign.start, style: TravelloTheme.caption.copyWith(color: colorScheme(context).onSurfaceVariant)),
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
                         decoration: BoxDecoration(
@@ -134,7 +130,7 @@ class _OrderDetailState extends State<OrderDetail> {
                         child: Row(children: [
                           const Icon(Icons.access_time, size: 16),
                           const SizedBox(width: 4),
-                          Text('2d 11h', textAlign: TextAlign.center, style: ThemeText.paragraph.copyWith(fontWeight: FontWeight.bold)),
+                          Text('2d 11h', textAlign: TextAlign.center, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold)),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
@@ -142,7 +138,7 @@ class _OrderDetailState extends State<OrderDetail> {
                               borderRadius: ThemeRadius.small,
                               color: colorStatus(BookStatus.active),
                             ),
-                            child: Text(BookStatus.active.name.toUpperCase(), style: ThemeText.caption.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
+                            child: Text(BookStatus.active.name.toUpperCase(), style: TravelloTheme.caption.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
                           ),
                         ]),
                       )
@@ -152,8 +148,8 @@ class _OrderDetailState extends State<OrderDetail> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Transaction date', textAlign: TextAlign.end, style: ThemeText.caption.copyWith(color: colorScheme(context).onSurfaceVariant)),
-                      Text('12 Jan 2025', textAlign: TextAlign.center, style: ThemeText.paragraph.copyWith(fontWeight: FontWeight.bold)),
+                      Text('Transaction date', textAlign: TextAlign.end, style: TravelloTheme.caption.copyWith(color: colorScheme(context).onSurfaceVariant)),
+                      Text('12 Jan 2025', textAlign: TextAlign.center, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold)),
                     ],
                   )
                 ]),
@@ -161,19 +157,19 @@ class _OrderDetailState extends State<OrderDetail> {
               const VSpace(),
               
               /// BARCODE
-              RichText(text: TextSpan(text: 'Booking Code: ', style: ThemeText.title2.copyWith(fontWeight: FontWeight.normal, color: colorScheme(context).onSurface), children: [
-                TextSpan(text: 'A1234Z', style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme(context).primary))
+              RichText(text: TextSpan(text: 'Booking Code: ', style: TravelloTheme.title2.copyWith(fontWeight: FontWeight.normal, color: colorScheme(context).onSurface), children: const [
+                TextSpan(text: 'A1234Z', style: TextStyle(fontWeight: FontWeight.bold, color: TravelloTheme.primaryMain))
               ])),
               Padding(
-                padding: EdgeInsets.symmetric(vertical: spacingUnit(2)),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Image.asset('assets/images/barcode.gif', 
                   width: MediaQuery.of(context).size.width * 0.75,
                   fit: BoxFit.contain,
                 ),
               ),
-              Text('Submit at Registration', style: ThemeText.paragraph.copyWith(color: colorScheme(context).onSurfaceVariant)),
+              Text('Submit at Registration', style: TravelloTheme.paragraph.copyWith(color: colorScheme(context).onSurfaceVariant)),
               const VSpaceShort(),
-              Divider(thickness: 10, color: colorScheme(context).surfaceDim),
+              Divider(thickness: 10, color: TravelloTheme.paperLightDim),
             
               /// FLIGHT SUMMARY
               wideScreen ? FlightSummaryWide(
@@ -207,7 +203,7 @@ class _OrderDetailState extends State<OrderDetail> {
               /// PASSENGGERS & PRICING DETAIL
               const ReviewOrder(withFlightDetail: false),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: const AlertInfo(type: AlertType.warning, text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis congue euismod elit'),
               ),
             
@@ -226,7 +222,7 @@ class _OrderDetailState extends State<OrderDetail> {
         shadowColor: Colors.black,
         height: 80,
         color: Theme.of(context).colorScheme.surface,
-        padding: EdgeInsets.symmetric(horizontal: spacingUnit(2), vertical: spacingUnit(1)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(
@@ -244,7 +240,7 @@ class _OrderDetailState extends State<OrderDetail> {
                   child: const Icon(Icons.more_horiz, size: 18)
                 ),
               ),
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               Expanded(
                 child: SizedBox(
                   height: 50,
@@ -257,8 +253,8 @@ class _OrderDetailState extends State<OrderDetail> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.qr_code, size: 16, color: colorScheme(context).onPrimaryContainer),
-                        SizedBox(width: spacingUnit(1)),
-                        const Text('SHOW BOARDING PASS', style: ThemeText.subtitle2),
+                        const SizedBox(width: 8),
+                        const Text('SHOW BOARDING PASS', style: TravelloTheme.subtitle2),
                       ],
                     )
                   ),

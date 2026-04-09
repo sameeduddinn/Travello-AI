@@ -1,9 +1,6 @@
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
 import 'package:flutter/material.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 final List<String> helpGuideList = [
   'Log in to the mobile banking application, internet banking, or ATM.',
@@ -22,24 +19,24 @@ class PaymentGuide extends StatelessWidget {
     return Column(children: [
       const GrabberIcon(),
       const VSpaceShort(),
-      const Text('Payment Guide', textAlign: TextAlign.center, style: ThemeText.subtitle),
+      const Text('Payment Guide', textAlign: TextAlign.center, style: TravelloTheme.subtitle),
       const VSpaceShort(),
       ListView.builder(
         shrinkWrap: true,
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         itemCount: helpGuideList.length,
         itemBuilder: (context, index) {
           return Stack(
             children: [
               Container(
-                padding: EdgeInsets.only(left: spacingUnit(3)),
+                padding: const EdgeInsets.only(left: 24),
                 margin: const EdgeInsets.only(left: 9),
                 decoration: BoxDecoration(
-                  border: index < helpGuideList.length - 1 ? Border(left: BorderSide(color: colorScheme(context).primaryContainer, width: 1)) : null
+                  border: index < helpGuideList.length - 1 ? Border(left: BorderSide(color: TravelloTheme.primaryMainContainer, width: 1)) : null
                 ),
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: spacingUnit(2)),
-                  child: Text(helpGuideList[index], textAlign: TextAlign.start, style: ThemeText.paragraph),
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(helpGuideList[index], textAlign: TextAlign.start, style: TravelloTheme.paragraph),
                 ),
               ),
               Positioned(
@@ -47,8 +44,8 @@ class PaymentGuide extends StatelessWidget {
                 left: 0,
                 child: CircleAvatar(
                   radius: 10,
-                  backgroundColor: colorScheme(context).primaryContainer,
-                  child: Text('${index + 1}', style: ThemeText.caption.copyWith(color: colorScheme(context).onPrimaryContainer))
+                  backgroundColor: TravelloTheme.primaryMainContainer,
+                  child: Text('${index + 1}', style: TravelloTheme.caption.copyWith(color: colorScheme(context).onPrimaryContainer))
                 ),
               ),
             ],
@@ -56,7 +53,7 @@ class PaymentGuide extends StatelessWidget {
         }
       ),
       Container(
-        padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         width: double.infinity,
         child: OutlinedButton(
           onPressed: () {

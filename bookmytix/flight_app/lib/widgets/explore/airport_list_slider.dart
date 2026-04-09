@@ -1,9 +1,8 @@
 import 'package:flight_app/models/airport.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/cards/airport_card.dart';
 import 'package:flight_app/widgets/title/title_basic.dart';
 import 'package:flutter/material.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class AirportListSlider extends StatefulWidget {
   const AirportListSlider({super.key});
@@ -72,9 +71,9 @@ class _AirportListSliderState extends State<AirportListSlider> {
     ];
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
-        child: const TitleBasic(
+      const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        child: TitleBasic(
           title: 'Top 10 Airports',
           desc: 'Voted by customers from across the world',
         ),
@@ -92,8 +91,8 @@ class _AirportListSliderState extends State<AirportListSlider> {
                 Airport item = airports[index];
                 return Padding(
                     padding: EdgeInsets.only(
-                        left: index == 0 ? spacingUnit(2) : 0,
-                        right: spacingUnit(1)),
+                        left: index == 0 ? 16 : 0,
+                        right: 8),
                     child: SizedBox(
                       width: 280,
                       height: cardHeight,
@@ -108,7 +107,7 @@ class _AirportListSliderState extends State<AirportListSlider> {
             // Left Arrow
             if (isDesktop && _showLeftArrow)
               Positioned(
-                left: spacingUnit(1),
+                left: 8,
                 top: 0,
                 bottom: 0,
                 child: Center(
@@ -130,10 +129,10 @@ class _AirportListSliderState extends State<AirportListSlider> {
                           )
                         ],
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.arrow_back_ios_new,
                         size: 20,
-                        color: colorScheme(context).primary,
+                        color: TravelloTheme.primaryMain,
                       ),
                     ),
                   ),
@@ -142,7 +141,7 @@ class _AirportListSliderState extends State<AirportListSlider> {
             // Right Arrow
             if (isDesktop && _showRightArrow)
               Positioned(
-                right: spacingUnit(1),
+                right: 8,
                 top: 0,
                 bottom: 0,
                 child: Center(
@@ -164,10 +163,10 @@ class _AirportListSliderState extends State<AirportListSlider> {
                           )
                         ],
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.arrow_forward_ios,
                         size: 20,
-                        color: colorScheme(context).primary,
+                        color: TravelloTheme.primaryMain,
                       ),
                     ),
                   ),

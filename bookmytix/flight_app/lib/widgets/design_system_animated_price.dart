@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 /// DSAnimatedPrice
 /// Smoothly counts from [oldValue] to [newValue] over [duration].
@@ -40,8 +39,8 @@ class DSAnimatedPrice extends StatelessWidget {
             Text(
               '$currency ',
               style: currencyStyle ??
-                  ThemeText.caption.copyWith(
-                    color: ThemePalette.primaryMain,
+                  TravelloTheme.caption.copyWith(
+                    color: TravelloTheme.primaryMain,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
                   ),
@@ -49,8 +48,8 @@ class DSAnimatedPrice extends StatelessWidget {
             Text(
               formatted,
               style: style ??
-                  ThemeText.title2.copyWith(
-                    color: ThemePalette.primaryMain,
+                  TravelloTheme.title2.copyWith(
+                    color: TravelloTheme.primaryMain,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.5,
                   ),

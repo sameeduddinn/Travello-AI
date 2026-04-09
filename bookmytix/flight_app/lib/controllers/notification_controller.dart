@@ -50,8 +50,8 @@ class NotificationController extends GetxController {
       type: 'success',
       category: 'flight',
       tag: airline,
-      title: '$airline $flightNumber — Booking Confirmed ✓',
-      subtitle: '$from → $to · $date · Ref: $bookingRef',
+      title: '$airline $flightNumber - Booking Confirmed',
+      subtitle: '$from -> $to | $date | Ref: $bookingRef',
       date: 'Just now',
       isRead: false,
     ));
@@ -75,7 +75,7 @@ class NotificationController extends GetxController {
       tag: 'Reminder',
       title: 'Leave home 3 hrs before departure',
       subtitle:
-          'For $flightNumber on $date — allow time for check-in, security & boarding',
+          'For $flightNumber on $date - allow time for check-in, security & boarding',
       date: 'Just now',
       isRead: false,
     ));
@@ -86,9 +86,9 @@ class NotificationController extends GetxController {
         type: 'warning',
         category: 'flight',
         tag: 'Reminder',
-        title: '24-hr return flight reminder — $returnFlight',
+        title: '24-hr return flight reminder - $returnFlight',
         subtitle:
-            '$to → $from · $returnDate · Online check-in opens now. Don\'t forget your baggage allowance.',
+            '$to -> $from | $returnDate | Online check-in opens now. Don\'t forget your baggage allowance.',
         date: 'Just now',
         isRead: false,
       ));
@@ -109,9 +109,9 @@ class NotificationController extends GetxController {
       type: 'success',
       category: 'hotel',
       tag: 'Hotel',
-      title: '$hotelName — Booking Confirmed ✓',
+      title: '$hotelName - Booking Confirmed',
       subtitle:
-          '$city · Check-in $checkIn · Check-out $checkOut · $nights nights · Ref: $bookingRef',
+          '$city | Check-in $checkIn | Check-out $checkOut | $nights nights | Ref: $bookingRef',
       date: 'Just now',
       isRead: false,
     ));
@@ -121,7 +121,7 @@ class NotificationController extends GetxController {
       type: 'info',
       category: 'hotel',
       tag: 'Hotel',
-      title: 'Hotel check-in reminder — $hotelName',
+      title: 'Hotel check-in reminder - $hotelName',
       subtitle:
           'Check-in on $checkIn. Standard check-in time is 14:00. Early check-in subject to availability.',
       date: 'Just now',
@@ -135,7 +135,7 @@ class NotificationController extends GetxController {
       tag: 'Reminder',
       title: 'Plan your journey to $hotelName',
       subtitle:
-          'Check-in $checkIn — book a cab or plan your route in advance to arrive on time.',
+          'Check-in $checkIn - book a cab or plan your route in advance to arrive on time.',
       date: 'Just now',
       isRead: false,
     ));
@@ -155,8 +155,8 @@ class NotificationController extends GetxController {
       type: 'success',
       category: 'train',
       tag: 'Train',
-      title: '$trainName — Ticket Confirmed ✓',
-      subtitle: '$from → $to · $date · Seat $seat · PNR: $pnr',
+      title: '$trainName - Ticket Confirmed',
+      subtitle: '$from -> $to | $date | Seat $seat | PNR: $pnr',
       date: 'Just now',
       isRead: false,
     ));
@@ -168,7 +168,7 @@ class NotificationController extends GetxController {
       tag: 'Train',
       title: 'Arrive at station 30 min before departure',
       subtitle:
-          '$trainName departs $date at $departureTime from $from — allow time for platform & boarding.',
+          '$trainName departs $date at $departureTime from $from - allow time for platform & boarding.',
       date: 'Just now',
       isRead: false,
     ));
@@ -180,7 +180,7 @@ class NotificationController extends GetxController {
       tag: 'Reminder',
       title: 'Plan your journey to $from station',
       subtitle:
-          'Train departs $date at $departureTime — check traffic and leave home early.',
+          'Train departs $date at $departureTime - check traffic and leave home early.',
       date: 'Just now',
       isRead: false,
     ));

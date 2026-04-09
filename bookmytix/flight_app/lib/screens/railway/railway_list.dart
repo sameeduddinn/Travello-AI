@@ -1,10 +1,7 @@
 import 'package:flight_app/models/train.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class RailwayListScreen extends StatefulWidget {
   const RailwayListScreen({super.key});
@@ -52,8 +49,8 @@ class _RailwayListScreenState extends State<RailwayListScreen> {
           children: [
             // Search Summary
             Container(
-              padding: EdgeInsets.all(spacingUnit(2)),
-              color: colorScheme(context).primaryContainer,
+              padding: const EdgeInsets.all(16),
+              color: TravelloTheme.primaryMainContainer,
               child: Row(
                 children: [
                   Expanded(
@@ -71,7 +68,7 @@ class _RailwayListScreenState extends State<RailwayListScreen> {
                             Expanded(
                               child: Text(
                                 '$_fromStation → $_toStation',
-                                style: ThemeText.subtitle.copyWith(
+                                style: TravelloTheme.subtitle.copyWith(
                                   color:
                                       colorScheme(context).onPrimaryContainer,
                                 ),
@@ -83,7 +80,7 @@ class _RailwayListScreenState extends State<RailwayListScreen> {
                         const SizedBox(height: 4),
                         Text(
                           '${_date.day}/${_date.month}/${_date.year} • $_passengers ${_passengers == 1 ? 'Passenger' : 'Passengers'}',
-                          style: ThemeText.caption.copyWith(
+                          style: TravelloTheme.caption.copyWith(
                             color: colorScheme(context).onPrimaryContainer,
                           ),
                         ),
@@ -109,18 +106,18 @@ class _RailwayListScreenState extends State<RailwayListScreen> {
                           const SizedBox(height: 16),
                           const Text(
                             'No trains found',
-                            style: ThemeText.title2,
+                            style: TravelloTheme.title2,
                           ),
                           const SizedBox(height: 8),
                           const Text(
                             'Try adjusting your search criteria',
-                            style: ThemeText.caption,
+                            style: TravelloTheme.caption,
                           ),
                         ],
                       ),
                     )
                   : ListView.builder(
-                      padding: EdgeInsets.all(spacingUnit(2)),
+                      padding: const EdgeInsets.all(16),
                       itemCount: _trains.length,
                       itemBuilder: (context, index) {
                         return _TrainCard(
@@ -153,7 +150,7 @@ class _TrainCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -167,19 +164,19 @@ class _TrainCard extends StatelessWidget {
                     children: [
                       Text(
                         train.name,
-                        style: ThemeText.title.copyWith(fontSize: 16),
+                        style: TravelloTheme.title.copyWith(fontSize: 16),
                       ),
                       Text(
                         'Train #${train.trainNumber}',
-                        style: ThemeText.caption,
+                        style: TravelloTheme.caption,
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: spacingUnit(1),
-                    vertical: spacingUnit(0.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme(context).tertiaryContainer,
@@ -187,7 +184,7 @@ class _TrainCard extends StatelessWidget {
                   ),
                   child: Text(
                     train.trainClass,
-                    style: ThemeText.caption.copyWith(
+                    style: TravelloTheme.caption.copyWith(
                       color: colorScheme(context).onTertiaryContainer,
                       fontWeight: FontWeight.bold,
                     ),
@@ -207,11 +204,11 @@ class _TrainCard extends StatelessWidget {
                     children: [
                       Text(
                         train.departureTime,
-                        style: ThemeText.title.copyWith(fontSize: 16),
+                        style: TravelloTheme.title.copyWith(fontSize: 16),
                       ),
                       Text(
                         train.fromStation,
-                        style: ThemeText.caption,
+                        style: TravelloTheme.caption,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -221,13 +218,13 @@ class _TrainCard extends StatelessWidget {
                 // Duration
                 Column(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.arrow_forward,
-                      color: colorScheme(context).primary,
+                      color: TravelloTheme.primaryMain,
                     ),
                     Text(
                       train.duration,
-                      style: ThemeText.caption,
+                      style: TravelloTheme.caption,
                     ),
                   ],
                 ),
@@ -239,11 +236,11 @@ class _TrainCard extends StatelessWidget {
                     children: [
                       Text(
                         train.arrivalTime,
-                        style: ThemeText.title.copyWith(fontSize: 16),
+                        style: TravelloTheme.title.copyWith(fontSize: 16),
                       ),
                       Text(
                         train.toStation,
-                        style: ThemeText.caption,
+                        style: TravelloTheme.caption,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -269,7 +266,7 @@ class _TrainCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       '${train.availableSeats} seats left',
-                      style: ThemeText.caption.copyWith(
+                      style: TravelloTheme.caption.copyWith(
                         color: train.availableSeats < 20
                             ? Colors.orange
                             : const Color(0xFFD4AF37),
@@ -279,9 +276,9 @@ class _TrainCard extends StatelessWidget {
                 ),
                 Text(
                   'PKR ${totalPrice.toStringAsFixed(0)}',
-                  style: ThemeText.title.copyWith(
+                  style: TravelloTheme.title.copyWith(
                     fontSize: 16,
-                    color: colorScheme(context).primary,
+                    color: TravelloTheme.primaryMain,
                   ),
                 ),
               ],

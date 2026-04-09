@@ -1,9 +1,6 @@
 import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/models/voucher.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/promo/promo_grid.dart';
 import 'package:flight_app/widgets/promo/promo_voucher_grid.dart';
 import 'package:flight_app/widgets/promo/promo_voucher_list.dart';
@@ -12,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flight_app/models/promo.dart';
 import 'package:flight_app/widgets/promo/promo_list.dart';
 import 'package:flight_app/widgets/search_filters/search_input_btn.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PromoMain extends StatefulWidget {
   const PromoMain({super.key});
@@ -53,14 +51,14 @@ class _PromoMainState extends State<PromoMain> {
       appBar: AppBar(
         toolbarHeight: 60,
         forceMaterialTransparency: true,
-        backgroundColor: colorScheme(context).surface,
+        backgroundColor: TravelloTheme.paperLight,
         titleSpacing: 0,
         automaticallyImplyLeading: false,
         centerTitle: true,
         /// TITLE AND SEARCH
         title: _showSearch ?
           Padding(
-            padding: EdgeInsets.symmetric(vertical: spacingUnit(2), horizontal: spacingUnit(2)),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
             child: SearchInputBtn(
               location: '/search-list',
               title: 'Search Promo',
@@ -68,7 +66,7 @@ class _PromoMainState extends State<PromoMain> {
                 toggleSearch();
               },
             ),
-          ) : const Text('Promos', style: ThemeText.title2,),
+          ) : const Text('Promos', style: TravelloTheme.title2,),
         actions: [
           /// SEARCH BUTTON
           !_showSearch ? IconButton(
@@ -81,7 +79,7 @@ class _PromoMainState extends State<PromoMain> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80.0),
           child: DecoratedBox(
-            decoration: BoxDecoration(color: colorScheme(context).surfaceContainerLowest),
+            decoration: BoxDecoration(color: TravelloTheme.paperLightContainerLowest),
             child: Column(
               children: [
                 Text('Check All Promos and Your Voucers by ${branding.name}'),

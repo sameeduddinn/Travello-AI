@@ -1,9 +1,7 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flight_app/widgets/profile/timeline_activities.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class DetailPoint extends StatelessWidget {
   const DetailPoint({super.key});
@@ -12,7 +10,7 @@ class DetailPoint extends StatelessWidget {
   Widget build(BuildContext context) {
 
     final ButtonStyle iconBtn = IconButton.styleFrom(
-      backgroundColor: colorScheme(context).surface,
+      backgroundColor: TravelloTheme.paperLight,
       shadowColor: Colors.grey.withValues(alpha: 0.5),
       elevation: 3
     );
@@ -28,25 +26,25 @@ class DetailPoint extends StatelessWidget {
           style: iconBtn,
           icon: const Icon(Icons.arrow_back_ios_new, size: 22),
         ),
-        title: Text('Your Points', style: ThemeText.subtitle.copyWith(color: Colors.white)),
+        title: Text('Your Points', style: TravelloTheme.subtitle.copyWith(color: Colors.white)),
         centerTitle: true,
       ),
       body: Container(
         padding: EdgeInsets.only(top: spacingUnit(7)),
-        decoration: BoxDecoration(
-          color: colorScheme(context).primary,
+        decoration: const BoxDecoration(
+          color: TravelloTheme.primaryMain,
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(Icons.stars, color: Colors.white.withValues(alpha: 0.5), size: 40),
-            SizedBox(width: spacingUnit(1)),
-            Text('3000', style: ThemeText.title.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 8),
+            Text('3000', style: TravelloTheme.title.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
           ]),
           const VSpaceShort(),
           /// HISTORY
           Expanded(child: 
             Container(
-              padding: EdgeInsets.all(spacingUnit(1)),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainer,
                 borderRadius: const BorderRadius.only(

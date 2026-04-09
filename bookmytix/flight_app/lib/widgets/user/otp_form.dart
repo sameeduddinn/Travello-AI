@@ -1,14 +1,11 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:pinput/pinput.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
 import 'package:flight_app/widgets/onboarding/city_selection_sheet.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class OtpForm extends StatefulWidget {
   const OtpForm({super.key});
@@ -61,10 +58,10 @@ class _OtpFormState extends State<OtpForm> {
         children: [
           /// TITLE
           const VSpace(),
-          const Text('Check Your Phone', style: ThemeText.title2),
-          SizedBox(height: spacingUnit(1)),
+          const Text('Check Your Phone', style: TravelloTheme.title2),
+          const SizedBox(height: 8),
           Text('We\'ve sent the code to your phone',
-              style: ThemeText.headline
+              style: TravelloTheme.headline
                   .copyWith(color: colorScheme(context).onSurfaceVariant)),
           const VSpace(),
 
@@ -133,7 +130,9 @@ class _OtpFormState extends State<OtpForm> {
                         final hasCity =
                             await LocationPreferenceService.hasOriginCity();
 
-                        if (!hasCity && mounted) {
+                        if (!context.mounted) return;
+
+                        if (!hasCity) {
                           // Show city selection for new users after verification
                           showModalBottomSheet(
                             context: context,
@@ -169,7 +168,7 @@ class _OtpFormState extends State<OtpForm> {
                 RichText(
                     text: TextSpan(
                         text: 'Please wait ',
-                        style: ThemeText.paragraph
+                        style: TravelloTheme.paragraph
                             .copyWith(color: colorScheme(context).onSurface),
                         children: const [
                       TextSpan(

@@ -8,11 +8,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/constants/app_constants.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/image_viewer.dart';
 import 'package:flight_app/widgets/decorations/rounded_deco_main.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
   const ProfileBannerHeader({
@@ -45,7 +43,7 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
             /// BACKGROUND
             Container(
               decoration:
-                  BoxDecoration(color: colorScheme(context).primaryContainer),
+                  BoxDecoration(color: TravelloTheme.primaryMainContainer),
               child: SvgPicture.asset(
                 ImgApi.profileBanner,
                 fit: BoxFit.cover,
@@ -59,10 +57,10 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                 child: RoundedDecoMain(
                   height: 80,
                   bgDecoration: BoxDecoration(
-                    color: colorScheme(context).surfaceContainerLowest,
+                    color: TravelloTheme.paperLightContainerLowest,
                     boxShadow: [
                       BoxShadow(
-                        color: colorScheme(context).surfaceContainerLowest,
+                        color: TravelloTheme.paperLightContainerLowest,
                         blurRadius: 0.0,
                         spreadRadius: 0.0,
                         offset: const Offset(0, 2),
@@ -73,8 +71,8 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
 
             /// TOP BAR
             Positioned(
-              top: spacingUnit(1),
-              left: spacingUnit(2),
+              top: 8,
+              left: 16,
               child: AnimatedOpacity(
                 opacity: showItem ? 0 : 1,
                 duration: const Duration(milliseconds: 300),
@@ -86,14 +84,14 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                         backgroundImage: NetworkImage(
                             userAvatar.isEmpty ? userDummy.avatar : userAvatar),
                       ),
-                      SizedBox(width: spacingUnit(1)),
-                      Text(userName, style: ThemeText.title2),
+                      const SizedBox(width: 8),
+                      Text(userName, style: TravelloTheme.title2),
                     ]),
               ),
             ),
             Positioned(
-              top: spacingUnit(1),
-              right: spacingUnit(1),
+              top: 8,
+              right: 8,
               child: Row(children: homeActionGroup(context, false)),
             ),
 
@@ -136,13 +134,13 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                                     ),
                                   ),
                                 ),
-                                Positioned(
+                                const Positioned(
                                     child: CircleAvatar(
                                   radius: 13,
-                                  backgroundColor: ThemePalette.secondaryMain,
+                                  backgroundColor: TravelloTheme.secondaryMain,
                                   child: Icon(Icons.verified,
                                       size: 20,
-                                      color: ThemePalette.secondaryDark),
+                                      color: TravelloTheme.secondaryDark),
                                 ))
                               ],
                             )),
@@ -152,7 +150,7 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                       AnimatedOpacity(
                         opacity: showItem ? 1 : 0,
                         duration: const Duration(milliseconds: 300),
-                        child: Text(userName, style: ThemeText.title),
+                        child: Text(userName, style: TravelloTheme.title),
                       ),
 
                       /// POINTS
@@ -174,7 +172,7 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                             boxShadow: [
                               BoxShadow(
                                 color:
-                                    colorScheme(context).surfaceContainerLowest,
+                                    TravelloTheme.paperLightContainerLowest,
                                 blurRadius: 0.0,
                                 spreadRadius: 0.0,
                                 offset: const Offset(0, 2),

@@ -1,8 +1,6 @@
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class NotifItem extends StatelessWidget {
   const NotifItem({
@@ -38,7 +36,7 @@ class NotifItem extends StatelessWidget {
             leading: _buildIcon(context, type),
             title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
-            trailing: Text(date, style: ThemeText.caption),
+            trailing: Text(date, style: TravelloTheme.caption),
           ),
           image != null ? 
             Padding(padding: const EdgeInsets.all(8),

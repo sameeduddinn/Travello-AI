@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/shimmer_preloader.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ProfileCard extends StatelessWidget {
   const ProfileCard({super.key, required this.avatar, required this.name, required this.distance});
@@ -35,10 +33,10 @@ class ProfileCard extends StatelessWidget {
             },
           )
         ),
-        SizedBox(width: spacingUnit(1)),
+        const SizedBox(width: 8),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text(name, style: ThemeText.headline, overflow: TextOverflow.ellipsis),
+            Text(name, style: TravelloTheme.headline, overflow: TextOverflow.ellipsis),
             const SizedBox(width: 4),
             Row(children: [
               Icon(Icons.location_on_outlined, size: 14, color: greyText),

@@ -86,12 +86,7 @@ class _RangeDatePickerSheetState extends State<RangeDatePickerSheet>
     with TickerProviderStateMixin {
   // ── palette ────────────────────────────────────────────────────────────────
   static const _gold = Color(0xFFD4AF37);
-  static const _goldLight = Color(0xFFE6C86A);
-  static const _goldDim = Color(0xFFC6A030);
-  static const _dark = Color(0xFF0D0D0D);
   static const _bg = Color(0xFFFFFFFF);
-  static const _surface = Color(0xFFF8F8F8);
-  static const _card = Color(0xFFF2F2F2);
 
   static const _weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
   static const _monthNames = [
@@ -117,8 +112,6 @@ class _RangeDatePickerSheetState extends State<RangeDatePickerSheet>
 
   // ── animation controllers ──────────────────────────────────────────────────
   late AnimationController _slideCtrl;
-  late Animation<Offset> _slideAnim;
-  late Animation<double> _fadeAnim;
   int _slideDir = 1; // +1 = forward (next), -1 = back (prev)
 
   // tracks last tapped day for scale bounce
@@ -141,13 +134,6 @@ class _RangeDatePickerSheetState extends State<RangeDatePickerSheet>
     _slideCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 320),
-    );
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(1, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutCubic));
-    _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOut),
     );
     _slideCtrl.value = 1.0; // start fully visible
 
@@ -266,7 +252,7 @@ class _RangeDatePickerSheetState extends State<RangeDatePickerSheet>
   }
 
   String _fmt(DateTime? d) => d == null
-      ? '—'
+      ? '-'
       : '${d.day} ${_monthNames[d.month - 1].substring(0, 3)} ${d.year}';
 
   // ── build ──────────────────────────────────────────────────────────────────
@@ -287,21 +273,24 @@ class _RangeDatePickerSheetState extends State<RangeDatePickerSheet>
       ),
       child: SafeArea(
         top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHandle(),
-            _buildTitle(),
-            _buildBadges(),
-            const SizedBox(height: 8),
-            _buildDivider(),
-            const SizedBox(height: 4),
-            _buildWeekRow(),
-            _buildAnimatedGrid(),
-            const SizedBox(height: 4),
-            _buildApplyButton(),
-            const SizedBox(height: 20),
-          ],
+        child: SingleChildScrollView(
+          primary: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHandle(),
+              _buildTitle(),
+              _buildBadges(),
+              const SizedBox(height: 8),
+              _buildDivider(),
+              const SizedBox(height: 4),
+              _buildWeekRow(),
+              _buildAnimatedGrid(),
+              const SizedBox(height: 4),
+              _buildApplyButton(),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -520,13 +509,19 @@ class _RangeDatePickerSheetState extends State<RangeDatePickerSheet>
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: GridView.count(
-        key: key,
-        crossAxisCount: 7,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        childAspectRatio: 1.05,
-        children: cells,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: GridView.count(
+            key: key,
+            primary: false,
+            crossAxisCount: 7,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 1.05,
+            children: cells,
+          ),
+        ),
       ),
     );
   }
@@ -768,7 +763,6 @@ class _PremiumDayCell extends StatelessWidget {
 
   static const _gold = Color(0xFFD4AF37);
   static const _goldLight = Color(0xFFE6C86A);
-  static const _dark = Color(0xFF0D0D0D);
 
   @override
   Widget build(BuildContext context) {
@@ -907,7 +901,6 @@ class _PremiumApplyButtonState extends State<_PremiumApplyButton>
 
   static const _gold = Color(0xFFD4AF37);
   static const _goldLight = Color(0xFFE8C84A);
-  static const _dark = Color(0xFF0D0D0D);
 
   @override
   Widget build(BuildContext context) {

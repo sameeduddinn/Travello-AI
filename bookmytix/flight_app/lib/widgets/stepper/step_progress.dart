@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class StepProgress extends StatefulWidget {
   const StepProgress({
@@ -45,7 +43,7 @@ class _StepProgressState extends State<StepProgress> {
     return SizedBox(
       height: 40,
       child: ListView.builder(
-        padding: EdgeInsets.symmetric(vertical: spacingUnit(1)),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         controller: _scrollController,
         scrollDirection: Axis.horizontal,
         itemCount: widget.items.length,
@@ -62,17 +60,17 @@ class _StepProgressState extends State<StepProgress> {
                     width: 25,
                     height: 25,
                     decoration: BoxDecoration(
-                      color: colorScheme(context).primaryContainer,
+                      color: TravelloTheme.primaryMainContainer,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: widget.activeIndex > index ?
-                        Icon(Icons.check, color: _isDark ? ThemePalette.primaryLight : ThemePalette.primaryMain, size: 16)
-                        : Text((index + 1).toString(), style: TextStyle(color: _isDark ? ThemePalette.primaryLight : ThemePalette.primaryMain))
+                        Icon(Icons.check, color: _isDark ? TravelloTheme.primaryLight : TravelloTheme.primaryMain, size: 16)
+                        : Text((index + 1).toString(), style: TextStyle(color: _isDark ? TravelloTheme.primaryLight : TravelloTheme.primaryMain))
                       ),
                   ),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(widget.items[index].toUpperCase()),
                   ),
                   index < widget.items.length - 1 ? Expanded(

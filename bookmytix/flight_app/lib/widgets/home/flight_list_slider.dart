@@ -1,13 +1,12 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/models/trip.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/cards/flight_portrait_card.dart';
 import 'package:flight_app/widgets/title/title_action.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightListSlider extends StatefulWidget {
   const FlightListSlider({super.key});
@@ -65,7 +64,7 @@ class _FlightListSliderState extends State<FlightListSlider> {
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Padding(
-        padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: TitleAction(
             title: 'Top Destinations',
             textAction: 'Find More',
@@ -73,7 +72,7 @@ class _FlightListSliderState extends State<FlightListSlider> {
               Get.toNamed('/flight-list');
             }),
       ),
-      SizedBox(height: spacingUnit(2)),
+      const SizedBox(height: 16),
 
       /// FLIGHT ITEMS
       SizedBox(
@@ -91,7 +90,7 @@ class _FlightListSliderState extends State<FlightListSlider> {
                 controller: _scrollController,
                 shrinkWrap: true,
                 scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: 10,
                 itemBuilder: ((context, index) {
                   Trip item = topFlightList[index];
@@ -99,7 +98,7 @@ class _FlightListSliderState extends State<FlightListSlider> {
                   return SizedBox(
                       width: cardWidth,
                       child: Padding(
-                        padding: EdgeInsets.only(right: spacingUnit(2)),
+                        padding: const EdgeInsets.only(right: 16),
                         child: GestureDetector(
                           onTap: () {
                             Get.toNamed(AppLink.flightSearchHome, arguments: {
@@ -124,7 +123,7 @@ class _FlightListSliderState extends State<FlightListSlider> {
             // LEFT ARROW BUTTON
             if (_showLeftArrow)
               Positioned(
-                left: spacingUnit(1),
+                left: 8,
                 top: 0,
                 bottom: 0,
                 child: Align(
@@ -132,7 +131,7 @@ class _FlightListSliderState extends State<FlightListSlider> {
                   child: Container(
                     decoration: BoxDecoration(
                       color:
-                          colorScheme(context).surface.withValues(alpha: 0.95),
+                          TravelloTheme.paperLight.withValues(alpha: 0.95),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -145,9 +144,9 @@ class _FlightListSliderState extends State<FlightListSlider> {
                     ),
                     child: IconButton(
                       onPressed: _scrollLeft,
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.arrow_back_ios_new,
-                        color: colorScheme(context).primary,
+                        color: TravelloTheme.primaryMain,
                         size: 20,
                       ),
                     ),
@@ -158,7 +157,7 @@ class _FlightListSliderState extends State<FlightListSlider> {
             // RIGHT ARROW BUTTON
             if (_showRightArrow)
               Positioned(
-                right: spacingUnit(1),
+                right: 8,
                 top: 0,
                 bottom: 0,
                 child: Align(
@@ -166,7 +165,7 @@ class _FlightListSliderState extends State<FlightListSlider> {
                   child: Container(
                     decoration: BoxDecoration(
                       color:
-                          colorScheme(context).surface.withValues(alpha: 0.95),
+                          TravelloTheme.paperLight.withValues(alpha: 0.95),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -179,9 +178,9 @@ class _FlightListSliderState extends State<FlightListSlider> {
                     ),
                     child: IconButton(
                       onPressed: _scrollRight,
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.arrow_forward_ios,
-                        color: colorScheme(context).primary,
+                        color: TravelloTheme.primaryMain,
                         size: 20,
                       ),
                     ),

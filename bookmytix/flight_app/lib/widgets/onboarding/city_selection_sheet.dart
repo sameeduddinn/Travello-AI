@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 /// Professional city selection bottom sheet shown after authentication
 /// Industry-standard approach used by MakeMyTrip, Uber, Booking.com
@@ -29,57 +26,208 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
 
   // Comprehensive Pakistani cities list - Professional standard (Bookme.pk, Sastaticket.pk)
   // Covers all provinces, major cities, and popular tourist destinations
-  final List<Map<String, String>> _allCities = [
+  final List<Map<String, dynamic>> _allCities = [
     // Punjab - Major Cities
-    {'name': 'Lahore', 'code': 'LHE', 'icon': '🕌', 'province': 'Punjab'},
-    {'name': 'Faisalabad', 'code': 'LYP', 'icon': '🏭', 'province': 'Punjab'},
-    {'name': 'Rawalpindi', 'code': 'RWP', 'icon': '🏙️', 'province': 'Punjab'},
-    {'name': 'Multan', 'code': 'MUX', 'icon': '🌾', 'province': 'Punjab'},
-    {'name': 'Gujranwala', 'code': 'GUJ', 'icon': '🏺', 'province': 'Punjab'},
-    {'name': 'Sialkot', 'code': 'SKT', 'icon': '⚽', 'province': 'Punjab'},
-    {'name': 'Bahawalpur', 'code': 'BHV', 'icon': '🕌', 'province': 'Punjab'},
-    {'name': 'Sargodha', 'code': 'SGD', 'icon': '🌾', 'province': 'Punjab'},
-    {'name': 'Sahiwal', 'code': 'SWL', 'icon': '🌾', 'province': 'Punjab'},
-    {'name': 'Jhang', 'code': 'JHG', 'icon': '🏛️', 'province': 'Punjab'},
+    {
+      'name': 'Lahore',
+      'code': 'LHE',
+      'icon': Icons.location_city,
+      'province': 'Punjab',
+    },
+    {
+      'name': 'Faisalabad',
+      'code': 'LYP',
+      'icon': Icons.business,
+      'province': 'Punjab',
+    },
+    {
+      'name': 'Rawalpindi',
+      'code': 'RWP',
+      'icon': Icons.location_city,
+      'province': 'Punjab',
+    },
+    {
+      'name': 'Multan',
+      'code': 'MUX',
+      'icon': Icons.eco,
+      'province': 'Punjab',
+    },
+    {
+      'name': 'Gujranwala',
+      'code': 'GUJ',
+      'icon': Icons.apartment,
+      'province': 'Punjab',
+    },
+    {
+      'name': 'Sialkot',
+      'code': 'SKT',
+      'icon': Icons.sports_soccer,
+      'province': 'Punjab',
+    },
+    {
+      'name': 'Bahawalpur',
+      'code': 'BHV',
+      'icon': Icons.account_balance,
+      'province': 'Punjab',
+    },
+    {
+      'name': 'Sargodha',
+      'code': 'SGD',
+      'icon': Icons.eco,
+      'province': 'Punjab',
+    },
+    {
+      'name': 'Sahiwal',
+      'code': 'SWL',
+      'icon': Icons.eco,
+      'province': 'Punjab',
+    },
+    {
+      'name': 'Jhang',
+      'code': 'JHG',
+      'icon': Icons.account_balance,
+      'province': 'Punjab',
+    },
 
     // Islamabad & Sindh
-    {'name': 'Islamabad', 'code': 'ISB', 'icon': '🏛️', 'province': 'ICT'},
-    {'name': 'Karachi', 'code': 'KHI', 'icon': '🌊', 'province': 'Sindh'},
-    {'name': 'Hyderabad', 'code': 'HDD', 'icon': '🏙️', 'province': 'Sindh'},
-    {'name': 'Sukkur', 'code': 'SKZ', 'icon': '🌉', 'province': 'Sindh'},
-    {'name': 'Larkana', 'code': 'LRK', 'icon': '🏛️', 'province': 'Sindh'},
-    {'name': 'Nawabshah', 'code': 'NWB', 'icon': '🌾', 'province': 'Sindh'},
+    {
+      'name': 'Islamabad',
+      'code': 'ISB',
+      'icon': Icons.account_balance,
+      'province': 'ICT',
+    },
+    {
+      'name': 'Karachi',
+      'code': 'KHI',
+      'icon': Icons.waves,
+      'province': 'Sindh',
+    },
+    {
+      'name': 'Hyderabad',
+      'code': 'HDD',
+      'icon': Icons.location_city,
+      'province': 'Sindh',
+    },
+    {
+      'name': 'Sukkur',
+      'code': 'SKZ',
+      'icon': Icons.alt_route,
+      'province': 'Sindh',
+    },
+    {
+      'name': 'Larkana',
+      'code': 'LRK',
+      'icon': Icons.account_balance,
+      'province': 'Sindh',
+    },
+    {
+      'name': 'Nawabshah',
+      'code': 'NWB',
+      'icon': Icons.eco,
+      'province': 'Sindh',
+    },
 
     // Khyber Pakhtunkhwa (KPK)
-    {'name': 'Peshawar', 'code': 'PEW', 'icon': '🏔️', 'province': 'KPK'},
-    {'name': 'Abbottabad', 'code': 'ATD', 'icon': '⛰️', 'province': 'KPK'},
-    {'name': 'Mardan', 'code': 'MRD', 'icon': '🏛️', 'province': 'KPK'},
-    {'name': 'Swat', 'code': 'SWT', 'icon': '🏔️', 'province': 'KPK'},
-    {'name': 'Mansehra', 'code': 'MSH', 'icon': '⛰️', 'province': 'KPK'},
+    {
+      'name': 'Peshawar',
+      'code': 'PEW',
+      'icon': Icons.terrain,
+      'province': 'KPK',
+    },
+    {
+      'name': 'Abbottabad',
+      'code': 'ATD',
+      'icon': Icons.terrain,
+      'province': 'KPK',
+    },
+    {
+      'name': 'Mardan',
+      'code': 'MRD',
+      'icon': Icons.account_balance,
+      'province': 'KPK',
+    },
+    {
+      'name': 'Swat',
+      'code': 'SWT',
+      'icon': Icons.terrain,
+      'province': 'KPK',
+    },
+    {
+      'name': 'Mansehra',
+      'code': 'MSH',
+      'icon': Icons.terrain,
+      'province': 'KPK',
+    },
 
     // Balochistan
-    {'name': 'Quetta', 'code': 'UET', 'icon': '⛰️', 'province': 'Balochistan'},
-    {'name': 'Gwadar', 'code': 'GWD', 'icon': '🌊', 'province': 'Balochistan'},
-    {'name': 'Turbat', 'code': 'TUK', 'icon': '🏜️', 'province': 'Balochistan'},
+    {
+      'name': 'Quetta',
+      'code': 'UET',
+      'icon': Icons.terrain,
+      'province': 'Balochistan',
+    },
+    {
+      'name': 'Gwadar',
+      'code': 'GWD',
+      'icon': Icons.waves,
+      'province': 'Balochistan',
+    },
+    {
+      'name': 'Turbat',
+      'code': 'TUK',
+      'icon': Icons.landscape,
+      'province': 'Balochistan',
+    },
 
     // Gilgit-Baltistan (Tourist Destinations)
-    {'name': 'Gilgit', 'code': 'GIL', 'icon': '🏔️', 'province': 'GB'},
-    {'name': 'Skardu', 'code': 'KDU', 'icon': '⛰️', 'province': 'GB'},
-    {'name': 'Hunza', 'code': 'HNZ', 'icon': '🏔️', 'province': 'GB'},
+    {
+      'name': 'Gilgit',
+      'code': 'GIL',
+      'icon': Icons.terrain,
+      'province': 'GB',
+    },
+    {
+      'name': 'Skardu',
+      'code': 'KDU',
+      'icon': Icons.terrain,
+      'province': 'GB',
+    },
+    {
+      'name': 'Hunza',
+      'code': 'HNZ',
+      'icon': Icons.terrain,
+      'province': 'GB',
+    },
 
     // AJK (Azad Jammu & Kashmir)
-    {'name': 'Muzaffarabad', 'code': 'MFD', 'icon': '🏔️', 'province': 'AJK'},
-    {'name': 'Mirpur', 'code': 'MJL', 'icon': '🏛️', 'province': 'AJK'},
+    {
+      'name': 'Muzaffarabad',
+      'code': 'MFD',
+      'icon': Icons.terrain,
+      'province': 'AJK',
+    },
+    {
+      'name': 'Mirpur',
+      'code': 'MJL',
+      'icon': Icons.account_balance,
+      'province': 'AJK',
+    },
   ];
 
-  List<Map<String, String>> get _filteredCities {
+  List<Map<String, dynamic>> get _filteredCities {
     if (_searchQuery.isEmpty) {
       return _allCities;
     }
     return _allCities.where((city) {
-      return city['name']!.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          city['code']!.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          city['province']!.toLowerCase().contains(_searchQuery.toLowerCase());
+      return (city['name'] as String)
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          (city['code'] as String)
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          (city['province'] as String)
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase());
     }).toList();
   }
 
@@ -110,7 +258,7 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
       opacity: _fadeAnimation,
       child: Container(
         decoration: BoxDecoration(
-          color: colorScheme(context).surface,
+          color: TravelloTheme.paperLight,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           boxShadow: [
             BoxShadow(
@@ -120,7 +268,7 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
             ),
           ],
         ),
-        padding: EdgeInsets.all(spacingUnit(3)),
+        padding: const EdgeInsets.all(24),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -129,7 +277,7 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
               Container(
                 width: 40,
                 height: 4,
-                margin: EdgeInsets.only(bottom: spacingUnit(2)),
+                margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
                   color: colorScheme(context).outline.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(2),
@@ -138,35 +286,35 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
 
               // Header with icon
               Container(
-                padding: EdgeInsets.all(spacingUnit(2)),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      colorScheme(context).primaryContainer,
-                      colorScheme(context).secondaryContainer,
+                      TravelloTheme.primaryMainContainer,
+                      TravelloTheme.secondaryMainContainer,
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.location_on_rounded,
                       size: 48,
-                      color: colorScheme(context).primary,
+                      color: TravelloTheme.primaryMain,
                     ),
-                    SizedBox(height: spacingUnit(1)),
+                    const SizedBox(height: 8),
                     Text(
-                      '📍 Which city are you in?',
-                      style: ThemeText.title2.copyWith(
+                      'Which city are you in?',
+                      style: TravelloTheme.title2.copyWith(
                         fontWeight: FontWeight.bold,
                         color: colorScheme(context).onSurface,
                       ),
                     ),
-                    SizedBox(height: spacingUnit(0.5)),
+                    const SizedBox(height: 4),
                     Text(
                       'We\'ll show you relevant destinations and accurate travel times from your location',
-                      style: ThemeText.caption.copyWith(
+                      style: TravelloTheme.caption.copyWith(
                         color: colorScheme(context)
                             .onSurface
                             .withValues(alpha: 0.7),
@@ -177,12 +325,12 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                 ),
               ),
 
-              SizedBox(height: spacingUnit(3)),
+              const SizedBox(height: 24),
 
               // Search bar (Pakistani app standard - Bookme.pk style)
               Container(
                 decoration: BoxDecoration(
-                  color: colorScheme(context).surfaceContainerHighest,
+                  color: TravelloTheme.paperLightContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: colorScheme(context).outline.withValues(alpha: 0.2),
@@ -197,13 +345,13 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                   },
                   decoration: InputDecoration(
                     hintText: 'Search city or code...',
-                    hintStyle: ThemeText.caption.copyWith(
+                    hintStyle: TravelloTheme.caption.copyWith(
                       color:
                           colorScheme(context).onSurface.withValues(alpha: 0.5),
                     ),
-                    prefixIcon: Icon(
+                    prefixIcon: const Icon(
                       Icons.search,
-                      color: colorScheme(context).primary,
+                      color: TravelloTheme.primaryMain,
                     ),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
@@ -222,24 +370,24 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                           )
                         : null,
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: spacingUnit(2),
-                      vertical: spacingUnit(1.5),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
                   ),
                 ),
               ),
 
-              SizedBox(height: spacingUnit(2)),
+              const SizedBox(height: 16),
 
               // Results count
               if (_searchQuery.isNotEmpty)
                 Padding(
-                  padding: EdgeInsets.only(bottom: spacingUnit(1)),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
                     '${_filteredCities.length} cities found',
-                    style: ThemeText.caption.copyWith(
-                      color: colorScheme(context).primary,
+                    style: TravelloTheme.caption.copyWith(
+                      color: TravelloTheme.primaryMain,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -269,8 +417,8 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                       return InkWell(
                         onTap: () {
                           setState(() {
-                            _selectedCity = city['name'];
-                            _selectedCode = city['code'];
+                            _selectedCity = city['name'] as String;
+                            _selectedCode = city['code'] as String;
                           });
                         },
                         borderRadius: BorderRadius.circular(12),
@@ -280,7 +428,7 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                             gradient: isSelected
                                 ? LinearGradient(
                                     colors: [
-                                      colorScheme(context).primary,
+                                      TravelloTheme.primaryMain,
                                       colorScheme(context)
                                           .primary
                                           .withOpacity(0.8),
@@ -289,11 +437,11 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                                 : null,
                             color: isSelected
                                 ? null
-                                : colorScheme(context).surfaceContainerHighest,
+                                : TravelloTheme.paperLightContainerHighest,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected
-                                  ? colorScheme(context).primary
+                                  ? TravelloTheme.primaryMain
                                   : colorScheme(context)
                                       .outline
                                       .withValues(alpha: 0.2),
@@ -314,25 +462,17 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                city['icon']!,
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  shadows: isSelected
-                                      ? [
-                                          Shadow(
-                                            color:
-                                                Colors.black.withOpacity(0.2),
-                                            blurRadius: 4,
-                                          ),
-                                        ]
-                                      : null,
-                                ),
+                              Icon(
+                                city['icon'] as IconData,
+                                size: 24,
+                                color: isSelected
+                                    ? Colors.white
+                                    : TravelloTheme.primaryMain,
                               ),
-                              SizedBox(height: spacingUnit(0.5)),
+                              const SizedBox(height: 4),
                               Text(
-                                city['name']!,
-                                style: ThemeText.caption.copyWith(
+                                city['name'] as String,
+                                style: TravelloTheme.caption.copyWith(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
                                   color: isSelected
@@ -342,8 +482,8 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                                 textAlign: TextAlign.center,
                               ),
                               Text(
-                                city['code']!,
-                                style: ThemeText.caption.copyWith(
+                                city['code'] as String,
+                                style: TravelloTheme.caption.copyWith(
                                   fontSize: 10,
                                   color: isSelected
                                       ? Colors.white.withValues(alpha: 0.8)
@@ -362,7 +502,7 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                 ),
               ),
 
-              SizedBox(height: spacingUnit(3)),
+              const SizedBox(height: 24),
 
               // Continue button
               SizedBox(
@@ -380,7 +520,7 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
 
                           // Show professional confirmation message
                           Get.snackbar(
-                            '✅ Location Set',
+                            'Location Set',
                             'Showing destinations from $_selectedCity',
                             backgroundColor: Colors.green.shade600,
                             colorText: Colors.white,
@@ -403,14 +543,14 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(Icons.check_circle_outline),
-                      SizedBox(width: spacingUnit(1)),
-                      const Text('CONTINUE', style: ThemeText.subtitle),
+                      const SizedBox(width: 8),
+                      const Text('CONTINUE', style: TravelloTheme.subtitle),
                     ],
                   ),
                 ),
               ),
 
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
 
               // Skip button with default fallback
               TextButton(
@@ -420,7 +560,7 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                       'Karachi', 'KHI');
 
                   Get.snackbar(
-                    'ℹ️ Default Location',
+                    'Default Location',
                     'Using Karachi as your location',
                     backgroundColor: Colors.blue.shade600,
                     colorText: Colors.white,
@@ -438,7 +578,7 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                 },
                 child: Text(
                   'Skip (Use Karachi as default)',
-                  style: ThemeText.caption.copyWith(
+                  style: TravelloTheme.caption.copyWith(
                     color:
                         colorScheme(context).onSurface.withValues(alpha: 0.6),
                     decoration: TextDecoration.underline,
@@ -446,13 +586,13 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                 ),
               ),
 
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
 
               // Info text
               Container(
-                padding: EdgeInsets.all(spacingUnit(1.5)),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: colorScheme(context).surfaceContainerHighest,
+                  color: TravelloTheme.paperLightContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -463,11 +603,11 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                       color:
                           colorScheme(context).onSurface.withValues(alpha: 0.6),
                     ),
-                    SizedBox(width: spacingUnit(1)),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'You can change this anytime from Settings',
-                        style: ThemeText.caption.copyWith(
+                        style: TravelloTheme.caption.copyWith(
                           fontSize: 11,
                           color: colorScheme(context)
                               .onSurface

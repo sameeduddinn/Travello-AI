@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class AppInputBox extends StatelessWidget {
   const AppInputBox({super.key, required this.content});
@@ -18,7 +17,7 @@ class AppInputBox extends StatelessWidget {
         )
       ),
       child: Padding(
-        padding: EdgeInsets.all(spacingUnit(1)),
+        padding: const EdgeInsets.all(8),
         child: content,
       ),
     );

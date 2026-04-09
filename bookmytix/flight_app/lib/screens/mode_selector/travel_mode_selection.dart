@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TravelModeSelection extends StatelessWidget {
   const TravelModeSelection({super.key});
@@ -19,36 +17,36 @@ class TravelModeSelection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              colorScheme(context).primary,
-              colorScheme(context).secondary,
+              TravelloTheme.primaryMain,
+              TravelloTheme.secondaryMain,
             ],
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: EdgeInsets.all(spacingUnit(3)),
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Title
                 Text(
                   'Choose Your Travel Mode',
-                  style: ThemeText.title.copyWith(
+                  style: TravelloTheme.title.copyWith(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 Text(
                   'Select how you prefer to travel',
-                  style: ThemeText.subtitle.copyWith(
+                  style: TravelloTheme.subtitle.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),
                   ),
                   textAlign: TextAlign.center,
@@ -64,7 +62,7 @@ class TravelModeSelection extends StatelessWidget {
                   onTap: () => _selectMode('airline'),
                 ),
 
-                SizedBox(height: spacingUnit(3)),
+                const SizedBox(height: 24),
 
                 // Railway Mode Card
                 _ModeCard(
@@ -75,11 +73,11 @@ class TravelModeSelection extends StatelessWidget {
                   onTap: () => _selectMode('railway'),
                 ),
 
-                SizedBox(height: spacingUnit(4)),
+                const SizedBox(height: 32),
 
                 // Info Text
                 Container(
-                  padding: EdgeInsets.all(spacingUnit(2)),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -87,11 +85,11 @@ class TravelModeSelection extends StatelessWidget {
                   child: Row(
                     children: [
                       const Icon(Icons.info_outline, color: Colors.white, size: 20),
-                      SizedBox(width: spacingUnit(1)),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'You can switch modes anytime from settings',
-                          style: ThemeText.caption.copyWith(
+                          style: TravelloTheme.caption.copyWith(
                             color: Colors.white,
                             fontSize: 12,
                           ),
@@ -130,7 +128,7 @@ class _ModeCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(3)),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -149,7 +147,7 @@ class _ModeCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(spacingUnit(2)),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(16),
@@ -160,23 +158,23 @@ class _ModeCard extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-            SizedBox(width: spacingUnit(2)),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: ThemeText.title.copyWith(
+                    style: TravelloTheme.title.copyWith(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: spacingUnit(0.5)),
+                  const SizedBox(height: 4),
                   Text(
                     description,
-                    style: ThemeText.subtitle.copyWith(
+                    style: TravelloTheme.subtitle.copyWith(
                       color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14,
                     ),

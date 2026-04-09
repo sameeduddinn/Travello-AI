@@ -1,7 +1,5 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class AppInputNumber extends StatefulWidget {
   const AppInputNumber({
@@ -45,19 +43,19 @@ class _AppInputNumberState extends State<AppInputNumber> {
     return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
       IconButton(
         onPressed: widget.onRemove ?? onRemove,
-        icon: Icon(Icons.remove_circle_outline, color: ThemePalette.primaryMain,),
+        icon: const Icon(Icons.remove_circle_outline, color: TravelloTheme.primaryMain,),
       ),
       Padding(
-        padding: EdgeInsets.symmetric(vertical: spacingUnit(1), horizontal: 4),
-        child: Text(widget.value != null ? widget.value.toString() : _localValue.toString(), style: ThemeText.paragraph.copyWith(fontWeight: FontWeight.bold),),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Text(widget.value != null ? widget.value.toString() : _localValue.toString(), style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold),),
       ),
       Padding(
-        padding: EdgeInsets.symmetric(vertical: spacingUnit(1)),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: widget.unit != null ? Text(widget.unit!) : Container(),
       ),
       IconButton(
         onPressed: widget.onAdd ?? onAdd,
-        icon: Icon(Icons.add_circle_outline, color: ThemePalette.primaryMain,),
+        icon: const Icon(Icons.add_circle_outline, color: TravelloTheme.primaryMain,),
       ),
     ]);
   }

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 enum AlertType { error, warning, success, info }
 
@@ -44,15 +42,15 @@ class AlertInfo extends StatelessWidget {
     }
     
     return Container(
-      padding: EdgeInsets.all(spacingUnit(1)),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         borderRadius: ThemeRadius.small,
         color: statusColor(type).withValues(alpha: 0.25)
       ),
       child: Row(children: [
         statusIcon(type),
-        SizedBox(width: spacingUnit(1)),
-        Expanded(child: Text(text, style: ThemeText.paragraph))
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, style: TravelloTheme.paragraph))
       ]),
     );
   }

@@ -1,10 +1,7 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flight_app/utils/shimmer_preloader.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class RewardCard extends StatelessWidget {
   const RewardCard({
@@ -27,14 +24,14 @@ class RewardCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: ThemeRadius.medium,
-        color: colorScheme(context).primaryContainer
+        color: TravelloTheme.primaryMainContainer
       ),
       child: Column(
         children: [
           Expanded(
             child: PaperCard(
               content: Padding(
-                padding: EdgeInsets.all(spacingUnit(1)),
+                padding: const EdgeInsets.all(8),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   SizedBox(
                     height: 100,
@@ -53,7 +50,7 @@ class RewardCard extends StatelessWidget {
                         },
                     )),
                   ),
-                  SizedBox(height: spacingUnit(1)),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       CircleAvatar(
@@ -61,11 +58,11 @@ class RewardCard extends StatelessWidget {
                         backgroundImage: NetworkImage(logo),
                       ),
                       const SizedBox(width: 4),
-                      Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: ThemeText.subtitle2),
+                      Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TravelloTheme.subtitle2),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: ThemeText.paragraph)
+                  Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: TravelloTheme.paragraph)
                 ]),
               )
             ),
@@ -75,7 +72,7 @@ class RewardCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('$point Point', style: ThemeText.paragraph.copyWith(color: colorScheme(context).onPrimaryContainer, fontWeight: FontWeight.bold)),
+              Text('$point Point', style: TravelloTheme.paragraph.copyWith(color: colorScheme(context).onPrimaryContainer, fontWeight: FontWeight.bold)),
               Icon(Icons.arrow_circle_right_outlined, color: colorScheme(context).onPrimaryContainer, size: 16)
             ]),
           )

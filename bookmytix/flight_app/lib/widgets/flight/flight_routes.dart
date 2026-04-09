@@ -1,10 +1,8 @@
 import 'package:flight_app/models/flight_route.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/cards/flight_route_card.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightRoutes extends StatelessWidget {
   const FlightRoutes({
@@ -23,17 +21,17 @@ class FlightRoutes extends StatelessWidget {
     const double itemHeight = 52;
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const VSpaceShort(),
-          Text(title, style: ThemeText.subtitle2),
+          Text(title, style: TravelloTheme.subtitle2),
           if (dateLabel != null)
             Text(dateLabel!,
-                style: ThemeText.caption
+                style: TravelloTheme.caption
                     .copyWith(color: colorScheme(context).onSurfaceVariant)),
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
           Stack(
             alignment: Alignment.centerLeft,
             children: [

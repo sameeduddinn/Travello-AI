@@ -2,12 +2,10 @@
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/booking/flight_seat_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Cabin class baggage policy
@@ -524,13 +522,13 @@ class _BookingFacilitesState extends State<BookingFacilites> {
           Container(height: 1, color: const Color(0xFFE0E0E0)), // Light divider
           Expanded(
             child: ListView(
-              padding: EdgeInsets.all(spacingUnit(2)),
+              padding: const EdgeInsets.all(16),
               children: [
                 // ── Departure Section ──
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Departure', style: ThemeText.sectionHeading),
+                    Text('Departure', style: TravelloTheme.sectionHeading),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
@@ -541,21 +539,21 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                       ),
                       child: Text(
                         'Non-Stop - Duration: ${_isRoundTrip ? _outboundFlight!.duration : _flight.duration}',
-                        style: ThemeText.durationBadge,
+                        style: TravelloTheme.durationBadge,
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: spacingUnit(1.2)),
+                const SizedBox(height: 9.6),
                 _buildFlightCard(context),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 // Return flight card for round trips
                 if (_isRoundTrip && _returnFlight != null) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Return', style: ThemeText.sectionHeading),
+                      Text('Return', style: TravelloTheme.sectionHeading),
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
@@ -566,34 +564,34 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         ),
                         child: Text(
                           'Non-Stop - Duration: ${_returnFlight!.duration}',
-                          style: ThemeText.durationBadge,
+                          style: TravelloTheme.durationBadge,
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: spacingUnit(1.2)),
+                  const SizedBox(height: 9.6),
                   _buildReturnFlightCard(context),
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                 ],
                 _buildBaggagePolicyBanner(context),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
                 _buildPassengerBaggageSection(context),
                 if (_isRoundTrip && _returnFlight != null) ...[
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                   _buildReturnBaggageSection(context),
                 ],
-                SizedBox(height: spacingUnit(3)),
+                const SizedBox(height: 24),
 
                 // ── Seat Selection Section ──
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
+                    const Row(
                       children: [
                         Icon(Icons.airline_seat_recline_normal,
-                            color: colorScheme(context).primary, size: 22),
-                        SizedBox(width: spacingUnit(1)),
-                        const Text(
+                            color: TravelloTheme.primaryMain, size: 22),
+                        SizedBox(width: 8),
+                        Text(
                           'Select Your Seats',
                           style: TextStyle(
                               fontSize: 19,
@@ -625,11 +623,11 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                       ),
                   ],
                 ),
-                SizedBox(height: spacingUnit(1.5)),
+                const SizedBox(height: 12),
 
                 // Optional info banner
                 Container(
-                  padding: EdgeInsets.all(spacingUnit(1.5)),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(10),
@@ -640,7 +638,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                     children: [
                       Icon(Icons.info_outline,
                           color: Colors.blue.shade700, size: 18),
-                      SizedBox(width: spacingUnit(1)),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Seat selection is optional. If not selected, seats will be assigned during check-in. '
@@ -655,7 +653,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                     ],
                   ),
                 ),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
 
                 FlightSeatPicker(
                   key: ValueKey('journey_$_currentJourneyIndex'),
@@ -679,7 +677,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 if (_isRoundTrip &&
                     _currentJourneyIndex == 0 &&
                     _areAllSeatsSelected()) ...[
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                   DSButton(
                     label: 'NEXT: SELECT RETURN SEATS',
                     trailingIcon: Icons.arrow_forward_rounded,
@@ -694,7 +692,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
 
                 // Back to outbound button (when on return journey)
                 if (_isRoundTrip && _currentJourneyIndex == 1) ...[
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                   DSButton(
                     label: 'BACK TO OUTBOUND SEATS',
                     leadingIcon: Icons.arrow_back_rounded,
@@ -707,9 +705,9 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                   ),
                 ],
 
-                SizedBox(height: spacingUnit(3)),
+                const SizedBox(height: 24),
                 _buildTransferSection(context),
-                SizedBox(height: spacingUnit(10)),
+                const SizedBox(height: 80),
               ],
             ),
           ),
@@ -724,7 +722,6 @@ class _BookingFacilitesState extends State<BookingFacilites> {
   //  Industry standard: 3-option selector per Expedia/Wego/AirBlue
   // ─────────────────────────────────────────────
   Widget _buildReturnBaggageSection(BuildContext context) {
-    final scheme = colorScheme(context);
     final policy = _policy();
     final freeKg = (policy['checkedKg'] as int).toDouble();
 
@@ -734,8 +731,9 @@ class _BookingFacilitesState extends State<BookingFacilites> {
         // ── Section header ──
         Row(
           children: [
-            Icon(Icons.luggage, color: scheme.primary, size: 22),
-            SizedBox(width: spacingUnit(1)),
+            const Icon(Icons.luggage,
+                color: TravelloTheme.primaryMain, size: 22),
+            const SizedBox(width: 8),
             const Text(
               'Return Flight Baggage',
               style: TextStyle(
@@ -745,7 +743,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 letterSpacing: 0.3,
               ),
             ),
-            SizedBox(width: spacingUnit(1)),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
@@ -762,26 +760,28 @@ class _BookingFacilitesState extends State<BookingFacilites> {
             ),
           ],
         ),
-        SizedBox(height: spacingUnit(1.5)),
+        const SizedBox(height: 12),
 
         // ── AI Smart Tip ──
         Container(
-          padding: EdgeInsets.all(spacingUnit(1.5)),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                scheme.primary.withValues(alpha: 0.08),
-                scheme.primary.withValues(alpha: 0.03),
+                TravelloTheme.primaryMain.withValues(alpha: 0.08),
+                TravelloTheme.primaryMain.withValues(alpha: 0.03),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: scheme.primary.withValues(alpha: 0.2)),
+            border: Border.all(
+                color: TravelloTheme.primaryMain.withValues(alpha: 0.2)),
           ),
-          child: Row(
+          child: const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('✈️', style: TextStyle(fontSize: 18)),
-              SizedBox(width: spacingUnit(1)),
+              Icon(Icons.flight_takeoff,
+                  size: 18, color: TravelloTheme.primaryMain),
+              SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -791,11 +791,11 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: scheme.primary,
+                        color: TravelloTheme.primaryMain,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    const Text(
+                    SizedBox(height: 3),
+                    Text(
                       'Bought something on your trip? You can add or upgrade baggage anytime from My Bookings — even a few hours before your flight.',
                       style: TextStyle(
                         fontSize: 12,
@@ -809,7 +809,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
             ],
           ),
         ),
-        SizedBox(height: spacingUnit(1.5)),
+        const SizedBox(height: 12),
 
         // ── 3-option selector ──
         Container(
@@ -851,7 +851,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 title: 'Decide later',
                 subtitle: 'Add via My Bookings · Available until 24 hrs before',
                 badge: 'Recommended',
-                badgeColor: scheme.primary,
+                badgeColor: TravelloTheme.primaryMain,
               ),
             ],
           ),
@@ -859,7 +859,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
 
         // ── Custom return bags (shown only when mode = custom) ──
         if (_returnBaggageMode == 'custom') ...[
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
           ...List.generate(
             _passengers.length,
             (i) => _buildReturnPassengerBaggageCard(context, i, freeKg),
@@ -868,9 +868,9 @@ class _BookingFacilitesState extends State<BookingFacilites> {
 
         // ── "later" info banner ──
         if (_returnBaggageMode == 'later') ...[
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Container(
-            padding: EdgeInsets.all(spacingUnit(1.5)),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.blue.shade50,
               borderRadius: BorderRadius.circular(10),
@@ -879,7 +879,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
             child: Row(
               children: [
                 Icon(Icons.info_outline, color: Colors.blue.shade700, size: 18),
-                SizedBox(width: spacingUnit(1)),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'No extra baggage fee now. Go to My Bookings → Manage Booking to add baggage before your return flight.',
@@ -904,18 +904,16 @@ class _BookingFacilitesState extends State<BookingFacilites> {
     required String? badge,
     required Color? badgeColor,
   }) {
-    final scheme = colorScheme(context);
     final selected = _returnBaggageMode == value;
     return InkWell(
       onTap: () => setState(() => _returnBaggageMode = value),
       borderRadius: BorderRadius.circular(14),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: EdgeInsets.symmetric(
-            horizontal: spacingUnit(2), vertical: spacingUnit(1.5)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: selected
-              ? scheme.primary.withValues(alpha: 0.06)
+              ? TravelloTheme.primaryMain.withValues(alpha: 0.06)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
         ),
@@ -929,11 +927,13 @@ class _BookingFacilitesState extends State<BookingFacilites> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: selected ? scheme.primary : Colors.grey.shade400,
+                  color: selected
+                      ? TravelloTheme.primaryMain
+                      : Colors.grey.shade400,
                   width: selected ? 2 : 1.5,
                 ),
                 color: selected
-                    ? scheme.primary.withValues(alpha: 0.1)
+                    ? TravelloTheme.primaryMain.withValues(alpha: 0.1)
                     : Colors.transparent,
               ),
               child: selected
@@ -941,28 +941,30 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                       child: Container(
                         width: 10,
                         height: 10,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: scheme.primary,
+                          color: TravelloTheme.primaryMain,
                         ),
                       ),
                     )
                   : null,
             ),
-            SizedBox(width: spacingUnit(1.5)),
+            const SizedBox(width: 12),
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: selected
-                    ? scheme.primary.withValues(alpha: 0.1)
+                    ? TravelloTheme.primaryMain.withValues(alpha: 0.1)
                     : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon,
                   size: 18,
-                  color: selected ? scheme.primary : Colors.grey.shade600),
+                  color: selected
+                      ? TravelloTheme.primaryMain
+                      : Colors.grey.shade600),
             ),
-            SizedBox(width: spacingUnit(1.2)),
+            const SizedBox(width: 9.6),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -974,7 +976,9 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: selected ? scheme.primary : Colors.black87,
+                          color: selected
+                              ? TravelloTheme.primaryMain
+                              : Colors.black87,
                         ),
                       ),
                       if (badge != null) ...[
@@ -1014,7 +1018,6 @@ class _BookingFacilitesState extends State<BookingFacilites> {
 
   Widget _buildReturnPassengerBaggageCard(
       BuildContext context, int i, double freeKg) {
-    final scheme = colorScheme(context);
     final overweight = _returnPassengerOverweight(i);
     final hasOverweight = overweight > 0;
     final extraCharge = overweight * _overweightRatePerKg;
@@ -1022,9 +1025,9 @@ class _BookingFacilitesState extends State<BookingFacilites> {
         .fold<double>(0, (s, c) => s + (double.tryParse(c.text) ?? 0));
 
     return Container(
-      margin: EdgeInsets.only(bottom: spacingUnit(1.5)),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: scheme.surface,
+        color: TravelloTheme.paperLight,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: hasOverweight ? Colors.red.shade300 : Colors.grey.shade200,
@@ -1036,14 +1039,14 @@ class _BookingFacilitesState extends State<BookingFacilites> {
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(spacingUnit(0.8)),
+                  padding: const EdgeInsets.all(6.4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE0E0E0),
                     borderRadius: BorderRadius.circular(8),
@@ -1051,7 +1054,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                   child: const Icon(Icons.person_outline,
                       color: Color(0xFFB3B3B3), size: 18),
                 ),
-                SizedBox(width: spacingUnit(1.2)),
+                const SizedBox(width: 9.6),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1071,7 +1074,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                   decoration: BoxDecoration(
                     color: hasOverweight
                         ? Colors.red.shade50
-                        : scheme.primary.withValues(alpha: 0.08),
+                        : TravelloTheme.primaryMain.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -1079,21 +1082,22 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color:
-                          hasOverweight ? Colors.red.shade700 : scheme.primary,
+                      color: hasOverweight
+                          ? Colors.red.shade700
+                          : TravelloTheme.primaryMain,
                     ),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
             Container(height: 1, color: const Color(0xFFE0E0E0)),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
             Row(
               children: [
                 const Icon(Icons.check_circle_outline,
                     color: Color(0xFFD4AF37), size: 16),
-                SizedBox(width: spacingUnit(0.8)),
+                const SizedBox(width: 6.4),
                 Text(
                   'Free allowance: ${freeKg.toStringAsFixed(0)} kg',
                   style: const TextStyle(
@@ -1104,35 +1108,36 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 ),
               ],
             ),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
             const Text('Bags',
                 style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87)),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             ...List.generate(_returnPassengerBags[i].length, (bagIdx) {
               final ctrl = _returnPassengerBags[i][bagIdx];
               return Padding(
-                padding: EdgeInsets.only(bottom: spacingUnit(1)),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(spacingUnit(0.7)),
+                      padding: const EdgeInsets.all(5.6),
                       decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.08),
+                        color:
+                            TravelloTheme.primaryMain.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.luggage_outlined,
-                          color: scheme.primary, size: 18),
+                      child: const Icon(Icons.luggage_outlined,
+                          color: TravelloTheme.primaryMain, size: 18),
                     ),
-                    SizedBox(width: spacingUnit(1)),
+                    const SizedBox(width: 8),
                     Text('Bag ${bagIdx + 1}',
                         style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: Colors.black87)),
-                    SizedBox(width: spacingUnit(1.5)),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: SizedBox(
                         height: 38,
@@ -1154,8 +1159,9 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                                     BorderSide(color: Colors.grey.shade300)),
                             focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                    color: scheme.primary, width: 1.5)),
+                                borderSide: const BorderSide(
+                                    color: TravelloTheme.primaryMain,
+                                    width: 1.5)),
                             enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide:
@@ -1164,7 +1170,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         ),
                       ),
                     ),
-                    SizedBox(width: spacingUnit(0.8)),
+                    const SizedBox(width: 6.4),
                     if (_returnPassengerBags[i].length > 1)
                       GestureDetector(
                         onTap: () => setState(() {
@@ -1172,7 +1178,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                           _returnPassengerBags[i].removeAt(bagIdx);
                         }),
                         child: Container(
-                          padding: EdgeInsets.all(spacingUnit(0.6)),
+                          padding: const EdgeInsets.all(4.8),
                           decoration: BoxDecoration(
                             color: Colors.red.shade50,
                             borderRadius: BorderRadius.circular(6),
@@ -1182,7 +1188,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         ),
                       )
                     else
-                      SizedBox(width: spacingUnit(3)),
+                      const SizedBox(width: 24),
                   ],
                 ),
               );
@@ -1191,22 +1197,22 @@ class _BookingFacilitesState extends State<BookingFacilites> {
               onPressed: () => setState(() {
                 _returnPassengerBags[i].add(TextEditingController(text: '0'));
               }),
-              icon: Icon(Icons.add_circle_outline,
-                  size: 16, color: scheme.primary),
-              label: Text('Add Bag',
+              icon: const Icon(Icons.add_circle_outline,
+                  size: 16, color: TravelloTheme.primaryMain),
+              label: const Text('Add Bag',
                   style: TextStyle(
                       fontSize: 12,
-                      color: scheme.primary,
+                      color: TravelloTheme.primaryMain,
                       fontWeight: FontWeight.w600)),
               style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap),
             ),
             if (hasOverweight) ...[
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
               Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: spacingUnit(1.5), vertical: spacingUnit(0.8)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6.4),
                 decoration: BoxDecoration(
                   color: Colors.red.shade50,
                   borderRadius: BorderRadius.circular(8),
@@ -1216,7 +1222,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                   children: [
                     Icon(Icons.warning_amber_rounded,
                         color: Colors.red.shade600, size: 16),
-                    SizedBox(width: spacingUnit(0.8)),
+                    const SizedBox(width: 6.4),
                     Expanded(
                       child: Text(
                         'Overweight: ${overweight.toStringAsFixed(0)} kg  ·  '
@@ -1261,12 +1267,12 @@ class _BookingFacilitesState extends State<BookingFacilites> {
         children: [
           // ── Header ──
           Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(2),
-              vertical: spacingUnit(1.5),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
             ),
             decoration: BoxDecoration(
-              color: colorScheme(context).primary.withOpacity(0.08),
+              color: TravelloTheme.primaryMain.withOpacity(0.08),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(12)),
             ),
@@ -1275,14 +1281,14 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme(context).primary,
+                    color: TravelloTheme.primaryMain,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.directions_car_rounded,
                       color: Colors.white, size: 20),
                 ),
-                SizedBox(width: spacingUnit(1.5)),
-                Expanded(
+                const SizedBox(width: 12),
+                const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1291,10 +1297,10 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: colorScheme(context).primary,
+                          color: TravelloTheme.primaryMain,
                         ),
                       ),
-                      const Text(
+                      Text(
                         'Pickup or drop-off at your doorstep',
                         style: TextStyle(
                           fontSize: 12,
@@ -1317,12 +1323,12 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                     decoration: BoxDecoration(
                       color: _transferAdded
                           ? Colors.red.shade50
-                          : colorScheme(context).primary,
+                          : TravelloTheme.primaryMain,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: _transferAdded
                             ? Colors.red.shade300
-                            : colorScheme(context).primary,
+                            : TravelloTheme.primaryMain,
                       ),
                     ),
                     child: Text(
@@ -1346,12 +1352,12 @@ class _BookingFacilitesState extends State<BookingFacilites> {
             crossFadeState: _transferAdded
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
-            firstChild: Padding(
+            firstChild: const Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(2),
-                vertical: spacingUnit(1.2),
+                horizontal: 16,
+                vertical: 9.6,
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.info_outline_rounded,
                       size: 14, color: Color(0xFF999999)),
@@ -1364,7 +1370,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
               ),
             ),
             secondChild: Padding(
-              padding: EdgeInsets.all(spacingUnit(2)),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1377,7 +1383,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                       color: Color(0xFF333333),
                     ),
                   ),
-                  SizedBox(height: spacingUnit(1)),
+                  const SizedBox(height: 8),
                   Row(
                     children: vehicles.map((v) {
                       final selected = _transferVehicleType == v['type'];
@@ -1388,22 +1394,20 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
                             margin: EdgeInsets.only(
-                              right: v['type'] != 'Van' ? spacingUnit(1) : 0,
+                              right: v['type'] != 'Van' ? 8 : 0,
                             ),
-                            padding: EdgeInsets.symmetric(
-                              vertical: spacingUnit(1.2),
-                              horizontal: spacingUnit(0.5),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 9.6,
+                              horizontal: 4,
                             ),
                             decoration: BoxDecoration(
                               color: selected
-                                  ? colorScheme(context)
-                                      .primary
-                                      .withOpacity(0.1)
+                                  ? TravelloTheme.primaryMain.withOpacity(0.1)
                                   : const Color(0xFFF5F5F5),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
                                 color: selected
-                                    ? colorScheme(context).primary
+                                    ? TravelloTheme.primaryMain
                                     : const Color(0xFFE0E0E0),
                                 width: selected ? 2 : 1,
                               ),
@@ -1416,7 +1420,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                                       : Icons.directions_car_filled_rounded,
                                   size: 22,
                                   color: selected
-                                      ? colorScheme(context).primary
+                                      ? TravelloTheme.primaryMain
                                       : const Color(0xFF888888),
                                 ),
                                 const SizedBox(height: 4),
@@ -1426,7 +1430,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: selected
-                                        ? colorScheme(context).primary
+                                        ? TravelloTheme.primaryMain
                                         : const Color(0xFF444444),
                                   ),
                                 ),
@@ -1446,7 +1450,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
                                     color: selected
-                                        ? colorScheme(context).primary
+                                        ? TravelloTheme.primaryMain
                                         : const Color(0xFF444444),
                                   ),
                                 ),
@@ -1458,7 +1462,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                     }).toList(),
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // ── Pickup location ──
                   const Text(
@@ -1469,7 +1473,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                       color: Color(0xFF333333),
                     ),
                   ),
-                  SizedBox(height: spacingUnit(0.8)),
+                  const SizedBox(height: 6.4),
                   TextField(
                     controller: _transferPickupCtrl,
                     decoration: InputDecoration(
@@ -1478,8 +1482,8 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         fontSize: 13,
                         color: Color(0xFFAAAAAA),
                       ),
-                      prefixIcon: Icon(Icons.location_on_outlined,
-                          color: colorScheme(context).primary, size: 20),
+                      prefixIcon: const Icon(Icons.location_on_outlined,
+                          color: TravelloTheme.primaryMain, size: 20),
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 12),
                       border: OutlineInputBorder(
@@ -1492,8 +1496,8 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                            color: colorScheme(context).primary, width: 1.5),
+                        borderSide: const BorderSide(
+                            color: TravelloTheme.primaryMain, width: 1.5),
                       ),
                       filled: true,
                       fillColor: const Color(0xFFFAFAFA),
@@ -1503,13 +1507,13 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         const TextStyle(fontSize: 13, color: Color(0xFF222222)),
                   ),
 
-                  SizedBox(height: spacingUnit(1.5)),
+                  const SizedBox(height: 12),
 
                   // ── Info banner ──
                   Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: spacingUnit(1.5),
-                      vertical: spacingUnit(1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF0F9F0),
@@ -1547,7 +1551,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
   // ─────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: colorScheme(context).primary,
+      backgroundColor: TravelloTheme.primaryMain,
       elevation: 0,
       centerTitle: true,
       leading: IconButton(
@@ -1653,12 +1657,11 @@ class _BookingFacilitesState extends State<BookingFacilites> {
   //  FLIGHT INFO CARD
   // ─────────────────────────────────────────────
   Widget _buildFlightCard(BuildContext context) {
-    final scheme = colorScheme(context);
     final cabinColor = _policy()['color'] as Color;
     return Container(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: scheme.surface,
+        color: TravelloTheme.paperLight,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE0E0E0)), // Light divider
         boxShadow: [
@@ -1672,34 +1675,34 @@ class _BookingFacilitesState extends State<BookingFacilites> {
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(spacingUnit(1.2)),
+            padding: const EdgeInsets.all(9.6),
             decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.1),
+              color: TravelloTheme.primaryMain.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.flight, color: scheme.primary, size: 22),
+            child: const Icon(Icons.flight,
+                color: TravelloTheme.primaryMain, size: 22),
           ),
-          SizedBox(width: spacingUnit(1.5)),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   _flight.airlineName,
-                  style:
-                      ThemeText.subtitle.copyWith(fontWeight: FontWeight.bold),
+                  style: TravelloTheme.subtitle
+                      .copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
                   '${_flight.airlineCode}  ·  ${_flight.departureTime} → ${_flight.arrivalTime}',
-                  style: ThemeText.caption
+                  style: TravelloTheme.caption
                       .copyWith(color: const Color(0xFFB3B3B3)),
                 ),
               ],
             ),
           ),
           Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(1.5), vertical: spacingUnit(0.5)),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: cabinColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
@@ -1722,14 +1725,13 @@ class _BookingFacilitesState extends State<BookingFacilites> {
   Widget _buildReturnFlightCard(BuildContext context) {
     if (_returnFlight == null) return const SizedBox.shrink();
 
-    final scheme = colorScheme(context);
     final cabinColor = (_cabinPolicy[_returnFlight!.cabinClass] ??
         _cabinPolicy['Economy'])!['color'] as Color;
 
     return Container(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: scheme.surface,
+        color: TravelloTheme.paperLight,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE0E0E0)), // Light divider
         boxShadow: [
@@ -1743,34 +1745,34 @@ class _BookingFacilitesState extends State<BookingFacilites> {
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(spacingUnit(1.2)),
+            padding: const EdgeInsets.all(9.6),
             decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.1),
+              color: TravelloTheme.primaryMain.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.flight, color: scheme.primary, size: 22),
+            child: const Icon(Icons.flight,
+                color: TravelloTheme.primaryMain, size: 22),
           ),
-          SizedBox(width: spacingUnit(1.5)),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   _returnFlight!.airlineName,
-                  style:
-                      ThemeText.subtitle.copyWith(fontWeight: FontWeight.bold),
+                  style: TravelloTheme.subtitle
+                      .copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
                   '${_returnFlight!.airlineCode}  ·  ${_returnFlight!.departureTime} → ${_returnFlight!.arrivalTime}',
-                  style: ThemeText.caption
+                  style: TravelloTheme.caption
                       .copyWith(color: const Color(0xFFB3B3B3)),
                 ),
               ],
             ),
           ),
           Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(1.5), vertical: spacingUnit(0.5)),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: cabinColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
@@ -1797,7 +1799,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
     final policy = _policy();
     final cabinColor = policy['color'] as Color;
     return Container(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -1816,7 +1818,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
           Row(
             children: [
               Icon(Icons.info_outline, color: cabinColor, size: 17),
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               Text(
                 'Free Baggage Allowance  ·  ${_resolvedCabin()}',
                 style: TextStyle(
@@ -1827,7 +1829,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
               ),
             ],
           ),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Row(
             children: [
               _policyChip(
@@ -1836,7 +1838,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 value: policy['carryOn'].toString(),
                 color: cabinColor,
               ),
-              SizedBox(width: spacingUnit(1.5)),
+              const SizedBox(width: 12),
               _policyChip(
                 icon: Icons.luggage_outlined,
                 label: 'Checked',
@@ -1845,9 +1847,9 @@ class _BookingFacilitesState extends State<BookingFacilites> {
               ),
             ],
           ),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Container(
-            padding: EdgeInsets.all(spacingUnit(1.2)),
+            padding: const EdgeInsets.all(9.6),
             decoration: BoxDecoration(
               color: Colors.amber.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
@@ -1858,7 +1860,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
               children: [
                 const Icon(Icons.warning_amber_outlined,
                     color: Colors.amber, size: 15),
-                SizedBox(width: spacingUnit(0.8)),
+                const SizedBox(width: 6.4),
                 Expanded(
                   child: Text(
                     'Airport overweight charges can be very high. '
@@ -1884,7 +1886,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
   }) {
     return Expanded(
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(1.2)),
+        padding: const EdgeInsets.all(9.6),
         decoration: BoxDecoration(
           color: const Color(0xFFF5F5F5), // Light card
           borderRadius: BorderRadius.circular(10),
@@ -1893,7 +1895,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
         child: Row(
           children: [
             Icon(icon, color: color, size: 18),
-            SizedBox(width: spacingUnit(0.8)),
+            const SizedBox(width: 6.4),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1917,21 +1919,22 @@ class _BookingFacilitesState extends State<BookingFacilites> {
   //  PER-PASSENGER BAGGAGE SECTION
   // ─────────────────────────────────────────────
   Widget _buildPassengerBaggageSection(BuildContext context) {
-    final scheme = colorScheme(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(Icons.luggage, color: scheme.primary, size: 22),
-            SizedBox(width: spacingUnit(1)),
+            const Icon(Icons.luggage,
+                color: TravelloTheme.primaryMain, size: 22),
+            const SizedBox(width: 8),
             Text(
               'Baggage Detail',
-              style: ThemeText.subtitle.copyWith(fontWeight: FontWeight.bold),
+              style:
+                  TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.bold),
             ),
           ],
         ),
-        SizedBox(height: spacingUnit(1.5)),
+        const SizedBox(height: 12),
         ...List.generate(
             _passengers.length, (i) => _buildPassengerBaggageCard(context, i)),
       ],
@@ -1939,7 +1942,6 @@ class _BookingFacilitesState extends State<BookingFacilites> {
   }
 
   Widget _buildPassengerBaggageCard(BuildContext context, int i) {
-    final scheme = colorScheme(context);
     final policy = _policy();
     final freeKg = (policy['checkedKg'] as int).toDouble();
     final overweight = _passengerOverweight(i);
@@ -1949,9 +1951,9 @@ class _BookingFacilitesState extends State<BookingFacilites> {
         .fold<double>(0, (s, c) => s + (double.tryParse(c.text) ?? 0));
 
     return Container(
-      margin: EdgeInsets.only(bottom: spacingUnit(1.5)),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: scheme.surface,
+        color: TravelloTheme.paperLight,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: hasOverweight ? Colors.red.shade300 : Colors.grey.shade200,
@@ -1966,7 +1968,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1974,7 +1976,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(spacingUnit(0.8)),
+                  padding: const EdgeInsets.all(6.4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE0E0E0), // Light container
                     borderRadius: BorderRadius.circular(8),
@@ -1982,30 +1984,30 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                   child: const Icon(Icons.person_outline,
                       color: Color(0xFFB3B3B3), size: 18),
                 ),
-                SizedBox(width: spacingUnit(1.2)),
+                const SizedBox(width: 9.6),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         _passengerName(i),
-                        style: ThemeText.subtitle.copyWith(
+                        style: TravelloTheme.subtitle.copyWith(
                             fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                       Text('Passenger ${i + 1}',
-                          style: ThemeText.caption
+                          style: TravelloTheme.caption
                               .copyWith(color: const Color(0xFFB3B3B3))),
                     ],
                   ),
                 ),
                 // total kg badge
                 Container(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: spacingUnit(1.5), vertical: spacingUnit(0.5)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: hasOverweight
                         ? Colors.red.shade50
-                        : scheme.primary.withValues(alpha: 0.08),
+                        : TravelloTheme.primaryMain.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -2013,24 +2015,25 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color:
-                          hasOverweight ? Colors.red.shade700 : scheme.primary,
+                      color: hasOverweight
+                          ? Colors.red.shade700
+                          : TravelloTheme.primaryMain,
                     ),
                   ),
                 ),
               ],
             ),
 
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
             Container(height: 1, color: const Color(0xFFE0E0E0)),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
 
             // ── free allowance row ──
             Row(
               children: [
                 const Icon(Icons.check_circle_outline,
                     color: Color(0xFFD4AF37), size: 16),
-                SizedBox(width: spacingUnit(0.8)),
+                const SizedBox(width: 6.4),
                 Text(
                   'Free allowance: ${freeKg.toStringAsFixed(0)} kg',
                   style: const TextStyle(
@@ -2041,7 +2044,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 ),
               ],
             ),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
 
             // ── bag rows ──
             const Text(
@@ -2052,23 +2055,24 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 color: Colors.black87,
               ),
             ),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             ...List.generate(_passengerBags[i].length, (bagIdx) {
               final ctrl = _passengerBags[i][bagIdx];
               return Padding(
-                padding: EdgeInsets.only(bottom: spacingUnit(1)),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(spacingUnit(0.7)),
+                      padding: const EdgeInsets.all(5.6),
                       decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.08),
+                        color:
+                            TravelloTheme.primaryMain.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.luggage_outlined,
-                          color: scheme.primary, size: 18),
+                      child: const Icon(Icons.luggage_outlined,
+                          color: TravelloTheme.primaryMain, size: 18),
                     ),
-                    SizedBox(width: spacingUnit(1)),
+                    const SizedBox(width: 8),
                     Text(
                       'Bag ${bagIdx + 1}',
                       style: const TextStyle(
@@ -2077,7 +2081,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         color: Colors.black87,
                       ),
                     ),
-                    SizedBox(width: spacingUnit(1.5)),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: SizedBox(
                         height: 38,
@@ -2088,9 +2092,8 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                           textAlign: TextAlign.center,
                           onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: spacingUnit(1),
-                                vertical: spacingUnit(0.5)),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             suffixText: 'kg',
                             suffixStyle: const TextStyle(
                                 fontSize: 12, color: Color(0xFFB3B3B3)),
@@ -2101,8 +2104,8 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide:
-                                  BorderSide(color: scheme.primary, width: 1.5),
+                              borderSide: const BorderSide(
+                                  color: TravelloTheme.primaryMain, width: 1.5),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -2113,7 +2116,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         ),
                       ),
                     ),
-                    SizedBox(width: spacingUnit(0.8)),
+                    const SizedBox(width: 6.4),
                     if (_passengerBags[i].length > 1)
                       GestureDetector(
                         onTap: () => setState(() {
@@ -2122,7 +2125,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                           _saveBaggage();
                         }),
                         child: Container(
-                          padding: EdgeInsets.all(spacingUnit(0.6)),
+                          padding: const EdgeInsets.all(4.8),
                           decoration: BoxDecoration(
                             color: Colors.red.shade50,
                             borderRadius: BorderRadius.circular(6),
@@ -2132,7 +2135,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         ),
                       )
                     else
-                      SizedBox(width: spacingUnit(3)),
+                      const SizedBox(width: 24),
                   ],
                 ),
               );
@@ -2144,13 +2147,13 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 _passengerBags[i].add(TextEditingController(text: '0'));
                 _saveBaggage();
               }),
-              icon: Icon(Icons.add_circle_outline,
-                  size: 16, color: scheme.primary),
-              label: Text(
+              icon: const Icon(Icons.add_circle_outline,
+                  size: 16, color: TravelloTheme.primaryMain),
+              label: const Text(
                 'Add Bag',
                 style: TextStyle(
                     fontSize: 12,
-                    color: scheme.primary,
+                    color: TravelloTheme.primaryMain,
                     fontWeight: FontWeight.w600),
               ),
               style: TextButton.styleFrom(
@@ -2161,10 +2164,10 @@ class _BookingFacilitesState extends State<BookingFacilites> {
 
             // ── overweight warning ──
             if (hasOverweight) ...[
-              SizedBox(height: spacingUnit(1)),
+              const SizedBox(height: 8),
               Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: spacingUnit(1.5), vertical: spacingUnit(0.8)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6.4),
                 decoration: BoxDecoration(
                   color: Colors.red.shade50,
                   borderRadius: BorderRadius.circular(8),
@@ -2174,7 +2177,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                   children: [
                     Icon(Icons.warning_amber_rounded,
                         color: Colors.red.shade600, size: 16),
-                    SizedBox(width: spacingUnit(0.8)),
+                    const SizedBox(width: 6.4),
                     Expanded(
                       child: Text(
                         'Overweight: ${overweight.toStringAsFixed(0)} kg  ·  '
@@ -2214,7 +2217,6 @@ class _BookingFacilitesState extends State<BookingFacilites> {
   }
 
   Widget _buildBottomBar(BuildContext context) {
-    final scheme = colorScheme(context);
     final extraTotal = _extraBaggageTotal();
     final flightTotal = _flightTotal();
     final seatTotal = _seatTotal;
@@ -2222,7 +2224,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
 
     return Container(
       decoration: BoxDecoration(
-        color: scheme.surface,
+        color: TravelloTheme.paperLight,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.12),
@@ -2233,14 +2235,13 @@ class _BookingFacilitesState extends State<BookingFacilites> {
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(spacingUnit(2.5), spacingUnit(2),
-              spacingUnit(2.5), spacingUnit(2)),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // ── price breakdown ──
               Container(
-                padding: EdgeInsets.all(spacingUnit(1.8)),
+                padding: const EdgeInsets.all(14.4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF5F5F5), // Light surface
                   borderRadius: BorderRadius.circular(12),
@@ -2262,9 +2263,9 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                       valueColor: Colors.black87,
                     ),
                     if (extraTotal > 0) ...[
-                      Padding(
-                        padding: EdgeInsets.symmetric(vertical: spacingUnit(1)),
-                        child: const Divider(
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Divider(
                             height: 1,
                             color: Color(0xFFE0E0E0)), // Light divider
                       ),
@@ -2278,9 +2279,9 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                       ),
                     ],
                     if (seatTotal > 0) ...[
-                      Padding(
-                        padding: EdgeInsets.symmetric(vertical: spacingUnit(1)),
-                        child: const Divider(
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Divider(
                             height: 1,
                             color: Color(0xFFE0E0E0)), // Light divider
                       ),
@@ -2299,7 +2300,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 ),
               ),
 
-              SizedBox(height: spacingUnit(1.8)),
+              const SizedBox(height: 14.4),
 
               // ── grand total + continue button ──
               Row(
@@ -2321,10 +2322,10 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         const SizedBox(height: 2),
                         Text(
                           _formatPKR(grandTotal),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: scheme.primary,
+                            color: TravelloTheme.primaryMain,
                             letterSpacing: -0.5,
                           ),
                         ),
@@ -2339,7 +2340,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                       ],
                     ),
                   ),
-                  SizedBox(width: spacingUnit(2)),
+                  const SizedBox(width: 16),
                   DSButton(
                     label: 'CONTINUE',
                     trailingIcon: Icons.arrow_forward_rounded,
@@ -2367,14 +2368,14 @@ class _BookingFacilitesState extends State<BookingFacilites> {
     return Row(
       children: [
         Container(
-          padding: EdgeInsets.all(spacingUnit(0.8)),
+          padding: const EdgeInsets.all(6.4),
           decoration: BoxDecoration(
             color: Colors.grey.shade200,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 16, color: const Color(0xFFB3B3B3)),
         ),
-        SizedBox(width: spacingUnit(1.2)),
+        const SizedBox(width: 9.6),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

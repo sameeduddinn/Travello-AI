@@ -1,11 +1,11 @@
 import 'package:flight_app/constants/image_api.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/no_data.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/models/chat.dart';
 import 'package:flight_app/screens/messages/chat.dart';
 import 'package:flight_app/widgets/chat/chat_item.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ChatList extends StatelessWidget {
   const ChatList({super.key, required this.data});
@@ -17,7 +17,7 @@ class ChatList extends StatelessWidget {
     return data.isNotEmpty
         ? ListView.builder(
             itemCount: data.length,
-            padding: EdgeInsets.only(bottom: spacingUnit(3)),
+            padding: const EdgeInsets.only(bottom: 24),
             itemBuilder: ((BuildContext context, int index) {
               Chat item = data[index];
               return ChatItem(

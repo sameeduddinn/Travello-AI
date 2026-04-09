@@ -2,11 +2,10 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/screens/railway/train_results_screen.dart';
 import 'package:flight_app/models/railway_station.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
 //  PROFESSIONAL TRAIN CHECKOUT SCREEN - Green Theme
@@ -503,7 +502,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Departure', style: ThemeText.sectionHeading),
+            Text('Departure', style: TravelloTheme.sectionHeading),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -513,7 +512,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
               ),
               child: Text(
                 'Direct - Duration: ${_train.duration}',
-                style: ThemeText.durationBadge,
+                style: TravelloTheme.durationBadge,
               ),
             ),
           ],
@@ -548,7 +547,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                     Flexible(
                       child: Text(
                         '$_fromStation($_fromStationCode) - $_toStation($_toStationCode)',
-                        style: ThemeText.cardHeading,
+                        style: TravelloTheme.cardHeading,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
                       ),
@@ -865,7 +864,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Return', style: ThemeText.sectionHeading),
+            Text('Return', style: TravelloTheme.sectionHeading),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -875,7 +874,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
               ),
               child: Text(
                 'Direct - Duration: ${_returnTrain!.duration}',
-                style: ThemeText.durationBadge,
+                style: TravelloTheme.durationBadge,
               ),
             ),
           ],
@@ -905,7 +904,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                     Flexible(
                       child: Text(
                         '$_toStation($_toStationCode) - $_fromStation($_fromStationCode)',
-                        style: ThemeText.cardHeading,
+                        style: TravelloTheme.cardHeading,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
                       ),
@@ -1870,7 +1869,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
         children: [
           // Header
           Padding(
-            padding: EdgeInsets.all(spacingUnit(2.5)),
+            padding: const EdgeInsets.all(20),
             child: Row(
               children: [
                 Container(
@@ -1885,7 +1884,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                     size: 22,
                   ),
                 ),
-                SizedBox(width: spacingUnit(1.5)),
+                const SizedBox(width: 12),
                 const Text(
                   'Review Policies',
                   style: TextStyle(
@@ -1903,11 +1902,11 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
 
           // Notice section (Pakistan Railways)
           Padding(
-            padding: EdgeInsets.fromLTRB(
-              spacingUnit(2.5),
-              spacingUnit(2),
-              spacingUnit(2.5),
-              spacingUnit(1.5),
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              16,
+              20,
+              12,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1916,7 +1915,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                   children: [
                     Icon(Icons.info_outline_rounded,
                         size: 18, color: Colors.orange.shade700),
-                    SizedBox(width: spacingUnit(1)),
+                    const SizedBox(width: 8),
                     Text(
                       'Notice',
                       style: TextStyle(
@@ -1927,25 +1926,25 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                     ),
                   ],
                 ),
-                SizedBox(height: spacingUnit(1.5)),
+                const SizedBox(height: 12),
                 _buildNoticePoint(
                     'Carry valid CNIC/Passport matching your booking name at boarding'),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 _buildNoticePoint(
                     'Arrive at station 30 minutes before departure time'),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 _buildNoticePoint(
                     'No cancellation within 2 hours of departure'),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 _buildNoticePoint(
                     'Service fees (Rs. 100) and gateway fees are non-refundable'),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 _buildNoticePoint(
                     'Refunds processed in 7-14 working days to original payment method'),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 _buildNoticePoint(
                     'Check PNR status before traveling - Pakistan Railways may reschedule'),
-                SizedBox(height: spacingUnit(1)),
+                const SizedBox(height: 8),
                 _buildNoticePoint(
                     'Tickets are non-transferable and valid only for booked train/date/class'),
               ],
@@ -1956,11 +1955,11 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
 
           // Payment section
           Padding(
-            padding: EdgeInsets.fromLTRB(
-              spacingUnit(2.5),
-              spacingUnit(2),
-              spacingUnit(2.5),
-              spacingUnit(2),
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              16,
+              20,
+              16,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1969,7 +1968,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                   children: [
                     const Icon(Icons.payment_rounded,
                         size: 18, color: Color(0xFFD4AF37)),
-                    SizedBox(width: spacingUnit(1)),
+                    const SizedBox(width: 8),
                     Text(
                       'Payment',
                       style: TextStyle(
@@ -1980,7 +1979,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                     ),
                   ],
                 ),
-                SizedBox(height: spacingUnit(1.5)),
+                const SizedBox(height: 12),
                 const Text(
                   'All Debit/Credit cards powered by Visa, MasterCard are accepted.',
                   style: TextStyle(
@@ -2018,11 +2017,11 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
 
           // T&C checkbox
           Padding(
-            padding: EdgeInsets.fromLTRB(
-              spacingUnit(2.5),
-              spacingUnit(2),
-              spacingUnit(2.5),
-              spacingUnit(2.5),
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              16,
+              20,
+              20,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2063,7 +2062,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                                   size: 16, color: Colors.white)
                               : null,
                         ),
-                        SizedBox(width: spacingUnit(1.5)),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.only(top: 2),
@@ -2116,12 +2115,12 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                   ),
                 ),
                 if (_showTermsError) ...[
-                  SizedBox(height: spacingUnit(1)),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Icon(Icons.error_outline_rounded,
                           size: 16, color: Colors.red.shade600),
-                      SizedBox(width: spacingUnit(0.7)),
+                      const SizedBox(width: 5.6),
                       Text(
                         'Please accept Terms & Conditions to continue',
                         style: TextStyle(
@@ -2147,9 +2146,9 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: spacingUnit(2.5),
-            vertical: spacingUnit(2),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
           ),
           child: Row(
             children: [
@@ -2161,7 +2160,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                 ),
                 child: Icon(icon, size: 20, color: const Color(0xFFB3B3B3)),
               ),
-              SizedBox(width: spacingUnit(1.5)),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
@@ -2197,7 +2196,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
             ),
           ),
         ),
-        SizedBox(width: spacingUnit(1.5)),
+        const SizedBox(width: 12),
         Expanded(
           child: Text(
             text,
@@ -2238,11 +2237,11 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  spacingUnit(3),
-                  spacingUnit(1),
-                  spacingUnit(1),
-                  spacingUnit(2),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  8,
+                  8,
+                  16,
                 ),
                 child: Row(
                   children: [
@@ -2269,7 +2268,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  padding: EdgeInsets.all(spacingUnit(3)),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2277,22 +2276,22 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                         'Cancellation Before Departure',
                         'Cancellation must be made at least 2 hours before the scheduled departure time. Cancellations within 2 hours of departure are not permitted.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Refund Amount',
                         'Full ticket fare minus service charges will be refunded:\n• Reservation Fee (Rs. 0): No charge for online bookings\n• Service Fee (Rs. 100): Non-refundable\n• Payment Gateway Fee (Rs. 24-74): Non-refundable',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Processing Time',
                         'Refunds are processed within 7 working days to your original payment method (bank card account). If you do not receive the refund, please contact your payment company.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Refund Method',
                         'Refunds are automatically credited to the original payment method used during booking. No cash refunds are available.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'No-Show Policy',
                         'No refund will be provided if you fail to cancel your booking or do not board the train (no-show).',
@@ -2334,11 +2333,11 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  spacingUnit(3),
-                  spacingUnit(1),
-                  spacingUnit(1),
-                  spacingUnit(2),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  8,
+                  8,
+                  16,
                 ),
                 child: Row(
                   children: [
@@ -2365,7 +2364,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  padding: EdgeInsets.all(spacingUnit(3)),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2373,22 +2372,22 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                         '2-Hour Deadline',
                         'Free cancellation is allowed up to 2 hours before the scheduled departure time. No cancellation is permitted within 2 hours of departure.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Cancellation Charges',
                         'When you cancel before the 2-hour deadline:\n• Ticket Fare: Fully refundable\n• Reservation Fee (Rs. 0): No charge for online bookings\n• Service Fee (Rs. 100): Non-refundable\n• Payment Gateway Fee (Rs. 24-74): Non-refundable',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'How to Cancel',
                         'Log in to your account, navigate to "My Bookings", select your train booking, and click "Cancel Booking". Ensure cancellation is completed at least 2 hours before departure.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Refund Processing',
                         'Approved refunds are processed within 7 working days to your original payment method. Contact your payment company if you do not receive the refund.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'No-Show Policy',
                         'If you do not cancel your booking or fail to board the train, no refund will be provided.',
@@ -2430,11 +2429,11 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  spacingUnit(3),
-                  spacingUnit(1),
-                  spacingUnit(1),
-                  spacingUnit(2),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  8,
+                  8,
+                  16,
                 ),
                 child: Row(
                   children: [
@@ -2461,7 +2460,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  padding: EdgeInsets.all(spacingUnit(3)),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2469,22 +2468,22 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                         'Fare Structure',
                         'Pakistan Railways ticket pricing includes:\n• Base Fare: Varies by class, route, and distance\n• Reservation Fee: Rs. 0 (included in base fare for online bookings)\n• Service/Convenience Fee: Rs. 100 per booking\n• Payment Gateway Fee: Rs. 24 (JazzCash/Easypaisa) or Rs. 74 (Credit/Debit Card)',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Passenger Concessions',
                         'Age-based discounts apply:\n• Adults (12+ years): 100% of base fare\n• Children (3-11 years): 50% discount on base fare\n• Infants (Under 3 years): Free (no seat allocated)',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Ticket Validity & Changes',
                         'Train tickets are valid only for the specific train, date, and class booked. Date changes and modifications are not permitted. Passengers must cancel and rebook if needed.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Name Policy',
                         'Tickets are issued in the passenger\'s name as provided during booking. Name changes or corrections are not allowed. Tickets are non-transferable.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Baggage Allowance',
                         'Passengers are allowed to carry personal baggage within reasonable limits. Excessive or commercial luggage may incur additional charges at the discretion of railway staff.',
@@ -2526,11 +2525,11 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  spacingUnit(3),
-                  spacingUnit(1),
-                  spacingUnit(1),
-                  spacingUnit(2),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  8,
+                  8,
+                  16,
                 ),
                 child: Row(
                   children: [
@@ -2557,7 +2556,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  padding: EdgeInsets.all(spacingUnit(3)),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2565,22 +2564,22 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                         'Information We Collect',
                         'For train bookings, we collect:\n• Personal Data: Name, CNIC/Passport number, phone number, email, date of birth\n• Payment Data: Card details (encrypted), transaction history\n• Booking Data: Travel dates, routes, passenger details, seat preferences\n• Device Data: IP address, browser type, device information',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'How We Use Your Data',
                         'Your information is used to:\n• Process ticket bookings and payments\n• Send booking confirmations and travel updates via SMS/Email\n• Verify passenger identity at boarding (CNIC verification)\n• Comply with Pakistan Railways regulations\n• Improve our services and user experience\n• Marketing communications (only with your consent)',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Data Protection & Security',
                         'We protect your data through:\n• SSL/TLS encryption for all data transmission\n• PCI-DSS compliant payment gateways\n• Secure servers located in Pakistan\n• No sharing with third parties except payment processors (JazzCash, Easypaisa, banks)\n• Data retention as per Pakistan Railways and SBP regulations',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Your Rights',
                         'Under Pakistan data protection laws, you have the right to:\n• Access your personal data\n• Request correction or deletion of your data\n• Opt-out of marketing communications\n• File complaints with relevant authorities\n• Withdraw consent for data processing',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Third-Party Services',
                         'We may share your information with:\n• Payment Gateways: JazzCash, Easypaisa, bank processors (for payment processing only)\n• SMS/Email Providers: For sending booking confirmations and notifications\n• Analytics Services: For improving user experience (anonymized data only)\n• Pakistan Railways: For ticket verification and compliance',
@@ -2639,8 +2638,8 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                   borderRadius: BorderRadius.circular(2)),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(spacingUnit(3), spacingUnit(1),
-                  spacingUnit(1), spacingUnit(2)),
+              padding: const EdgeInsets.fromLTRB(24, 8,
+                  8, 16),
               child: Row(children: [
                 Expanded(
                   child: Text(title,
@@ -2661,13 +2660,13 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
             Expanded(
               child: SingleChildScrollView(
                 controller: scrollController,
-                padding: EdgeInsets.all(spacingUnit(3)),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: items
                         .map((item) => Padding(
                               padding:
-                                  EdgeInsets.only(bottom: spacingUnit(2.5)),
+                                  const EdgeInsets.only(bottom: 20),
                               child: _buildPolicySection(item.title, item.body),
                             ))
                         .toList()),
@@ -2692,7 +2691,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
             letterSpacing: -0.3,
           ),
         ),
-        SizedBox(height: spacingUnit(1)),
+        const SizedBox(height: 8),
         Text(
           content,
           style: const TextStyle(
@@ -2708,7 +2707,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
 
   Widget _buildFullPageSection(String title, String content) {
     return Container(
-      padding: EdgeInsets.all(spacingUnit(2.5)),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -2726,7 +2725,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
               letterSpacing: -0.4,
             ),
           ),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Text(
             content,
             style: const TextStyle(

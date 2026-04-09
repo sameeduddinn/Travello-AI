@@ -3,10 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/models/destination.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 /// Dynamic destination cards that change based on travel mode (Flight/Train/Hotel)
 class DynamicDestinationCards extends StatefulWidget {
@@ -82,7 +80,7 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
         // Section header
         Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: isDesktop ? spacingUnit(8) : spacingUnit(2),
+            horizontal: isDesktop ? spacingUnit(8) : 16,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -92,12 +90,12 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
                 children: [
                   Text(
                     _getSectionTitle(),
-                    style: ThemeText.title2.copyWith(
+                    style: TravelloTheme.title2.copyWith(
                       color: colorScheme(context).onSurface,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: spacingUnit(0.5)),
+                  const SizedBox(height: 4),
                   Text(
                     _getSectionSubtitle(),
                     style: TextStyle(
@@ -124,7 +122,7 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
             ],
           ),
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
 
         // Horizontal scrollable destination cards with arrow controls
         SizedBox(
@@ -144,7 +142,7 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
                     controller: _scrollController,
                     scrollDirection: Axis.horizontal,
                     padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? spacingUnit(8) : spacingUnit(2),
+                      horizontal: isDesktop ? spacingUnit(8) : 16,
                     ),
                     itemCount: widget.destinations.length,
                     itemBuilder: (context, index) {
@@ -162,7 +160,7 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
                   child: Container(
                     decoration: BoxDecoration(
                       color:
-                          colorScheme(context).surface.withValues(alpha: 0.95),
+                          TravelloTheme.paperLight.withValues(alpha: 0.95),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -175,9 +173,9 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
                     ),
                     child: IconButton(
                       onPressed: _scrollLeft,
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.arrow_back_ios_new,
-                        color: colorScheme(context).primary,
+                        color: TravelloTheme.primaryMain,
                         size: 20,
                       ),
                     ),
@@ -189,7 +187,7 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
                   child: Container(
                     decoration: BoxDecoration(
                       color:
-                          colorScheme(context).surface.withValues(alpha: 0.95),
+                          TravelloTheme.paperLight.withValues(alpha: 0.95),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -202,9 +200,9 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
                     ),
                     child: IconButton(
                       onPressed: _scrollRight,
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.arrow_forward_ios,
-                        color: colorScheme(context).primary,
+                        color: TravelloTheme.primaryMain,
                         size: 20,
                       ),
                     ),
@@ -229,7 +227,7 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
         width: isDesktop
             ? 260
             : (MediaQuery.of(context).size.width < 400 ? 180 : 220),
-        margin: EdgeInsets.only(right: spacingUnit(2)),
+        margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -304,7 +302,7 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
 
             // Content
             Padding(
-              padding: EdgeInsets.all(spacingUnit(2)),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -314,7 +312,7 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: EdgeInsets.all(spacingUnit(1)),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
@@ -327,9 +325,9 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
                       ),
                       if (destination.popularityRank <= 3)
                         Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: spacingUnit(1),
-                            vertical: spacingUnit(0.5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.9),
@@ -343,7 +341,7 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
                                 color: Color(0xFFFFB800),
                                 size: 12,
                               ),
-                              SizedBox(width: spacingUnit(0.5)),
+                              const SizedBox(width: 4),
                               Text(
                                 'Top ${destination.popularityRank}',
                                 style: const TextStyle(
@@ -372,7 +370,7 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: spacingUnit(0.5)),
+                      const SizedBox(height: 4),
                       Text(
                         destination.description,
                         style: TextStyle(
@@ -382,11 +380,11 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: spacingUnit(1)),
+                      const SizedBox(height: 8),
                       Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: spacingUnit(1),
-                          vertical: spacingUnit(0.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
@@ -400,7 +398,7 @@ class _DynamicDestinationCardsState extends State<DynamicDestinationCards> {
                               color: Colors.white.withValues(alpha: 0.9),
                               size: 12,
                             ),
-                            SizedBox(width: spacingUnit(0.5)),
+                            const SizedBox(width: 4),
                             Flexible(
                               child: Text(
                                 destination.getFormattedTravelTime(

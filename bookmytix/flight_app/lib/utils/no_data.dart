@@ -1,10 +1,7 @@
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class NoData extends StatelessWidget {
   const NoData({
@@ -31,9 +28,9 @@ class NoData extends StatelessWidget {
     return Center(
       child: Container(
         constraints: BoxConstraints(maxWidth: ThemeSize.sm),
-        padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(3),
-          vertical: spacingUnit(4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 32,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -49,17 +46,17 @@ class NoData extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    ThemePalette.primaryMain.withValues(alpha: 0.15),
-                    ThemePalette.primaryLight.withValues(alpha: 0.30),
+                    TravelloTheme.primaryMain.withValues(alpha: 0.15),
+                    TravelloTheme.primaryLight.withValues(alpha: 0.30),
                   ],
                 ),
                 border: Border.all(
-                  color: ThemePalette.primaryMain.withValues(alpha: 0.20),
+                  color: TravelloTheme.primaryMain.withValues(alpha: 0.20),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: ThemePalette.primaryMain.withValues(alpha: 0.12),
+                    color: TravelloTheme.primaryMain.withValues(alpha: 0.12),
                     blurRadius: 24,
                     spreadRadius: 4,
                     offset: const Offset(0, 8),
@@ -72,13 +69,13 @@ class NoData extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
 
             /// TITLE
             Text(
               title,
               textAlign: TextAlign.center,
-              style: ThemeText.title.copyWith(
+              style: TravelloTheme.title.copyWith(
                 fontWeight: FontWeight.w800,
                 fontSize: 22,
                 color: colorScheme(context).onSurface,
@@ -86,15 +83,15 @@ class NoData extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
 
             /// DESCRIPTION
             Container(
-              padding: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 desc,
                 textAlign: TextAlign.center,
-                style: ThemeText.headline.copyWith(
+                style: TravelloTheme.headline.copyWith(
                   color: colorScheme(context).onSurface.withValues(alpha: 0.55),
                   fontSize: 14,
                   height: 1.5,
@@ -102,7 +99,7 @@ class NoData extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: spacingUnit(3.5)),
+            const SizedBox(height: 28),
 
             /// PRIMARY BUTTON
             if (primaryTxtBtn != null)
@@ -121,7 +118,7 @@ class NoData extends StatelessWidget {
                   ),
                   child: Text(
                     primaryTxtBtn!,
-                    style: ThemeText.subtitle2.copyWith(
+                    style: TravelloTheme.subtitle2.copyWith(
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                     ),
@@ -130,7 +127,7 @@ class NoData extends StatelessWidget {
               ),
 
             if (primaryTxtBtn != null && secondaryTxtBtn != null)
-              SizedBox(height: spacingUnit(1.5)),
+              const SizedBox(height: 12),
 
             /// SECONDARY BUTTON
             if (secondaryTxtBtn != null)
@@ -147,14 +144,14 @@ class NoData extends StatelessWidget {
                     ),
                     side: WidgetStateProperty.all(
                       BorderSide(
-                        color: ThemePalette.primaryMain.withValues(alpha: 0.45),
+                        color: TravelloTheme.primaryMain.withValues(alpha: 0.45),
                         width: 1.5,
                       ),
                     ),
                   ),
                   child: Text(
                     secondaryTxtBtn!,
-                    style: ThemeText.subtitle2.copyWith(
+                    style: TravelloTheme.subtitle2.copyWith(
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                     ),

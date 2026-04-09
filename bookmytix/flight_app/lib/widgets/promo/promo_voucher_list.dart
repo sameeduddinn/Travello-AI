@@ -1,11 +1,11 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/models/voucher.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/no_data.dart';
 import 'package:flight_app/widgets/cards/voucher_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PromoVoucherList extends StatelessWidget {
   const PromoVoucherList({super.key, required this.dataList});
@@ -19,18 +19,18 @@ class PromoVoucherList extends StatelessWidget {
             shrinkWrap: true,
             physics: const ClampingScrollPhysics(),
             itemCount: dataList.length,
-            padding: EdgeInsets.only(
-              top: spacingUnit(2),
-              left: spacingUnit(2),
-              right: spacingUnit(2),
-              bottom: spacingUnit(10),
+            padding: const EdgeInsets.only(
+              top: 16,
+              left: 16,
+              right: 16,
+              bottom: 80,
             ),
             itemBuilder: ((BuildContext context, int index) {
               Voucher item = dataList[index];
               return Container(
                 width: double.infinity,
                 height: 100,
-                padding: EdgeInsets.only(bottom: spacingUnit(2)),
+                padding: const EdgeInsets.only(bottom: 16),
                 child: InkWell(
                   onTap: () {
                     Get.toNamed(AppLink.voucherDetail);

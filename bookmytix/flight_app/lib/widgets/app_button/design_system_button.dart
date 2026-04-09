@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 /// DSButton
 /// Airline-grade primary button with:
@@ -92,7 +91,7 @@ class _DSButtonState extends State<DSButton>
   Widget build(BuildContext context) {
     final bgColor = _isDisabled
         ? const Color(0xFFCBD5E1)
-        : (widget.color ?? ThemePalette.primaryMain);
+        : (widget.color ?? TravelloTheme.primaryMain);
 
     final fgColor = _isDisabled
         ? const Color(0xFF94A3B8)
@@ -116,7 +115,7 @@ class _DSButtonState extends State<DSButton>
             height: widget.height,
             decoration: BoxDecoration(
               color: _isHovered && !_isDisabled
-                  ? (widget.color ?? ThemePalette.primaryMain)
+                  ? (widget.color ?? TravelloTheme.primaryMain)
                       .withValues(alpha: 0.88)
                   : bgColor,
               borderRadius: BorderRadius.circular(widget.borderRadius ?? 12),
@@ -124,7 +123,7 @@ class _DSButtonState extends State<DSButton>
                   ? []
                   : [
                       BoxShadow(
-                        color: (widget.color ?? ThemePalette.primaryMain)
+                        color: (widget.color ?? TravelloTheme.primaryMain)
                             .withValues(
                                 alpha: _isPressed
                                     ? 0.18
@@ -154,7 +153,7 @@ class _DSButtonState extends State<DSButton>
                         ],
                         Text(
                           widget.label,
-                          style: ThemeText.paragraphBold.copyWith(
+                          style: TravelloTheme.paragraphBold.copyWith(
                             color: fgColor,
                             fontSize: 15,
                             letterSpacing: 0.4,
@@ -252,25 +251,25 @@ class _DSOutlinedButtonState extends State<DSOutlinedButton>
             height: widget.height,
             decoration: BoxDecoration(
               color: _isHovered && !_isDisabled
-                  ? ThemePalette.primaryMain.withValues(alpha: 0.06)
+                  ? TravelloTheme.primaryMain.withValues(alpha: 0.06)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _isDisabled
                     ? const Color(0xFFCBD5E1)
-                    : ThemePalette.primaryMain,
+                    : TravelloTheme.primaryMain,
                 width: _isHovered ? 2.0 : 1.5,
               ),
             ),
             child: Center(
               child: widget.loading
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 22,
                       height: 22,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                            ThemePalette.primaryMain),
+                            TravelloTheme.primaryMain),
                       ),
                     )
                   : Row(
@@ -281,15 +280,15 @@ class _DSOutlinedButtonState extends State<DSOutlinedButton>
                               size: 18,
                               color: _isDisabled
                                   ? const Color(0xFF94A3B8)
-                                  : ThemePalette.primaryMain),
+                                  : TravelloTheme.primaryMain),
                           const SizedBox(width: 8),
                         ],
                         Text(
                           widget.label,
-                          style: ThemeText.paragraphBold.copyWith(
+                          style: TravelloTheme.paragraphBold.copyWith(
                             color: _isDisabled
                                 ? const Color(0xFF94A3B8)
-                                : ThemePalette.primaryMain,
+                                : TravelloTheme.primaryMain,
                             fontSize: 15,
                             letterSpacing: 0.4,
                           ),

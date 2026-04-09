@@ -1,9 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/models/rating.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/cards/rating_card.dart';
 import 'package:flight_app/widgets/title/title_action.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ReviewListSlider extends StatelessWidget {
   const ReviewListSlider({super.key});
@@ -12,7 +12,7 @@ class ReviewListSlider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(children: [
       Padding(
-        padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: TitleAction(
           title: 'Reviews',
           textAction: 'See All Reviews',
@@ -34,8 +34,8 @@ class ReviewListSlider extends StatelessWidget {
               padding: EdgeInsets.only(
                 top: 4,
                 bottom: 4,
-                left: index > 0 ? 4 : spacingUnit(2),
-                right: index < ratingList.length - 1 ? 4 : spacingUnit(2),
+                left: index > 0 ? 4 : 16,
+                right: index < ratingList.length - 1 ? 4 : 16,
               ),
               child: RatingCard(
                 avatar: item.avatar,

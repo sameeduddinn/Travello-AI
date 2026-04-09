@@ -2,12 +2,12 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/models/trip.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/no_data.dart';
 import 'package:flight_app/widgets/cards/flight_card.dart';
 import 'package:flight_app/widgets/cards/flight_wide_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightTripList extends StatelessWidget {
   const FlightTripList(
@@ -27,14 +27,14 @@ class FlightTripList extends StatelessWidget {
     return flightData.isNotEmpty
         ? ListView.builder(
             controller: scrollRef,
-            padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(2), vertical: spacingUnit(1)),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 8),
             itemCount: flightData.length,
             itemBuilder: (context, index) {
               Trip item = flightData[index];
 
               return Padding(
-                padding: EdgeInsets.only(bottom: spacingUnit(2)),
+                padding: const EdgeInsets.only(bottom: 16),
                 child: GestureDetector(
                   onTap: () {
                     Get.toNamed(AppLink.flightDetail);

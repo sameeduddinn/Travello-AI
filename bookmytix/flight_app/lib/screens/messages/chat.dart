@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/models/chat.dart';
 import 'package:flight_app/ui/layouts/general_layout.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/action_headers/other_btn.dart';
 import 'package:flight_app/widgets/chat/chat_input.dart';
 import 'package:flight_app/widgets/chat/chat_message.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key, required this.messageData, required this.name, required this.avatar});
@@ -63,8 +62,8 @@ class _ChatPageState extends State<ChatPage> {
                 radius: 15,
                 backgroundImage: NetworkImage(widget.avatar)
               ),
-              SizedBox(width: spacingUnit(1)),
-              Text(widget.name, style: ThemeText.subtitle),
+              const SizedBox(width: 8),
+              Text(widget.name, style: TravelloTheme.subtitle),
             ]),
           ),
           actions: const [

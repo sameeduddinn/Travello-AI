@@ -1,11 +1,7 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/decorations/dashed_border.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 /// Wide (tablet/desktop) variant of TrainSummary – mirrors FlightSummaryWide.
 class TrainSummaryWide extends StatelessWidget {
@@ -47,26 +43,26 @@ class TrainSummaryWide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.all(spacingUnit(2)),
-      padding: EdgeInsets.symmetric(vertical: spacingUnit(1)),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       height: 120,
       decoration: BoxDecoration(
-        color: colorScheme(context).surface,
+        color: TravelloTheme.paperLight,
         borderRadius: ThemeRadius.medium,
         boxShadow: !bordered ? [ThemeShade.shadeSoft(context)] : null,
         border: bordered
-            ? Border.all(width: 1, color: colorScheme(context).primaryContainer)
+            ? Border.all(width: 1, color: TravelloTheme.primaryMainContainer)
             : null,
       ),
       child: Row(
         children: [
           /// TRAIN INFO COLUMN (mirrors airplane info column in FlightSummaryWide)
           Padding(
-            padding: EdgeInsets.only(
-              left: spacingUnit(2),
-              right: spacingUnit(2),
-              bottom: spacingUnit(2),
-              top: spacingUnit(1),
+            padding: const EdgeInsets.only(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              top: 8,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -76,17 +72,17 @@ class TrainSummaryWide extends StatelessWidget {
                     width: 20,
                     height: 20,
                     decoration: BoxDecoration(
-                      color: colorScheme(context).primaryContainer,
+                      color: TravelloTheme.primaryMainContainer,
                       borderRadius: ThemeRadius.xsmall,
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.train,
                       size: 13,
-                      color: colorScheme(context).primary,
+                      color: TravelloTheme.primaryMain,
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Text(trainName, style: ThemeText.paragraph),
+                  Text(trainName, style: TravelloTheme.paragraph),
                 ]),
                 const VSpaceShort(),
                 Container(
@@ -97,13 +93,13 @@ class TrainSummaryWide extends StatelessWidget {
                   ),
                   child: Text(
                     '$trainClass · $trainNumber',
-                    style: ThemeText.caption,
+                    style: TravelloTheme.caption,
                   ),
                 ),
               ],
             ),
           ),
-          SizedBox(width: spacingUnit(2)),
+          const SizedBox(width: 16),
 
           /// STATIONS + DASHED LINE (mirrors FlightSummaryWide expanded section)
           Expanded(
@@ -122,20 +118,20 @@ class TrainSummaryWide extends StatelessWidget {
                           Text(
                             fromCity,
                             overflow: TextOverflow.ellipsis,
-                            style: ThemeText.caption.copyWith(
+                            style: TravelloTheme.caption.copyWith(
                                 color: colorScheme(context).onSurfaceVariant),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 1),
                             child: Text(
                               fromCode,
-                              style: ThemeText.title2
+                              style: TravelloTheme.title2
                                   .copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
                           depart != null
                               ? Text(DateFormat.MMMEd().format(depart!),
-                                  style: ThemeText.caption.copyWith(
+                                  style: TravelloTheme.caption.copyWith(
                                       color: colorScheme(context)
                                           .onSurfaceVariant))
                               : Container(),
@@ -154,7 +150,7 @@ class TrainSummaryWide extends StatelessWidget {
                                 height: 8,
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                      color: colorScheme(context).primary,
+                                      color: TravelloTheme.primaryMain,
                                       width: 1),
                                   shape: BoxShape.circle,
                                 ),
@@ -165,7 +161,7 @@ class TrainSummaryWide extends StatelessWidget {
                                 height: 8,
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                      color: colorScheme(context).primary,
+                                      color: TravelloTheme.primaryMain,
                                       width: 1),
                                   shape: BoxShape.circle,
                                 ),
@@ -205,20 +201,20 @@ class TrainSummaryWide extends StatelessWidget {
                           Text(
                             toCity,
                             overflow: TextOverflow.ellipsis,
-                            style: ThemeText.caption.copyWith(
+                            style: TravelloTheme.caption.copyWith(
                                 color: colorScheme(context).onSurfaceVariant),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 1),
                             child: Text(
                               toCode,
-                              style: ThemeText.title2
+                              style: TravelloTheme.title2
                                   .copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
                           arrival != null
                               ? Text(DateFormat.MMMEd().format(arrival!),
-                                  style: ThemeText.caption.copyWith(
+                                  style: TravelloTheme.caption.copyWith(
                                       color: colorScheme(context)
                                           .onSurfaceVariant))
                               : Container(),
@@ -233,7 +229,7 @@ class TrainSummaryWide extends StatelessWidget {
 
           /// PRICE COLUMN
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -243,11 +239,11 @@ class TrainSummaryWide extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                       borderRadius: ThemeRadius.xsmall,
-                      color: colorScheme(context).secondaryContainer,
+                      color: TravelloTheme.secondaryMainContainer,
                     ),
                     child: Text(
                       label!,
-                      style: ThemeText.paragraph.copyWith(
+                      style: TravelloTheme.paragraph.copyWith(
                           fontWeight: FontWeight.w500,
                           color: colorScheme(context).onSurface),
                     ),
@@ -257,7 +253,7 @@ class TrainSummaryWide extends StatelessWidget {
                     ? Text(
                         'PKR ${price.toStringAsFixed(0)}',
                         textAlign: TextAlign.end,
-                        style: ThemeText.headline.copyWith(
+                        style: TravelloTheme.headline.copyWith(
                             color: colorScheme(context).onSurfaceVariant,
                             height: 1,
                             decoration: TextDecoration.lineThrough),
@@ -266,8 +262,8 @@ class TrainSummaryWide extends StatelessWidget {
                 Text(
                   'PKR ${(price - price * discount / 100).toStringAsFixed(0)}',
                   textAlign: TextAlign.end,
-                  style: ThemeText.title.copyWith(
-                      color: colorScheme(context).primary,
+                  style: TravelloTheme.title.copyWith(
+                      color: TravelloTheme.primaryMain,
                       height: 1,
                       fontWeight: FontWeight.bold),
                 ),

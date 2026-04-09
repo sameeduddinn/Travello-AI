@@ -2,11 +2,8 @@ import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/constants/app_constants.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:get/get.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class Welcome extends StatefulWidget {
   const Welcome({super.key});
@@ -25,11 +22,11 @@ class _WelcomeState extends State<Welcome> {
       body: SingleChildScrollView(
         child: Container(
           height: screenHeight,
-          decoration: BoxDecoration(color: ThemePalette.primaryMain),
+          decoration: const BoxDecoration(color: TravelloTheme.primaryMain),
           child: Container(
-            padding: EdgeInsets.all(spacingUnit(3)),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-                color: colorScheme(context).surface.withValues(alpha: 0.1),
+                color: TravelloTheme.paperLight.withValues(alpha: 0.1),
                 image: DecorationImage(
                     image: AssetImage(ImgApi.welcomeBg), fit: BoxFit.cover)),
             child: Align(
@@ -48,7 +45,7 @@ class _WelcomeState extends State<Welcome> {
                               fontWeight: FontWeight.bold)),
                       const VSpaceShort(),
                       Text(branding.title,
-                          style: ThemeText.title2.copyWith(
+                          style: TravelloTheme.title2.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.normal)),
                       const VSpaceBig(),
@@ -65,7 +62,7 @@ class _WelcomeState extends State<Welcome> {
                             style: ThemeButton.btnBig.merge(
                               FilledButton.styleFrom(
                                 backgroundColor: Colors.white,
-                                foregroundColor: ThemePalette.primaryMain,
+                                foregroundColor: TravelloTheme.primaryMain,
                                 elevation: 2,
                                 shadowColor: Colors.black26,
                               ),
@@ -78,7 +75,7 @@ class _WelcomeState extends State<Welcome> {
                       ),
                       Padding(
                           padding:
-                              EdgeInsets.symmetric(vertical: spacingUnit(3)),
+                              const EdgeInsets.symmetric(vertical: 24),
                           child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
@@ -103,7 +100,7 @@ class _WelcomeState extends State<Welcome> {
                             },
                             style: ThemeButton.btnBig.merge(
                               OutlinedButton.styleFrom(
-                                foregroundColor: ThemePalette.primaryMain,
+                                foregroundColor: TravelloTheme.primaryMain,
                                 backgroundColor: Colors.white,
                                 side: const BorderSide(
                                     color: Colors.white, width: 2),

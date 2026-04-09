@@ -1,10 +1,8 @@
 ﻿import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/booking_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 const _gold = Color(0xFFD4AF37);
 const _goldLight = Color(0xFFFEF9EC);
@@ -168,9 +166,9 @@ class _MyBookingsState extends State<MyBookings>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const CircularProgressIndicator(color: _gold),
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                   Text('Loading your bookings...',
-                      style: ThemeText.paragraph
+                      style: TravelloTheme.paragraph
                           .copyWith(color: Colors.grey.shade600)),
                 ],
               )),
@@ -179,11 +177,11 @@ class _MyBookingsState extends State<MyBookings>
             SliverFillRemaining(child: _buildEmptyState())
           else
             SliverPadding(
-              padding: EdgeInsets.all(spacingUnit(2)),
+              padding: const EdgeInsets.all(16),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => Padding(
-                    padding: EdgeInsets.only(bottom: spacingUnit(2)),
+                    padding: const EdgeInsets.only(bottom: 16),
                     child: _buildBookingCard(_filteredBookings[index]),
                   ),
                   childCount: _filteredBookings.length,
@@ -213,8 +211,8 @@ class _MyBookingsState extends State<MyBookings>
           ),
           child: SafeArea(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(spacingUnit(2), spacingUnit(1),
-                  spacingUnit(2), spacingUnit(2)),
+              padding: const EdgeInsets.fromLTRB(16, 8,
+                  16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -226,7 +224,7 @@ class _MyBookingsState extends State<MyBookings>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('My Bookings',
-                              style: ThemeText.title.copyWith(
+                              style: TravelloTheme.title.copyWith(
                                   color: Colors.white,
                                   fontSize: 26,
                                   fontWeight: FontWeight.w800)),
@@ -240,7 +238,7 @@ class _MyBookingsState extends State<MyBookings>
                         ],
                       ),
                       Container(
-                        padding: EdgeInsets.all(spacingUnit(1.5)),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
@@ -267,28 +265,28 @@ class _MyBookingsState extends State<MyBookings>
     return SliverToBoxAdapter(
       child: Container(
         color: Colors.white,
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Row(children: [
               _buildTypeChip('All', Icons.list_alt),
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               _buildTypeChip('Train', Icons.train),
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               _buildTypeChip('Flight', Icons.flight),
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               _buildTypeChip('Hotel', Icons.hotel),
             ]),
-            SizedBox(height: spacingUnit(1.5)),
+            const SizedBox(height: 12),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(children: [
                 _buildFilterChip('All'),
-                SizedBox(width: spacingUnit(1)),
+                const SizedBox(width: 8),
                 _buildFilterChip('Upcoming'),
-                SizedBox(width: spacingUnit(1)),
+                const SizedBox(width: 8),
                 _buildFilterChip('Past'),
-                SizedBox(width: spacingUnit(1)),
+                const SizedBox(width: 8),
                 _buildFilterChip('Canceled'),
               ]),
             ),
@@ -308,8 +306,8 @@ class _MyBookingsState extends State<MyBookings>
         }),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(0.5), vertical: spacingUnit(1)),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 4, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected ? _gold : Colors.white,
             borderRadius: BorderRadius.circular(10),
@@ -352,7 +350,7 @@ class _MyBookingsState extends State<MyBookings>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(
-            horizontal: spacingUnit(2), vertical: spacingUnit(0.75)),
+            horizontal: 16, vertical: spacingUnit(0.75)),
         decoration: BoxDecoration(
           color: isSelected ? _goldLight : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
@@ -418,8 +416,8 @@ class _MyBookingsState extends State<MyBookings>
               children: [
                 Row(children: [
                   Container(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: spacingUnit(1), vertical: spacingUnit(0.5)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                         color: accentColor,
                         borderRadius: BorderRadius.circular(6)),
@@ -433,13 +431,13 @@ class _MyBookingsState extends State<MyBookings>
                               fontSize: 11)),
                     ]),
                   ),
-                  SizedBox(width: spacingUnit(1)),
+                  const SizedBox(width: 8),
                   Text(
                     bookingType == 'hotel'
                         ? 'Ref: ${booking['pnr'] ?? 'N/A'}'
                         : 'PNR: ${booking['pnr'] ?? 'N/A'}',
                     style:
-                        ThemeText.caption.copyWith(fontWeight: FontWeight.w600),
+                        TravelloTheme.caption.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ]),
                 _buildStatusBadge(booking['status'] ?? 'confirmed'),
@@ -447,7 +445,7 @@ class _MyBookingsState extends State<MyBookings>
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(spacingUnit(2)),
+            padding: const EdgeInsets.all(16),
             child: Column(children: [
               if (bookingType == 'train')
                 _buildTrainJourneyDetails(booking)
@@ -455,7 +453,7 @@ class _MyBookingsState extends State<MyBookings>
                 _buildHotelDetails(booking)
               else
                 _buildFlightJourneyDetails(booking),
-              SizedBox(height: spacingUnit(1.5)),
+              const SizedBox(height: 12),
               Divider(color: Colors.grey.shade100, height: 1),
               SizedBox(height: spacingUnit(1.25)),
               Row(
@@ -464,15 +462,15 @@ class _MyBookingsState extends State<MyBookings>
                   Row(children: [
                     Icon(Icons.people_outline,
                         size: 15, color: Colors.grey.shade500),
-                    SizedBox(width: spacingUnit(0.5)),
+                    const SizedBox(width: 4),
                     Text(
                       '${booking['passengerCount'] ?? 1} ${bookingType == 'hotel' ? (((booking['passengerCount'] ?? 1) > 1) ? 'Guests' : 'Guest') : (((booking['passengerCount'] ?? 1) > 1) ? 'Passengers' : 'Passenger')}',
-                      style: ThemeText.caption
+                      style: TravelloTheme.caption
                           .copyWith(color: Colors.grey.shade500),
                     ),
                   ]),
                   Text('PKR ${(booking['total'] ?? 0.0).toStringAsFixed(0)}',
-                      style: ThemeText.subtitle.copyWith(
+                      style: TravelloTheme.subtitle.copyWith(
                           fontWeight: FontWeight.w800,
                           color: _gold,
                           fontSize: 16)),
@@ -494,24 +492,24 @@ class _MyBookingsState extends State<MyBookings>
       children: [
         Row(children: [
           Container(
-            padding: EdgeInsets.all(spacingUnit(1)),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
                 color: _goldLight, borderRadius: BorderRadius.circular(10)),
             child: const Icon(Icons.hotel, color: _gold, size: 28),
           ),
-          SizedBox(width: spacingUnit(1.5)),
+          const SizedBox(width: 12),
           Expanded(
               child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(h['hotelName'] ?? 'Hotel',
-                  style: ThemeText.subtitle
+                  style: TravelloTheme.subtitle
                       .copyWith(fontWeight: FontWeight.w800, fontSize: 15),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
               if ((h['city'] ?? '').toString().isNotEmpty)
                 Text(h['city'].toString(),
-                    style: ThemeText.caption
+                    style: TravelloTheme.caption
                         .copyWith(color: Colors.grey.shade500)),
               if (stars > 0)
                 Row(
@@ -520,10 +518,10 @@ class _MyBookingsState extends State<MyBookings>
             ],
           )),
         ]),
-        SizedBox(height: spacingUnit(1.5)),
+        const SizedBox(height: 12),
         Container(
-          padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(1.5), vertical: spacingUnit(1)),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
               color: _goldLight, borderRadius: BorderRadius.circular(10)),
           child: Row(children: [
@@ -541,8 +539,8 @@ class _MyBookingsState extends State<MyBookings>
                       fontSize: 13, fontWeight: FontWeight.w700)),
             ])),
             Container(
-              padding: EdgeInsets.symmetric(
-                  horizontal: spacingUnit(1), vertical: spacingUnit(0.5)),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                   color: _gold.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6)),
@@ -567,10 +565,10 @@ class _MyBookingsState extends State<MyBookings>
             ])),
           ]),
         ),
-        SizedBox(height: spacingUnit(1)),
+        const SizedBox(height: 8),
         Row(children: [
           const Icon(Icons.bed_outlined, size: 14, color: _goldDark),
-          SizedBox(width: spacingUnit(0.5)),
+          const SizedBox(width: 4),
           Text(h['roomType'] ?? 'Standard Room',
               style: TextStyle(
                   fontSize: 12,
@@ -591,14 +589,14 @@ class _MyBookingsState extends State<MyBookings>
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(train['departure'] ?? 'N/A',
-                style: ThemeText.title2
+                style: TravelloTheme.title2
                     .copyWith(fontWeight: FontWeight.w800, fontSize: 20)),
             SizedBox(height: spacingUnit(0.3)),
             Text(train['fromCode'] ?? 'N/A',
-                style: ThemeText.headline.copyWith(
+                style: TravelloTheme.headline.copyWith(
                     color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
             Text(train['from'] ?? 'N/A',
-                style: ThemeText.caption.copyWith(color: Colors.grey.shade400),
+                style: TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ])),
@@ -607,17 +605,17 @@ class _MyBookingsState extends State<MyBookings>
           child: Column(children: [
             Container(
               padding: EdgeInsets.symmetric(
-                  horizontal: spacingUnit(0.8), vertical: spacingUnit(0.3)),
+                  horizontal: 6.4, vertical: spacingUnit(0.3)),
               decoration: BoxDecoration(
                   color: const Color(0xFFF0FDF4),
                   borderRadius: BorderRadius.circular(4)),
               child: Text(train['duration'] ?? 'N/A',
-                  style: ThemeText.caption.copyWith(
+                  style: TravelloTheme.caption.copyWith(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                       color: accent)),
             ),
-            SizedBox(height: spacingUnit(0.5)),
+            const SizedBox(height: 4),
             Row(children: [
               Container(
                   width: 8,
@@ -633,23 +631,23 @@ class _MyBookingsState extends State<MyBookings>
                   decoration: const BoxDecoration(
                       color: accent, shape: BoxShape.circle)),
             ]),
-            SizedBox(height: spacingUnit(0.5)),
+            const SizedBox(height: 4),
             Text(train['class'] ?? 'Economy',
-                style: ThemeText.caption.copyWith(
+                style: TravelloTheme.caption.copyWith(
                     fontSize: 10, fontWeight: FontWeight.w600, color: accent)),
           ])),
       Expanded(
           flex: 2,
           child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text(train['arrival'] ?? 'N/A',
-                style: ThemeText.title2
+                style: TravelloTheme.title2
                     .copyWith(fontWeight: FontWeight.w800, fontSize: 20)),
             SizedBox(height: spacingUnit(0.3)),
             Text(train['toCode'] ?? 'N/A',
-                style: ThemeText.headline.copyWith(
+                style: TravelloTheme.headline.copyWith(
                     color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
             Text(train['to'] ?? 'N/A',
-                style: ThemeText.caption.copyWith(color: Colors.grey.shade400),
+                style: TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end),
@@ -673,14 +671,14 @@ class _MyBookingsState extends State<MyBookings>
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(flight['departure'] ?? 'N/A',
-                style: ThemeText.title2
+                style: TravelloTheme.title2
                     .copyWith(fontWeight: FontWeight.w800, fontSize: 20)),
             SizedBox(height: spacingUnit(0.3)),
             Text(fromCode,
-                style: ThemeText.headline.copyWith(
+                style: TravelloTheme.headline.copyWith(
                     color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
             Text(fromStr.replaceAll(RegExp(r'\s*\([A-Z]{3}\)'), ''),
-                style: ThemeText.caption.copyWith(color: Colors.grey.shade400),
+                style: TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ])),
@@ -689,17 +687,17 @@ class _MyBookingsState extends State<MyBookings>
           child: Column(children: [
             Container(
               padding: EdgeInsets.symmetric(
-                  horizontal: spacingUnit(0.8), vertical: spacingUnit(0.3)),
+                  horizontal: 6.4, vertical: spacingUnit(0.3)),
               decoration: BoxDecoration(
                   color: const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(4)),
               child: Text(flight['duration'] ?? 'N/A',
-                  style: ThemeText.caption.copyWith(
+                  style: TravelloTheme.caption.copyWith(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                       color: accent)),
             ),
-            SizedBox(height: spacingUnit(0.5)),
+            const SizedBox(height: 4),
             Row(children: [
               Container(
                   width: 8,
@@ -715,23 +713,23 @@ class _MyBookingsState extends State<MyBookings>
                   decoration: const BoxDecoration(
                       color: accent, shape: BoxShape.circle)),
             ]),
-            SizedBox(height: spacingUnit(0.5)),
+            const SizedBox(height: 4),
             Text(flight['class'] ?? 'Economy',
-                style: ThemeText.caption.copyWith(
+                style: TravelloTheme.caption.copyWith(
                     fontSize: 10, fontWeight: FontWeight.w600, color: accent)),
           ])),
       Expanded(
           flex: 2,
           child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text(flight['arrival'] ?? 'N/A',
-                style: ThemeText.title2
+                style: TravelloTheme.title2
                     .copyWith(fontWeight: FontWeight.w800, fontSize: 20)),
             SizedBox(height: spacingUnit(0.3)),
             Text(toCode,
-                style: ThemeText.headline.copyWith(
+                style: TravelloTheme.headline.copyWith(
                     color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
             Text(toStr.replaceAll(RegExp(r'\s*\([A-Z]{3}\)'), ''),
-                style: ThemeText.caption.copyWith(color: Colors.grey.shade400),
+                style: TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end),
@@ -770,15 +768,15 @@ class _MyBookingsState extends State<MyBookings>
         icon = Icons.access_time;
     }
     return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(1), vertical: spacingUnit(0.5)),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 8, vertical: 4),
       decoration:
           BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
       child: Row(children: [
         Icon(icon, size: 12, color: textColor),
         SizedBox(width: spacingUnit(0.3)),
         Text(label,
-            style: ThemeText.caption.copyWith(
+            style: TravelloTheme.caption.copyWith(
                 color: textColor, fontWeight: FontWeight.w700, fontSize: 10)),
       ]),
     );
@@ -787,12 +785,12 @@ class _MyBookingsState extends State<MyBookings>
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(spacingUnit(3)),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.all(spacingUnit(3)),
+              padding: const EdgeInsets.all(24),
               decoration: const BoxDecoration(
                   color: _goldLight, shape: BoxShape.circle),
               child: Icon(
@@ -805,19 +803,19 @@ class _MyBookingsState extends State<MyBookings>
                 color: _gold,
               ),
             ),
-            SizedBox(height: spacingUnit(2)),
+            const SizedBox(height: 16),
             Text(
               (_selectedFilter != 'All' || _selectedType != 'All')
                   ? 'No ${_selectedFilter != 'All' ? '${_selectedFilter.toLowerCase()} ' : ''}${_selectedType != 'All' ? '${_selectedType.toLowerCase()} ' : ''}bookings'
                   : 'No bookings yet',
-              style: ThemeText.title2.copyWith(fontWeight: FontWeight.w700),
+              style: TravelloTheme.title2.copyWith(fontWeight: FontWeight.w700),
             ),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             Text('Start exploring and book your next trip!',
                 style:
-                    ThemeText.paragraph.copyWith(color: Colors.grey.shade600),
+                    TravelloTheme.paragraph.copyWith(color: Colors.grey.shade600),
                 textAlign: TextAlign.center),
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
             SizedBox(
               width: 200,
               child: FilledButton(

@@ -1,9 +1,6 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/app_button/tag_button.dart';
 import 'package:flight_app/widgets/home/flight_list_double.dart';
 import 'package:flight_app/widgets/home/package_list_slider.dart';
@@ -11,6 +8,7 @@ import 'package:flight_app/widgets/search_filters/search_flight_form.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class SearchFlight extends StatefulWidget {
   const SearchFlight({super.key});
@@ -52,7 +50,7 @@ class _SearchFlightState extends State<SearchFlight> {
                 Get.back();
               },
             ),
-            title: const Text('Search Flights', style: ThemeText.subtitle),
+            title: const Text('Search Flights', style: TravelloTheme.subtitle),
             flexibleSpace: FlexibleSpaceBar(
               background: Image.asset(
                 ImgApi.searchBanner,
@@ -67,9 +65,9 @@ class _SearchFlightState extends State<SearchFlight> {
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(50),
               child: Container(
-                decoration: BoxDecoration(
-                  color: colorScheme(context).primary,
-                  borderRadius: const BorderRadius.vertical(
+                decoration: const BoxDecoration(
+                  color: TravelloTheme.primaryMain,
+                  borderRadius: BorderRadius.vertical(
                     top: Radius.circular(16),
                   ),
                 ),
@@ -81,14 +79,14 @@ class _SearchFlightState extends State<SearchFlight> {
                         Get.toNamed(AppLink.promo);
                       },
                       child: Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: spacingUnit(2),
-                            vertical: spacingUnit(1)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8),
                         child: Row(
                           children: [
                             CircleAvatar(
                               backgroundColor:
-                                  colorScheme(context).primaryContainer,
+                                  TravelloTheme.primaryMainContainer,
                               radius: 12,
                               child: Icon(
                                 CupertinoIcons.tags_solid,
@@ -96,18 +94,18 @@ class _SearchFlightState extends State<SearchFlight> {
                                 size: 12,
                               ),
                             ),
-                            SizedBox(width: spacingUnit(1)),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                   'Find exciting deals and unlock incredible travel experiences. Check the latest promos now and let the journey begin!',
                                   textAlign: TextAlign.start,
-                                  style: ThemeText.caption
+                                  style: TravelloTheme.caption
                                       .copyWith(color: Colors.white)),
                             ),
-                            SizedBox(width: spacingUnit(1)),
+                            const SizedBox(width: 8),
                             const Icon(Icons.arrow_forward_ios,
                                 color: Colors.white, size: 12),
-                            SizedBox(width: spacingUnit(1)),
+                            const SizedBox(width: 8),
                           ],
                         ),
                       ),
@@ -118,14 +116,14 @@ class _SearchFlightState extends State<SearchFlight> {
                       width: double.infinity,
                       height: 20,
                       decoration: BoxDecoration(
-                        color: colorScheme(context).surfaceContainerLowest,
+                        color: TravelloTheme.paperLightContainerLowest,
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(16),
                         ),
                         boxShadow: [
                           BoxShadow(
                               color:
-                                  colorScheme(context).surfaceContainerLowest,
+                                  TravelloTheme.paperLightContainerLowest,
                               offset: const Offset(0, 2),
                               blurRadius: 0,
                               spreadRadius: 0)
@@ -145,8 +143,8 @@ class _SearchFlightState extends State<SearchFlight> {
               /// SEARCH FORM
               Container(
                 constraints: BoxConstraints(maxWidth: ThemeSize.sm),
-                padding: EdgeInsets.symmetric(
-                    horizontal: spacingUnit(2), vertical: spacingUnit(1)),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 8),
                 child: Row(children: [
                   TagButton(
                       text: 'One Way',
@@ -154,7 +152,7 @@ class _SearchFlightState extends State<SearchFlight> {
                       onPressed: () {
                         _setRoundTrip(false);
                       }),
-                  SizedBox(width: spacingUnit(1)),
+                  const SizedBox(width: 8),
                   TagButton(
                       text: 'Round Trip',
                       selected: _roundTrip,

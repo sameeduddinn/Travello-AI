@@ -1,14 +1,10 @@
 import 'package:flight_app/models/city.dart';
 import 'package:flight_app/models/plane.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/decorations/dashed_border.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightSummary extends StatelessWidget {
   const FlightSummary(
@@ -38,26 +34,26 @@ class FlightSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.all(spacingUnit(2)),
-      padding: EdgeInsets.symmetric(vertical: spacingUnit(1)),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-          color: colorScheme(context).surface,
+          color: TravelloTheme.paperLight,
           borderRadius: ThemeRadius.medium,
           boxShadow: !bordered ? [ThemeShade.shadeSoft(context)] : null,
           border: bordered
               ? Border.all(
-                  width: 1, color: colorScheme(context).primaryContainer)
+                  width: 1, color: TravelloTheme.primaryMainContainer)
               : null),
       child: Column(
         children: [
           /// AIRPLANE INFO
           plane != null
               ? Padding(
-                  padding: EdgeInsets.only(
-                    left: spacingUnit(2),
-                    right: spacingUnit(2),
-                    bottom: spacingUnit(2),
-                    top: spacingUnit(1),
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    bottom: 16,
+                    top: 8,
                   ),
                   child: Row(children: [
                     ClipRRect(
@@ -72,7 +68,7 @@ class FlightSummary extends StatelessWidget {
                     ),
                     Text(
                       plane!.name,
-                      style: ThemeText.paragraph,
+                      style: TravelloTheme.paragraph,
                     ),
                     const Spacer(),
                     Container(
@@ -80,7 +76,7 @@ class FlightSummary extends StatelessWidget {
                       decoration: BoxDecoration(
                           borderRadius: ThemeRadius.xsmall,
                           color: colorScheme(context).outline),
-                      child: Text(plane!.classType, style: ThemeText.caption),
+                      child: Text(plane!.classType, style: TravelloTheme.caption),
                     )
                   ]),
                 )
@@ -100,7 +96,7 @@ class FlightSummary extends StatelessWidget {
                           height: 8,
                           decoration: BoxDecoration(
                               border: Border.all(
-                                  color: colorScheme(context).primary,
+                                  color: TravelloTheme.primaryMain,
                                   width: 1),
                               shape: BoxShape.circle),
                         ),
@@ -112,7 +108,7 @@ class FlightSummary extends StatelessWidget {
                           height: 8,
                           decoration: BoxDecoration(
                               border: Border.all(
-                                  color: colorScheme(context).primary,
+                                  color: TravelloTheme.primaryMain,
                                   width: 1),
                               shape: BoxShape.circle),
                         ),
@@ -120,7 +116,7 @@ class FlightSummary extends StatelessWidget {
 
               /// DESTINATION
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -131,7 +127,7 @@ class FlightSummary extends StatelessWidget {
                             children: [
                               Text(from.name,
                                   overflow: TextOverflow.ellipsis,
-                                  style: ThemeText.caption.copyWith(
+                                  style: TravelloTheme.caption.copyWith(
                                       color: colorScheme(context)
                                           .onSurfaceVariant)),
                               Padding(
@@ -139,13 +135,13 @@ class FlightSummary extends StatelessWidget {
                                     const EdgeInsets.symmetric(vertical: 1),
                                 child: Text(
                                   from.code,
-                                  style: ThemeText.title2
+                                  style: TravelloTheme.title2
                                       .copyWith(fontWeight: FontWeight.bold),
                                 ),
                               ),
                               depart != null
                                   ? Text(DateFormat.MMMEd().format(depart!),
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant))
                                   : Container(),
@@ -175,7 +171,7 @@ class FlightSummary extends StatelessWidget {
                             children: [
                               Text(to.name,
                                   overflow: TextOverflow.ellipsis,
-                                  style: ThemeText.caption.copyWith(
+                                  style: TravelloTheme.caption.copyWith(
                                       color: colorScheme(context)
                                           .onSurfaceVariant)),
                               Padding(
@@ -183,13 +179,13 @@ class FlightSummary extends StatelessWidget {
                                     const EdgeInsets.symmetric(vertical: 1),
                                 child: Text(
                                   to.code,
-                                  style: ThemeText.title2
+                                  style: TravelloTheme.title2
                                       .copyWith(fontWeight: FontWeight.bold),
                                 ),
                               ),
                               arrival != null
                                   ? Text(DateFormat.MMMEd().format(arrival!),
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           color: colorScheme(context)
                                               .onSurfaceVariant))
                                   : Container(),
@@ -201,18 +197,18 @@ class FlightSummary extends StatelessWidget {
           ),
 
           /// PRICE AND LABEL
-          Divider(color: colorScheme(context).primaryContainer),
+          Divider(color: TravelloTheme.primaryMainContainer),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                     borderRadius: ThemeRadius.xsmall,
-                    color: colorScheme(context).secondaryContainer),
+                    color: TravelloTheme.secondaryMainContainer),
                 child: label != null
                     ? Text(label!,
-                        style: ThemeText.paragraph.copyWith(
+                        style: TravelloTheme.paragraph.copyWith(
                             fontWeight: FontWeight.w500,
                             color: colorScheme(context).onSurface))
                     : Container(),
@@ -230,18 +226,18 @@ class FlightSummary extends StatelessWidget {
               discount > 0
                   ? Text('PKR ${price.toStringAsFixed(0)}',
                       textAlign: TextAlign.end,
-                      style: ThemeText.headline.copyWith(
+                      style: TravelloTheme.headline.copyWith(
                           color: colorScheme(context).onSurfaceVariant,
                           height: 1,
                           decoration: TextDecoration.lineThrough))
                   : Container(),
-              SizedBox(
-                width: spacingUnit(1),
+              const SizedBox(
+                width: 8,
               ),
               Text('PKR ${(price - price * discount / 100).toStringAsFixed(0)}',
                   textAlign: TextAlign.end,
-                  style: ThemeText.title.copyWith(
-                      color: colorScheme(context).primary,
+                  style: TravelloTheme.title.copyWith(
+                      color: TravelloTheme.primaryMain,
                       height: 1,
                       fontWeight: FontWeight.bold)),
             ]),

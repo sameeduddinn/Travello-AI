@@ -1,10 +1,10 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/cards/promo_card.dart';
 import 'package:flight_app/widgets/title/title_action.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/promo.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PromoListSlider extends StatelessWidget {
   const PromoListSlider({super.key});
@@ -23,7 +23,7 @@ class PromoListSlider extends StatelessWidget {
   
     return Column(children: [
       Padding(
-        padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: TitleAction(
           title: 'The Latest Promos',
           desc: 'Check out the latest promos just for you',

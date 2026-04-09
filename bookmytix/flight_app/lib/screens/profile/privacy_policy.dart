@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PrivacyPolicy extends StatelessWidget {
   const PrivacyPolicy({super.key});
@@ -15,29 +13,29 @@ class PrivacyPolicy extends StatelessWidget {
           onPressed: () => Get.back(),
           icon: const Icon(Icons.arrow_back_ios_new),
         ),
-        title: const Text('Privacy Policy', style: ThemeText.subtitle),
+        title: const Text('Privacy Policy', style: TravelloTheme.subtitle),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(spacingUnit(3)),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Privacy Policy',
-              style: ThemeText.title.copyWith(
-                color: ThemePalette.primaryDark,
+              style: TravelloTheme.title.copyWith(
+                color: TravelloTheme.primaryDark,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: spacingUnit(1)),
+            const SizedBox(height: 8),
             Text(
               'Last Updated: March 2026',
-              style: ThemeText.caption.copyWith(color: Colors.grey),
+              style: TravelloTheme.caption.copyWith(color: Colors.grey),
             ),
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
             _buildSection(
               'Introduction',
               'Travello AI ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our travel booking platform.',
@@ -99,7 +97,7 @@ class PrivacyPolicy extends StatelessWidget {
                   'Phone: +92 (21) 1234-5678\n'
                   'Address: Karachi, Pakistan',
             ),
-            SizedBox(height: spacingUnit(3)),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -108,21 +106,21 @@ class PrivacyPolicy extends StatelessWidget {
 
   Widget _buildSection(String title, String content) {
     return Padding(
-      padding: EdgeInsets.only(bottom: spacingUnit(3)),
+      padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: ThemeText.subtitle.copyWith(
+            style: TravelloTheme.subtitle.copyWith(
               fontWeight: FontWeight.bold,
-              color: ThemePalette.primaryDark,
+              color: TravelloTheme.primaryDark,
             ),
           ),
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
           Text(
             content,
-            style: ThemeText.paragraph.copyWith(
+            style: TravelloTheme.paragraph.copyWith(
               height: 1.6,
               color: Colors.grey.shade700,
             ),

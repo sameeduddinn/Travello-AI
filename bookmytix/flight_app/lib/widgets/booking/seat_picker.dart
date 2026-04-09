@@ -1,11 +1,7 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class SeatPicker extends StatelessWidget {
   const SeatPicker({
@@ -26,7 +22,7 @@ class SeatPicker extends StatelessWidget {
 
     /// BOTTOMSHEET CONTENT
     return Padding(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       child: Wrap(children: [
         Column(children: [
           const GrabberIcon(),
@@ -34,7 +30,7 @@ class SeatPicker extends StatelessWidget {
           const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(Icons.airline_seat_recline_normal_rounded, size: 22),
             SizedBox(width: 8,),
-            Text('Change Seat', style: ThemeText.subtitle2),
+            Text('Change Seat', style: TravelloTheme.subtitle2),
           ]),
           const VSpaceShort(),
           /// COLOR INFO
@@ -58,11 +54,11 @@ class SeatPicker extends StatelessWidget {
 
           /// SEAT PICKER
           Container(
-            padding: EdgeInsets.all(spacingUnit(1)),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               border: Border.all(
                 width: 1,
-                color: colorScheme(context).primary,
+                color: TravelloTheme.primaryMain,
               ),
               borderRadius: ThemeRadius.medium
             ),
@@ -127,7 +123,7 @@ class SeatPicker extends StatelessWidget {
                 Get.back();
               },
               style: ThemeButton.btnBig.merge(ThemeButton.tonalPrimary(context)),
-              child: Text('Done'.toUpperCase(), style: ThemeText.subtitle)
+              child: Text('Done'.toUpperCase(), style: TravelloTheme.subtitle)
             ),
           ),
           const VSpace()
@@ -142,11 +138,11 @@ class SeatPicker extends StatelessWidget {
     Color checkStatus(st) {
       switch(st) {
         case 'selected':
-          return colorScheme(context).primary;
+          return TravelloTheme.primaryMain;
         case 'disabled':
           return colorScheme(context).outline;
         default:
-          return colorScheme(context).surface;
+          return TravelloTheme.paperLight;
       }
     }
 
@@ -163,7 +159,7 @@ class SeatPicker extends StatelessWidget {
           color: status == 'available' ? colorScheme(context).outlineVariant : Colors.transparent
         )
       ),
-      child: Text(text, style: ThemeText.caption.copyWith(color: status == 'available' ? colorScheme(context).onSurface : colorScheme(context).secondary),)
+      child: Text(text, style: TravelloTheme.caption.copyWith(color: status == 'available' ? colorScheme(context).onSurface : TravelloTheme.secondaryMain),)
     );
   }
 }

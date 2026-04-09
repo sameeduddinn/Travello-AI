@@ -1,7 +1,3 @@
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
 import 'package:flight_app/widgets/app_button/tag_button.dart';
 import 'package:flight_app/widgets/app_input/app_input_box.dart';
@@ -10,6 +6,7 @@ import 'package:flight_app/widgets/title/title_basic.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PassenggerClass extends StatelessWidget {
   const PassenggerClass(
@@ -29,27 +26,27 @@ class PassenggerClass extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: colorScheme(context).surface,
-      padding: EdgeInsets.all(spacingUnit(2)),
+      color: TravelloTheme.paperLight,
+      padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           const GrabberIcon(),
           const VSpaceShort(),
           const TitleBasic(title: 'Passengers'),
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
           AppInputBox(
               content: Row(children: [
-            Expanded(
+            const Expanded(
                 child: ListTile(
               leading: Icon(FontAwesomeIcons.user,
-                  size: 24, color: ThemePalette.primaryMain),
-              contentPadding: const EdgeInsets.all(0),
+                  size: 24, color: TravelloTheme.primaryMain),
+              contentPadding: EdgeInsets.all(0),
               minTileHeight: 0,
               minVerticalPadding: 0,
-              title: const Text('Adults'),
-              subtitle: const Text('Age 12 and over'),
+              title: Text('Adults'),
+              subtitle: Text('Age 12 and over'),
             )),
-            SizedBox(width: spacingUnit(1)),
+            const SizedBox(width: 8),
             AppInputNumber(
               onAdd: () {
                 addPassenggers('adults');
@@ -63,17 +60,17 @@ class PassenggerClass extends StatelessWidget {
           const VSpaceShort(),
           AppInputBox(
               content: Row(children: [
-            Expanded(
+            const Expanded(
                 child: ListTile(
               leading: Icon(FontAwesomeIcons.child,
-                  size: 24, color: ThemePalette.primaryMain),
-              contentPadding: const EdgeInsets.all(0),
+                  size: 24, color: TravelloTheme.primaryMain),
+              contentPadding: EdgeInsets.all(0),
               minTileHeight: 0,
               minVerticalPadding: 0,
-              title: const Text('Child'),
-              subtitle: const Text('Age 2-11'),
+              title: Text('Child'),
+              subtitle: Text('Age 2-11'),
             )),
-            SizedBox(width: spacingUnit(1)),
+            const SizedBox(width: 8),
             AppInputNumber(
               onAdd: () {
                 addPassenggers('children');
@@ -87,17 +84,17 @@ class PassenggerClass extends StatelessWidget {
           const VSpaceShort(),
           AppInputBox(
               content: Row(children: [
-            Expanded(
+            const Expanded(
                 child: ListTile(
               leading: Icon(FontAwesomeIcons.baby,
-                  size: 24, color: ThemePalette.primaryMain),
-              contentPadding: const EdgeInsets.all(0),
+                  size: 24, color: TravelloTheme.primaryMain),
+              contentPadding: EdgeInsets.all(0),
               minTileHeight: 0,
               minVerticalPadding: 0,
-              title: const Text('Infant'),
-              subtitle: const Text('Below Age 2'),
+              title: Text('Infant'),
+              subtitle: Text('Below Age 2'),
             )),
-            SizedBox(width: spacingUnit(1)),
+            const SizedBox(width: 8),
             AppInputNumber(
               onAdd: () {
                 addPassenggers('infants');
@@ -110,7 +107,7 @@ class PassenggerClass extends StatelessWidget {
           ])),
           const VSpace(),
           const TitleBasic(title: 'Flight Class'),
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
           SizedBox(
             child: Row(
               children: [
@@ -122,7 +119,7 @@ class PassenggerClass extends StatelessWidget {
                         onPressed: () {
                           setClass('Economy');
                         })),
-                SizedBox(width: spacingUnit(1)),
+                const SizedBox(width: 8),
                 Expanded(
                     child: SizedBox(
                         height: 34,
@@ -136,7 +133,7 @@ class PassenggerClass extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -147,7 +144,7 @@ class PassenggerClass extends StatelessWidget {
                       onPressed: () {
                         setClass('Business');
                       })),
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               Expanded(
                   child: TagButton(
                       text: 'First Class',
@@ -167,7 +164,7 @@ class PassenggerClass extends StatelessWidget {
                 },
                 style:
                     ThemeButton.btnBig.merge(ThemeButton.tonalPrimary(context)),
-                child: Text('Done'.toUpperCase(), style: ThemeText.subtitle)),
+                child: Text('Done'.toUpperCase(), style: TravelloTheme.subtitle)),
           ),
           const VSpace()
         ],

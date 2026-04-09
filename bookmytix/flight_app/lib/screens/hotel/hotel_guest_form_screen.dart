@@ -2,13 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/models/hotel.dart';
 import 'package:flight_app/models/room_type.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class HotelGuestFormScreen extends StatefulWidget {
   const HotelGuestFormScreen({super.key});
@@ -283,7 +282,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: colorScheme(context).primary,
+        backgroundColor: TravelloTheme.primaryMain,
         foregroundColor: Colors.white,
         title: const Text('Guest Details',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -305,8 +304,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
           // ── Progress steps ─────────────────────────────────────────────────
           Container(
             color: Colors.white,
-            padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(2), vertical: spacingUnit(1.5)),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: const Row(
               children: [
                 _Step(num: 1, label: 'Hotel', done: true),
@@ -328,14 +326,13 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
             child: Form(
               key: _formKey,
               child: ListView(
-                padding: EdgeInsets.all(spacingUnit(2)),
+                padding: const EdgeInsets.all(16),
                 children: [
                   // ── Booking summary strip ──────────────────────────────────
                   Container(
                     padding: EdgeInsets.all(spacingUnit(1.75)),
                     decoration: BoxDecoration(
-                      color:
-                          colorScheme(context).primary.withValues(alpha: 0.08),
+                      color: TravelloTheme.primaryMain.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                           color: colorScheme(context)
@@ -360,17 +357,17 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                             ),
                             Text(
                                 'PKR ${fmt.format((roomType?.pricePerNight ?? hotel.pricePerNight).round())}/night',
-                                style: TextStyle(
+                                style: const TextStyle(
                                     fontSize: 12,
-                                    color: colorScheme(context).primary,
+                                    color: TravelloTheme.primaryMain,
                                     fontWeight: FontWeight.w600)),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.location_on,
-                                size: 13, color: colorScheme(context).primary),
+                            const Icon(Icons.location_on,
+                                size: 13, color: TravelloTheme.primaryMain),
                             const SizedBox(width: 3),
                             Expanded(
                                 child: Text(hotel.name,
@@ -402,7 +399,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // ── Contact Details header ─────────────────────────────────
                   Container(
@@ -410,28 +407,27 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                         horizontal: spacingUnit(1.75),
                         vertical: spacingUnit(1.25)),
                     decoration: BoxDecoration(
-                      color:
-                          colorScheme(context).primary.withValues(alpha: 0.06),
+                      color: TravelloTheme.primaryMain.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                           color: colorScheme(context)
                               .primary
                               .withValues(alpha: 0.18)),
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
                         Icon(Icons.contact_page_outlined,
-                            color: colorScheme(context).primary, size: 20),
-                        const SizedBox(width: 10),
+                            color: TravelloTheme.primaryMain, size: 20),
+                        SizedBox(width: 10),
                         Text('Contact Details',
                             style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
-                                color: colorScheme(context).primary)),
+                                color: TravelloTheme.primaryMain)),
                       ],
                     ),
                   ),
-                  SizedBox(height: spacingUnit(1.5)),
+                  const SizedBox(height: 12),
 
                   // ── Primary Guest ──────────────────────────────────────────
                   const Row(
@@ -442,9 +438,9 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                               fontSize: 16, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  SizedBox(height: spacingUnit(1)),
+                  const SizedBox(height: 8),
                   Container(
-                    padding: EdgeInsets.all(spacingUnit(2)),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -467,7 +463,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                                   _field(_firstNameCtrl, 'First Name *',
                                       Icons.person_outline,
                                       required: true),
-                                  SizedBox(height: spacingUnit(1.5)),
+                                  const SizedBox(height: 12),
                                   _field(_lastNameCtrl, 'Last Name *',
                                       Icons.person_outline,
                                       required: true),
@@ -477,10 +473,10 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                             return Row(
                               children: [
                                 Expanded(
-                                    child: _field(_firstNameCtrl, 'First Name *',
-                                        Icons.person_outline,
+                                    child: _field(_firstNameCtrl,
+                                        'First Name *', Icons.person_outline,
                                         required: true)),
-                                SizedBox(width: spacingUnit(1.5)),
+                                const SizedBox(width: 12),
                                 Expanded(
                                     child: _field(_lastNameCtrl, 'Last Name *',
                                         Icons.person_outline,
@@ -489,7 +485,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                             );
                           },
                         ),
-                        SizedBox(height: spacingUnit(1.5)),
+                        const SizedBox(height: 12),
 
                         // CNIC
                         TextFormField(
@@ -513,8 +509,8 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                                     BorderSide(color: Colors.grey.shade300)),
                             focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                    color: colorScheme(context).primary)),
+                                borderSide: const BorderSide(
+                                    color: TravelloTheme.primaryMain)),
                           ),
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) {
@@ -531,7 +527,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                             setState(() => _cnicVerified = digits.length == 13);
                           },
                         ),
-                        SizedBox(height: spacingUnit(1.5)),
+                        const SizedBox(height: 12),
 
                         // Phone + Gender
                         LayoutBuilder(
@@ -560,21 +556,25 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                                       hintText: '3001234567',
                                       prefixIcon: const Icon(Icons.phone),
                                       prefixText: '+92 ',
-                                      prefixStyle: TextStyle(
+                                      prefixStyle: const TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 15,
-                                        color: colorScheme(context).primary,
+                                        color: TravelloTheme.primaryMain,
                                       ),
                                       border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12)),
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
                                       enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                           borderSide: BorderSide(
                                               color: Colors.grey.shade300)),
                                       focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(
-                                              color: colorScheme(context).primary)),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          borderSide: const BorderSide(
+                                              color:
+                                                  TravelloTheme.primaryMain)),
                                     ),
                                     validator: (v) {
                                       if (v == null || v.trim().isEmpty) {
@@ -595,22 +595,26 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                                       return null;
                                     },
                                   ),
-                                  SizedBox(height: spacingUnit(1.5)),
+                                  const SizedBox(height: 12),
                                   DropdownButtonFormField<String>(
                                     initialValue: _gender,
                                     decoration: InputDecoration(
                                       labelText: 'Gender',
                                       prefixIcon: const Icon(Icons.wc),
                                       border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12)),
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
                                       enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                           borderSide: BorderSide(
                                               color: Colors.grey.shade300)),
                                       focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(
-                                              color: colorScheme(context).primary)),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          borderSide: const BorderSide(
+                                              color:
+                                                  TravelloTheme.primaryMain)),
                                     ),
                                     items: ['Male', 'Female']
                                         .map((g) => DropdownMenuItem(
@@ -627,82 +631,90 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: _phoneCtrl,
-                                style: const TextStyle(color: Colors.black),
-                                keyboardType: TextInputType.phone,
-                                maxLength: 10,
-                                buildCounter: (_,
-                                        {required currentLength,
-                                        required isFocused,
-                                        maxLength}) =>
-                                    null,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(10),
-                                  _NoLeadingZeroFormatter(),
-                                ],
-                                decoration: InputDecoration(
-                                  labelText: 'Mobile *',
-                                  hintText: '3001234567',
-                                  prefixIcon: const Icon(Icons.phone),
-                                  prefixText: '+92 ',
-                                  prefixStyle: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                    color: colorScheme(context).primary,
+                                    style: const TextStyle(color: Colors.black),
+                                    keyboardType: TextInputType.phone,
+                                    maxLength: 10,
+                                    buildCounter: (_,
+                                            {required currentLength,
+                                            required isFocused,
+                                            maxLength}) =>
+                                        null,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                      LengthLimitingTextInputFormatter(10),
+                                      _NoLeadingZeroFormatter(),
+                                    ],
+                                    decoration: InputDecoration(
+                                      labelText: 'Mobile *',
+                                      hintText: '3001234567',
+                                      prefixIcon: const Icon(Icons.phone),
+                                      prefixText: '+92 ',
+                                      prefixStyle: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                        color: TravelloTheme.primaryMain,
+                                      ),
+                                      border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                      enabledBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          borderSide: BorderSide(
+                                              color: Colors.grey.shade300)),
+                                      focusedBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          borderSide: const BorderSide(
+                                              color:
+                                                  TravelloTheme.primaryMain)),
+                                    ),
+                                    validator: (v) {
+                                      if (v == null || v.trim().isEmpty) {
+                                        return 'Phone required';
+                                      }
+                                      final digits =
+                                          v.replaceAll(RegExp(r'[^0-9]'), '');
+                                      if (digits.startsWith('0')) {
+                                        return 'Do not include leading 0 with +92';
+                                      }
+                                      if (digits.length != 10) {
+                                        return 'Enter 10-digit mobile number';
+                                      }
+                                      if (!digits.startsWith('3') &&
+                                          !digits.startsWith('2')) {
+                                        return 'Invalid Pakistan phone number';
+                                      }
+                                      return null;
+                                    },
                                   ),
-                                  border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12)),
-                                  enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300)),
-                                  focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                          color: colorScheme(context).primary)),
                                 ),
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) {
-                                    return 'Phone required';
-                                  }
-                                  final digits =
-                                      v.replaceAll(RegExp(r'[^0-9]'), '');
-                                  if (digits.startsWith('0')) {
-                                    return 'Do not include leading 0 with +92';
-                                  }
-                                  if (digits.length != 10) {
-                                    return 'Enter 10-digit mobile number';
-                                  }
-                                  if (!digits.startsWith('3') &&
-                                      !digits.startsWith('2')) {
-                                    return 'Invalid Pakistan phone number';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                            SizedBox(width: spacingUnit(1.5)),
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                initialValue: _gender,
-                                decoration: InputDecoration(
-                                  labelText: 'Gender',
-                                  prefixIcon: const Icon(Icons.wc),
-                                  border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12)),
-                                  enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300)),
-                                  focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                          color: colorScheme(context).primary)),
-                                ),
-                                items: ['Male', 'Female']
-                                    .map((g) => DropdownMenuItem(
-                                        value: g, child: Text(g)))
-                                    .toList(),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    initialValue: _gender,
+                                    decoration: InputDecoration(
+                                      labelText: 'Gender',
+                                      prefixIcon: const Icon(Icons.wc),
+                                      border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                      enabledBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          borderSide: BorderSide(
+                                              color: Colors.grey.shade300)),
+                                      focusedBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          borderSide: const BorderSide(
+                                              color:
+                                                  TravelloTheme.primaryMain)),
+                                    ),
+                                    items: ['Male', 'Female']
+                                        .map((g) => DropdownMenuItem(
+                                            value: g, child: Text(g)))
+                                        .toList(),
                                     onChanged: (v) =>
                                         setState(() => _gender = v ?? 'Male'),
                                   ),
@@ -711,7 +723,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                             );
                           },
                         ),
-                        SizedBox(height: spacingUnit(1.5)),
+                        const SizedBox(height: 12),
 
                         // Email (optional)
                         TextFormField(
@@ -730,8 +742,8 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                                     BorderSide(color: Colors.grey.shade300)),
                             focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                    color: colorScheme(context).primary)),
+                                borderSide: const BorderSide(
+                                    color: TravelloTheme.primaryMain)),
                           ),
                           validator: (v) {
                             if (v != null &&
@@ -745,7 +757,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: spacingUnit(1)),
+                  const SizedBox(height: 8),
 
                   // ── Save Details Checkbox ──────────────────────────────────
                   InkWell(
@@ -760,7 +772,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                             value: _saveGuestDetails,
                             onChanged: (v) =>
                                 setState(() => _saveGuestDetails = v ?? false),
-                            activeColor: colorScheme(context).primary,
+                            activeColor: TravelloTheme.primaryMain,
                             materialTapTargetSize:
                                 MaterialTapTargetSize.shrinkWrap,
                             visualDensity: VisualDensity.compact,
@@ -783,11 +795,11 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: spacingUnit(1.5)),
+                  const SizedBox(height: 12),
 
                   // ── NADRA Banner ───────────────────────────────────────────
                   Container(
-                    padding: EdgeInsets.all(spacingUnit(1.5)),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF3CD),
                       borderRadius: BorderRadius.circular(10),
@@ -800,7 +812,8 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                       children: [
                         const Row(
                           children: [
-                            Text('🇵🇰', style: TextStyle(fontSize: 16)),
+                            Icon(Icons.flag,
+                                size: 16, color: Color(0xFF856404)),
                             SizedBox(width: 6),
                             Expanded(
                                 child: Text('NADRA CNIC Required',
@@ -818,7 +831,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // ── Additional Guests (dynamic loop for guests 2…N) ─────────
                   for (int i = 0; i < _extraNameCtrls.length; i++) ...[
@@ -827,9 +840,9 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(height: spacingUnit(1)),
+                    const SizedBox(height: 8),
                     Container(
-                      padding: EdgeInsets.all(spacingUnit(2)),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
@@ -840,7 +853,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                           _field(_extraNameCtrls[i], 'Full Name *',
                               Icons.person_outline,
                               required: true),
-                          SizedBox(height: spacingUnit(1.5)),
+                          const SizedBox(height: 12),
                           TextFormField(
                             controller: _extraDocCtrls[i],
                             style: const TextStyle(color: Colors.black),
@@ -882,21 +895,21 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                                       BorderSide(color: Colors.grey.shade300)),
                               focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                      color: colorScheme(context).primary)),
+                                  borderSide: const BorderSide(
+                                      color: TravelloTheme.primaryMain)),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: spacingUnit(2)),
+                    const SizedBox(height: 16),
                   ],
 
                   // ── Add Extras ─────────────────────────────────────────────
                   const Text('Add extras',
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  SizedBox(height: spacingUnit(1)),
+                  const SizedBox(height: 8),
                   if (roomType?.breakfastIncluded == true)
                     Container(
                       margin: const EdgeInsets.only(bottom: 8),
@@ -934,7 +947,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                       onToggle: () =>
                           setState(() => _addBreakfast = !_addBreakfast),
                     ),
-                  SizedBox(height: spacingUnit(1)),
+                  const SizedBox(height: 8),
                   _ExtraCard(
                     icon: Icons.airport_shuttle,
                     title: 'Airport transfer',
@@ -945,7 +958,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                     onToggle: () => setState(
                         () => _addAirportTransfer = !_addAirportTransfer),
                   ),
-                  SizedBox(height: spacingUnit(1)),
+                  const SizedBox(height: 8),
                   _ExtraCard(
                     icon: Icons.schedule,
                     title: 'Late check-out',
@@ -957,7 +970,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                     onToggle: () =>
                         setState(() => _addLateCheckout = !_addLateCheckout),
                   ),
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // ── House Rules ─────────────────────────────────────────────
                   Container(
@@ -1004,7 +1017,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: spacingUnit(10)),
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
@@ -1014,7 +1027,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
 
       // ── Bottom Bar ─────────────────────────────────────────────────────────
       bottomNavigationBar: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
@@ -1034,14 +1047,14 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     children: [
-                      Icon(Icons.add_circle_outline,
-                          size: 14, color: colorScheme(context).primary),
+                      const Icon(Icons.add_circle_outline,
+                          size: 14, color: TravelloTheme.primaryMain),
                       const SizedBox(width: 4),
                       Text(
                           'Extras: PKR ${NumberFormat('#,##0').format(extrasTotal.round())}',
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 12,
-                              color: colorScheme(context).primary,
+                              color: TravelloTheme.primaryMain,
                               fontWeight: FontWeight.w500)),
                     ],
                   ),
@@ -1057,10 +1070,10 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                             style: TextStyle(fontSize: 11, color: Colors.grey)),
                         Text(
                             'PKR ${NumberFormat('#,##0').format(finalTotal.round())}',
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: colorScheme(context).primary)),
+                                color: TravelloTheme.primaryMain)),
                         Text(
                             '$guests ${guests == 1 ? 'guest' : 'guests'} · $numberOfNights nights',
                             style: const TextStyle(
@@ -1068,7 +1081,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(width: spacingUnit(2)),
+                  const SizedBox(width: 16),
                   DSButton(
                     label: 'Continue to Checkout',
                     trailingIcon: Icons.arrow_forward_rounded,
@@ -1104,7 +1117,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
             borderSide: BorderSide(color: Colors.grey.shade300)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme(context).primary)),
+            borderSide: const BorderSide(color: TravelloTheme.primaryMain)),
       ),
       validator: required
           ? (v) {
@@ -1134,7 +1147,7 @@ class _Step extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gold = colorScheme(context).primary;
+    const gold = TravelloTheme.primaryMain;
     return Column(
       children: [
         Container(
@@ -1175,7 +1188,7 @@ class _StepLine extends StatelessWidget {
       child: Container(
         height: 2,
         margin: const EdgeInsets.only(bottom: 18),
-        color: done ? colorScheme(context).primary : const Color(0xFFE0E0E0),
+        color: done ? TravelloTheme.primaryMain : const Color(0xFFE0E0E0),
       ),
     );
   }
@@ -1208,13 +1221,12 @@ class _ExtraCard extends StatelessWidget {
         padding: EdgeInsets.all(spacingUnit(1.75)),
         decoration: BoxDecoration(
           color: selected
-              ? colorScheme(context).primary.withValues(alpha: 0.07)
+              ? TravelloTheme.primaryMain.withValues(alpha: 0.07)
               : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: selected
-                  ? colorScheme(context).primary
-                  : Colors.grey.shade300,
+              color:
+                  selected ? TravelloTheme.primaryMain : Colors.grey.shade300,
               width: selected ? 1.5 : 1),
         ),
         child: Row(
@@ -1223,17 +1235,17 @@ class _ExtraCard extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: selected
-                    ? colorScheme(context).primary.withValues(alpha: 0.12)
+                    ? TravelloTheme.primaryMain.withValues(alpha: 0.12)
                     : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon,
                   size: 20,
                   color: selected
-                      ? colorScheme(context).primary
+                      ? TravelloTheme.primaryMain
                       : Colors.grey.shade600),
             ),
-            SizedBox(width: spacingUnit(1.5)),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1248,20 +1260,20 @@ class _ExtraCard extends StatelessWidget {
               ),
             ),
             Text(price,
-                style: TextStyle(
+                style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: colorScheme(context).primary)),
-            SizedBox(width: spacingUnit(1)),
+                    color: TravelloTheme.primaryMain)),
+            const SizedBox(width: 8),
             Container(
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                color: selected ? colorScheme(context).primary : Colors.white,
+                color: selected ? TravelloTheme.primaryMain : Colors.white,
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(
                     color: selected
-                        ? colorScheme(context).primary
+                        ? TravelloTheme.primaryMain
                         : Colors.grey.shade400,
                     width: 1.5),
               ),

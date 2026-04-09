@@ -1,12 +1,8 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get/get.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PanelPoint extends StatefulWidget {
   const PanelPoint({super.key});
@@ -114,37 +110,37 @@ class _PanelPointState extends State<PanelPoint>
         child: ScaleTransition(
           scale: _scaleAnimation,
           child: Container(
-            margin: EdgeInsets.only(
-                top: spacingUnit(2),
-                left: spacingUnit(2),
-                right: spacingUnit(2)),
+            margin: const EdgeInsets.only(
+                top: 16,
+                left: 16,
+                right: 16),
             decoration: BoxDecoration(
-              color: colorScheme(context).surface,
+              color: TravelloTheme.paperLight,
               borderRadius: ThemeRadius.medium,
               boxShadow: [
                 ThemeShade.shadeSoft(context),
                 BoxShadow(
-                  color: ThemePalette.primaryMain.withOpacity(0.1),
+                  color: TravelloTheme.primaryMain.withOpacity(0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
               ],
               border: Border.all(
-                color: ThemePalette.primaryMain.withOpacity(0.15),
+                color: TravelloTheme.primaryMain.withOpacity(0.15),
                 width: 1,
               ),
             ),
             child: Padding(
-              padding: EdgeInsets.all(spacingUnit(1.5)),
+              padding: const EdgeInsets.all(12),
               child: _isLoading
-                  ? Center(
+                  ? const Center(
                       child: SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            ThemePalette.primaryMain,
+                            TravelloTheme.primaryMain,
                           ),
                         ),
                       ),
@@ -174,11 +170,11 @@ class _PanelPointState extends State<PanelPoint>
             label: 'Total Bookings',
             gradient: LinearGradient(
               colors: [
-                ThemePalette.primaryMain.withOpacity(0.15),
-                ThemePalette.primaryLight.withOpacity(0.1),
+                TravelloTheme.primaryMain.withOpacity(0.15),
+                TravelloTheme.primaryLight.withOpacity(0.1),
               ],
             ),
-            iconColor: ThemePalette.primaryMain,
+            iconColor: TravelloTheme.primaryMain,
             delay: 200,
           ),
         ),
@@ -186,7 +182,7 @@ class _PanelPointState extends State<PanelPoint>
         SizedBox(
           height: 40,
           child: VerticalDivider(
-            color: ThemePalette.primaryMain.withOpacity(0.2),
+            color: TravelloTheme.primaryMain.withOpacity(0.2),
             width: 20,
             thickness: 1,
           ),
@@ -201,11 +197,11 @@ class _PanelPointState extends State<PanelPoint>
             label: 'Upcoming',
             gradient: LinearGradient(
               colors: [
-                ThemePalette.secondaryMain.withOpacity(0.15),
-                ThemePalette.secondaryLight.withOpacity(0.1),
+                TravelloTheme.secondaryMain.withOpacity(0.15),
+                TravelloTheme.secondaryLight.withOpacity(0.1),
               ],
             ),
-            iconColor: ThemePalette.secondaryMain,
+            iconColor: TravelloTheme.secondaryMain,
             delay: 400,
           ),
         ),
@@ -258,7 +254,7 @@ class _PanelPointState extends State<PanelPoint>
                     ),
                   ),
                 ),
-                SizedBox(width: spacingUnit(1.5)),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,7 +265,7 @@ class _PanelPointState extends State<PanelPoint>
                             .createShader(bounds),
                         child: Text(
                           '$count',
-                          style: ThemeText.subtitle2.copyWith(
+                          style: TravelloTheme.subtitle2.copyWith(
                             height: 1,
                             fontWeight: FontWeight.w700,
                             fontSize: 18,
@@ -280,7 +276,7 @@ class _PanelPointState extends State<PanelPoint>
                       const SizedBox(height: 2),
                       Text(
                         label,
-                        style: ThemeText.paragraph.copyWith(
+                        style: TravelloTheme.paragraph.copyWith(
                           fontSize: 11,
                         ),
                       ),
@@ -310,19 +306,19 @@ class _PanelPointState extends State<PanelPoint>
               onTap: () => Get.toNamed('/login'),
               borderRadius: ThemeRadius.medium,
               child: Container(
-                padding: EdgeInsets.symmetric(vertical: spacingUnit(1)),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      ThemePalette.primaryMain.withOpacity(0.08),
-                      ThemePalette.primaryLight.withOpacity(0.05),
+                      TravelloTheme.primaryMain.withOpacity(0.08),
+                      TravelloTheme.primaryLight.withOpacity(0.05),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: ThemeRadius.medium,
                   border: Border.all(
-                    color: ThemePalette.primaryMain.withOpacity(0.2),
+                    color: TravelloTheme.primaryMain.withOpacity(0.2),
                     width: 1,
                   ),
                 ),
@@ -332,11 +328,11 @@ class _PanelPointState extends State<PanelPoint>
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        gradient: ThemePalette.gradientPrimaryLight,
+                        gradient: TravelloTheme.gradientPrimaryLight,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: ThemePalette.primaryMain.withOpacity(0.3),
+                            color: TravelloTheme.primaryMain.withOpacity(0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -348,7 +344,7 @@ class _PanelPointState extends State<PanelPoint>
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(width: spacingUnit(2)),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,7 +375,7 @@ class _PanelPointState extends State<PanelPoint>
                     Icon(
                       Icons.arrow_forward_ios,
                       size: 16,
-                      color: ThemePalette.primaryMain.withOpacity(0.5),
+                      color: TravelloTheme.primaryMain.withOpacity(0.5),
                     ),
                   ],
                 ),

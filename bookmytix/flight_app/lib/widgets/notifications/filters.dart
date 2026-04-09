@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class NotificationFilters extends StatelessWidget {
   const NotificationFilters({super.key, required this.selected, this.onChangeFilter});

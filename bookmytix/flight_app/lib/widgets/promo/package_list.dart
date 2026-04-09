@@ -1,11 +1,10 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/models/flight_package.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/cards/package_card.dart';
 import 'package:flight_app/widgets/flight/package_options.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PackageList extends StatelessWidget {
   const PackageList({super.key});
@@ -84,22 +83,22 @@ class PackageList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text('Explore the best packages!',
               textAlign: TextAlign.start,
-              style: ThemeText.subtitle.copyWith(fontWeight: FontWeight.bold)),
+              style: TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.bold)),
         ),
         const VSpace(),
         ListView.builder(
           shrinkWrap: true,
           physics: const ClampingScrollPhysics(),
-          padding: EdgeInsets.only(
-              top: spacingUnit(2), left: spacingUnit(2), right: spacingUnit(2)),
+          padding: const EdgeInsets.only(
+              top: 16, left: 16, right: 16),
           itemCount: packageList.length,
           itemBuilder: (BuildContext context, int index) {
             FlightPackage item = flightPackageList[index];
             return Padding(
-              padding: EdgeInsets.only(bottom: spacingUnit(3)),
+              padding: const EdgeInsets.only(bottom: 24),
               child: SizedBox(
                   width: double.infinity,
                   child: GestureDetector(

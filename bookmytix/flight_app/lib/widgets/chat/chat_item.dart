@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/shimmer_preloader.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ChatItem extends StatelessWidget {
   const ChatItem({
@@ -27,7 +26,7 @@ class ChatItem extends StatelessWidget {
       onTap: onTap,
       child: Column(children: [
         ListTile(
-          contentPadding: EdgeInsets.all(spacingUnit(1)),
+          contentPadding: const EdgeInsets.all(8),
           leading: ClipRRect(
             borderRadius: BorderRadius.circular(100),
             child: Image.network(
@@ -47,7 +46,7 @@ class ChatItem extends StatelessWidget {
           ),
           title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
           subtitle: Text(message, maxLines: 2, overflow: TextOverflow.ellipsis),
-          trailing: Text(date, style: ThemeText.caption),
+          trailing: Text(date, style: TravelloTheme.caption),
         ),
         !isLast ? const LineList() : Container()
       ])

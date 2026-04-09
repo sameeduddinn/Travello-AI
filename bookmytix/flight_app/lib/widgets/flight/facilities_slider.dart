@@ -1,8 +1,6 @@
 import 'package:flight_app/models/list_item.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FacilitiesSlider extends StatelessWidget {
   const FacilitiesSlider({super.key});
@@ -50,8 +48,8 @@ class FacilitiesSlider extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
-          child: const Text('Facilities', style: ThemeText.subtitle2),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: const Text('Facilities', style: TravelloTheme.subtitle2),
         ),
         const VSpaceShort(),
         SizedBox(
@@ -65,11 +63,11 @@ class FacilitiesSlider extends StatelessWidget {
               ListItem item = facilities[index];
           
               return Container(
-                padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(children: [
                   Icon(item.icon, size: 48, color: colorScheme(context).outlineVariant),
-                  SizedBox(height: spacingUnit(1),),
-                  Text(item.label, style: ThemeText.paragraph)
+                  const SizedBox(height: 8,),
+                  Text(item.label, style: TravelloTheme.paragraph)
                 ])
               );
             })

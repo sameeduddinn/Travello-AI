@@ -3,8 +3,7 @@ import 'package:flight_app/models/notification.dart';
 import 'package:flight_app/utils/support_message_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class Notification extends StatefulWidget {
   const Notification({super.key});
@@ -89,10 +88,10 @@ class _NotificationState extends State<Notification>
         actions: [
           TextButton(
             onPressed: _markAllRead,
-            child: Text('Mark all read',
+            child: const Text('Mark all read',
                 style: TextStyle(
                     fontSize: 13,
-                    color: ThemePalette.primaryMain,
+                    color: TravelloTheme.primaryMain,
                     fontWeight: FontWeight.w600)),
           ),
         ],
@@ -102,9 +101,9 @@ class _NotificationState extends State<Notification>
             children: [
               TabBar(
                 controller: _tabController,
-                indicatorColor: ThemePalette.primaryMain,
+                indicatorColor: TravelloTheme.primaryMain,
                 indicatorWeight: 2.5,
-                labelColor: ThemePalette.primaryMain,
+                labelColor: TravelloTheme.primaryMain,
                 unselectedLabelColor: Colors.grey.shade500,
                 labelStyle:
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -168,8 +167,8 @@ class _NotificationState extends State<Notification>
                 color: Color(0xFFFDF5D8),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.notifications_none_rounded,
-                  size: 40, color: ThemePalette.primaryMain),
+              child: const Icon(Icons.notifications_none_rounded,
+                  size: 40, color: TravelloTheme.primaryMain),
             ),
             const SizedBox(height: 20),
             const Text("You're all caught up!",
@@ -214,7 +213,7 @@ class _NotificationState extends State<Notification>
                       ),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                            backgroundColor: ThemePalette.primaryMain),
+                            backgroundColor: TravelloTheme.primaryMain),
                         onPressed: () {
                           Get.back();
                           _clearAll();
@@ -296,8 +295,8 @@ class _NotificationState extends State<Notification>
                         color: const Color(0xFFFDF5D8),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Icon(Icons.chat_bubble_outline_rounded,
-                          color: ThemePalette.primaryMain, size: 28),
+                      child: const Icon(Icons.chat_bubble_outline_rounded,
+                          color: TravelloTheme.primaryMain, size: 28),
                     ),
                   ),
                   Positioned(
@@ -307,7 +306,7 @@ class _NotificationState extends State<Notification>
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: ThemePalette.primaryMain,
+                        color: TravelloTheme.primaryMain,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.chat_bubble_rounded,
@@ -360,7 +359,7 @@ class _NotificationState extends State<Notification>
                           child: const Text('Cancel')),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                            backgroundColor: ThemePalette.primaryMain),
+                            backgroundColor: TravelloTheme.primaryMain),
                         onPressed: () async {
                           Get.back();
                           await SupportMessageService.clearAll();
@@ -520,8 +519,8 @@ class _NotifTile extends StatelessWidget {
         children: [
           Container(
             color: item.isRead ? Colors.white : const Color(0xFFFEF9EC),
-            padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(2), vertical: spacingUnit(1.5)),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -534,7 +533,7 @@ class _NotifTile extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: item.isRead
                           ? Colors.transparent
-                          : ThemePalette.primaryMain,
+                          : TravelloTheme.primaryMain,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -678,8 +677,8 @@ class _MessageTile extends StatelessWidget {
               color: const Color(0xFFFDF5D8),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.support_agent_rounded,
-                color: ThemePalette.primaryMain, size: 22),
+            child: const Icon(Icons.support_agent_rounded,
+                color: TravelloTheme.primaryMain, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(

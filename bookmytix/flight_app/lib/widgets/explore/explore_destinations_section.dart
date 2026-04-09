@@ -1,9 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pakistan destination data model
@@ -460,9 +458,9 @@ class ExploreDestinationsSection extends StatelessWidget {
       children: [
         // Section title
         Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: spacingUnit(2),
-            vertical: spacingUnit(1),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -474,7 +472,7 @@ class ExploreDestinationsSection extends StatelessWidget {
                     selectedCategory == 'All'
                         ? 'Explore Pakistan'
                         : '$selectedCategory in Pakistan',
-                    style: ThemeText.title2.copyWith(
+                    style: TravelloTheme.title2.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -489,9 +487,9 @@ class ExploreDestinationsSection extends StatelessWidget {
                   ),
                 ],
               ),
-              Icon(
+              const Icon(
                 CupertinoIcons.map,
-                color: ThemePalette.primaryMain,
+                color: TravelloTheme.primaryMain,
                 size: 20,
               ),
             ],
@@ -500,15 +498,15 @@ class ExploreDestinationsSection extends StatelessWidget {
 
         // Grid of destination cards
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: spacingUnit(1.5)),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossCount,
               childAspectRatio: 0.72,
-              crossAxisSpacing: spacingUnit(1.5),
-              mainAxisSpacing: spacingUnit(1.5),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
             ),
             itemCount: destinations.length,
             itemBuilder: (context, index) {
@@ -516,7 +514,7 @@ class ExploreDestinationsSection extends StatelessWidget {
             },
           ),
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
       ],
     );
   }

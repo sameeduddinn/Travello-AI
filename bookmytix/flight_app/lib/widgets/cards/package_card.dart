@@ -1,13 +1,10 @@
 import 'package:change_case/change_case.dart';
 import 'package:flight_app/models/plane.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/shimmer_preloader.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
 import 'package:flight_app/widgets/decorations/dashed_border.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PackageCard extends StatelessWidget {
   const PackageCard(
@@ -68,16 +65,16 @@ class PackageCard extends StatelessWidget {
                   width: 60,
                   height: 60,
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: colorScheme(context).secondary,
-                    borderRadius: const BorderRadius.only(
+                  decoration: const BoxDecoration(
+                    color: TravelloTheme.secondaryMain,
+                    borderRadius: BorderRadius.only(
                       bottomRight: Radius.circular(60),
                     ),
                   ),
                   child: Text(
                     label,
                     textAlign: TextAlign.start,
-                    style: ThemeText.paragraphBold
+                    style: TravelloTheme.paragraphBold
                         .copyWith(color: const Color(0xFF000000)),
                   ),
                 ),
@@ -88,7 +85,7 @@ class PackageCard extends StatelessWidget {
 
         /// PROPERTIES
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Column(
             children: [
               const SizedBox(height: 100),
@@ -102,7 +99,7 @@ class PackageCard extends StatelessWidget {
                       Flexible(
                           child: Text(from,
                               overflow: TextOverflow.ellipsis,
-                              style: ThemeText.subtitle)),
+                              style: TravelloTheme.subtitle)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Icon(
@@ -115,7 +112,7 @@ class PackageCard extends StatelessWidget {
                       Flexible(
                           child: Text(to,
                               overflow: TextOverflow.ellipsis,
-                              style: ThemeText.subtitle)),
+                              style: TravelloTheme.subtitle)),
                     ]),
                   ),
 
@@ -123,20 +120,23 @@ class PackageCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    date,
-                                    style: ThemeText.caption.copyWith(
+                                  Flexible(
+                                    child: Text(
+                                      date,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TravelloTheme.caption.copyWith(
                                         color: colorScheme(context)
-                                            .onSurfaceVariant),
+                                            .onSurfaceVariant,
+                                      ),
+                                    ),
                                   ),
                                   const SizedBox(width: 6),
                                   Container(
@@ -164,29 +164,33 @@ class PackageCard extends StatelessWidget {
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  Wrap(
-                                    spacing: 4,
-                                    children: tags.asMap().entries.map((entry) {
-                                      int index = entry.key;
-                                      String tag = entry.value;
-                                      return Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 4),
-                                        decoration: BoxDecoration(
-                                            borderRadius: ThemeRadius.xsmall,
-                                            color: index % 2 == 0
-                                                ? colorScheme(context)
-                                                    .primaryContainer
-                                                : colorScheme(context)
-                                                    .secondaryContainer),
-                                        child: Text(tag.toCapitalCase(),
-                                            style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w500,
-                                                color: colorScheme(context)
-                                                    .onSurface)),
-                                      );
-                                    }).toList(),
+                                  Expanded(
+                                    child: Wrap(
+                                      spacing: 4,
+                                      runSpacing: 4,
+                                      children:
+                                          tags.asMap().entries.map((entry) {
+                                        int index = entry.key;
+                                        String tag = entry.value;
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 4),
+                                          decoration: BoxDecoration(
+                                              borderRadius: ThemeRadius.xsmall,
+                                              color: index % 2 == 0
+                                                  ? colorScheme(context)
+                                                      .primaryContainer
+                                                  : colorScheme(context)
+                                                      .secondaryContainer),
+                                          child: Text(tag.toCapitalCase(),
+                                              style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: colorScheme(context)
+                                                      .onSurface)),
+                                        );
+                                      }).toList(),
+                                    ),
                                   ),
                                   const SizedBox(width: 4),
                                   Container(
@@ -203,23 +207,25 @@ class PackageCard extends StatelessWidget {
                               ),
                             ],
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                'Start from',
-                                style: ThemeText.caption.copyWith(
-                                    color:
-                                        colorScheme(context).onSurfaceVariant),
-                              ),
-                              Text('Rs.${price.toStringAsFixed(0)}',
-                                  style: ThemeText.title2.copyWith(
-                                      color: colorScheme(context).primary,
-                                      fontWeight: FontWeight.bold,
-                                      height: 1.1)),
-                            ],
-                          ),
-                        ]),
+                        ),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Start from',
+                              style: TravelloTheme.caption.copyWith(
+                                  color: colorScheme(context).onSurfaceVariant),
+                            ),
+                            Text('Rs.${price.toStringAsFixed(0)}',
+                                style: TravelloTheme.title2.copyWith(
+                                    color: TravelloTheme.primaryMain,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.1)),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
 
                   /// AIRPLANE
@@ -241,15 +247,15 @@ class PackageCard extends StatelessWidget {
                             child: Text(
                               '${plane!.name} · ${plane!.classType}',
                               overflow: TextOverflow.ellipsis,
-                              style: ThemeText.caption,
+                              style: TravelloTheme.caption,
                             ),
                           ),
                           if (duration.isNotEmpty) ...[
                             const SizedBox(width: 4),
                             Text(
                               duration,
-                              style: ThemeText.caption.copyWith(
-                                  color: colorScheme(context).primary,
+                              style: TravelloTheme.caption.copyWith(
+                                  color: TravelloTheme.primaryMain,
                                   fontWeight: FontWeight.w600),
                             ),
                           ],

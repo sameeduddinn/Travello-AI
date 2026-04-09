@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/models/railway_station.dart';
 import 'package:flight_app/utils/format_utils.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 // Train result model
 class TrainResult {
@@ -767,7 +766,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
               expand: false,
               builder: (context, scrollController) {
                 return Container(
-                  padding: EdgeInsets.all(spacingUnit(3)),
+                  padding: const EdgeInsets.all(24),
                   child: ListView(
                     controller: scrollController,
                     children: [
@@ -775,7 +774,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         child: Container(
                           width: 40,
                           height: 4,
-                          margin: EdgeInsets.only(bottom: spacingUnit(2)),
+                          margin: const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
                             color: Colors.grey[300],
                             borderRadius: BorderRadius.circular(2),
@@ -785,7 +784,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Filters', style: ThemeText.title2),
+                          const Text('Filters', style: TravelloTheme.title2),
                           TextButton(
                             onPressed: () {
                               setModalState(() {
@@ -801,15 +800,15 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: spacingUnit(3)),
+                      const SizedBox(height: 24),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Price Range', style: ThemeText.subtitle),
+                          const Text('Price Range', style: TravelloTheme.subtitle),
                           Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: spacingUnit(1.5),
-                              vertical: spacingUnit(0.5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFD4AF37)
@@ -827,7 +826,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: spacingUnit(1)),
+                      const SizedBox(height: 8),
                       RangeSlider(
                         values: tempPrice,
                         min: minPrice,
@@ -846,16 +845,16 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                 setModalState(() => tempPrice = values);
                               },
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('Departure Time',
-                              style: ThemeText.subtitle),
+                              style: TravelloTheme.subtitle),
                           Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: spacingUnit(1.5),
-                              vertical: spacingUnit(0.5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFD4AF37)
@@ -873,7 +872,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: spacingUnit(1)),
+                      const SizedBox(height: 8),
                       RangeSlider(
                         values: tempTime,
                         min: 0,
@@ -892,15 +891,15 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                           setModalState(() => tempTime = values);
                         },
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       GestureDetector(
                         onTap: () => setModalState(
                             () => tempRefundable = !tempRefundable),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: spacingUnit(2),
-                            vertical: spacingUnit(1.5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
                           ),
                           decoration: BoxDecoration(
                             color: tempRefundable
@@ -927,13 +926,13 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                         : Colors.grey.shade400,
                                     size: 20,
                                   ),
-                                  SizedBox(width: spacingUnit(1.5)),
+                                  const SizedBox(width: 12),
                                   Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       const Text('Refundable trains only',
-                                          style: ThemeText.subtitle),
+                                          style: TravelloTheme.subtitle),
                                       Text(
                                         'Show only cancellable tickets',
                                         style: TextStyle(
@@ -956,7 +955,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                           ),
                         ),
                       ),
-                      SizedBox(height: spacingUnit(4)),
+                      const SizedBox(height: 32),
                       SizedBox(
                         width: double.infinity,
                         height: 52,
@@ -1072,15 +1071,15 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
           if (_isRoundTrip)
             Container(
               color: Colors.white,
-              padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(2),
-                vertical: spacingUnit(1.5),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
               ),
               child: Row(
                 children: [
                   Expanded(
                     child: Container(
-                      padding: EdgeInsets.symmetric(vertical: spacingUnit(1.5)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         color: _currentJourneyIndex == 0
                             ? const Color(0xFFD4AF37)
@@ -1105,7 +1104,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                               size: 18,
                             ),
                           if (_selectedOutboundTrain != null)
-                            SizedBox(width: spacingUnit(0.5)),
+                            const SizedBox(width: 4),
                           Text(
                             'Outbound',
                             style: TextStyle(
@@ -1120,15 +1119,15 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(width: spacingUnit(1.5)),
+                  const SizedBox(width: 12),
                   Icon(
                     CupertinoIcons.arrow_right,
                     color: Colors.grey[600],
                   ),
-                  SizedBox(width: spacingUnit(1.5)),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Container(
-                      padding: EdgeInsets.symmetric(vertical: spacingUnit(1.5)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         color: _currentJourneyIndex == 1
                             ? const Color(0xFFD4AF37)
@@ -1163,33 +1162,33 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
 
           // Sort options
           Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(2),
-              vertical: spacingUnit(1),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
             ),
             color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
             child: Row(
               children: [
-                const Text('Sort by:', style: ThemeText.caption),
-                SizedBox(width: spacingUnit(1)),
+                const Text('Sort by:', style: TravelloTheme.caption),
+                const SizedBox(width: 8),
                 Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
                         _buildSortChip('Recommended'),
-                        SizedBox(width: spacingUnit(1)),
+                        const SizedBox(width: 8),
                         _buildSortChip('Cheapest'),
-                        SizedBox(width: spacingUnit(1)),
+                        const SizedBox(width: 8),
                         _buildSortChip('Fastest'),
                       ],
                     ),
                   ),
                 ),
-                SizedBox(width: spacingUnit(1)),
+                const SizedBox(width: 8),
                 Text(
                   DateFormat('d MMM, E').format(_selectedDate),
-                  style: ThemeText.subtitle2.copyWith(
+                  style: TravelloTheme.subtitle2.copyWith(
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFFD4AF37),
                   ),
@@ -1213,16 +1212,16 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                               size: 80,
                               color: Colors.grey.withValues(alpha: 0.5),
                             ),
-                            SizedBox(height: spacingUnit(2)),
+                            const SizedBox(height: 16),
                             const Text(
                               'No trains found',
-                              style: ThemeText.title2,
+                              style: TravelloTheme.title2,
                             ),
                           ],
                         ),
                       )
                     : ListView.builder(
-                        padding: EdgeInsets.all(spacingUnit(2)),
+                        padding: const EdgeInsets.all(16),
                         itemCount: _trains.length,
                         itemBuilder: (context, index) {
                           final train = _trains[index];
@@ -1283,7 +1282,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
 
               // Header
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1306,7 +1305,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
 
               Expanded(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.all(spacingUnit(2)),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1381,7 +1380,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         ),
                       ),
 
-                      SizedBox(height: spacingUnit(2)),
+                      const SizedBox(height: 16),
 
                       // FROM station
                       _buildInlineStationDropdown(
@@ -1392,7 +1391,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                             setFormState(() => selectedFrom = s),
                       ),
 
-                      SizedBox(height: spacingUnit(1.5)),
+                      const SizedBox(height: 12),
 
                       // Swap button
                       Center(
@@ -1425,7 +1424,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         ),
                       ),
 
-                      SizedBox(height: spacingUnit(1.5)),
+                      const SizedBox(height: 12),
 
                       // TO station
                       _buildInlineStationDropdown(
@@ -1436,7 +1435,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                             setFormState(() => selectedTo = s),
                       ),
 
-                      SizedBox(height: spacingUnit(2)),
+                      const SizedBox(height: 16),
 
                       // Dates
                       Row(
@@ -1474,7 +1473,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                             ),
                           ),
                           if (tripType == 'Round-trip') ...[
-                            SizedBox(width: spacingUnit(1.5)),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: _buildInlineDatePicker(
                                 label: 'RETURN',
@@ -1509,7 +1508,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         ],
                       ),
 
-                      SizedBox(height: spacingUnit(2)),
+                      const SizedBox(height: 16),
 
                       // Passengers
                       _buildInlinePassengerSelector(
@@ -1525,7 +1524,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         },
                       ),
 
-                      SizedBox(height: spacingUnit(2)),
+                      const SizedBox(height: 16),
 
                       // Train Class
                       _buildInlineTrainClassSelector(
@@ -1537,7 +1536,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         },
                       ),
 
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
 
                       // Search Button
                       SizedBox(
@@ -1616,12 +1615,12 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: Row(
+                          child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.search, size: 20),
-                              SizedBox(width: spacingUnit(1)),
-                              const Text(
+                              Icon(Icons.search, size: 20),
+                              SizedBox(width: 8),
+                              Text(
                                 'Update Search',
                                 style: TextStyle(
                                   fontSize: 16,
@@ -1669,7 +1668,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey.shade300),
         ),
-        padding: EdgeInsets.all(spacingUnit(1.5)),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1733,7 +1732,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(1.5)),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1799,7 +1798,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(1.5)),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1856,7 +1855,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: EdgeInsets.all(spacingUnit(1.5)),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1929,7 +1928,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
-              padding: EdgeInsets.all(spacingUnit(2)),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   Container(
@@ -1946,7 +1945,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                     style: const TextStyle(
                         fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                   TextField(
                     controller: searchController,
                     onChanged: (v) => setModalState(() => searchQuery = v),
@@ -1981,7 +1980,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                   Expanded(
                     child: ListView.builder(
                       itemCount: filtered.length,
@@ -2051,7 +2050,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Container(
               constraints: const BoxConstraints(maxWidth: 400),
-              padding: EdgeInsets.all(spacingUnit(3)),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -2059,7 +2058,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                     'Passengers',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: spacingUnit(3)),
+                  const SizedBox(height: 24),
                   _buildPassengerRow(
                     label: 'Adults',
                     subtitle: '12+ years',
@@ -2069,7 +2068,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                     onIncrement:
                         adults < 9 ? () => setModalState(() => adults++) : null,
                   ),
-                  SizedBox(height: spacingUnit(2.5)),
+                  const SizedBox(height: 20),
                   _buildPassengerRow(
                     label: 'Children',
                     subtitle: '2-11 years',
@@ -2081,7 +2080,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         ? () => setModalState(() => children++)
                         : null,
                   ),
-                  SizedBox(height: spacingUnit(2.5)),
+                  const SizedBox(height: 20),
                   _buildPassengerRow(
                     label: 'Infants',
                     subtitle: 'Under 2 years',
@@ -2093,7 +2092,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         ? () => setModalState(() => infants++)
                         : null,
                   ),
-                  SizedBox(height: spacingUnit(3)),
+                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -2165,7 +2164,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         : Colors.grey.shade500),
               ),
             ),
-            SizedBox(width: spacingUnit(2)),
+            const SizedBox(width: 16),
             SizedBox(
               width: 36,
               child: Text('$count',
@@ -2173,7 +2172,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                   style: const TextStyle(
                       fontSize: 20, fontWeight: FontWeight.bold)),
             ),
-            SizedBox(width: spacingUnit(2)),
+            const SizedBox(width: 16),
             InkWell(
               onTap: onIncrement,
               borderRadius: BorderRadius.circular(50),
@@ -2215,7 +2214,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Container(
               constraints: const BoxConstraints(maxWidth: 450),
-              padding: EdgeInsets.all(spacingUnit(3)),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -2223,7 +2222,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                     'Train Class',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: spacingUnit(3)),
+                  const SizedBox(height: 24),
                   _buildTrainClassOption(
                     label: 'Economy (Seat)',
                     subtitle: 'Sitting seats, budget friendly',
@@ -2263,7 +2262,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                     onTap: () =>
                         setModalState(() => selectedClass = 'AC Business'),
                   ),
-                  SizedBox(height: spacingUnit(3)),
+                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -2302,9 +2301,9 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(1.5),
-          vertical: spacingUnit(1.5),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
         ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
@@ -2326,7 +2325,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
               ),
               child: Icon(icon, size: 22, color: iconColor),
             ),
-            SizedBox(width: spacingUnit(1.5)),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2448,7 +2447,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                   ? Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: spacingUnit(0.75),
-                        vertical: spacingUnit(0.5),
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFD4AF37).withValues(alpha: 0.8),
@@ -2489,9 +2488,9 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                   : Expanded(
                       flex: 2,
                       child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: spacingUnit(1.5),
-                          vertical: spacingUnit(1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFD4AF37).withValues(alpha: 0.8),
@@ -2611,7 +2610,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
   Widget _buildTripTypeTab(String label, bool isSelected) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: spacingUnit(1.5),
+        horizontal: 12,
         vertical: spacingUnit(0.75),
       ),
       decoration: BoxDecoration(
@@ -2645,9 +2644,9 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.symmetric(
-                horizontal: spacingUnit(2),
-                vertical: spacingUnit(0.5),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
               ),
               decoration: BoxDecoration(
                 color: selected
@@ -2811,7 +2810,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
             transform: Matrix4.identity()
               ..translate(0.0, isHovered ? -4.0 : 0.0),
             child: Card(
-              margin: EdgeInsets.only(bottom: spacingUnit(2)),
+              margin: const EdgeInsets.only(bottom: 16),
               elevation: isHovered ? 8 : (isSelectedOutbound ? 4 : 2),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -2825,7 +2824,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Padding(
-                  padding: EdgeInsets.all(spacingUnit(2)),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
                       // Badge for fastest/cheapest
@@ -2833,9 +2832,9 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         Row(
                           children: [
                             Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: spacingUnit(1.5),
-                                vertical: spacingUnit(0.5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
                               ),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
@@ -2865,7 +2864,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                     size: 14,
                                     color: Colors.white,
                                   ),
-                                  SizedBox(width: spacingUnit(0.5)),
+                                  const SizedBox(width: 4),
                                   Text(
                                     _getBadge(train),
                                     style: const TextStyle(
@@ -2881,7 +2880,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         ),
 
                       if (_getBadge(train).isNotEmpty)
-                        SizedBox(height: spacingUnit(1.5)),
+                        const SizedBox(height: 12),
 
                       // Train info and timing
                       Row(
@@ -2902,7 +2901,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                             ),
                           ),
 
-                          SizedBox(width: spacingUnit(2)),
+                          const SizedBox(width: 16),
 
                           // Time and route info
                           Expanded(
@@ -2920,7 +2919,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                       children: [
                                         Text(
                                           train.departureTime,
-                                          style: ThemeText.title2.copyWith(
+                                          style: TravelloTheme.title2.copyWith(
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -2933,7 +2932,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                               : searchParams['fromStation']
                                                       ?.code ??
                                                   'DEP',
-                                          style: ThemeText.caption.copyWith(
+                                          style: TravelloTheme.caption.copyWith(
                                             fontWeight: FontWeight.bold,
                                             color: const Color(0xFFD4AF37),
                                           ),
@@ -2985,13 +2984,13 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                               Text(
                                                 train.duration,
                                                 style:
-                                                    ThemeText.caption.copyWith(
+                                                    TravelloTheme.caption.copyWith(
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          SizedBox(height: spacingUnit(0.5)),
+                                          const SizedBox(height: 4),
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
@@ -3021,7 +3020,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                               ),
                                             ],
                                           ),
-                                          SizedBox(height: spacingUnit(0.5)),
+                                          const SizedBox(height: 4),
                                           Container(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 8,
@@ -3062,7 +3061,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                           children: [
                                             Text(
                                               train.arrivalTime,
-                                              style: ThemeText.title2.copyWith(
+                                              style: TravelloTheme.title2.copyWith(
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -3099,7 +3098,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                               : searchParams['toStation']
                                                       ?.code ??
                                                   'ARR',
-                                          style: ThemeText.caption.copyWith(
+                                          style: TravelloTheme.caption.copyWith(
                                             fontWeight: FontWeight.bold,
                                             color: const Color(0xFFD4AF37),
                                           ),
@@ -3139,7 +3138,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                   ],
                                 ),
 
-                                SizedBox(height: spacingUnit(1)),
+                                const SizedBox(height: 8),
 
                                 // Train name and available info
                                 Row(
@@ -3151,7 +3150,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                         children: [
                                           Text(
                                             train.trainName,
-                                            style: ThemeText.caption.copyWith(
+                                            style: TravelloTheme.caption.copyWith(
                                               fontWeight: FontWeight.bold,
                                               color: Colors.black87,
                                             ),
@@ -3189,17 +3188,17 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         ],
                       ),
 
-                      SizedBox(height: spacingUnit(1.5)),
+                      const SizedBox(height: 12),
 
                       // Class grid — all 4 classes with seats + price
                       _buildClassGrid(train),
 
-                      SizedBox(height: spacingUnit(1.5)),
+                      const SizedBox(height: 12),
 
                       Divider(
                           height: 1, color: Colors.grey.withValues(alpha: 0.2)),
 
-                      SizedBox(height: spacingUnit(1.5)),
+                      const SizedBox(height: 12),
 
                       // Price and select button
                       Row(
@@ -3218,7 +3217,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  SizedBox(height: spacingUnit(0.5)),
+                                  const SizedBox(height: 4),
                                   const Row(
                                     children: [
                                       Icon(
@@ -3243,7 +3242,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                     children: [
                                       Text(
                                         formatPKR(priceForClass),
-                                        style: ThemeText.title2.copyWith(
+                                        style: TravelloTheme.title2.copyWith(
                                           color: const Color(0xFFD4AF37),
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -3258,15 +3257,15 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                       fontSize: 11, color: Colors.orange[700]),
                                 ),
                               if (isSelectedOutbound)
-                                Row(
+                                const Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       CupertinoIcons.check_mark_circled_solid,
                                       color: Color(0xFFD4AF37),
                                       size: 14,
                                     ),
-                                    SizedBox(width: spacingUnit(0.5)),
-                                    const Text(
+                                    SizedBox(width: 4),
+                                    Text(
                                       'Outbound Selected',
                                       style: TextStyle(
                                         fontSize: 11,
@@ -3289,9 +3288,9 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                               backgroundColor: const Color(0xFFD4AF37),
                               foregroundColor: Colors.white,
                               disabledBackgroundColor: Colors.grey[300],
-                              padding: EdgeInsets.symmetric(
-                                horizontal: spacingUnit(3),
-                                vertical: spacingUnit(1.5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),

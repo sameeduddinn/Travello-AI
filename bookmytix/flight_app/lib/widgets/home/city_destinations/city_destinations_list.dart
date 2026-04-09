@@ -1,15 +1,11 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/models/city.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/shimmer_preloader.dart';
 import 'package:flight_app/widgets/title/title_basic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class CityDestinationsList extends StatefulWidget {
   const CityDestinationsList({super.key});
@@ -60,16 +56,15 @@ class _CityDestinationsListState extends State<CityDestinationsList> {
     ];
 
     return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: spacingUnit(2), vertical: spacingUnit(5)),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: spacingUnit(5)),
       decoration: BoxDecoration(
-          color: colorScheme(context).surfaceContainerLowest,
+          color: TravelloTheme.paperLightContainerLowest,
           borderRadius: ThemeRadius.medium),
       child: Column(
         children: [
           const TitleBasic(title: 'Popular Destinations'),
-          SizedBox(
-            height: spacingUnit(2),
+          const SizedBox(
+            height: 16,
           ),
           Stack(
             alignment: Alignment.center,
@@ -88,9 +83,11 @@ class _CityDestinationsListState extends State<CityDestinationsList> {
                       scrollDirection: Axis.horizontal,
                       itemCount: recomendedCityList.length,
                       separatorBuilder: (context, index) =>
-                          SizedBox(width: spacingUnit(2)),
+                          const SizedBox(width: 16),
                       itemBuilder: (context, index) {
                         final item = recomendedCityList[index];
+                        final String photoUrl =
+                            item.photos.isNotEmpty ? item.photos.first : '';
                         return GestureDetector(
                             onTap: () {
                               Get.toNamed(AppLink.flightSearchHome, arguments: {
@@ -113,7 +110,7 @@ class _CityDestinationsListState extends State<CityDestinationsList> {
                                     child: ClipRRect(
                                       borderRadius: ThemeRadius.medium,
                                       child: Image.network(
-                                        item.photos[0],
+                                        photoUrl,
                                         fit: BoxFit.cover,
                                         loadingBuilder: (BuildContext context,
                                             Widget child,
@@ -126,13 +123,23 @@ class _CityDestinationsListState extends State<CityDestinationsList> {
                                               height: 60,
                                               child: ShimmerPreloader());
                                         },
+                                        errorBuilder: (_, __, ___) => Container(
+                                          color: TravelloTheme
+                                              .paperLightContainerHighest,
+                                          alignment: Alignment.center,
+                                          child: const Icon(
+                                            Icons.image_not_supported_outlined,
+                                            color: TravelloTheme.textMuted,
+                                            size: 28,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                  SizedBox(height: spacingUnit(1)),
+                                  const SizedBox(height: 8),
                                   Text(item.name,
                                       overflow: TextOverflow.ellipsis,
-                                      style: ThemeText.subtitle)
+                                      style: TravelloTheme.subtitle)
                                 ]));
                       }),
                 ),
@@ -142,14 +149,14 @@ class _CityDestinationsListState extends State<CityDestinationsList> {
                 left: 0,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: colorScheme(context).surface.withValues(alpha: 0.9),
+                    color: TravelloTheme.paperLight.withValues(alpha: 0.9),
                     shape: BoxShape.circle,
                     boxShadow: [ThemeShade.shadeMedium(context)],
                   ),
                   child: IconButton(
                     onPressed: _scrollLeft,
-                    icon: Icon(Icons.arrow_back_ios_new,
-                        color: colorScheme(context).primary),
+                    icon: const Icon(Icons.arrow_back_ios_new,
+                        color: TravelloTheme.primaryMain),
                   ),
                 ),
               ),
@@ -158,14 +165,14 @@ class _CityDestinationsListState extends State<CityDestinationsList> {
                 right: 0,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: colorScheme(context).surface.withValues(alpha: 0.9),
+                    color: TravelloTheme.paperLight.withValues(alpha: 0.9),
                     shape: BoxShape.circle,
                     boxShadow: [ThemeShade.shadeMedium(context)],
                   ),
                   child: IconButton(
                     onPressed: _scrollRight,
-                    icon: Icon(Icons.arrow_forward_ios,
-                        color: colorScheme(context).primary),
+                    icon: const Icon(Icons.arrow_forward_ios,
+                        color: TravelloTheme.primaryMain),
                   ),
                 ),
               ),

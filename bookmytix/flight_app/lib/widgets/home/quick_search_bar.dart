@@ -1,10 +1,7 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class QuickSearchBar extends StatelessWidget {
   final String service;
@@ -34,7 +31,7 @@ class QuickSearchBar extends StatelessWidget {
           maxWidth: isDesktop ? 800 : double.infinity,
         ),
         padding:
-            EdgeInsets.symmetric(horizontal: isDesktop ? 0 : spacingUnit(2)),
+            EdgeInsets.symmetric(horizontal: isDesktop ? 0 : 16),
         child: GestureDetector(
           onTap: () {
             Get.toNamed(AppLink.searchList);
@@ -58,17 +55,17 @@ class QuickSearchBar extends StatelessWidget {
             ),
             child: Row(
               children: [
-                SizedBox(width: spacingUnit(2)),
-                Icon(
+                const SizedBox(width: 16),
+                const Icon(
                   Icons.search,
-                  color: colorScheme(context).primary,
+                  color: TravelloTheme.primaryMain,
                   size: 24,
                 ),
-                SizedBox(width: spacingUnit(1.5)),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     _searchPlaceholder,
-                    style: ThemeText.paragraph.copyWith(
+                    style: TravelloTheme.paragraph.copyWith(
                       color:
                           colorScheme(context).onSurface.withValues(alpha: 0.5),
                     ),

@@ -1,6 +1,5 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class BottomDraggableSheet extends StatefulWidget {
   const BottomDraggableSheet({
@@ -36,10 +35,10 @@ class _BottomDraggableSheetState extends State<BottomDraggableSheet> {
       initialChildSize: _sheetPosition,
       builder: (BuildContext context, ScrollController scrollController) {
         return Container(
-          padding: EdgeInsets.only(top: spacingUnit(2)),
-          decoration: BoxDecoration(
-            color: colorScheme(context).surface,
-            borderRadius: const BorderRadius.only(
+          padding: const EdgeInsets.only(top: 16),
+          decoration: const BoxDecoration(
+            color: TravelloTheme.paperLight,
+            borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
             )
@@ -94,7 +93,7 @@ class Grabber extends StatelessWidget {
       child: Container(
         width: double.infinity,
         height: 40,
-        color: colorScheme(context).surface,
+        color: TravelloTheme.paperLight,
         child: Align(
           alignment: Alignment.topCenter,
           child: Container(

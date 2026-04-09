@@ -1,4 +1,3 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
 
 class GrabberIcon extends StatelessWidget {
@@ -13,7 +12,7 @@ class GrabberIcon extends StatelessWidget {
         width: 32.0,
         height: 4.0,
         decoration: BoxDecoration(
-          color: colorScheme(context).outline,
+          color: Theme.of(context).colorScheme.outline,
           borderRadius: BorderRadius.circular(8.0),
         ),
       ),

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ReviewStats extends StatelessWidget {
   const ReviewStats({super.key});
@@ -21,12 +19,12 @@ class ReviewStats extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               text: TextSpan(text: '', style: TextStyle(color: colorScheme.onSurface, fontSize: 16), children: [
-                TextSpan(text: '4.5', style: ThemeText.title.copyWith(fontWeight: FontWeight.bold)),
+                TextSpan(text: '4.5', style: TravelloTheme.title.copyWith(fontWeight: FontWeight.bold)),
                 const TextSpan(text: '/5'),
               ])
             ),
             const SizedBox(height: 4),
-            const Text('1.234 Ratings', style: ThemeText.caption,)
+            const Text('1.234 Ratings', style: TravelloTheme.caption,)
           ],
         ),
         SizedBox(width: spacingUnit(5)),

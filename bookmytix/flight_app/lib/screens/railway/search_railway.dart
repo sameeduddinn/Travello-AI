@@ -1,12 +1,9 @@
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/models/railway_station.dart';
 import 'package:flight_app/models/train.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/app/app_link.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class SearchRailwayScreen extends StatefulWidget {
   const SearchRailwayScreen({super.key});
@@ -91,7 +88,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(spacingUnit(2)),
+          padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
             child: Column(
@@ -99,7 +96,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
               children: [
                 // Railway Icon Header
                 Container(
-                  padding: EdgeInsets.all(spacingUnit(3)),
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
@@ -128,7 +125,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                 const SizedBox(height: 24),
 
                 // From Station
-                const Text('From Station', style: ThemeText.subtitle),
+                const Text('From Station', style: TravelloTheme.subtitle),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<RailwayStation>(
                   decoration: InputDecoration(
@@ -165,7 +162,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                     icon: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: colorScheme(context).primaryContainer,
+                        color: TravelloTheme.primaryMainContainer,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -178,7 +175,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                 const SizedBox(height: 16),
 
                 // To Station
-                const Text('To Station', style: ThemeText.subtitle),
+                const Text('To Station', style: TravelloTheme.subtitle),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<RailwayStation>(
                   decoration: InputDecoration(
@@ -209,7 +206,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                 const SizedBox(height: 24),
 
                 // Travel Date
-                const Text('Travel Date', style: ThemeText.subtitle),
+                const Text('Travel Date', style: TravelloTheme.subtitle),
                 const SizedBox(height: 8),
                 InkWell(
                   onTap: () => _selectDate(context),
@@ -223,14 +220,14 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                     ),
                     child: Text(
                       '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                      style: ThemeText.paragraph,
+                      style: TravelloTheme.paragraph,
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
 
                 // Train Class
-                const Text('Train Class', style: ThemeText.subtitle),
+                const Text('Train Class', style: TravelloTheme.subtitle),
                 const SizedBox(height: 8),
                 InkWell(
                   onTap: () {
@@ -239,12 +236,12 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                       backgroundColor: Colors.transparent,
                       isScrollControlled: true,
                       builder: (context) => Container(
-                        decoration: BoxDecoration(
-                          color: colorScheme(context).surface,
-                          borderRadius: const BorderRadius.vertical(
+                        decoration: const BoxDecoration(
+                          color: TravelloTheme.paperLight,
+                          borderRadius: BorderRadius.vertical(
                               top: Radius.circular(24)),
                         ),
-                        padding: EdgeInsets.all(spacingUnit(3)),
+                        padding: const EdgeInsets.all(24),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -252,14 +249,14 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                             Container(
                               width: 40,
                               height: 4,
-                              margin: EdgeInsets.only(bottom: spacingUnit(2)),
+                              margin: const EdgeInsets.only(bottom: 16),
                               decoration: BoxDecoration(
                                 color: Colors.grey[300],
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
-                            const Text('Train Class', style: ThemeText.title2),
-                            SizedBox(height: spacingUnit(3)),
+                            const Text('Train Class', style: TravelloTheme.title2),
+                            const SizedBox(height: 24),
                             ..._trainClasses
                                 .where((c) => c != 'All')
                                 .map((trainClass) {
@@ -297,7 +294,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
 
                               return Container(
                                 margin:
-                                    EdgeInsets.only(bottom: spacingUnit(1.5)),
+                                    const EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
                                   border: Border.all(
                                     color: isSelected
@@ -317,15 +314,15 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                                   },
                                   borderRadius: BorderRadius.circular(12),
                                   child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: spacingUnit(2),
-                                      vertical: spacingUnit(1.5),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
                                     ),
                                     child: Row(
                                       children: [
                                         Container(
                                           padding:
-                                              EdgeInsets.all(spacingUnit(1)),
+                                              const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
                                             color: classColor.withValues(
                                                 alpha: 0.1),
@@ -338,7 +335,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                                             size: 24,
                                           ),
                                         ),
-                                        SizedBox(width: spacingUnit(2)),
+                                        const SizedBox(width: 16),
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment:
@@ -347,7 +344,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                                               Text(
                                                 trainClass,
                                                 style:
-                                                    ThemeText.subtitle.copyWith(
+                                                    TravelloTheme.subtitle.copyWith(
                                                   fontWeight: isSelected
                                                       ? FontWeight.bold
                                                       : FontWeight.normal,
@@ -356,7 +353,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                                               if (description.isNotEmpty)
                                                 Text(
                                                   description,
-                                                  style: ThemeText.caption
+                                                  style: TravelloTheme.caption
                                                       .copyWith(
                                                     color: Colors.grey[600],
                                                   ),
@@ -380,16 +377,16 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                                 ),
                               );
                             }),
-                            SizedBox(height: spacingUnit(2)),
+                            const SizedBox(height: 16),
                           ],
                         ),
                       ),
                     );
                   },
                   child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: spacingUnit(2),
-                      vertical: spacingUnit(1.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
                     decoration: InputDecoration(
                               prefixIcon:
@@ -401,23 +398,23 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                             ).border !=
                             null
                         ? BoxDecoration(
-                            color: colorScheme(context).surfaceContainerHighest,
+                            color: TravelloTheme.paperLightContainerHighest,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: Colors.grey.withValues(alpha: 0.3),
                             ),
                           )
                         : BoxDecoration(
-                            color: colorScheme(context).surfaceContainerHighest,
+                            color: TravelloTheme.paperLightContainerHighest,
                             borderRadius: BorderRadius.circular(12),
                           ),
                     child: Row(
                       children: [
                         const Icon(Icons.airline_seat_recline_normal),
-                        SizedBox(width: spacingUnit(2)),
+                        const SizedBox(width: 16),
                         Text(
                           _selectedClass,
-                          style: ThemeText.paragraph,
+                          style: TravelloTheme.paragraph,
                         ),
                         const Spacer(),
                         const Icon(Icons.arrow_drop_down),
@@ -428,18 +425,18 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                 const SizedBox(height: 24),
 
                 // Passengers
-                const Text('Passengers', style: ThemeText.subtitle),
+                const Text('Passengers', style: TravelloTheme.subtitle),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
                       child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: spacingUnit(2),
-                          vertical: spacingUnit(1.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: colorScheme(context).surfaceContainerHighest,
+                          color: TravelloTheme.paperLightContainerHighest,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -448,7 +445,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                             const Icon(Icons.person),
                             Text(
                               '$_passengers ${_passengers == 1 ? 'Passenger' : 'Passengers'}',
-                              style: ThemeText.paragraph,
+                              style: TravelloTheme.paragraph,
                             ),
                             Row(
                               children: [
@@ -483,7 +480,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                     children: [
                       Icon(Icons.search),
                       SizedBox(width: 8),
-                      Text('Search Trains', style: ThemeText.subtitle),
+                      Text('Search Trains', style: TravelloTheme.subtitle),
                     ],
                   ),
                 ),

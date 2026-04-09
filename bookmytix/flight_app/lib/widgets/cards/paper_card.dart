@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PaperCard extends StatelessWidget {
   const PaperCard({
@@ -21,12 +19,12 @@ class PaperCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: coloured ? ThemePalette.primaryMain : Theme.of(context).colorScheme.surface,
+        color: coloured ? TravelloTheme.primaryMain : Theme.of(context).colorScheme.surface,
         borderRadius: ThemeRadius.medium,
         boxShadow: !flat ? [ThemeShade.shadeSoft(context)] : null,
         border: flat ? Border.all(
           width: 1,
-          color: colouredBorder ? ThemePalette.primaryMain : Theme.of(context).colorScheme.outline
+          color: colouredBorder ? TravelloTheme.primaryMain : Theme.of(context).colorScheme.outline
         ) : null
       ),
       child: content

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/settings/contact_list.dart';
 import 'package:flight_app/widgets/settings/message_form.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class Contact extends StatefulWidget {
   const Contact({super.key});
@@ -31,7 +30,7 @@ class _ContactState extends State<Contact> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: ThemePalette.primaryMain,
+        backgroundColor: TravelloTheme.primaryMain,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -54,7 +53,7 @@ class _ContactState extends State<Contact> with SingleTickerProviderStateMixin {
               const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           unselectedLabelStyle:
               const TextStyle(fontWeight: FontWeight.w400, fontSize: 14),
-          labelPadding: EdgeInsets.symmetric(horizontal: spacingUnit(3)),
+          labelPadding: const EdgeInsets.symmetric(horizontal: 24),
           dividerHeight: 0,
           tabs: const [
             Tab(text: 'MESSAGE'),

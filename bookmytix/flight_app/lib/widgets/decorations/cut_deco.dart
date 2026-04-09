@@ -1,7 +1,7 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/widgets/decorations/dashed_border.dart';
 import 'package:get/get.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class CutDeco extends StatelessWidget {
   const CutDeco({super.key, this.color, this.radius = 12});
@@ -28,7 +28,7 @@ class CutDeco extends StatelessWidget {
     final bool isDark = Get.isDarkMode;
     final Color cardColor = isDark
         ? colorScheme(context).outline
-        : colorScheme(context).primaryContainer;
+        : TravelloTheme.primaryMainContainer;
 
     return Container(
       width: radius / 2,
@@ -36,7 +36,7 @@ class CutDeco extends StatelessWidget {
       decoration: BoxDecoration(
           color: color != null
               ? color!
-              : colorScheme(context).surfaceContainerLowest,
+              : TravelloTheme.paperLightContainerLowest,
           border: Border(
             top:
                 BorderSide(color: color != null ? color! : cardColor, width: 1),

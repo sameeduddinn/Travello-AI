@@ -1,14 +1,10 @@
 import 'package:flight_app/constants/image_api.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flight_app/app/app_link.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key, required this.saveIntroStatus});
@@ -176,10 +172,10 @@ class _IntroScreenState extends State<IntroScreen>
               ),
               const SizedBox(height: 20),
               Padding(
-                padding: EdgeInsets.only(
-                    left: spacingUnit(2),
-                    right: spacingUnit(2),
-                    bottom: spacingUnit(4)),
+                padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    bottom: 32),
                 child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -191,7 +187,7 @@ class _IntroScreenState extends State<IntroScreen>
                             Get.offAllNamed(AppLink.welcome);
                           },
                           child: Text('SKIP',
-                              style: ThemeText.subtitle
+                              style: TravelloTheme.subtitle
                                   .copyWith(color: Colors.white))),
                       _current < introList.length - 1
                           ? FilledButton(
@@ -199,7 +195,7 @@ class _IntroScreenState extends State<IntroScreen>
                                   .merge(ThemeButton.tonalPrimary(context)),
                               onPressed: () => _sliderRef.nextPage(),
                               child: Row(children: [
-                                const Text('NEXT', style: ThemeText.subtitle),
+                                const Text('NEXT', style: TravelloTheme.subtitle),
                                 const SizedBox(width: 4),
                                 Icon(Icons.arrow_forward_ios,
                                     size: 16,
@@ -217,7 +213,7 @@ class _IntroScreenState extends State<IntroScreen>
                               },
                               child: Row(children: [
                                 const Text('CONTINUE',
-                                    style: ThemeText.subtitle),
+                                    style: TravelloTheme.subtitle),
                                 const SizedBox(width: 4),
                                 Icon(Icons.arrow_forward_ios,
                                     size: 16,
@@ -236,7 +232,7 @@ class _IntroScreenState extends State<IntroScreen>
   Widget _contentIntro(
       BuildContext context, String title, String desc, String image) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 const _kGold = Color(0xFFD4AF37);
 const _kGoldDeep = Color(0xFFB8860B);
@@ -20,8 +18,8 @@ class QuickAccessFeatures extends StatelessWidget {
     final hPad = isDesktop
         ? spacingUnit(8)
         : isTablet
-            ? spacingUnit(4)
-            : spacingUnit(2);
+            ? 32.0
+            : 16.0;
     final gap = spacingUnit(isTablet ? 2.5 : 1.5);
 
     return Padding(
@@ -30,11 +28,11 @@ class QuickAccessFeatures extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Features',
-              style: ThemeText.title.copyWith(
+              style: TravelloTheme.title.copyWith(
                 fontWeight: FontWeight.w700,
                 color: colorScheme(context).onSurface,
               )),
-          SizedBox(height: spacingUnit(2)),
+          const SizedBox(height: 16),
           LayoutBuilder(builder: (_, constraints) {
             final cards = [
               _FeatureCard(
@@ -185,7 +183,7 @@ class _FeatureCardState extends State<_FeatureCard> {
                   ),
                   child: Icon(widget.icon, color: Colors.white, size: iconSize),
                 ),
-                SizedBox(height: spacingUnit(1.2)),
+                const SizedBox(height: 9.6),
                 Text(widget.title,
                     style: TextStyle(
                       fontSize: titleSize,

@@ -1,14 +1,10 @@
 import 'package:flight_app/models/list_item.dart';
 import 'package:flight_app/models/plane.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flight_app/utils/picker.dart';
 import 'package:flight_app/widgets/search_filters/filter_flight_form.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FilterBottomFloating extends StatefulWidget {
   const FilterBottomFloating({
@@ -179,7 +175,7 @@ class _FilterBottomFloatingState extends State<FilterBottomFloating> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
-        backgroundColor: colorScheme(context).surface,
+        backgroundColor: TravelloTheme.paperLight,
       );
     }
 
@@ -200,10 +196,10 @@ class _FilterBottomFloatingState extends State<FilterBottomFloating> {
             child: Container(
               height: 100,
               width: 240,
-              margin: EdgeInsets.all(spacingUnit(2)),
-              padding: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
-                color: colorScheme(context).primaryContainer,
+                color: TravelloTheme.primaryMainContainer,
                 borderRadius: ThemeRadius.big,
                 boxShadow: [ThemeShade.shadeSoft(context)]
               ),
@@ -215,13 +211,13 @@ class _FilterBottomFloatingState extends State<FilterBottomFloating> {
                       showOrderSheet(context);
                     },
                     child: Row(children: [
-                      Icon(Icons.import_export, color: _isDark ? ThemePalette.tertiaryMain : ThemePalette.primaryMain),
+                      Icon(Icons.import_export, color: _isDark ? TravelloTheme.tertiaryMain : TravelloTheme.primaryMain),
                       const SizedBox(width: 4),
-                      Text('Order', style: ThemeText.subtitle2.copyWith(color: colorScheme(context).onSurface))
+                      Text('Order', style: TravelloTheme.subtitle2.copyWith(color: colorScheme(context).onSurface))
                     ],)
                   ),
                   Padding(
-                    padding: EdgeInsets.all(spacingUnit(1)),
+                    padding: const EdgeInsets.all(8),
                     child: VerticalDivider(color: colorScheme(context).outlineVariant),                      
                   ),
                   TextButton(
@@ -229,9 +225,9 @@ class _FilterBottomFloatingState extends State<FilterBottomFloating> {
                       showFilterSheet();
                     },
                     child: Row(children: [
-                      Icon(Icons.tune, color: _isDark ? ThemePalette.tertiaryMain : ThemePalette.primaryMain),
+                      Icon(Icons.tune, color: _isDark ? TravelloTheme.tertiaryMain : TravelloTheme.primaryMain),
                       const SizedBox(width: 4),
-                      Text('Filter', style: ThemeText.subtitle2.copyWith(color: colorScheme(context).onSurface))
+                      Text('Filter', style: TravelloTheme.subtitle2.copyWith(color: colorScheme(context).onSurface))
                     ],)
                   ),
                 ],

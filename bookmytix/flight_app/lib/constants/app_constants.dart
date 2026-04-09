@@ -25,6 +25,9 @@ class ContentApi {
   static const date = '19 Sep 2024';
 }
 
+const String googleBrandIconUrl = '';
+const String appleBrandIconUrl = '';
+
 // Project
 Company branding = Company(
     id: '1',

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flight_app/models/news.dart';
 import 'package:flight_app/widgets/cards/news_card.dart';
 import 'package:flight_app/widgets/title/title_action.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class NewsList extends StatelessWidget {
   const NewsList({super.key});
@@ -23,7 +23,7 @@ class NewsList extends StatelessWidget {
   
     return Column(children: [
       Padding(
-        padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: TitleAction(
           title: 'You have to know',
           textAction: 'See All',
@@ -32,7 +32,7 @@ class NewsList extends StatelessWidget {
           }
         ),
       ),
-      SizedBox(height: spacingUnit(2)),
+      const SizedBox(height: 16),
       SizedBox(
         height: cardHeight,
         child: ListView.builder(

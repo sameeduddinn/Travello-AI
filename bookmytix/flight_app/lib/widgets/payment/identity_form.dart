@@ -4,7 +4,7 @@ import 'package:flight_app/controllers/payment_form_controller.dart';
 import 'package:flight_app/utils/design_system_formatters.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/widgets/app_input/ds_input_field.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class IdentityForm extends StatelessWidget {
   const IdentityForm({super.key});
@@ -32,7 +32,7 @@ class IdentityForm extends StatelessWidget {
                 autofillHints: const [AutofillHints.givenName],
               ),
             ),
-            SizedBox(width: spacingUnit(2)),
+            const SizedBox(width: 16),
             Expanded(
               child: DSInputField(
                 label: 'LAST NAME',
@@ -48,7 +48,7 @@ class IdentityForm extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: spacingUnit(2)),
+        const SizedBox(height: 16),
 
         // ── Phone number ───────────────────────────────────────────────────
         DSInputField(

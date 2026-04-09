@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
 import 'package:flight_app/widgets/review/rating_star.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class RatingCard extends StatelessWidget {
   const RatingCard({
@@ -27,7 +26,7 @@ class RatingCard extends StatelessWidget {
 
     return PaperCard(
       content: Padding(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           /// NAME
           Row(children: [
@@ -35,8 +34,8 @@ class RatingCard extends StatelessWidget {
               radius: 10,
               backgroundImage: NetworkImage(avatar),
             ),
-            SizedBox(width: spacingUnit(1)),
-            Text(name, style: ThemeText.subtitle2),
+            const SizedBox(width: 8),
+            Text(name, style: TravelloTheme.subtitle2),
           ]),
           
           /// RATING
@@ -45,12 +44,12 @@ class RatingCard extends StatelessWidget {
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               RatingStar(initVal: rating, readOnly: true,),
               const SizedBox(width: 4),
-              Text(date, style: ThemeText.caption)
+              Text(date, style: TravelloTheme.caption)
             ]),
           ),
 
           /// DESCRIPTION
-          Text(description, style: ThemeText.paragraph, maxLines: overflowDesc ? 2 : null, overflow: TextOverflow.ellipsis,)
+          Text(description, style: TravelloTheme.paragraph, maxLines: overflowDesc ? 2 : null, overflow: TextOverflow.ellipsis,)
         ]),
       )
     );

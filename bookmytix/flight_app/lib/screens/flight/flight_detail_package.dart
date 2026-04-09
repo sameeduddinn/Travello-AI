@@ -8,10 +8,6 @@ import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/models/plane.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/app_button/back_icon_button.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
@@ -23,6 +19,7 @@ import 'package:flight_app/widgets/flight/flight_summary.dart';
 import 'package:flight_app/widgets/flight/flight_summary_wide.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightDetailPackage extends StatefulWidget {
   const FlightDetailPackage({super.key});
@@ -281,7 +278,7 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
       backgroundColor: Colors.grey.shade50,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        shadowColor: colorScheme(context).surface,
+        shadowColor: TravelloTheme.paperLight,
         scrolledUnderElevation: 1,
         backgroundColor: Colors.transparent,
         leading: BackIconButton(onTap: () {
@@ -295,12 +292,12 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
                 onPressed: () {
                   Get.toNamed(AppLink.faq);
                 },
-                style: ThemeButton.iconBtn(context),
-                icon: Icon(Icons.help_outline_rounded,
-                    color: colorScheme(context).onSurface, size: 18)),
+                style: IconButton.styleFrom(),
+                icon: const Icon(Icons.help_outline_rounded,
+                    color: TravelloTheme.textSecondary, size: 18)),
           ),
-          SizedBox(
-            width: spacingUnit(2),
+          const SizedBox(
+            width: 16,
           )
         ],
       ),
@@ -325,7 +322,7 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
             left: -10,
             child: CustomPaint(
               painter: OvalShape(
-                  color: colorScheme(context).surfaceContainerLowest,
+                  color: TravelloTheme.paperLight,
                   width: MediaQuery.of(context).size.width + 20),
             ),
           ),
@@ -380,7 +377,7 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
                           DateFormat('EEE, d MMM yyyy').format(_returnDate),
                     ),
             ],
-            const VSpaceBig(),
+            const SizedBox(height: 24),
           ])
         ]),
       ),
@@ -388,9 +385,8 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
         elevation: 20,
         shadowColor: Colors.black,
         height: 80,
-        color: colorScheme(context).surface,
-        padding: EdgeInsets.symmetric(
-            horizontal: spacingUnit(2), vertical: spacingUnit(1)),
+        color: TravelloTheme.paperLight,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -404,27 +400,28 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
                 children: [
                   Text('PKR ${_basePrice.toStringAsFixed(0)}',
                       textAlign: TextAlign.end,
-                      style: ThemeText.headline.copyWith(
-                          color: colorScheme(context).onSurfaceVariant,
+                      style: TravelloTheme.headline.copyWith(
+                          color: TravelloTheme.textSecondary,
                           decoration: TextDecoration.lineThrough,
                           height: 1)),
                   Text('PKR ${_finalPrice.toStringAsFixed(0)}',
                       textAlign: TextAlign.end,
-                      style: ThemeText.title.copyWith(
-                          color: colorScheme(context).primary,
+                      style: TravelloTheme.title.copyWith(
+                          color: TravelloTheme.primaryMain,
                           height: 1,
                           fontWeight: FontWeight.bold)),
                 ],
               ),
-              SizedBox(width: spacingUnit(3)),
+              const SizedBox(width: 24),
               Expanded(
                 child: SizedBox(
                   height: 50,
                   child: FilledButton(
                       onPressed: _onBookNow,
-                      style: ThemeButton.btnBig.merge(ThemeButton.primary),
-                      child:
-                          const Text('BOOK NOW', style: ThemeText.subtitle2)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: TravelloTheme.primaryMain,
+                      ),
+                      child: const Text('BOOK NOW')),
                 ),
               )
             ]),

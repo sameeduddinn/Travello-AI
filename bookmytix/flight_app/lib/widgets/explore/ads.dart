@@ -1,8 +1,7 @@
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/constants/image_api.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 double getHeight(BuildContext context) {
   if (ThemeBreakpoints.mdUp(context)) {
@@ -22,7 +21,7 @@ class AdsFood extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+      margin: const EdgeInsets.symmetric(horizontal: 8),
       width: double.infinity,
       height: getHeight(context),
       decoration: BoxDecoration(
@@ -42,7 +41,7 @@ class AdsHoliday extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+      margin: const EdgeInsets.symmetric(horizontal: 8),
       width: double.infinity,
       height: getHeight(context),
       decoration: BoxDecoration(

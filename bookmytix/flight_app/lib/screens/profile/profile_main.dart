@@ -1,10 +1,10 @@
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/widgets/settings/setting_list.dart';
 import 'package:flight_app/widgets/profile/profile_banner_header.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/constants/app_constants.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ProfileMain extends StatefulWidget {
   const ProfileMain({super.key});
@@ -78,7 +78,7 @@ class _ProfileMainState extends State<ProfileMain> {
                   constraints: BoxConstraints(maxWidth: ThemeSize.sm),
                   child: const SettingList())),
         ),
-        SliverPadding(padding: EdgeInsets.only(bottom: spacingUnit(10)))
+        const SliverPadding(padding: EdgeInsets.only(bottom: 80))
       ],
     );
   }

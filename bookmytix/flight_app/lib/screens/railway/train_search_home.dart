@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/models/railway_station.dart';
 import 'package:flight_app/widgets/range_date_picker.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TrainSearchHome extends StatefulWidget {
   const TrainSearchHome({super.key});
@@ -138,12 +136,12 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                 ? (_rankToClasses[tempRank] ?? _trainClasses)
                 : _trainClasses;
             return Container(
-              decoration: BoxDecoration(
-                color: colorScheme(context).surface,
+              decoration: const BoxDecoration(
+                color: TravelloTheme.paperLight,
                 borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(24)),
+                    BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              padding: EdgeInsets.all(spacingUnit(3)),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -151,15 +149,15 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                   Container(
                     width: 40,
                     height: 4,
-                    margin: EdgeInsets.only(bottom: spacingUnit(2)),
+                    margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: Colors.grey[300],
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
 
-                  const Text('Select Seat Type', style: ThemeText.title2),
-                  SizedBox(height: spacingUnit(2)),
+                  const Text('Select Seat Type', style: TravelloTheme.title2),
+                  const SizedBox(height: 16),
 
                   // Rank dropdown
                   Column(
@@ -172,7 +170,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                           const SizedBox(width: 6),
                           Text(
                             'Rank:',
-                            style: ThemeText.caption
+                            style: TravelloTheme.caption
                                 .copyWith(fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -218,7 +216,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                     ],
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // Seat type options
                   ...filteredClasses.map((seatType) {
@@ -249,7 +247,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                     }
 
                     return Container(
-                      margin: EdgeInsets.only(bottom: spacingUnit(1.5)),
+                      margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: isSelected
@@ -266,9 +264,9 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                         onTap: () => setSheetState(() => tempClass = seatType),
                         borderRadius: BorderRadius.circular(12),
                         child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: spacingUnit(2),
-                            vertical: spacingUnit(1.5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
                           ),
                           child: Row(
                             children: [
@@ -283,7 +281,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                               ),
                               const SizedBox(width: 4),
                               Container(
-                                padding: EdgeInsets.all(spacingUnit(1)),
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: seatColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
@@ -291,11 +289,11 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                                 child:
                                     Icon(seatIcon, color: seatColor, size: 24),
                               ),
-                              SizedBox(width: spacingUnit(1.5)),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   seatType,
-                                  style: ThemeText.subtitle.copyWith(
+                                  style: TravelloTheme.subtitle.copyWith(
                                     fontWeight: isSelected
                                         ? FontWeight.bold
                                         : FontWeight.normal,
@@ -304,7 +302,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                               ),
                               Text(
                                 'Rs.${(_seatTypePrices[seatType] ?? 0).toStringAsFixed(0)}',
-                                style: ThemeText.subtitle.copyWith(
+                                style: TravelloTheme.subtitle.copyWith(
                                   color: const Color(0xFFD4AF37),
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -316,7 +314,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                     );
                   }),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // Confirm button
                   ElevatedButton(
@@ -340,7 +338,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                             fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
 
-                  SizedBox(height: spacingUnit(1)),
+                  const SizedBox(height: 8),
                 ],
               ),
             );
@@ -428,7 +426,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
-              padding: EdgeInsets.all(spacingUnit(3)),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -436,15 +434,15 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                   Container(
                     width: 40,
                     height: 4,
-                    margin: EdgeInsets.only(bottom: spacingUnit(2)),
+                    margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: Colors.grey[300],
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
 
-                  const Text('Passengers', style: ThemeText.title2),
-                  SizedBox(height: spacingUnit(3)),
+                  const Text('Passengers', style: TravelloTheme.title2),
+                  const SizedBox(height: 24),
 
                   // Adults
                   _buildPassengerRow(
@@ -461,7 +459,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                     },
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // Children
                   _buildPassengerRow(
@@ -478,7 +476,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                     },
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // Infants
                   _buildPassengerRow(
@@ -497,14 +495,14 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
 
                   if (_infants > _adults)
                     Padding(
-                      padding: EdgeInsets.only(top: spacingUnit(2)),
+                      padding: const EdgeInsets.only(top: 16),
                       child: Text(
                         'Each infant must be accompanied by an adult',
-                        style: ThemeText.caption.copyWith(color: Colors.red),
+                        style: TravelloTheme.caption.copyWith(color: Colors.red),
                       ),
                     ),
 
-                  SizedBox(height: spacingUnit(3)),
+                  const SizedBox(height: 24),
 
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
@@ -519,7 +517,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                     child: const Text('Done'),
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
                 ],
               ),
             );
@@ -543,8 +541,8 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: ThemeText.subtitle),
-            Text(subtitle, style: ThemeText.caption),
+            Text(title, style: TravelloTheme.subtitle),
+            Text(subtitle, style: TravelloTheme.caption),
           ],
         ),
         Row(
@@ -560,7 +558,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
               width: 30,
               child: Text(
                 '$count',
-                style: ThemeText.subtitle,
+                style: TravelloTheme.subtitle,
                 textAlign: TextAlign.center,
               ),
             ),
@@ -787,15 +785,15 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                 children: [
                   // Trip type selector
                   Container(
-                    color: colorScheme(context).surface,
-                    padding: EdgeInsets.all(spacingUnit(2)),
+                    color: TravelloTheme.paperLight,
+                    padding: const EdgeInsets.all(16),
                     child: Row(
                       children: _tripTypes.map((type) {
                         final isSelected = _tripType == type;
                         return Expanded(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: spacingUnit(0.5)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4),
                             child: InkWell(
                               onTap: () {
                                 setState(() {
@@ -806,8 +804,8 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                                 });
                               },
                               child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    vertical: spacingUnit(1.5)),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 12),
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? const Color(0xFFD4AF37)
@@ -841,13 +839,13 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                     ),
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // From and To stations
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: colorScheme(context).surface,
+                      color: TravelloTheme.paperLight,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -863,31 +861,31 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                         InkWell(
                           onTap: () => _selectStation(true),
                           child: Container(
-                            padding: EdgeInsets.all(spacingUnit(2)),
+                            padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
                                 const Icon(
                                   CupertinoIcons.train_style_one,
                                   color: Color(0xFFD4AF37),
                                 ),
-                                SizedBox(width: spacingUnit(2)),
+                                const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       const Text('From',
-                                          style: ThemeText.caption),
-                                      SizedBox(height: spacingUnit(0.5)),
+                                          style: TravelloTheme.caption),
+                                      const SizedBox(height: 4),
                                       Text(
                                         _fromStation?.name ??
                                             'Select departure station',
-                                        style: ThemeText.subtitle,
+                                        style: TravelloTheme.subtitle,
                                       ),
                                       if (_fromStation != null)
                                         Text(
                                           _fromStation!.city,
-                                          style: ThemeText.caption,
+                                          style: TravelloTheme.caption,
                                         ),
                                     ],
                                   ),
@@ -895,7 +893,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                                 if (_fromStation != null)
                                   Text(
                                     _fromStation!.code,
-                                    style: ThemeText.title2.copyWith(
+                                    style: TravelloTheme.title2.copyWith(
                                       color: const Color(0xFFD4AF37),
                                     ),
                                   ),
@@ -934,31 +932,31 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                         InkWell(
                           onTap: () => _selectStation(false),
                           child: Container(
-                            padding: EdgeInsets.all(spacingUnit(2)),
+                            padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
                                 const Icon(
                                   CupertinoIcons.train_style_one,
                                   color: Color(0xFFD4AF37),
                                 ),
-                                SizedBox(width: spacingUnit(2)),
+                                const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       const Text('To',
-                                          style: ThemeText.caption),
-                                      SizedBox(height: spacingUnit(0.5)),
+                                          style: TravelloTheme.caption),
+                                      const SizedBox(height: 4),
                                       Text(
                                         _toStation?.name ??
                                             'Select arrival station',
-                                        style: ThemeText.subtitle,
+                                        style: TravelloTheme.subtitle,
                                       ),
                                       if (_toStation != null)
                                         Text(
                                           _toStation!.city,
-                                          style: ThemeText.caption,
+                                          style: TravelloTheme.caption,
                                         ),
                                     ],
                                   ),
@@ -966,7 +964,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                                 if (_toStation != null)
                                   Text(
                                     _toStation!.code,
-                                    style: ThemeText.title2.copyWith(
+                                    style: TravelloTheme.title2.copyWith(
                                       color: const Color(0xFFD4AF37),
                                     ),
                                   ),
@@ -978,11 +976,11 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                     ),
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // Travel date and return date
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: _tripType == 'Round-trip'
                         ? Row(
                             children: [
@@ -991,9 +989,9 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                                 child: InkWell(
                                   onTap: _selectTravelDate,
                                   child: Container(
-                                    padding: EdgeInsets.all(spacingUnit(2)),
+                                    padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: colorScheme(context).surface,
+                                      color: TravelloTheme.paperLight,
                                       borderRadius: BorderRadius.circular(16),
                                       boxShadow: [
                                         BoxShadow(
@@ -1015,37 +1013,37 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                                               color: Color(0xFFD4AF37),
                                               size: 20,
                                             ),
-                                            SizedBox(width: spacingUnit(1)),
+                                            const SizedBox(width: 8),
                                             const Text('Departure',
-                                                style: ThemeText.caption),
+                                                style: TravelloTheme.caption),
                                           ],
                                         ),
-                                        SizedBox(height: spacingUnit(0.5)),
+                                        const SizedBox(height: 4),
                                         Text(
                                           _travelDate != null
                                               ? '${_travelDate!.day} ${_getMonthName(_travelDate!.month).substring(0, 3)}'
                                               : 'Select date',
-                                          style: ThemeText.subtitle,
+                                          style: TravelloTheme.subtitle,
                                         ),
                                         if (_travelDate != null)
                                           Text(
                                             _getDayName(_travelDate!.weekday),
-                                            style: ThemeText.caption,
+                                            style: TravelloTheme.caption,
                                           ),
                                       ],
                                     ),
                                   ),
                                 ),
                               ),
-                              SizedBox(width: spacingUnit(2)),
+                              const SizedBox(width: 16),
                               // Return date
                               Expanded(
                                 child: InkWell(
                                   onTap: _selectReturnDate,
                                   child: Container(
-                                    padding: EdgeInsets.all(spacingUnit(2)),
+                                    padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: colorScheme(context).surface,
+                                      color: TravelloTheme.paperLight,
                                       borderRadius: BorderRadius.circular(16),
                                       border: _returnDate == null
                                           ? Border.all(
@@ -1074,22 +1072,22 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                                               color: Color(0xFFD4AF37),
                                               size: 20,
                                             ),
-                                            SizedBox(width: spacingUnit(1)),
+                                            const SizedBox(width: 8),
                                             const Text('Return',
-                                                style: ThemeText.caption),
+                                                style: TravelloTheme.caption),
                                           ],
                                         ),
-                                        SizedBox(height: spacingUnit(0.5)),
+                                        const SizedBox(height: 4),
                                         Text(
                                           _returnDate != null
                                               ? '${_returnDate!.day} ${_getMonthName(_returnDate!.month).substring(0, 3)}'
                                               : 'Select date',
-                                          style: ThemeText.subtitle,
+                                          style: TravelloTheme.subtitle,
                                         ),
                                         if (_returnDate != null)
                                           Text(
                                             _getDayName(_returnDate!.weekday),
-                                            style: ThemeText.caption,
+                                            style: TravelloTheme.caption,
                                           ),
                                       ],
                                     ),
@@ -1101,9 +1099,9 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                         : InkWell(
                             onTap: _selectTravelDate,
                             child: Container(
-                              padding: EdgeInsets.all(spacingUnit(2)),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: colorScheme(context).surface,
+                                color: TravelloTheme.paperLight,
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
@@ -1119,25 +1117,25 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                                     CupertinoIcons.calendar,
                                     color: Color(0xFFD4AF37),
                                   ),
-                                  SizedBox(width: spacingUnit(2)),
+                                  const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
                                         const Text('Travel Date',
-                                            style: ThemeText.caption),
-                                        SizedBox(height: spacingUnit(0.5)),
+                                            style: TravelloTheme.caption),
+                                        const SizedBox(height: 4),
                                         Text(
                                           _travelDate != null
                                               ? '${_travelDate!.day} ${_getMonthName(_travelDate!.month)} ${_travelDate!.year}'
                                               : 'Select travel date',
-                                          style: ThemeText.subtitle,
+                                          style: TravelloTheme.subtitle,
                                         ),
                                         if (_travelDate != null)
                                           Text(
                                             _getDayName(_travelDate!.weekday),
-                                            style: ThemeText.caption,
+                                            style: TravelloTheme.caption,
                                           ),
                                       ],
                                     ),
@@ -1148,11 +1146,11 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                           ),
                   ),
 
-                  SizedBox(height: spacingUnit(2)),
+                  const SizedBox(height: 16),
 
                   // Passengers and Class
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
                         // Passengers
@@ -1160,9 +1158,9 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                           child: InkWell(
                             onTap: _showPassengerPicker,
                             child: Container(
-                              padding: EdgeInsets.all(spacingUnit(2)),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: colorScheme(context).surface,
+                                color: TravelloTheme.paperLight,
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
@@ -1182,19 +1180,19 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                                         size: 20,
                                         color: Color(0xFFD4AF37),
                                       ),
-                                      SizedBox(width: spacingUnit(1)),
+                                      const SizedBox(width: 8),
                                       const Text('Passengers',
-                                          style: ThemeText.caption),
+                                          style: TravelloTheme.caption),
                                     ],
                                   ),
-                                  SizedBox(height: spacingUnit(1)),
+                                  const SizedBox(height: 8),
                                   Text(
                                     '${_adults + _children + _infants} ${(_adults + _children + _infants) == 1 ? "Passenger" : "Passengers"}',
-                                    style: ThemeText.subtitle,
+                                    style: TravelloTheme.subtitle,
                                   ),
                                   Text(
                                     'A: $_adults, C: $_children, I: $_infants',
-                                    style: ThemeText.caption,
+                                    style: TravelloTheme.caption,
                                   ),
                                 ],
                               ),
@@ -1202,16 +1200,16 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                           ),
                         ),
 
-                        SizedBox(width: spacingUnit(2)),
+                        const SizedBox(width: 16),
 
                         // Train class
                         Expanded(
                           child: InkWell(
                             onTap: _showSeatTypeDialog,
                             child: Container(
-                              padding: EdgeInsets.all(spacingUnit(2)),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: colorScheme(context).surface,
+                                color: TravelloTheme.paperLight,
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
@@ -1231,21 +1229,21 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                                         size: 20,
                                         color: Color(0xFFD4AF37),
                                       ),
-                                      SizedBox(width: spacingUnit(1)),
+                                      const SizedBox(width: 8),
                                       const Text('Class',
-                                          style: ThemeText.caption),
+                                          style: TravelloTheme.caption),
                                     ],
                                   ),
-                                  SizedBox(height: spacingUnit(1)),
+                                  const SizedBox(height: 8),
                                   Text(
                                     _trainClass,
-                                    style: ThemeText.subtitle,
+                                    style: TravelloTheme.subtitle,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   if (_selectedRank != null)
                                     Text(
                                       'Rank: $_selectedRank',
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                         color: const Color(0xFFD4AF37),
                                       ),
                                     ),
@@ -1257,7 +1255,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                       ],
                     ),
                   ),
-                  SizedBox(height: spacingUnit(10)),
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
@@ -1267,9 +1265,9 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
 
       // Sticky bottom button
       bottomNavigationBar: Container(
-        padding: EdgeInsets.all(spacingUnit(2)),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: colorScheme(context).surface,
+          color: TravelloTheme.paperLight,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.1),
@@ -1290,12 +1288,12 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
               ),
               elevation: 0,
             ),
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(CupertinoIcons.search),
-                SizedBox(width: spacingUnit(1)),
-                const Text(
+                Icon(CupertinoIcons.search),
+                SizedBox(width: 8),
+                Text(
                   'Search Trains',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
@@ -1380,22 +1378,22 @@ class _StationSearchBottomSheetState extends State<_StationSearchBottomSheet> {
       expand: false,
       builder: (context, scrollController) {
         return Container(
-          padding: EdgeInsets.all(spacingUnit(2)),
+          padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               // Handle bar
               Container(
                 width: 40,
                 height: 4,
-                margin: EdgeInsets.only(bottom: spacingUnit(2)),
+                margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
 
-              const Text('Select Station', style: ThemeText.title2),
-              SizedBox(height: spacingUnit(2)),
+              const Text('Select Station', style: TravelloTheme.title2),
+              const SizedBox(height: 16),
 
               // Search field
               TextField(
@@ -1428,7 +1426,7 @@ class _StationSearchBottomSheetState extends State<_StationSearchBottomSheet> {
                 ),
               ),
 
-              SizedBox(height: spacingUnit(2)),
+              const SizedBox(height: 16),
 
               // Station list
               Expanded(

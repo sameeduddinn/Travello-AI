@@ -1,10 +1,5 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_shadow.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PointCard extends StatelessWidget {
   const PointCard({
@@ -29,11 +24,11 @@ class PointCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: ThemeRadius.medium,
         boxShadow: [ThemeShade.shadeSoft(context)],
-        color: colorScheme(context).surface
+        color: TravelloTheme.paperLight
       ),
       child: Column(
         children: [
@@ -43,13 +38,13 @@ class PointCard extends StatelessWidget {
               /// TEXT
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, style: ThemeText.paragraph.copyWith(fontWeight: FontWeight.bold)),
-                  SizedBox(height: spacingUnit(1)),
+                  Text(title, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
                   Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
                     Icon(Icons.stars, color: color, size: 26),
                     const SizedBox(width: 4),
-                    Text('$progress$label', style: ThemeText.title.copyWith(height: 1)),
-                    Text(' / $max$label', style: ThemeText.subtitle2),
+                    Text('$progress$label', style: TravelloTheme.title.copyWith(height: 1)),
+                    Text(' / $max$label', style: TravelloTheme.subtitle2),
                   ])
                 ]),
               ),
@@ -57,16 +52,16 @@ class PointCard extends StatelessWidget {
               OutlinedButton(
                 onPressed: onTap,
                 style: ThemeButton.outlinedInvert(context),
-                child: Text(btnText, style: ThemeText.subtitle2),
+                child: Text(btnText, style: TravelloTheme.subtitle2),
               )
             ],
           ),
-          SizedBox(height: spacingUnit(1),),
+          const SizedBox(height: 8,),
           ClipRRect(
             borderRadius: ThemeRadius.small,
             child: LinearProgressIndicator(
               value: progress / max,
-              backgroundColor: colorScheme(context).surfaceDim,
+              backgroundColor: TravelloTheme.paperLightDim,
               color: color,
               minHeight: 10,
               semanticsLabel: 'Progress indicator',

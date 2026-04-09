@@ -1,12 +1,10 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/models/booking.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/booking/ticket_list.dart';
 import 'package:flight_app/widgets/search_filters/filter_transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class OrderHistory extends StatefulWidget {
   const OrderHistory({super.key});
@@ -36,7 +34,7 @@ class _OrderHistoryState extends State<OrderHistory> {
     return Scaffold(
       extendBody: true,
       appBar: AppBar(
-        backgroundColor: colorScheme(context).surfaceContainerLowest,
+        backgroundColor: TravelloTheme.paperLightContainerLowest,
         leading: IconButton(
           onPressed: () {
             Get.back();
@@ -44,7 +42,7 @@ class _OrderHistoryState extends State<OrderHistory> {
           icon: const Icon(Icons.arrow_back_ios_new)
         ),
         centerTitle: true,
-        title: const Text('Transaction History', style: ThemeText.subtitle),
+        title: const Text('Transaction History', style: TravelloTheme.subtitle),
         actions: [
           IconButton(
             onPressed: () {
@@ -56,7 +54,7 @@ class _OrderHistoryState extends State<OrderHistory> {
       ),
       body: SingleChildScrollView(child: Column(
         children: [
-          SizedBox(height: spacingUnit(1)),
+          const SizedBox(height: 8),
           FilterTransaction(
             sortby: _sortby,
             category: _category,

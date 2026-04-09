@@ -1,12 +1,9 @@
-import 'package:flight_app/ui/themes/theme_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/list_item.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/picker.dart';
 import 'package:change_case/change_case.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FilterTransaction extends StatefulWidget {
   const FilterTransaction({
@@ -207,79 +204,79 @@ class _FilterTransactionState extends State<FilterTransaction> with RestorationM
             scrollDirection: Axis.horizontal,
             children: [
               /// FILTER BY CATEGORY
-              SizedBox(width: spacingUnit(2)),
+              const SizedBox(width: 16),
               OutlinedButton(
                 onPressed: () {
                   openCategoryPicker(context);
                 },
                 style: buttonStyle,
                 child: Row(children: [
-                  Icon(Icons.grid_view_outlined, size: 16, color: ThemePalette.primaryMain),
+                  const Icon(Icons.grid_view_outlined, size: 16, color: TravelloTheme.primaryMain),
                   const SizedBox(width: 2),
-                  Text('Category: ${categoryTemp.toCapitalCase()}', style: ThemeText.caption),
+                  Text('Category: ${categoryTemp.toCapitalCase()}', style: TravelloTheme.caption),
                   const SizedBox(width: 2),
                   Icon(Icons.arrow_drop_down, color: colorScheme(context).onSurface, size: 16),
                 ])
               ),
         
               /// SORT BY DATE
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               OutlinedButton(
                 onPressed: () {
                   openSortPicker(context);
                 },
                 style: buttonStyle,
                 child: Row(children: [
-                  Icon(Icons.swap_vert, size: 16, color: ThemePalette.primaryMain),
+                  const Icon(Icons.swap_vert, size: 16, color: TravelloTheme.primaryMain),
                   const SizedBox(width: 2),
-                  Text('Sort By ${sortbyTemp.toCapitalCase()}', style: ThemeText.caption),
+                  Text('Sort By ${sortbyTemp.toCapitalCase()}', style: TravelloTheme.caption),
                   const SizedBox(width: 2),
                   Icon(Icons.arrow_drop_down, color: colorScheme(context).onSurface, size: 16),
                 ])
               ),
         
               /// FILTER DATE
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               OutlinedButton(
                 onPressed: () {
                   _restorableDateRangePickerRouteFuture.present();
                 },
                 style: buttonStyle,
                 child: Row(children: [
-                  Icon(Icons.calendar_month, size: 16, color: ThemePalette.primaryMain),
+                  const Icon(Icons.calendar_month, size: 16, color: TravelloTheme.primaryMain),
                   const SizedBox(width: 2),
-                  Text('${DateFormat.MMMd().format(_startDate.value!)} - ${DateFormat.MMMd().format(_endDate.value!)}', style: ThemeText.caption),
+                  Text('${DateFormat.MMMd().format(_startDate.value!)} - ${DateFormat.MMMd().format(_endDate.value!)}', style: TravelloTheme.caption),
                   const SizedBox(width: 2),
                   Icon(Icons.arrow_drop_down, color: colorScheme(context).onSurface, size: 16),
                 ])
               ),
               
               /// TAG FILTERS
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               OutlinedButton(
                 onPressed: () {},
                 style: buttonStyle,
-                child: const Text('This Month', style: ThemeText.caption)
+                child: const Text('This Month', style: TravelloTheme.caption)
               ),
-              SizedBox(width: spacingUnit(1)),
+              const SizedBox(width: 8),
               OutlinedButton(
                 onPressed: () {},
                 style: buttonStyle,
-                child: const Text('This Week', style: ThemeText.caption)
+                child: const Text('This Week', style: TravelloTheme.caption)
               ),
-              SizedBox(width: spacingUnit(2)),
+              const SizedBox(width: 16),
             ]
           ),
         ),
 
         /// TEXT RESULT AND RESET
         Padding(
-          padding: EdgeInsets.symmetric(vertical: spacingUnit(1), horizontal: spacingUnit(2)),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('22 Filtered Result', style: ThemeText.paragraph,),
+            const Text('22 Filtered Result', style: TravelloTheme.paragraph,),
             TextButton(
               onPressed: () {},
-              child: Text('RESET FILTER', style: ThemeText.paragraph.copyWith(color: ThemePalette.primaryMain))
+              child: Text('RESET FILTER', style: TravelloTheme.paragraph.copyWith(color: TravelloTheme.primaryMain))
             )
           ]),
         )

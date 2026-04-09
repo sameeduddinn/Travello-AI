@@ -1,9 +1,6 @@
 import 'package:flight_app/models/train.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TrainInfo extends StatelessWidget {
   const TrainInfo({super.key, required this.train});
@@ -13,20 +10,20 @@ class TrainInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(
+        const Icon(
           Icons.train,
-          color: colorScheme(context).primary,
+          color: TravelloTheme.primaryMain,
           size: 24,
         ),
         const SizedBox(
           width: 8,
         ),
         Text(train.name,
-            style: ThemeText.paragraph.copyWith(fontWeight: FontWeight.bold)),
+            style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold)),
         const Spacer(),
-        Text(train.trainNumber, style: ThemeText.paragraph),
+        Text(train.trainNumber, style: TravelloTheme.paragraph),
         const SizedBox(
           width: 8,
         ),
@@ -34,8 +31,8 @@ class TrainInfo extends StatelessWidget {
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
               borderRadius: ThemeRadius.xsmall,
-              color: colorScheme(context).primaryContainer),
-          child: Text(train.trainClass, style: ThemeText.caption),
+              color: TravelloTheme.primaryMainContainer),
+          child: Text(train.trainClass, style: TravelloTheme.caption),
         )
       ]),
     );

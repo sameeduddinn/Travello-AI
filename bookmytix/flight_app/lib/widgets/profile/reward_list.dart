@@ -1,7 +1,7 @@
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/models/reward.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/widgets/cards/reward_card.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class RewardList extends StatelessWidget {
   const RewardList({super.key});
@@ -9,11 +9,11 @@ class RewardList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-      padding: EdgeInsets.only(
-        top: spacingUnit(2),
-        left: spacingUnit(2),
-        right: spacingUnit(2),
-        bottom: spacingUnit(4),
+      padding: const EdgeInsets.only(
+        top: 16,
+        left: 16,
+        right: 16,
+        bottom: 32,
       ),
       shrinkWrap: true,
       physics: const ClampingScrollPhysics(),

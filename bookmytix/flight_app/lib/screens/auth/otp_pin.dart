@@ -1,11 +1,9 @@
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/widgets/user/auth_wrap.dart';
 import 'package:flight_app/widgets/user/otp_form.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class OtpPin extends StatelessWidget {
   const OtpPin({super.key});
@@ -30,18 +28,18 @@ class OtpPin extends StatelessWidget {
           ),
           icon: const Icon(Icons.arrow_back_ios_new),
         ),
-        actionsPadding: EdgeInsets.symmetric(horizontal: spacingUnit(1)),
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 8),
         actions: [
           FilledButton(
             onPressed: () {
               Get.toNamed(AppLink.contact);
             },
             style: ThemeButton.btnSmall.merge(ThemeButton.white),
-            child: Row(
+            child: const Row(
               children: [
-                Icon(Icons.headset_mic, color: ThemePalette.primaryMain),
-                const SizedBox(width: 4),
-                Text('Help and Support', style: TextStyle(color: ThemePalette.primaryMain)),
+                Icon(Icons.headset_mic, color: TravelloTheme.primaryMain),
+                SizedBox(width: 4),
+                Text('Help and Support', style: TextStyle(color: TravelloTheme.primaryMain)),
               ],
             )
           )

@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/expanded_section.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PricingCard extends StatefulWidget {
   const PricingCard({
@@ -59,7 +55,7 @@ class _PricingCardState extends State<PricingCard>
   Widget build(BuildContext context) {
     return PaperCard(
         content: Padding(
-      padding: EdgeInsets.all(spacingUnit(1)),
+      padding: const EdgeInsets.all(8),
       child: Column(
         children: [
           /// TITLE HEADER
@@ -78,11 +74,11 @@ class _PricingCardState extends State<PricingCard>
               /// ICON
               Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
                 Text('Total: 1/999',
-                    style: ThemeText.caption.copyWith(color: widget.color)),
+                    style: TravelloTheme.caption.copyWith(color: widget.color)),
                 const SizedBox(height: 4),
                 widget.mainIcon,
               ]),
-              SizedBox(width: spacingUnit(2)),
+              const SizedBox(width: 16),
 
               /// DESCRIPTION
               Expanded(
@@ -92,7 +88,7 @@ class _PricingCardState extends State<PricingCard>
                       Row(
                         children: [
                           Text(widget.title,
-                              style: ThemeText.title2
+                              style: TravelloTheme.title2
                                   .copyWith(fontWeight: FontWeight.bold)),
                           widget.isRecomended
                               ? Container(
@@ -104,9 +100,9 @@ class _PricingCardState extends State<PricingCard>
                                     color: widget.color,
                                   ),
                                   child: Text(' POPULAR ',
-                                      style: ThemeText.caption.copyWith(
+                                      style: TravelloTheme.caption.copyWith(
                                           fontWeight: FontWeight.bold,
-                                          color: colorScheme(context).surface)),
+                                          color: TravelloTheme.paperLight)),
                                 )
                               : Container()
                         ],
@@ -119,11 +115,11 @@ class _PricingCardState extends State<PricingCard>
                       ),
                     ]),
               ),
-              SizedBox(width: spacingUnit(2)),
+              const SizedBox(width: 16),
 
               /// PRICE
               Text(widget.price > 0 ? '\$${widget.price}' : 'FREE',
-                  style: ThemeText.title),
+                  style: TravelloTheme.title),
 
               /// ARROW
               const SizedBox(width: 8),
@@ -140,7 +136,7 @@ class _PricingCardState extends State<PricingCard>
               child: Column(children: [
                 ListView.builder(
                     shrinkWrap: true,
-                    padding: EdgeInsets.only(top: spacingUnit(1)),
+                    padding: const EdgeInsets.only(top: 8),
                     physics: const ClampingScrollPhysics(),
                     itemCount: widget.features.length,
                     itemBuilder: ((BuildContext context, int index) {
@@ -149,14 +145,14 @@ class _PricingCardState extends State<PricingCard>
 
                       return ListTile(
                         leading: icon
-                            ? Icon(Icons.check_circle,
-                                color: ThemePalette.primaryMain)
+                            ? const Icon(Icons.check_circle,
+                                color: TravelloTheme.primaryMain)
                             : Icon(Icons.close,
                                 color: colorScheme(context)
                                     .onSurfaceVariant
                                     .withValues(alpha: 0.5)),
                         title: Text(item,
-                            style: ThemeText.headline.copyWith(
+                            style: TravelloTheme.headline.copyWith(
                                 color: icon
                                     ? colorScheme(context).onSurface
                                     : colorScheme(context)
@@ -175,7 +171,7 @@ class _PricingCardState extends State<PricingCard>
                             .merge(ThemeButton.invert(context)),
                         child: const Text(
                           'Choose This Package',
-                          style: ThemeText.subtitle2,
+                          style: TravelloTheme.subtitle2,
                         )),
                   ),
                   const SizedBox(width: 4),

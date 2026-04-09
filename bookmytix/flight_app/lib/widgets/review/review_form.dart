@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_button.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/grabber_icon.dart';
 import 'package:flight_app/widgets/app_input/app_textfield.dart';
 import 'package:flight_app/widgets/review/rating_star.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ReviewForm extends StatefulWidget {
   const ReviewForm({super.key});
@@ -43,22 +41,22 @@ class _ReviewFormState extends State<ReviewForm> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(spacingUnit(2)),
+      padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
         const GrabberIcon(),
         const VSpace(),
         
         /// TEXT
-        Text('Write Review', textAlign: TextAlign.center, style: ThemeText.title2.copyWith(fontWeight: FontWeight.bold)),
-        SizedBox(height: spacingUnit(1)),
+        Text('Write Review', textAlign: TextAlign.center, style: TravelloTheme.title2.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
         const Text('Click the star to change the rating. IMPORTANT: Reviews are public and include your name and avatar,', textAlign: TextAlign.center),
         const VSpace(),
 
         /// FORM
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           RatingStar(initVal: 5, size: 32, onChanged: handleChange),
-          SizedBox(width: spacingUnit(1)),
-          Text(_review, style: ThemeText.subtitle)
+          const SizedBox(width: 8),
+          Text(_review, style: TravelloTheme.subtitle)
         ]),
         const VSpace(),
         AppTextField(

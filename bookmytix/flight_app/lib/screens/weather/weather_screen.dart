@@ -1,9 +1,7 @@
 import 'package:flight_app/models/weather.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class WeatherScreen extends StatefulWidget {
   const WeatherScreen({super.key});
@@ -206,10 +204,10 @@ class _WeatherScreenState extends State<WeatherScreen>
               children: [
                 // City Selector
                 Padding(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: spacingUnit(2), vertical: spacingUnit(1.5)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: DropdownButtonFormField<String>(
-                    value: _selectedCity,
+                    initialValue: _selectedCity,
                     dropdownColor: Colors.white,
                     style: const TextStyle(
                       color: Color(0xFFD4AF37),
@@ -257,19 +255,19 @@ class _WeatherScreenState extends State<WeatherScreen>
 
                 // Current Weather Card
                 Padding(
-                  padding: EdgeInsets.all(spacingUnit(2)),
+                  padding: const EdgeInsets.all(16),
                   child: Card(
                     child: Padding(
-                      padding: EdgeInsets.all(spacingUnit(3)),
+                      padding: const EdgeInsets.all(24),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           final isSmall = constraints.maxWidth < 360;
                           return Column(
                             children: [
-                              Text(
+                              Icon(
                                 _currentWeather.icon,
-                                style:
-                                    TextStyle(fontSize: isSmall ? 56.0 : 72.0),
+                                size: isSmall ? 56.0 : 72.0,
+                                color: TravelloTheme.primaryMain,
                               ),
                               const SizedBox(height: 16),
                               Text(
@@ -281,7 +279,8 @@ class _WeatherScreenState extends State<WeatherScreen>
                               ),
                               Text(
                                 _currentWeather.condition,
-                                style: ThemeText.title.copyWith(fontSize: 16),
+                                style:
+                                    TravelloTheme.title.copyWith(fontSize: 16),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 24),
@@ -312,11 +311,11 @@ class _WeatherScreenState extends State<WeatherScreen>
                 // Travel Warning (if applicable)
                 if (_currentWeather.travelWarning)
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Card(
                       color: Colors.orange.shade50,
                       child: Padding(
-                        padding: EdgeInsets.all(spacingUnit(2)),
+                        padding: const EdgeInsets.all(16),
                         child: Row(
                           children: [
                             Icon(
@@ -331,7 +330,7 @@ class _WeatherScreenState extends State<WeatherScreen>
                                 children: [
                                   Text(
                                     'Travel Warning',
-                                    style: ThemeText.subtitle.copyWith(
+                                    style: TravelloTheme.subtitle.copyWith(
                                       color: Colors.orange.shade800,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -339,7 +338,7 @@ class _WeatherScreenState extends State<WeatherScreen>
                                   const SizedBox(height: 4),
                                   Text(
                                     _currentWeather.warningMessage,
-                                    style: ThemeText.caption.copyWith(
+                                    style: TravelloTheme.caption.copyWith(
                                       color: Colors.orange.shade900,
                                     ),
                                   ),
@@ -355,12 +354,12 @@ class _WeatherScreenState extends State<WeatherScreen>
                 // Weather Warnings Section
                 if (warnings.isNotEmpty) ...[
                   Padding(
-                    padding: EdgeInsets.all(spacingUnit(2)),
+                    padding: const EdgeInsets.all(16),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
                         'Active Weather Alerts',
-                        style: ThemeText.title.copyWith(fontSize: 16),
+                        style: TravelloTheme.title.copyWith(fontSize: 16),
                       ),
                     ),
                   ),
@@ -369,12 +368,12 @@ class _WeatherScreenState extends State<WeatherScreen>
 
                 // All Cities Weather
                 Padding(
-                  padding: EdgeInsets.all(spacingUnit(2)),
+                  padding: const EdgeInsets.all(16),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'All Cities',
-                      style: ThemeText.title.copyWith(fontSize: 16),
+                      style: TravelloTheme.title.copyWith(fontSize: 16),
                     ),
                   ),
                 ),
@@ -385,7 +384,7 @@ class _WeatherScreenState extends State<WeatherScreen>
                     onTap: () => _changeCity(weather.city),
                   );
                 }),
-                SizedBox(height: spacingUnit(2)),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -410,10 +409,10 @@ class _WeatherDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, color: colorScheme(context).primary),
+        Icon(icon, color: TravelloTheme.primaryMain),
         const SizedBox(height: 4),
-        Text(label, style: ThemeText.caption),
-        Text(value, style: ThemeText.subtitle),
+        Text(label, style: TravelloTheme.caption),
+        Text(value, style: TravelloTheme.subtitle),
       ],
     );
   }
@@ -427,29 +426,30 @@ class _WarningCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: spacingUnit(2),
-        vertical: spacingUnit(0.5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 4,
       ),
       child: Card(
         color: Colors.red.shade50,
         child: ListTile(
           leading: CircleAvatar(
             backgroundColor: Colors.red.shade100,
-            child: Text(
+            child: Icon(
               weather.icon,
-              style: const TextStyle(fontSize: 24),
+              size: 24,
+              color: Colors.red.shade700,
             ),
           ),
           title: Text(
             weather.city,
-            style: ThemeText.subtitle.copyWith(
+            style: TravelloTheme.subtitle.copyWith(
               color: Colors.red.shade900,
             ),
           ),
           subtitle: Text(
             weather.warningMessage,
-            style: ThemeText.caption.copyWith(
+            style: TravelloTheme.caption.copyWith(
               color: Colors.red.shade800,
             ),
           ),
@@ -477,39 +477,42 @@ class _CityWeatherTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: spacingUnit(2),
-        vertical: spacingUnit(0.5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 4,
       ),
       child: Card(
-        color: isSelected ? colorScheme(context).primaryContainer : null,
+        color: isSelected ? TravelloTheme.primaryMainContainer : null,
         child: ListTile(
           onTap: onTap,
-          leading: Text(
+          leading: Icon(
             weather.icon,
-            style: const TextStyle(fontSize: 32),
+            size: 32,
+            color: isSelected
+                ? colorScheme(context).onPrimaryContainer
+                : TravelloTheme.primaryMain,
           ),
           title: Text(
             weather.city,
-            style: ThemeText.subtitle.copyWith(
+            style: TravelloTheme.subtitle.copyWith(
               color:
                   isSelected ? colorScheme(context).onPrimaryContainer : null,
             ),
           ),
           subtitle: Text(
             weather.condition,
-            style: ThemeText.caption.copyWith(
+            style: TravelloTheme.caption.copyWith(
               color:
                   isSelected ? colorScheme(context).onPrimaryContainer : null,
             ),
           ),
           trailing: Text(
             '${weather.temperature.toStringAsFixed(0)}°C',
-            style: ThemeText.title.copyWith(
+            style: TravelloTheme.title.copyWith(
               fontSize: 16,
               color: isSelected
                   ? colorScheme(context).onPrimaryContainer
-                  : colorScheme(context).primary,
+                  : TravelloTheme.primaryMain,
             ),
           ),
         ),

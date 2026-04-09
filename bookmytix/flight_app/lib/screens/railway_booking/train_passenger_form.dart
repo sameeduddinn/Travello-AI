@@ -6,11 +6,11 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/models/railway_station.dart';
 import 'package:flight_app/screens/railway/train_results_screen.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/utils/format_utils.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/widgets/app_input/ds_input_field.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TrainPassengerForm extends StatefulWidget {
   const TrainPassengerForm({super.key});
@@ -1698,8 +1698,8 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: spacingUnit(2), vertical: spacingUnit(1.5)),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Expanded(

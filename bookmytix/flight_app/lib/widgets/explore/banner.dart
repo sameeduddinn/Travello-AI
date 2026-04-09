@@ -4,10 +4,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:flutter_svg_provider/flutter_svg_provider.dart' as svg_img;
 import 'package:get/route_manager.dart';
 import 'package:flight_app/constants/app_constants.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/decorations/rounded_deco_main.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class BannerExplore extends StatelessWidget {
   const BannerExplore({super.key});
@@ -19,7 +17,7 @@ class BannerExplore extends StatelessWidget {
     return Container(
         decoration: BoxDecoration(
             color:
-                isDark ? ThemePalette.primaryDark : ThemePalette.primaryLight),
+                isDark ? TravelloTheme.primaryDark : TravelloTheme.primaryLight),
         child: Container(
           decoration: BoxDecoration(
             image: DecorationImage(
@@ -40,18 +38,18 @@ class BannerExplore extends StatelessWidget {
             children: [
               /// TEXT TITLE
               Padding(
-                  padding: EdgeInsets.only(
-                    left: spacingUnit(2),
-                    right: spacingUnit(2),
-                    bottom: spacingUnit(2),
-                    top: spacingUnit(10),
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    bottom: 16,
+                    top: 80,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
                         'Explore the most beautiful places around Pakistan',
-                        style: ThemeText.title2,
+                        style: TravelloTheme.title2,
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -59,7 +57,7 @@ class BannerExplore extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         branding.desc,
-                        style: ThemeText.subtitle.copyWith(
+                        style: TravelloTheme.subtitle.copyWith(
                           fontWeight: FontWeight.w800,
                           fontSize: 14,
                           color: Colors.black,
@@ -90,7 +88,7 @@ class BannerExplore extends StatelessWidget {
                       child: RoundedDecoMain(
                         height: 100,
                         bgDecoration: BoxDecoration(
-                            color: colorScheme(context).surfaceContainerLowest),
+                            color: TravelloTheme.paperLightContainerLowest),
                       )),
                   SizedBox(
                     height: 140,
@@ -99,8 +97,8 @@ class BannerExplore extends StatelessWidget {
                       padding: const EdgeInsets.all(8.0),
                       child: SvgPicture.asset(ImgApi.bgPakistanLandmarks,
                           fit: BoxFit.contain,
-                          colorFilter: ColorFilter.mode(
-                              colorScheme(context).primary, BlendMode.srcIn)),
+                          colorFilter: const ColorFilter.mode(
+                              TravelloTheme.primaryMain, BlendMode.srcIn)),
                     ),
                   ),
                 ],

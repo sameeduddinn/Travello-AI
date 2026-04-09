@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Static Pakistan slides — never change regardless of selected tab
@@ -257,7 +256,10 @@ class _Dots extends StatelessWidget {
           decoration: BoxDecoration(
             color: active
                 ? const Color(0xFFD4AF37)
-                : colorScheme(context).onSurface.withOpacity(0.22),
+                : Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.22),
             borderRadius: BorderRadius.circular(4),
           ),
         );

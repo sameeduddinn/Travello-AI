@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class AppTextField extends StatefulWidget {
   const AppTextField({
@@ -76,7 +74,7 @@ class _AppTextFieldState extends State<AppTextField> {
     final Color activeBorderColor = widget.errorText != null
         ? Colors.red[400]!
         : boxFocus
-            ? ThemePalette.primaryMain
+            ? TravelloTheme.primaryMain
             : Theme.of(context).colorScheme.outline;
 
     final OutlineInputBorder border = OutlineInputBorder(
@@ -106,7 +104,7 @@ class _AppTextFieldState extends State<AppTextField> {
               color: widget.errorText != null
                   ? Colors.red[400]
                   : boxFocus
-                      ? ThemePalette.primaryMain
+                      ? TravelloTheme.primaryMain
                       : Theme.of(context)
                           .colorScheme
                           .onSurface
@@ -120,7 +118,7 @@ class _AppTextFieldState extends State<AppTextField> {
             ),
             alignLabelWithHint: widget.maxLines != 1,
             errorText: widget.errorText,
-            errorStyle: ThemeText.caption.copyWith(color: Colors.red[400]),
+            errorStyle: TravelloTheme.caption.copyWith(color: Colors.red[400]),
             border: border,
             enabledBorder: border,
             focusedBorder: border,

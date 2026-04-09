@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/ui/themes/theme_radius.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/utils/image_viewer.dart';
 import 'package:flight_app/utils/shimmer_preloader.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PromoDesc extends StatelessWidget {
   const PromoDesc({
@@ -33,25 +31,25 @@ class PromoDesc extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: spacingUnit(2)),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(children: [
         Padding(
-          padding: EdgeInsets.symmetric(vertical: spacingUnit(2)),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
             /// EVENT TITLE
             Expanded(child: Text(
               title,
               overflow: TextOverflow.ellipsis,
               maxLines: 2,
-              style: ThemeText.title2.copyWith(fontWeight: FontWeight.bold))
+              style: TravelloTheme.title2.copyWith(fontWeight: FontWeight.bold))
             ),
-            SizedBox(width: spacingUnit(1)),
+            const SizedBox(width: 8),
 
             /// TIME REMAINING
             Container(
               width: 120,
-              padding: EdgeInsets.all(spacingUnit(1)),
-              margin: EdgeInsets.only(bottom: spacingUnit(1)),
+              padding: const EdgeInsets.all(8),
+              margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
                 color: Colors.black,
                 borderRadius: ThemeRadius.medium
@@ -59,7 +57,7 @@ class PromoDesc extends StatelessWidget {
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 const Icon(Icons.access_time_outlined, size: 15, color: Colors.white),
                 const SizedBox(width: 2),
-                Text(date, style: ThemeText.paragraph.copyWith(color: Colors.white)),
+                Text(date, style: TravelloTheme.paragraph.copyWith(color: Colors.white)),
               ],)
             ),
           ]),
@@ -94,17 +92,17 @@ class PromoDesc extends StatelessWidget {
 
         /// DESCRIPTION AND termsS
         Container(
-          padding: EdgeInsets.symmetric(vertical: spacingUnit(2)),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(desc, style: ThemeText.paragraph),
-            SizedBox(height: spacingUnit(2)),
-            Text('Terms of use:', style: ThemeText.subtitle2.copyWith(fontWeight: FontWeight.bold)),
-            SizedBox(height: spacingUnit(1)),
-            Text('1. $terms1', style: ThemeText.paragraph),
-            SizedBox(height: spacingUnit(1)),
-            Text('2. $terms2', style: ThemeText.paragraph),
-            SizedBox(height: spacingUnit(1)),
-            Text('3. $terms3', style: ThemeText.paragraph),
+            Text(desc, style: TravelloTheme.paragraph),
+            const SizedBox(height: 16),
+            Text('Terms of use:', style: TravelloTheme.subtitle2.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('1. $terms1', style: TravelloTheme.paragraph),
+            const SizedBox(height: 8),
+            Text('2. $terms2', style: TravelloTheme.paragraph),
+            const SizedBox(height: 8),
+            Text('3. $terms3', style: TravelloTheme.paragraph),
           ]),
         )
       ]),

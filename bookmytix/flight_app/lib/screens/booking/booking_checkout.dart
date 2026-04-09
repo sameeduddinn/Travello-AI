@@ -1,14 +1,12 @@
 ﻿import 'dart:math' as math;
 import 'package:flight_app/app/app_link.dart';
-import 'package:flight_app/ui/themes/theme_text.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
-import 'package:flight_app/ui/themes/theme_palette.dart';
-import 'package:flight_app/ui/themes/theme_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:flight_app/ui/themes/theme_system.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
 //  PROFESSIONAL CHECKOUT SCREEN - Matches Bookme/Expedia Design
@@ -214,12 +212,12 @@ class _BookingCheckoutState extends State<BookingCheckout> {
       return (_outboundFlight!.price + _returnFlight!.price) *
           _passengers.length;
     }
-    return _flight!.price * _passengers.length;
+    return _flight.price * _passengers.length;
   }
 
   double get _discountPercent {
-    if (_flight!.badge.contains('%')) {
-      final match = RegExp(r'(\d+)%').firstMatch(_flight!.badge);
+    if (_flight.badge.contains('%')) {
+      final match = RegExp(r'(\d+)%').firstMatch(_flight.badge);
       if (match != null) return double.tryParse(match.group(1) ?? '0') ?? 0;
     }
     return 0;
@@ -286,47 +284,6 @@ class _BookingCheckoutState extends State<BookingCheckout> {
 
   @override
   Widget build(BuildContext context) {
-    // Safety check: if flight data is missing, show error
-    if (_flight == null) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: colorScheme(context).primary,
-          title: const Text('Checkout', style: TextStyle(color: Colors.white)),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Get.back(),
-          ),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
-                const SizedBox(height: 24),
-                const Text(
-                  'Flight data is missing',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Please start your booking from the search page.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () => Get.offAllNamed(AppLink.home),
-                  child: const Text('Go to Home'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA), // Light background
       appBar: _buildAppBar(),
@@ -378,7 +335,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: colorScheme(context).primary,
+      backgroundColor: TravelloTheme.primaryMain,
       elevation: 0,
       centerTitle: true,
       leading: IconButton(
@@ -519,7 +476,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
     final arrDate = DateFormat('dd MMM')
         .format(_departureDate.add(const Duration(hours: 2)));
 
-    final primary = colorScheme(context).primary;
+    const primary = TravelloTheme.primaryMain;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -556,7 +513,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Departure', style: ThemeText.sectionHeading),
+            Text('Departure', style: TravelloTheme.sectionHeading),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -565,8 +522,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 border: Border.all(color: Colors.grey.shade300),
               ),
               child: Text(
-                'Non-Stop - Duration: ${_flight!.duration}',
-                style: ThemeText.durationBadge,
+                'Non-Stop - Duration: ${_flight.duration}',
+                style: TravelloTheme.durationBadge,
               ),
             ),
           ],
@@ -603,14 +560,14 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                   children: [
                     Text(
                       '${_fromAirport.location}(${_fromAirport.code}) - ${_toAirport.location}(${_toAirport.code})',
-                      style: ThemeText.cardHeading,
+                      style: TravelloTheme.cardHeading,
                     ),
                     const Spacer(),
                     const Icon(Icons.schedule_rounded,
                         size: 15, color: Color(0xFF666666)),
                     const SizedBox(width: 5),
                     Text(
-                      _flight!.duration,
+                      _flight.duration,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -635,7 +592,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _flight!.departureTime,
+                                _flight.departureTime,
                                 style: const TextStyle(
                                     fontSize: 34,
                                     fontWeight: FontWeight.w900,
@@ -659,7 +616,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                _flight!.arrivalTime,
+                                _flight.arrivalTime,
                                 style: const TextStyle(
                                     fontSize: 34,
                                     fontWeight: FontWeight.w900,
@@ -856,7 +813,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _flight!.airlineName,
+                            _flight.airlineName,
                             style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -864,7 +821,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${_flight!.cabinClass} ${_flight!.airlineCode}',
+                            '${_flight.cabinClass} ${_flight.airlineCode}',
                             style: const TextStyle(
                                 fontSize: 11.5, color: Color(0xFF666666)),
                           ),
@@ -894,7 +851,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
     final arrDate =
         DateFormat('dd MMM').format(_returnDate!.add(const Duration(hours: 2)));
 
-    final primary = colorScheme(context).primary;
+    const primary = TravelloTheme.primaryMain;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -903,7 +860,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Return', style: ThemeText.sectionHeading),
+            Text('Return', style: TravelloTheme.sectionHeading),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -913,7 +870,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
               ),
               child: Text(
                 'Non-Stop - Duration: ${_returnFlight!.duration}',
-                style: ThemeText.durationBadge,
+                style: TravelloTheme.durationBadge,
               ),
             ),
           ],
@@ -950,7 +907,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                   children: [
                     Text(
                       '${_toAirport.location}(${_toAirport.code}) - ${_fromAirport.location}(${_fromAirport.code})',
-                      style: ThemeText.cardHeading,
+                      style: TravelloTheme.cardHeading,
                     ),
                     const Spacer(),
                     const Icon(Icons.schedule_rounded,
@@ -1233,7 +1190,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
   // ═══════════════════════════════════════════════════════════════════════
 
   Widget _buildPassengerDetails() {
-    final primary = colorScheme(context).primary;
+    const primary = TravelloTheme.primaryMain;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1938,7 +1895,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
   // ═════════════════════════════════════════════════════════════════════════
 
   Widget _buildPriceDetail() {
-    final primary = colorScheme(context).primary;
+    const primary = TravelloTheme.primaryMain;
 
     // Build baggage subtitle from actual baggageData
     String baggageSubtitle = '';
@@ -1992,7 +1949,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           : 'Ticket ${_fromAirport.location} → ${_toAirport.location}',
                       subtitle: _isRoundTrip
                           ? '${_fromAirport.location} ⇄ ${_toAirport.location} · ${_passengerBreakdownText()}'
-                          : '${_formatPrice(_flight!.price)} × ${_passengers.length} pax  (${_passengerBreakdownText()})',
+                          : '${_formatPrice(_flight.price)} × ${_passengers.length} pax  (${_passengerBreakdownText()})',
                       price: _formatPrice(_ticketPrice),
                     ),
                     const SizedBox(height: 14),
@@ -2040,14 +1997,14 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                     _buildPriceRow(
                       icon: Icons.local_airport_outlined,
                       title: 'Airport Development Fee',
-                      subtitle: 'PKR 200 × ${_passengerCount} pax',
+                      subtitle: 'PKR 200 × $_passengerCount pax',
                       price: _formatPrice(_taxAirportFee),
                     ),
                     const SizedBox(height: 14),
                     _buildPriceRow(
                       icon: Icons.security_outlined,
                       title: 'Aviation Security Fee',
-                      subtitle: 'PKR 150 × ${_passengerCount} pax',
+                      subtitle: 'PKR 150 × $_passengerCount pax',
                       price: _formatPrice(_taxSecurityFee),
                     ),
                     const SizedBox(height: 14),
@@ -2147,7 +2104,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
     Color? priceColor,
     String? pricePrefix,
   }) {
-    final primary = colorScheme(context).primary;
+    const primary = TravelloTheme.primaryMain;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -2224,7 +2181,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
             children: [
               // Header
               Padding(
-                padding: EdgeInsets.all(spacingUnit(2.5)),
+                padding: const EdgeInsets.all(20),
                 child: Row(
                   children: [
                     Container(
@@ -2239,7 +2196,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                         size: 22,
                       ),
                     ),
-                    SizedBox(width: spacingUnit(1.5)),
+                    const SizedBox(width: 12),
                     const Text(
                       'Review Policies',
                       style: TextStyle(
@@ -2278,11 +2235,11 @@ class _BookingCheckoutState extends State<BookingCheckout> {
 
               // Terms & Conditions Checkbox
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  spacingUnit(2.5),
-                  spacingUnit(2),
-                  spacingUnit(2.5),
-                  spacingUnit(2.5),
+                padding: const EdgeInsets.fromLTRB(
+                  20,
+                  16,
+                  20,
+                  20,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2326,7 +2283,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                                     )
                                   : null,
                             ),
-                            SizedBox(width: spacingUnit(1.5)),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 2),
@@ -2386,7 +2343,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                       ),
                     ),
                     if (_showTermsError) ...[
-                      SizedBox(height: spacingUnit(1)),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           Icon(
@@ -2394,7 +2351,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                             size: 16,
                             color: Colors.red.shade600,
                           ),
-                          SizedBox(width: spacingUnit(0.7)),
+                          const SizedBox(width: 5.6),
                           Text(
                             'Please accept Terms & Conditions to continue',
                             style: TextStyle(
@@ -2422,9 +2379,9 @@ class _BookingCheckoutState extends State<BookingCheckout> {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: spacingUnit(2.5),
-            vertical: spacingUnit(2),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
           ),
           child: Row(
             children: [
@@ -2440,7 +2397,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                   color: const Color(0xFFB3B3B3),
                 ),
               ),
-              SizedBox(width: spacingUnit(1.5)),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
@@ -2490,11 +2447,11 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  spacingUnit(3),
-                  spacingUnit(1),
-                  spacingUnit(1),
-                  spacingUnit(2),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  8,
+                  8,
+                  16,
                 ),
                 child: Row(
                   children: [
@@ -2521,7 +2478,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  padding: EdgeInsets.all(spacingUnit(3)),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2529,17 +2486,17 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                         'Refund Eligibility',
                         'Refunds are available for cancellations made according to the airline\'s cancellation policy. Refund processing time varies by airline and payment method.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Processing Time',
                         'Refunds typically take 7-14 business days to process. Credit card refunds may take an additional 5-7 business days to reflect in your account.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Non-Refundable Tickets',
                         'Some promotional or discounted fares are non-refundable. Please check your fare conditions before booking.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Cancellation Fees',
                         'Airlines may charge cancellation fees. These fees vary by airline, route, and fare class and will be deducted from your refund amount.',
@@ -2581,11 +2538,11 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  spacingUnit(3),
-                  spacingUnit(1),
-                  spacingUnit(1),
-                  spacingUnit(2),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  8,
+                  8,
+                  16,
                 ),
                 child: Row(
                   children: [
@@ -2612,7 +2569,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  padding: EdgeInsets.all(spacingUnit(3)),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2620,17 +2577,17 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                         'Free Cancellation',
                         'Cancellations made within 24 hours of booking may be eligible for free cancellation, subject to airline policy and fare rules.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Cancellation Charges',
                         'Cancellation fees vary based on time before departure:\n• More than 15 days: Minimal fees\n• 7-15 days: Moderate fees\n• Less than 7 days: Higher fees\n• No-show: Maximum fees',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'How to Cancel',
                         'Log in to your account, go to "My Bookings", select your booking, and click "Cancel Booking". Follow the prompts to complete cancellation.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Non-Cancellable Bookings',
                         'Certain promotional or special fares may be non-cancellable. Please review your booking details carefully.',
@@ -2672,11 +2629,11 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  spacingUnit(3),
-                  spacingUnit(1),
-                  spacingUnit(1),
-                  spacingUnit(2),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  8,
+                  8,
+                  16,
                 ),
                 child: Row(
                   children: [
@@ -2703,7 +2660,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  padding: EdgeInsets.all(spacingUnit(3)),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2711,17 +2668,17 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                         'Fare Components',
                         'The ticket price includes base fare, taxes, fuel surcharge, and airport fees. Additional charges for baggage and seat selection may apply.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Date Changes',
                         'Changes to travel dates may incur change fees plus fare difference. Economy fares typically have higher change fees than premium fares.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Name Changes',
                         'Most airlines do not permit name changes. Spelling corrections may be allowed with proper documentation and applicable fees.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Baggage Allowance',
                         'Baggage allowance varies by airline and fare class. Check your booking confirmation for specific allowance. Excess baggage fees apply.',
@@ -2763,11 +2720,11 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  spacingUnit(3),
-                  spacingUnit(1),
-                  spacingUnit(1),
-                  spacingUnit(2),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  8,
+                  8,
+                  16,
                 ),
                 child: Row(
                   children: [
@@ -2794,7 +2751,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  padding: EdgeInsets.all(spacingUnit(3)),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2802,17 +2759,17 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                         'Data Collection',
                         'We collect personal information necessary for booking and providing travel services, including name, contact details, and payment information.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Data Usage',
                         'Your information is used to process bookings, send confirmations, provide customer support, and improve our services.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Data Security',
                         'We implement industry-standard security measures to protect your personal information from unauthorized access, disclosure, or destruction.',
                       ),
-                      SizedBox(height: spacingUnit(2.5)),
+                      const SizedBox(height: 20),
                       _buildPolicySection(
                         'Third-Party Sharing',
                         'Information may be shared with airlines, payment processors, and service providers necessary to complete your booking.',
@@ -2855,7 +2812,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
           ),
         ),
         body: SingleChildScrollView(
-          padding: EdgeInsets.all(spacingUnit(3)),
+          padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2863,39 +2820,39 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 '1. Acceptance of Terms',
                 'By accessing and using Travello AI, you accept and agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our services.',
               ),
-              SizedBox(height: spacingUnit(3)),
+              const SizedBox(height: 24),
               _buildFullPageSection(
                 '2. Booking & Payment',
                 'All bookings are subject to availability and confirmation. Payment must be made in full at the time of booking. We accept major credit cards, debit cards, and mobile wallet payments.',
               ),
-              SizedBox(height: spacingUnit(3)),
+              const SizedBox(height: 24),
               _buildFullPageSection(
                 '3. Cancellation & Refunds',
                 'Cancellations are subject to airline policies and fare rules. Refunds, if applicable, will be processed within 7-14 business days. Cancellation fees may apply.',
               ),
-              SizedBox(height: spacingUnit(3)),
+              const SizedBox(height: 24),
               _buildFullPageSection(
                 '4. User Responsibilities',
                 'You are responsible for providing accurate information, maintaining account security, and ensuring valid travel documents. You must arrive at the airport with sufficient time before departure.',
               ),
-              SizedBox(height: spacingUnit(3)),
+              const SizedBox(height: 24),
               _buildFullPageSection(
                 '5. Liability',
                 'Travello AI acts as an intermediary between customers and airlines. We are not liable for flight delays, cancellations, or changes made by airlines.',
               ),
-              SizedBox(height: spacingUnit(3)),
+              const SizedBox(height: 24),
               _buildFullPageSection(
                 '6. Privacy',
                 'We respect your privacy and handle your personal information in accordance with our Privacy Policy. Your data is used solely for providing and improving our services.',
               ),
-              SizedBox(height: spacingUnit(3)),
+              const SizedBox(height: 24),
               _buildFullPageSection(
                 '7. Changes to Terms',
                 'We reserve the right to modify these terms at any time. Continued use of our services constitutes acceptance of updated terms.',
               ),
-              SizedBox(height: spacingUnit(4)),
+              const SizedBox(height: 32),
               Container(
-                padding: EdgeInsets.all(spacingUnit(2.5)),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(12),
@@ -2905,7 +2862,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                   children: [
                     Icon(Icons.info_outline_rounded,
                         color: Colors.blue.shade700, size: 20),
-                    SizedBox(width: spacingUnit(1.5)),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Last updated: March 2026',
@@ -2941,7 +2898,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
             letterSpacing: -0.3,
           ),
         ),
-        SizedBox(height: spacingUnit(1)),
+        const SizedBox(height: 8),
         Text(
           content,
           style: const TextStyle(
@@ -2957,7 +2914,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
 
   Widget _buildFullPageSection(String title, String content) {
     return Container(
-      padding: EdgeInsets.all(spacingUnit(2.5)),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -2975,7 +2932,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
               letterSpacing: -0.4,
             ),
           ),
-          SizedBox(height: spacingUnit(1.5)),
+          const SizedBox(height: 12),
           Text(
             content,
             style: const TextStyle(
