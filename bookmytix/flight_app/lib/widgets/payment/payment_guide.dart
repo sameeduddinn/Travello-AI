@@ -32,7 +32,7 @@ class PaymentGuide extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 24),
                 margin: const EdgeInsets.only(left: 9),
                 decoration: BoxDecoration(
-                  border: index < helpGuideList.length - 1 ? Border(left: BorderSide(color: TravelloTheme.primaryMainContainer, width: 1)) : null
+                  border: index < helpGuideList.length - 1 ? const Border(left: BorderSide(color: TravelloTheme.primaryMainContainer, width: 1)) : null
                 ),
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 16),

@@ -306,7 +306,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Departure', style: TravelloTheme.sectionHeading),
+                    const Text('Departure', style: TravelloTheme.sectionHeading),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
@@ -331,7 +331,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Return', style: TravelloTheme.sectionHeading),
+                      const Text('Return', style: TravelloTheme.sectionHeading),
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),

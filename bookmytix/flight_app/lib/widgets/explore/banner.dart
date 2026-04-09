@@ -82,7 +82,7 @@ class BannerExplore extends StatelessWidget {
               Stack(
                 alignment: Alignment.topCenter,
                 children: [
-                  Positioned(
+                  const Positioned(
                       bottom: 0,
                       left: 0,
                       child: RoundedDecoMain(

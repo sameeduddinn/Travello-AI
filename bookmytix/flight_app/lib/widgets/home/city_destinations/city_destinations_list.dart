@@ -57,7 +57,7 @@ class _CityDestinationsListState extends State<CityDestinationsList> {
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: spacingUnit(5)),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
           color: TravelloTheme.paperLightContainerLowest,
           borderRadius: ThemeRadius.medium),
       child: Column(

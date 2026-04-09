@@ -43,7 +43,7 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
             /// BACKGROUND
             Container(
               decoration:
-                  BoxDecoration(color: TravelloTheme.primaryMainContainer),
+                  const BoxDecoration(color: TravelloTheme.primaryMainContainer),
               child: SvgPicture.asset(
                 ImgApi.profileBanner,
                 fit: BoxFit.cover,
@@ -51,7 +51,7 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
             ),
 
             /// CURVE DECORATION
-            Positioned(
+            const Positioned(
                 bottom: 0,
                 left: 0,
                 child: RoundedDecoMain(
@@ -63,7 +63,7 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                         color: TravelloTheme.paperLightContainerLowest,
                         blurRadius: 0.0,
                         spreadRadius: 0.0,
-                        offset: const Offset(0, 2),
+                        offset: Offset(0, 2),
                       )
                     ],
                   ),
@@ -168,14 +168,14 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                       Container(
                           width: maxWidth,
                           height: 10,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             boxShadow: [
                               BoxShadow(
                                 color:
                                     TravelloTheme.paperLightContainerLowest,
                                 blurRadius: 0.0,
                                 spreadRadius: 0.0,
-                                offset: const Offset(0, 2),
+                                offset: Offset(0, 2),
                               )
                             ],
                           ))

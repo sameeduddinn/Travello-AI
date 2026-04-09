@@ -47,9 +47,9 @@ class FacilitiesSlider extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: const Text('Facilities', style: TravelloTheme.subtitle2),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text('Facilities', style: TravelloTheme.subtitle2),
         ),
         const VSpaceShort(),
         SizedBox(

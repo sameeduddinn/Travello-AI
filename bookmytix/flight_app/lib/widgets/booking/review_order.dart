@@ -157,7 +157,7 @@ class ReviewOrder extends StatelessWidget {
 
       Container(
         margin: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           borderRadius: ThemeRadius.small,
           color: TravelloTheme.primaryMainContainer
         ),

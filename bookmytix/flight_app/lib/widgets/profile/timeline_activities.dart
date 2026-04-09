@@ -11,9 +11,9 @@ class TimelineActivities extends StatelessWidget {
     const double itemHeight = 60;
 
     return ListView(padding: const EdgeInsets.all(4), children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: const Text('History', style: TravelloTheme.title2,)
+      const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        child: Text('History', style: TravelloTheme.title2,)
       ),
       const VSpaceShort(),
       Stack(

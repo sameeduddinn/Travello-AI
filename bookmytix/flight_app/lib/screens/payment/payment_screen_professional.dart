@@ -148,7 +148,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: TravelloTheme.primaryMainContainer,
                   shape: BoxShape.circle,
                 ),
@@ -564,7 +564,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                       ),
                       Text(
                         'PKR ${totalPrice.toStringAsFixed(0)}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: primaryColor,
@@ -1472,7 +1472,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                 color: primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
+              child: const Icon(
                 CupertinoIcons.airplane,
                 color: primary,
                 size: 22,
@@ -2032,9 +2032,9 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
           width: double.infinity,
           padding: EdgeInsets.symmetric(
               horizontal: 16, vertical: spacingUnit(1.25)),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: primary,
-            borderRadius: const BorderRadius.only(
+            borderRadius: BorderRadius.only(
               topLeft: Radius.circular(16),
               topRight: Radius.circular(16),
             ),
@@ -2261,15 +2261,15 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
           const SizedBox(height: 16),
           Divider(thickness: 1, color: Colors.grey.withValues(alpha: 0.3)),
           const SizedBox(height: 12),
-          Row(
+          const Row(
             children: [
-              const Icon(
+              Icon(
                 CupertinoIcons.bed_double_fill,
                 color: TravelloTheme.primaryMain,
                 size: 20,
               ),
-              const SizedBox(width: 12),
-              const Text(
+              SizedBox(width: 12),
+              Text(
                 'Room Type',
                 style: TravelloTheme.subtitle2,
               ),

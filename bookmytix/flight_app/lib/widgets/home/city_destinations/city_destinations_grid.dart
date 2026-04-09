@@ -51,7 +51,7 @@ class CityDestinationsGrid extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(
           horizontal: screenWidth > 1200 ? spacingUnit(8) : 16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
           color: TravelloTheme.paperLightContainerLowest,
           borderRadius: ThemeRadius.medium),
       child: Column(

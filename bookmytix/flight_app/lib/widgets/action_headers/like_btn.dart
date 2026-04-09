@@ -27,7 +27,7 @@ class LikeBtn extends StatelessWidget {
         elevation: 3
       ) : null,
       icon: isLiked == true ? 
-        Icon(Icons.favorite, color: TravelloTheme.tertiaryMain)
+        const Icon(Icons.favorite, color: TravelloTheme.tertiaryMain)
         : Icon(
             Icons.favorite_border_outlined,
             shadows: highContrast ? const [BoxShadow(color: Colors.black, offset: Offset(0, 0), blurRadius: 5)] : null,

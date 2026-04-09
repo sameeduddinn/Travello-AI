@@ -70,7 +70,7 @@ class MainApp extends StatelessWidget {
               return MediaQuery(data: baseMq, child: child);
             }
 
-            const desktopMaxWidth = 600.0;
+            const desktopMaxWidth = 393.0;
             final constrainedWidth = constraints.maxWidth > desktopMaxWidth
                 ? desktopMaxWidth
                 : constraints.maxWidth;

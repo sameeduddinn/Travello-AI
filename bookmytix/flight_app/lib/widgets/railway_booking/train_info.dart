@@ -29,7 +29,7 @@ class TrainInfo extends StatelessWidget {
         ),
         Container(
           padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
               borderRadius: ThemeRadius.xsmall,
               color: TravelloTheme.primaryMainContainer),
           child: Text(train.trainClass, style: TravelloTheme.caption),

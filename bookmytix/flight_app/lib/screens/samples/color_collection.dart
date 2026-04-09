@@ -82,21 +82,21 @@ class ColorCollection extends StatelessWidget {
         Row(children: [
           Expanded(child: Container(
             height: 100,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: TravelloTheme.gradientMixedLight
             ),
             child: const Text('Gradient Light', style: TextStyle(color: Colors.black))
           )),
           Expanded(child: Container(
             height: 100,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: TravelloTheme.gradientMixedMain
             ),
             child: const Text('Gradient Main', style: TextStyle(color: Colors.black))
           )),
           Expanded(child: Container(
             height: 100,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: TravelloTheme.gradientMixedDark
             ),
             child: const Text('Gradient Dark', style: TextStyle(color: Colors.white))
@@ -108,14 +108,14 @@ class ColorCollection extends StatelessWidget {
         Row(children: [
           Expanded(child: Container(
             height: 100,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: TravelloTheme.gradientPrimaryDark
             ),
             child: const Text('Primary Dark', style: TextStyle(color: Colors.white))
           )),
           Expanded(child: Container(
             height: 100,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: TravelloTheme.gradientPrimaryLight
             ),
             child: const Text('Primary Light', style: TextStyle(color: Colors.black))
@@ -127,14 +127,14 @@ class ColorCollection extends StatelessWidget {
         Row(children: [
           Expanded(child: Container(
             height: 100,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: TravelloTheme.gradientSecondaryDark
             ),
             child: const Text('Secondary Dark', style: TextStyle(color: Colors.black))
           )),
           Expanded(child: Container(
             height: 100,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: TravelloTheme.gradientSecondaryLight
             ),
             child: const Text('Secondary Light', style: TextStyle(color: Colors.black))

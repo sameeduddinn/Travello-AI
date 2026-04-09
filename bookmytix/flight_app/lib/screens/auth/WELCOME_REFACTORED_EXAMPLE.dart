@@ -49,7 +49,7 @@ class _WelcomeScreenRefactoredState extends State<WelcomeScreenRefactored>
         child: Container(
           height: screenHeight,
           // ✨ GRADIENT BACKGROUND instead of plain color
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: TravelloTheme.gradientHeroGold,
           ),
           child: Container(

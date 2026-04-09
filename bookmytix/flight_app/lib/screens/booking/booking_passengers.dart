@@ -709,7 +709,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                       )
                     ],
                   ),
-                  child: Icon(Icons.flight_rounded, color: primary, size: 20),
+                  child: const Icon(Icons.flight_rounded, color: primary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 // Airline name + code
@@ -816,7 +816,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                       ),
                       child: Text(
                         _fromAirport.code,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
                             color: primary,
@@ -850,7 +850,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                           // Plane icon (facing right/forward)
                           Transform.rotate(
                             angle: math.pi / 4,
-                            child: Icon(Icons.flight_rounded,
+                            child: const Icon(Icons.flight_rounded,
                                 size: 28, color: primary),
                           ),
                           // Right dashed line
@@ -865,7 +865,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                                 shape: BoxShape.circle, color: primary),
                           ),
                         ],
@@ -883,7 +883,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                       ),
                       child: Text(
                         _toAirport.code,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
                             color: primary,
@@ -1086,7 +1086,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                       )
                     ],
                   ),
-                  child: Icon(Icons.flight_rounded, color: primary, size: 20),
+                  child: const Icon(Icons.flight_rounded, color: primary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 // Airline name + code
@@ -1193,7 +1193,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                       ),
                       child: Text(
                         _toAirport.code,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
                             color: primary,
@@ -1227,7 +1227,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                           // Plane icon (facing right/forward)
                           Transform.rotate(
                             angle: math.pi / 4,
-                            child: Icon(Icons.flight_rounded,
+                            child: const Icon(Icons.flight_rounded,
                                 size: 28, color: primary),
                           ),
                           // Right dashed line
@@ -1242,7 +1242,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                                 shape: BoxShape.circle, color: primary),
                           ),
                         ],
@@ -1260,7 +1260,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                       ),
                       child: Text(
                         _fromAirport.code,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
                             color: primary,

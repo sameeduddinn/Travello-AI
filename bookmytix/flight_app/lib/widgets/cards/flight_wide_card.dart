@@ -46,7 +46,7 @@ class FlightWideCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             height: 150,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: TravelloTheme.paperLight,
               borderRadius: ThemeRadius.medium,
             ),
@@ -149,7 +149,7 @@ class FlightWideCard extends StatelessWidget {
                   Row(children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         borderRadius: ThemeRadius.xsmall,
                         color: TravelloTheme.secondaryMainContainer
                       ),

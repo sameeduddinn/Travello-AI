@@ -114,10 +114,10 @@ class AuthOptions extends StatelessWidget {
                                         )
                                       ])),
                             ),
-                             Padding(
+                             const Padding(
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                child: const Row(
+                                    EdgeInsets.symmetric(vertical: 16),
+                                child: Row(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,
                                     children: [

@@ -79,7 +79,7 @@ class _PromoMainState extends State<PromoMain> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80.0),
           child: DecoratedBox(
-            decoration: BoxDecoration(color: TravelloTheme.paperLightContainerLowest),
+            decoration: const BoxDecoration(color: TravelloTheme.paperLightContainerLowest),
             child: Column(
               children: [
                 Text('Check All Promos and Your Voucers by ${branding.name}'),

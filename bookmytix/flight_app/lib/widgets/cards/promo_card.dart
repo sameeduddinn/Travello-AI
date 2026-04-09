@@ -45,7 +45,7 @@ class PromoCard extends StatelessWidget {
               },
             ),
           ),
-          liked ? Positioned(
+          liked ? const Positioned(
             top: 8,
             right: 8,
             child: CircleAvatar(
@@ -61,7 +61,7 @@ class PromoCard extends StatelessWidget {
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: TravelloTheme.primaryMainContainer,
                 borderRadius: ThemeRadius.medium
               ),

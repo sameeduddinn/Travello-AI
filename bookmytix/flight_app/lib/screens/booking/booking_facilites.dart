@@ -1,4 +1,4 @@
-﻿import 'package:flight_app/app/app_link.dart';
+import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
@@ -528,7 +528,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Departure', style: TravelloTheme.sectionHeading),
+                    const Text('Departure', style: TravelloTheme.sectionHeading),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
@@ -553,7 +553,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Return', style: TravelloTheme.sectionHeading),
+                      const Text('Return', style: TravelloTheme.sectionHeading),
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),

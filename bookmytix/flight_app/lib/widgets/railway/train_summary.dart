@@ -66,7 +66,7 @@ class TrainSummary extends StatelessWidget {
               Container(
                 width: 20,
                 height: 20,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: TravelloTheme.primaryMainContainer,
                   borderRadius: ThemeRadius.xsmall,
                 ),
@@ -249,13 +249,13 @@ class TrainSummary extends StatelessWidget {
           ),
 
           /// DIVIDER + PRICE ROW – mirrors FlightSummary price section
-          Divider(color: TravelloTheme.primaryMainContainer),
+          const Divider(color: TravelloTheme.primaryMainContainer),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   borderRadius: ThemeRadius.xsmall,
                   color: TravelloTheme.secondaryMainContainer,
                 ),

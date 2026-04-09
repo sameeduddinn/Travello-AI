@@ -262,7 +262,7 @@ class TicketWideCard extends StatelessWidget {
                               Container(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 4),
-                                decoration: BoxDecoration(
+                                decoration: const BoxDecoration(
                                     borderRadius: ThemeRadius.xsmall,
                                     color: TravelloTheme.paperLightDim),
                                 child: Text(plane.classType,

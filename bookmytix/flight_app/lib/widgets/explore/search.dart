@@ -11,7 +11,7 @@ class SearchExplore extends StatelessWidget {
     return Container(
         height: 80,
         decoration:
-            BoxDecoration(color: TravelloTheme.paperLightContainerLowest),
+            const BoxDecoration(color: TravelloTheme.paperLightContainerLowest),
         child: Stack(alignment: Alignment.bottomCenter, children: [
           /// SEARCH BOX
           InkWell(

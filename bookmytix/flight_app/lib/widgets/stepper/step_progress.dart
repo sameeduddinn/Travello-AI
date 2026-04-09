@@ -59,7 +59,7 @@ class _StepProgressState extends State<StepProgress> {
                   Container(
                     width: 25,
                     height: 25,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: TravelloTheme.primaryMainContainer,
                       shape: BoxShape.circle,
                     ),

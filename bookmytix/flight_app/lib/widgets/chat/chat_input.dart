@@ -52,7 +52,7 @@ class _ChatInputState extends State<ChatInput> {
         bottom: 24
       ),
       height: 80,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: TravelloTheme.paperLightContainerHighest,
       ),
       child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [

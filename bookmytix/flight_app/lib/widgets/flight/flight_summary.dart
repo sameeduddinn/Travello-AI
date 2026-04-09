@@ -197,13 +197,13 @@ class FlightSummary extends StatelessWidget {
           ),
 
           /// PRICE AND LABEL
-          Divider(color: TravelloTheme.primaryMainContainer),
+          const Divider(color: TravelloTheme.primaryMainContainer),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                     borderRadius: ThemeRadius.xsmall,
                     color: TravelloTheme.secondaryMainContainer),
                 child: label != null

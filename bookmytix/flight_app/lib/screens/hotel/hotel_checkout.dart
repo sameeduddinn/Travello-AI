@@ -882,7 +882,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                                         WidgetSpan(
                                           child: GestureDetector(
                                             onTap: _showTermsPage,
-                                            child: Text('Terms & Conditions',
+                                            child: const Text('Terms & Conditions',
                                                 style: TextStyle(
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.w600,
@@ -896,7 +896,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                                         WidgetSpan(
                                           child: GestureDetector(
                                             onTap: _showPrivacyPolicy,
-                                            child: Text('Privacy Policy',
+                                            child: const Text('Privacy Policy',
                                                 style: TextStyle(
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.w600,

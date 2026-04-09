@@ -72,7 +72,7 @@ class ETicketCard extends StatelessWidget {
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       borderRadius: ThemeRadius.small,
                       color: TravelloTheme.paperLightDim
                     ),

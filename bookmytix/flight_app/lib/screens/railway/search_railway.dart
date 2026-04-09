@@ -161,7 +161,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                     onPressed: _swapStations,
                     icon: Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: TravelloTheme.primaryMainContainer,
                         shape: BoxShape.circle,
                       ),

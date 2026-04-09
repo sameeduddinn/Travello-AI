@@ -53,7 +53,7 @@ class FlightCard extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: TravelloTheme.paperLight,
               borderRadius: ThemeRadius.medium,
             ),
@@ -211,7 +211,7 @@ class FlightCard extends StatelessWidget {
                     Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                         borderRadius: ThemeRadius.xsmall,
                         color: TravelloTheme.secondaryMainContainer),
                     child: label != null

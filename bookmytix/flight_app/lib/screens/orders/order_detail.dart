@@ -71,9 +71,9 @@ class _OrderDetailState extends State<OrderDetail> {
     void showPassengerList() async {
       Get.bottomSheet(
         StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: const Wrap(
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Wrap(
               alignment: WrapAlignment.center,
               children: [
                 VSpace(),
@@ -169,7 +169,7 @@ class _OrderDetailState extends State<OrderDetail> {
               ),
               Text('Submit at Registration', style: TravelloTheme.paragraph.copyWith(color: colorScheme(context).onSurfaceVariant)),
               const VSpaceShort(),
-              Divider(thickness: 10, color: TravelloTheme.paperLightDim),
+              const Divider(thickness: 10, color: TravelloTheme.paperLightDim),
             
               /// FLIGHT SUMMARY
               wideScreen ? FlightSummaryWide(

@@ -161,9 +161,9 @@ class _SearchFlightFormState extends State<SearchFlightForm> {
                             width: 50,
                             height: 50,
                             padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                                 borderRadius: ThemeRadius.small,
-                                color: const Color(0xFF1A1A1A)),
+                                color: Color(0xFF1A1A1A)),
                             child: const Icon(
                                 CupertinoIcons.arrow_up_arrow_down,
                                 size: 24,

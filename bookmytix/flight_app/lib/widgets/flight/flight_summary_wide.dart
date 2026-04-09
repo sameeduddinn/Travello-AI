@@ -195,7 +195,7 @@ class FlightSummaryWide extends StatelessWidget {
                   Row(children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                           borderRadius: ThemeRadius.xsmall,
                           color: TravelloTheme.secondaryMainContainer),
                       child: label != null

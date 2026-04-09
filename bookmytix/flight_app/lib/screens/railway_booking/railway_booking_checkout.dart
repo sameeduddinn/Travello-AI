@@ -502,7 +502,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Departure', style: TravelloTheme.sectionHeading),
+            const Text('Departure', style: TravelloTheme.sectionHeading),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -864,7 +864,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Return', style: TravelloTheme.sectionHeading),
+            const Text('Return', style: TravelloTheme.sectionHeading),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(

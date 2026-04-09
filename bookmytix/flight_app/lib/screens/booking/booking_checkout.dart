@@ -1,4 +1,4 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/models/airport.dart';
@@ -513,7 +513,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Departure', style: TravelloTheme.sectionHeading),
+            const Text('Departure', style: TravelloTheme.sectionHeading),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -658,7 +658,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           ),
                           child: Text(
                             _fromAirport.code,
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 21,
                                 fontWeight: FontWeight.w900,
                                 color: primary,
@@ -693,7 +693,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                               // Plane icon (facing destination)
                               Transform.rotate(
                                 angle: math.pi / 4,
-                                child: Icon(Icons.flight_rounded,
+                                child: const Icon(Icons.flight_rounded,
                                     size: 30, color: primary),
                               ),
                               // Right dashed line
@@ -708,7 +708,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                               Container(
                                 width: 8,
                                 height: 8,
-                                decoration: BoxDecoration(
+                                decoration: const BoxDecoration(
                                     shape: BoxShape.circle, color: primary),
                               ),
                             ],
@@ -729,7 +729,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           ),
                           child: Text(
                             _toAirport.code,
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 21,
                                 fontWeight: FontWeight.w900,
                                 color: primary,
@@ -804,7 +804,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                         ],
                       ),
                       child:
-                          Icon(Icons.flight_rounded, color: primary, size: 21),
+                          const Icon(Icons.flight_rounded, color: primary, size: 21),
                     ),
                     const SizedBox(width: 13),
                     // Airline info
@@ -860,7 +860,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Return', style: TravelloTheme.sectionHeading),
+            const Text('Return', style: TravelloTheme.sectionHeading),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -1005,7 +1005,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           ),
                           child: Text(
                             _toAirport.code,
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 21,
                                 fontWeight: FontWeight.w900,
                                 color: primary,
@@ -1040,7 +1040,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                               // Plane icon (facing destination)
                               Transform.rotate(
                                 angle: math.pi / 4,
-                                child: Icon(Icons.flight_rounded,
+                                child: const Icon(Icons.flight_rounded,
                                     size: 30, color: primary),
                               ),
                               // Right dashed line
@@ -1055,7 +1055,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                               Container(
                                 width: 8,
                                 height: 8,
-                                decoration: BoxDecoration(
+                                decoration: const BoxDecoration(
                                     shape: BoxShape.circle, color: primary),
                               ),
                             ],
@@ -1076,7 +1076,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           ),
                           child: Text(
                             _fromAirport.code,
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 21,
                                 fontWeight: FontWeight.w900,
                                 color: primary,
@@ -1151,7 +1151,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                         ],
                       ),
                       child:
-                          Icon(Icons.flight_rounded, color: primary, size: 21),
+                          const Icon(Icons.flight_rounded, color: primary, size: 21),
                     ),
                     const SizedBox(width: 13),
                     // Airline info
@@ -2077,7 +2077,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           ),
                         Text(
                           _formatPrice(_grandTotal),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
                             color: primary,

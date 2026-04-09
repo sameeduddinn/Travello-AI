@@ -22,7 +22,7 @@ class RewardCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         borderRadius: ThemeRadius.medium,
         color: TravelloTheme.primaryMainContainer
       ),

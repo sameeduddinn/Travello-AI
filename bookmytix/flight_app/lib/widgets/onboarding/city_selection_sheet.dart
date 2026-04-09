@@ -288,7 +288,7 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [
                       TravelloTheme.primaryMainContainer,
                       TravelloTheme.secondaryMainContainer,
@@ -539,12 +539,12 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                           widget.onComplete();
                         },
                   style: ThemeButton.btnBig.merge(ThemeButton.primary),
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.check_circle_outline),
-                      const SizedBox(width: 8),
-                      const Text('CONTINUE', style: TravelloTheme.subtitle),
+                      Icon(Icons.check_circle_outline),
+                      SizedBox(width: 8),
+                      Text('CONTINUE', style: TravelloTheme.subtitle),
                     ],
                   ),
                 ),

@@ -17,7 +17,7 @@ class ButtonTab extends StatelessWidget {
       style: FilledButton.styleFrom(
         backgroundColor: isSelected ? TravelloTheme.primaryMainContainer : Colors.transparent,
         foregroundColor: isSelected ? colorScheme(context).onPrimaryContainer : colorScheme(context).onSurface,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: ThemeRadius.medium
         )
       ),

@@ -115,16 +115,16 @@ class _SearchFlightState extends State<SearchFlight> {
                     Container(
                       width: double.infinity,
                       height: 20,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: TravelloTheme.paperLightContainerLowest,
-                        borderRadius: const BorderRadius.vertical(
+                        borderRadius: BorderRadius.vertical(
                           top: Radius.circular(16),
                         ),
                         boxShadow: [
                           BoxShadow(
                               color:
                                   TravelloTheme.paperLightContainerLowest,
-                              offset: const Offset(0, 2),
+                              offset: Offset(0, 2),
                               blurRadius: 0,
                               spreadRadius: 0)
                         ],

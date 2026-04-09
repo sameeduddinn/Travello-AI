@@ -72,7 +72,7 @@ class TitleBasicSeparator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-        decoration: BoxDecoration(color: TravelloTheme.paperLightDim),
+        decoration: const BoxDecoration(color: TravelloTheme.paperLightDim),
         child: TitleBasicSmall(title: title));
   }
 }

@@ -50,7 +50,7 @@ class PromoDesc extends StatelessWidget {
               width: 120,
               padding: const EdgeInsets.all(8),
               margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.black,
                 borderRadius: ThemeRadius.medium
               ),

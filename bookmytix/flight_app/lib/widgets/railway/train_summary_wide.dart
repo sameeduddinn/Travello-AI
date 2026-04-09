@@ -71,7 +71,7 @@ class TrainSummaryWide extends StatelessWidget {
                   Container(
                     width: 20,
                     height: 20,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: TravelloTheme.primaryMainContainer,
                       borderRadius: ThemeRadius.xsmall,
                     ),
@@ -237,7 +237,7 @@ class TrainSummaryWide extends StatelessWidget {
                 if (label != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       borderRadius: ThemeRadius.xsmall,
                       color: TravelloTheme.secondaryMainContainer,
                     ),

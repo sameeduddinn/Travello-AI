@@ -49,7 +49,7 @@ class _FlightPortraitCardState extends State<FlightPortraitCard> {
       children: [
         /// TOP PROPERTIES
         Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
               border: Border(
                 top: BorderSide(
                     color: TravelloTheme.primaryMainContainer, width: 1),
@@ -58,7 +58,7 @@ class _FlightPortraitCardState extends State<FlightPortraitCard> {
                 right: BorderSide(
                     color: TravelloTheme.primaryMainContainer, width: 1),
               ),
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(14),
                 topRight: Radius.circular(14),
               )),
@@ -172,7 +172,7 @@ class _FlightPortraitCardState extends State<FlightPortraitCard> {
         widget.plane != null
             ? Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
                           color: TravelloTheme.primaryMainContainer,
@@ -184,7 +184,7 @@ class _FlightPortraitCardState extends State<FlightPortraitCard> {
                           color: TravelloTheme.primaryMainContainer,
                           width: 1),
                     ),
-                    borderRadius: const BorderRadius.only(
+                    borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(10),
                       bottomRight: Radius.circular(10),
                     )),

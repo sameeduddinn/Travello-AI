@@ -747,15 +747,15 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
+                                  const Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         CupertinoIcons.calendar,
                                         size: 20,
                                         color: TravelloTheme.primaryMain,
                                       ),
-                                      const SizedBox(width: 8),
-                                      const Text('Departure',
+                                      SizedBox(width: 8),
+                                      Text('Departure',
                                           style: TravelloTheme.caption),
                                     ],
                                   ),
@@ -800,15 +800,15 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
+                                    const Row(
                                       children: [
-                                        const Icon(
+                                        Icon(
                                           CupertinoIcons.calendar,
                                           size: 20,
                                           color: TravelloTheme.primaryMain,
                                         ),
-                                        const SizedBox(width: 8),
-                                        const Text('Return',
+                                        SizedBox(width: 8),
+                                        Text('Return',
                                             style: TravelloTheme.caption),
                                       ],
                                     ),
@@ -861,15 +861,15 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
+                                  const Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         CupertinoIcons.person_2,
                                         size: 20,
                                         color: TravelloTheme.primaryMain,
                                       ),
-                                      const SizedBox(width: 8),
-                                      const Text('Passengers',
+                                      SizedBox(width: 8),
+                                      Text('Passengers',
                                           style: TravelloTheme.caption),
                                     ],
                                   ),
@@ -1059,15 +1059,15 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
+                                  const Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         CupertinoIcons.checkmark_seal,
                                         size: 20,
                                         color: TravelloTheme.primaryMain,
                                       ),
-                                      const SizedBox(width: 8),
-                                      const Text('Class',
+                                      SizedBox(width: 8),
+                                      Text('Class',
                                           style: TravelloTheme.caption),
                                     ],
                                   ),

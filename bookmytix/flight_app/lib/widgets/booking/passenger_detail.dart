@@ -69,7 +69,7 @@ class PassengerDetail extends StatelessWidget {
           const VSpace(),
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: TravelloTheme.paperLightDim,
               borderRadius: ThemeRadius.medium
             ),

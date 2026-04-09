@@ -33,7 +33,7 @@ class HomeBanner extends StatelessWidget {
             ),
           ),
         ),
-        Positioned(
+        const Positioned(
             bottom: 0,
             left: 0,
             child: RoundedDecoMain(
@@ -45,7 +45,7 @@ class HomeBanner extends StatelessWidget {
                     color: TravelloTheme.paperLightContainerLowest,
                     blurRadius: 0.0,
                     spreadRadius: 0.0,
-                    offset: const Offset(0, 2),
+                    offset: Offset(0, 2),
                   )
                 ],
               ),

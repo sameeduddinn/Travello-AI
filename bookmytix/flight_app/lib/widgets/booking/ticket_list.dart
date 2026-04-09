@@ -23,9 +23,9 @@ class TicketList extends StatelessWidget {
     void showPassengerList() async {
       Get.bottomSheet(
         StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: const Wrap(
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Wrap(
               alignment: WrapAlignment.center,
               children: [VSpace(), GrabberIcon(), ChoosePassengger()],
             ),
