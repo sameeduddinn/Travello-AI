@@ -2543,7 +2543,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               Expanded(
                                   child: _buildTextField(
                                 label: 'Passport Number',
-                                fieldKey: p.documentFieldKey,
+                                fieldKey: p.foreignPassportFieldKey,
                                 controller: p.passportNumberCtrl,
                                 icon: Icons.article_outlined,
                                 hint: 'e.g., A12345678 (6-12 characters)',
@@ -3439,6 +3439,9 @@ class _PassengerData {
   final lastNameKey = GlobalKey<FormFieldState>();
   final nationalityDobKey = GlobalKey();
   final documentFieldKey = GlobalKey<FormFieldState>();
+  // Separate key for the non-Pakistani passport field so it never shares
+  // a key with the Pakistani-passport field during nationality transitions.
+  final foreignPassportFieldKey = GlobalKey<FormFieldState>();
 
   void dispose() {
     firstNameCtrl.dispose();

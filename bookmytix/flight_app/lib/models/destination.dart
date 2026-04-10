@@ -78,7 +78,7 @@ final List<Destination> flightDestinations = [
     code: 'LHE',
     description: 'Cultural heart of Pakistan',
     imageUrl:
-        'https://images.unsplash.com/photo-1584204687456-cbed5e3c1e82?w=800&q=80',
+        'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
     cardColor: const Color(0xFF1A237E), // Dark Blue
     travelTime: '1h 25m from KHI',
     durationMatrix: {
@@ -293,7 +293,7 @@ final List<Destination> trainDestinations = [
     code: 'LHR',
     description: 'Most popular train destination',
     imageUrl:
-        'https://images.unsplash.com/photo-1584204687456-cbed5e3c1e82?w=800&q=80',
+        'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
     cardColor: const Color(0xFF1A237E), // Dark Blue
     travelTime: '10-12h from Karachi',
     durationMatrix: {

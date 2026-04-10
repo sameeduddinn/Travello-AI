@@ -600,6 +600,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
+        iconTheme: IconThemeData(color: TravelloTheme.primaryMain),
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -622,7 +623,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
             if (_isRoundTrip && _currentJourneyIndex == 1) {
               // Go back to outbound selection
@@ -640,8 +641,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.slider_horizontal_3,
-                color: Colors.white),
+            icon: const Icon(CupertinoIcons.slider_horizontal_3),
             onPressed: _showFiltersBottomSheet,
           ),
         ],

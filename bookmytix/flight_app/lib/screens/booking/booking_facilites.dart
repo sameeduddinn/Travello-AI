@@ -93,6 +93,24 @@ class _BookingFacilitesState extends State<BookingFacilites> {
   String _transferVehicleType = 'Sedan';
   final TextEditingController _transferPickupCtrl = TextEditingController();
 
+  // Issue 2 — Return transfer (round trip only)
+  bool _returnTransferAdded = false;
+  String _returnTransferVehicleType = 'Sedan';
+  final TextEditingController _returnTransferPickupCtrl =
+      TextEditingController();
+
+  // Arrival transfer (destination city — both one-way and round trip)
+  bool _arrivalTransferAdded = false;
+  String _arrivalTransferVehicleType = 'Sedan';
+  final TextEditingController _arrivalTransferPickupCtrl =
+      TextEditingController();
+
+  // Final arrival transfer (round trip only — destination airport → home)
+  bool _finalArrivalTransferAdded = false;
+  String _finalArrivalTransferVehicleType = 'Sedan';
+  final TextEditingController _finalArrivalTransferPickupCtrl =
+      TextEditingController();
+
   // ── stepper ──
   // step index 1 = FACILITIES
   final List<String> _steps = [
@@ -172,6 +190,9 @@ class _BookingFacilitesState extends State<BookingFacilites> {
       }
     }
     _transferPickupCtrl.dispose();
+    _returnTransferPickupCtrl.dispose();
+    _arrivalTransferPickupCtrl.dispose();
+    _finalArrivalTransferPickupCtrl.dispose();
     super.dispose();
   }
 
@@ -348,6 +369,60 @@ class _BookingFacilitesState extends State<BookingFacilites> {
   }
 
   void _onContinue() {
+    // Issue 1 — Departure transfer pickup validation
+    if (_transferAdded && _transferPickupCtrl.text.trim().isEmpty) {
+      Get.snackbar(
+        'Pickup Address Required',
+        'Please enter pickup address for departure transfer',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+    // Issue 2 — Return transfer pickup validation (round trip)
+    if (_isRoundTrip &&
+        _returnTransferAdded &&
+        _returnTransferPickupCtrl.text.trim().isEmpty) {
+      Get.snackbar(
+        'Pickup Address Required',
+        'Please enter pickup address for return transfer',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+    // Arrival transfer pickup validation
+    if (_arrivalTransferAdded &&
+        _arrivalTransferPickupCtrl.text.trim().isEmpty) {
+      Get.snackbar(
+        'Pickup Address Required',
+        'Please enter pickup address for arrival transfer',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+    // Final arrival transfer pickup validation (round trip only)
+    if (_isRoundTrip &&
+        _finalArrivalTransferAdded &&
+        _finalArrivalTransferPickupCtrl.text.trim().isEmpty) {
+      Get.snackbar(
+        'Pickup Address Required',
+        'Please enter pickup address for final arrival transfer',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
     final policy = _policy();
     final freeKg = (policy['checkedKg'] as int).toDouble();
     final baggageData = List.generate(_passengers.length, (i) {
@@ -461,6 +536,16 @@ class _BookingFacilitesState extends State<BookingFacilites> {
         'transferAdded': _transferAdded,
         'transferVehicleType': _transferVehicleType,
         'transferPickupLocation': _transferPickupCtrl.text.trim(),
+        'returnTransferAdded': _returnTransferAdded,
+        'returnTransferVehicleType': _returnTransferVehicleType,
+        'returnTransferPickupLocation': _returnTransferPickupCtrl.text.trim(),
+        'arrivalTransferAdded': _arrivalTransferAdded,
+        'arrivalTransferVehicleType': _arrivalTransferVehicleType,
+        'arrivalTransferPickupLocation': _arrivalTransferPickupCtrl.text.trim(),
+        'finalArrivalTransferAdded': _finalArrivalTransferAdded,
+        'finalArrivalTransferVehicleType': _finalArrivalTransferVehicleType,
+        'finalArrivalTransferPickupLocation':
+            _finalArrivalTransferPickupCtrl.text.trim(),
       });
     } else {
       // One-way trip
@@ -504,6 +589,9 @@ class _BookingFacilitesState extends State<BookingFacilites> {
         'transferAdded': _transferAdded,
         'transferVehicleType': _transferVehicleType,
         'transferPickupLocation': _transferPickupCtrl.text.trim(),
+        'arrivalTransferAdded': _arrivalTransferAdded,
+        'arrivalTransferVehicleType': _arrivalTransferVehicleType,
+        'arrivalTransferPickupLocation': _arrivalTransferPickupCtrl.text.trim(),
       });
     }
   }
@@ -528,7 +616,8 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Departure', style: TravelloTheme.sectionHeading),
+                    const Text('Departure',
+                        style: TravelloTheme.sectionHeading),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
@@ -1246,7 +1335,16 @@ class _BookingFacilitesState extends State<BookingFacilites> {
   // ─────────────────────────────────────────────
   //  GROUND TRANSFER SECTION
   // ─────────────────────────────────────────────
-  Widget _buildTransferSection(BuildContext context) {
+  // Shared card builder used by all three transfer sections.
+  Widget _buildTransferCard({
+    required String title,
+    required String subtitle,
+    required bool added,
+    required String vehicleType,
+    required TextEditingController pickupCtrl,
+    required VoidCallback onToggle,
+    required void Function(String) onVehicleChanged,
+  }) {
     const List<Map<String, dynamic>> vehicles = [
       {'type': 'Sedan', 'desc': '1–3 passengers', 'price': 800},
       {'type': 'SUV', 'desc': '1–5 passengers', 'price': 1200},
@@ -1288,21 +1386,21 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                       color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Airport Transfer',
-                        style: TextStyle(
+                        title,
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: TravelloTheme.primaryMain,
                         ),
                       ),
                       Text(
-                        'Pickup or drop-off at your doorstep',
-                        style: TextStyle(
+                        subtitle,
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF666666),
                         ),
@@ -1312,32 +1410,28 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                 ),
                 // Add / Remove toggle
                 GestureDetector(
-                  onTap: () => setState(() {
-                    _transferAdded = !_transferAdded;
-                    if (!_transferAdded) _transferPickupCtrl.clear();
-                  }),
+                  onTap: onToggle,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding:
                         const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(
-                      color: _transferAdded
+                      color: added
                           ? Colors.red.shade50
                           : TravelloTheme.primaryMain,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: _transferAdded
+                        color: added
                             ? Colors.red.shade300
                             : TravelloTheme.primaryMain,
                       ),
                     ),
                     child: Text(
-                      _transferAdded ? 'Remove' : '+ Add',
+                      added ? 'Remove' : '+ Add',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color:
-                            _transferAdded ? Colors.red.shade700 : Colors.white,
+                        color: added ? Colors.red.shade700 : Colors.white,
                       ),
                     ),
                   ),
@@ -1349,14 +1443,10 @@ class _BookingFacilitesState extends State<BookingFacilites> {
           // ── Expanded details (shown when added) ──
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 250),
-            crossFadeState: _transferAdded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
+            crossFadeState:
+                added ? CrossFadeState.showSecond : CrossFadeState.showFirst,
             firstChild: const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 9.6,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 9.6),
               child: Row(
                 children: [
                   Icon(Icons.info_outline_rounded,
@@ -1386,11 +1476,10 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                   const SizedBox(height: 8),
                   Row(
                     children: vehicles.map((v) {
-                      final selected = _transferVehicleType == v['type'];
+                      final selected = vehicleType == v['type'];
                       return Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(
-                              () => _transferVehicleType = v['type'] as String),
+                          onTap: () => onVehicleChanged(v['type'] as String),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
                             margin: EdgeInsets.only(
@@ -1402,7 +1491,8 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                             ),
                             decoration: BoxDecoration(
                               color: selected
-                                  ? TravelloTheme.primaryMain.withValues(alpha: 0.1)
+                                  ? TravelloTheme.primaryMain
+                                      .withValues(alpha: 0.1)
                                   : const Color(0xFFF5F5F5),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
@@ -1475,7 +1565,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                   ),
                   const SizedBox(height: 6.4),
                   TextField(
-                    controller: _transferPickupCtrl,
+                    controller: pickupCtrl,
                     decoration: InputDecoration(
                       hintText: 'e.g. House 12, Block A, Gulshan, Karachi',
                       hintStyle: const TextStyle(
@@ -1527,7 +1617,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Driver details sent via SMS 2 hrs before pickup. AC vehicle guaranteed.',
+                            'Driver details sent via E-mail 2 hrs before pickup. AC vehicle guaranteed.',
                             style: TextStyle(
                               fontSize: 11.5,
                               color: Color(0xFF2E7D32),
@@ -1543,6 +1633,81 @@ class _BookingFacilitesState extends State<BookingFacilites> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTransferSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Card 1 — always shown
+        _buildTransferCard(
+          title: 'Departure Transfer',
+          subtitle: _isRoundTrip
+              ? 'Home → Departure airport'
+              : 'Home → Airport',
+          added: _transferAdded,
+          vehicleType: _transferVehicleType,
+          pickupCtrl: _transferPickupCtrl,
+          onToggle: () => setState(() {
+            _transferAdded = !_transferAdded;
+            if (!_transferAdded) _transferPickupCtrl.clear();
+          }),
+          onVehicleChanged: (t) => setState(() => _transferVehicleType = t),
+        ),
+
+        // Card 2 — always shown
+        const SizedBox(height: 16),
+        _buildTransferCard(
+          title: 'Arrival Transfer',
+          subtitle: _isRoundTrip
+              ? 'Arrival airport → Destination'
+              : 'Airport → Destination',
+          added: _arrivalTransferAdded,
+          vehicleType: _arrivalTransferVehicleType,
+          pickupCtrl: _arrivalTransferPickupCtrl,
+          onToggle: () => setState(() {
+            _arrivalTransferAdded = !_arrivalTransferAdded;
+            if (!_arrivalTransferAdded) _arrivalTransferPickupCtrl.clear();
+          }),
+          onVehicleChanged: (t) =>
+              setState(() => _arrivalTransferVehicleType = t),
+        ),
+
+        // Cards 3 & 4 — round trip only
+        if (_isRoundTrip) ...[
+          const SizedBox(height: 16),
+          _buildTransferCard(
+            title: 'Return Transfer',
+            subtitle: 'Destination → Return airport',
+            added: _returnTransferAdded,
+            vehicleType: _returnTransferVehicleType,
+            pickupCtrl: _returnTransferPickupCtrl,
+            onToggle: () => setState(() {
+              _returnTransferAdded = !_returnTransferAdded;
+              if (!_returnTransferAdded) _returnTransferPickupCtrl.clear();
+            }),
+            onVehicleChanged: (t) =>
+                setState(() => _returnTransferVehicleType = t),
+          ),
+          const SizedBox(height: 16),
+          _buildTransferCard(
+            title: 'Final Arrival Transfer',
+            subtitle: 'Return airport → Home',
+            added: _finalArrivalTransferAdded,
+            vehicleType: _finalArrivalTransferVehicleType,
+            pickupCtrl: _finalArrivalTransferPickupCtrl,
+            onToggle: () => setState(() {
+              _finalArrivalTransferAdded = !_finalArrivalTransferAdded;
+              if (!_finalArrivalTransferAdded) {
+                _finalArrivalTransferPickupCtrl.clear();
+              }
+            }),
+            onVehicleChanged: (t) =>
+                setState(() => _finalArrivalTransferVehicleType = t),
+          ),
+        ],
+      ],
     );
   }
 

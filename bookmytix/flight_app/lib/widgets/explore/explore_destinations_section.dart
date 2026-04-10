@@ -283,7 +283,7 @@ const List<_PakDestination> _pakDestinations = [
     province: 'Punjab',
     tagline: 'Cultural Heart of Pakistan',
     imageUrl:
-        'https://images.unsplash.com/photo-1584204687456-cbed5e3c1e82?w=800&q=80',
+        'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
     category: 'Historical',
     accentColor: Color(0xFF880E4F),
     flightCode: 'LHE',

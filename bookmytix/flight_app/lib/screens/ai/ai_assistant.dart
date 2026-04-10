@@ -782,7 +782,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       destination: 'Lahore',
       province: 'Punjab',
       imageUrl:
-          'https://images.unsplash.com/photo-1584204687456-cbed5e3c1e82?w=800&q=80',
+          'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
       style: 'Cultural',
       duration: 3,
       budget: 'Budget',
@@ -2645,7 +2645,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       'Chitral':
           'https://images.unsplash.com/photo-1542401886-65d6c61db217?w=800&q=80',
       'Lahore':
-          'https://images.unsplash.com/photo-1584204687456-cbed5e3c1e82?w=800&q=80',
+          'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
       'Islamabad':
           'https://images.unsplash.com/photo-1578895101408-1a36b834405b?w=800&q=80',
       'Peshawar':
