@@ -551,7 +551,7 @@ final List<Destination> hotelDestinations = [
     code: 'MRE',
     description: 'Hill station near Islamabad',
     imageUrl:
-        'https://images.unsplash.com/photo-1542315192-c1d8e7b19fbe?w=800&q=80',
+        'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80',
     cardColor: const Color(0xFFFF9800), // Orange
     travelTime: '2h from ISB',
     popularityRank: 3,
@@ -628,7 +628,7 @@ final List<Destination> hotelDestinations = [
     code: 'ZRT',
     description: 'Juniper forests & Quaid residency',
     imageUrl:
-        'https://images.unsplash.com/photo-1542315192-c1d8e7b19fbe?w=800&q=80',
+        'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80',
     cardColor: const Color(0xFF8D6E63), // Brown
     travelTime: 'Historical retreat',
     popularityRank: 10,

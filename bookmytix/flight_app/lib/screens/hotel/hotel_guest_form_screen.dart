@@ -184,6 +184,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
   double get finalTotal => totalPrice + extrasTotal;
 
   /// Reactively tracked — add listeners in initState for this to update button.
+  // NEW:
   bool get _isFormValid {
     if (_firstNameCtrl.text.trim().isEmpty) return false;
     if (_lastNameCtrl.text.trim().isEmpty) return false;
@@ -198,6 +199,9 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
       final doc = _extraDocCtrls[i].text.replaceAll('-', '');
       if (doc.length != 13) return false;
     }
+    // Issue 1 fix: block if ANY duplicate exists
+    if (_hasDuplicateNames()) return false;
+    if (_hasDuplicateCnics()) return false;
     return true;
   }
 
@@ -215,7 +219,50 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
     }
   }
 
+  bool _hasDuplicateNames() {
+    final names = <String>[];
+    final primary = '${_firstNameCtrl.text.trim()} ${_lastNameCtrl.text.trim()}'
+        .trim()
+        .toLowerCase();
+    if (primary.isNotEmpty) names.add(primary);
+    for (final c in _extraNameCtrls) {
+      final n = c.text.trim().toLowerCase();
+      if (n.isEmpty) continue;
+      if (names.contains(n)) return true;
+      names.add(n);
+    }
+    return false;
+  }
+
+  bool _hasDuplicateCnics() {
+    final cnics = <String>[];
+    final primary = _cnicCtrl.text.replaceAll('-', '');
+    if (primary.isNotEmpty) cnics.add(primary);
+    for (final c in _extraDocCtrls) {
+      final d = c.text.replaceAll('-', '');
+      if (d.isEmpty) continue;
+      if (cnics.contains(d)) return true;
+      cnics.add(d);
+    }
+    return false;
+  }
+
   Future<void> _proceedToPayment() async {
+    // Issue 2 fix: show explicit duplicate errors before form validation
+    if (_hasDuplicateNames()) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Guest names must be different'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating));
+      return;
+    }
+    if (_hasDuplicateCnics()) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('CNIC numbers must be different'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating));
+      return;
+    }
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Please fill all required fields'),

@@ -626,9 +626,8 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
         // SECTION 2 – TOP HOTELS OF PAKISTAN
         Container(
           margin: EdgeInsets.symmetric(
-            horizontal: MediaQuery.of(context).size.width > 1200
-                ? spacingUnit(8)
-                : 16,
+            horizontal:
+                MediaQuery.of(context).size.width > 1200 ? spacingUnit(8) : 16,
           ),
           child: const _TopHotelsOfPakistanSection(),
         ),
@@ -637,9 +636,8 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
         // SECTION 3 – EXPLORE PAKISTAN DESTINATIONS
         Container(
           margin: EdgeInsets.symmetric(
-            horizontal: MediaQuery.of(context).size.width > 1200
-                ? spacingUnit(8)
-                : 16,
+            horizontal:
+                MediaQuery.of(context).size.width > 1200 ? spacingUnit(8) : 16,
           ),
           child: _HotelExplorePakistanSection(
             onCityTap: (city) =>
@@ -656,9 +654,8 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
   Widget _buildHotelPackagesSection() {
     return Container(
       margin: EdgeInsets.symmetric(
-        horizontal: MediaQuery.of(context).size.width > 1200
-            ? spacingUnit(8)
-            : 16,
+        horizontal:
+            MediaQuery.of(context).size.width > 1200 ? spacingUnit(8) : 16,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1565,8 +1562,8 @@ class _TopHotelCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                TravelloTheme.primaryDark.withValues(alpha: 0.4),
+                            color: TravelloTheme.primaryDark
+                                .withValues(alpha: 0.4),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -1782,7 +1779,8 @@ class _HotelExplorePakistanSectionState
     {
       'city': 'Islamabad',
       'properties': 2722,
-      'image': 'https://images.unsplash.com/photo-1546961342-ea5f62d95bf2?w=400'
+      'image':
+          'https://images.unsplash.com/photo-1548013146-72479768bada?w=400&q=80'
     },
     {
       'city': 'Karachi',
@@ -1841,10 +1839,12 @@ class _HotelExplorePakistanSectionState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Explore Pakistan',
-                style: TravelloTheme.title2.copyWith(fontWeight: FontWeight.bold)),
+                style:
+                    TravelloTheme.title2.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text('Find your perfect stay across Pakistan\'s finest cities',
-                style: TravelloTheme.caption.copyWith(color: Colors.grey.shade600)),
+                style: TravelloTheme.caption
+                    .copyWith(color: Colors.grey.shade600)),
           ],
         ),
         const SizedBox(height: 12),

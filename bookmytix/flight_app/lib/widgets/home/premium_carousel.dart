@@ -26,7 +26,8 @@ const List<_Slide> _pakistanSlides = [
   ),
   _Slide(
     // Karachi Sea View / Clifton
-    url: 'https://images.unsplash.com/photo-1615138038539-f4bfd17e985b?w=900',
+    url:
+        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900&q=80',
     location: 'Karachi, Sindh',
     tagline: 'City of Lights & The Sea',
   ),
