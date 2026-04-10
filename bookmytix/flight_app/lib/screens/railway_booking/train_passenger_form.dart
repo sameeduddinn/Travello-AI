@@ -47,6 +47,10 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
   final _contactEmailCtrl = TextEditingController();
   final _contactPhoneCtrl = TextEditingController();
 
+  final _contactNameKey = GlobalKey();
+  final _contactEmailKey = GlobalKey();
+  final _contactPhoneKey = GlobalKey();
+
   final List<String> _steps = [
     'PASSENGERS',
     'FACILITIES',
@@ -246,10 +250,18 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
     if (_currentPage < _totalPassengers) {
       setState(() => _passengers[_currentPage].submitted = true);
     }
-    if (!_formKeys[_currentPage].currentState!.validate()) return;
+    if (!_formKeys[_currentPage].currentState!.validate()) {
+      if (_currentPage < _totalPassengers) {
+        _scrollToFirstPassengerError(_currentPage);
+      }
+      return;
+    }
     if (_currentPage < _totalPassengers) {
       final p = _passengers[_currentPage];
-      if (p.dateOfBirth == null) return;
+      if (p.dateOfBirth == null) {
+        _scrollToFirstPassengerError(_currentPage);
+        return;
+      }
       if (p.saveDetails) _saveData(_currentPage);
     }
     setState(() => _currentPage++);
@@ -272,7 +284,10 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
   }
 
   Future<void> _submit() async {
-    if (!_formKeys[_totalPassengers].currentState!.validate()) return;
+    if (!_formKeys[_totalPassengers].currentState!.validate()) {
+      _scrollToFirstContactError();
+      return;
+    }
     final passengersData = List.generate(_totalPassengers, (i) {
       final p = _passengers[i];
 
@@ -714,6 +729,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                       }
                                       return null;
                                     },
+                                    fieldKey: p.firstNameKey,
                                   ),
                                   const SizedBox(height: 16),
                                   _buildTextField(
@@ -737,6 +753,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                       }
                                       return null;
                                     },
+                                    fieldKey: p.lastNameKey,
                                   ),
                                 ],
                               );
@@ -767,6 +784,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                       }
                                       return null;
                                     },
+                                    fieldKey: p.firstNameKey,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -792,6 +810,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                       }
                                       return null;
                                     },
+                                    fieldKey: p.lastNameKey,
                                   ),
                                 ),
                               ],
@@ -800,6 +819,8 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                         ),
                         const SizedBox(height: 16),
 
+                        // Scroll anchor for DOB / document section
+                        Container(key: p.dobKey, height: 0),
                         // Date of Birth + CNIC side by side (conditionally show CNIC)
                         LayoutBuilder(
                           builder: (context, constraints) {
@@ -913,6 +934,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                         }
                                         return null;
                                       },
+                                    fieldKey: p.documentKey,
                                     ),
                                   ],
                                 ],
@@ -1033,6 +1055,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                     }
                                     return null;
                                   },
+                                  fieldKey: p.documentKey,
                                 ),
                               ),
                             ],
@@ -1592,6 +1615,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                         ),
                         const SizedBox(height: 16),
                         DSInputField(
+                          key: _contactNameKey,
                           label: 'Full Name',
                           controller: _contactNameCtrl,
                           hint: 'Enter full name',
@@ -1613,6 +1637,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                         ),
                         const SizedBox(height: 14),
                         DSInputField(
+                          key: _contactEmailKey,
                           label: 'Email Address',
                           controller: _contactEmailCtrl,
                           hint: 'Enter email address',
@@ -1622,6 +1647,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                         ),
                         const SizedBox(height: 14),
                         DSInputField(
+                          key: _contactPhoneKey,
                           label: 'Phone Number',
                           controller: _contactPhoneCtrl,
                           hint: '3001234567',
@@ -1753,6 +1779,55 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
     );
   }
 
+  void _scrollToFirstPassengerError(int i) {
+    final p = _passengers[i];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      GlobalKey? errorKey;
+      if (p.firstNameKey.currentState?.errorText != null) {
+        errorKey = p.firstNameKey;
+      } else if (p.lastNameKey.currentState?.errorText != null) {
+        errorKey = p.lastNameKey;
+      } else if (p.dateOfBirth == null) {
+        errorKey = p.dobKey;
+      } else if (p.documentKey.currentState?.errorText != null) {
+        errorKey = p.documentKey;
+      }
+      final ctx = errorKey?.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          alignment: 0.15,
+        );
+      }
+    });
+  }
+
+  void _scrollToFirstContactError() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final checks = <(TextEditingController, GlobalKey)>[
+        (_contactNameCtrl, _contactNameKey),
+        (_contactEmailCtrl, _contactEmailKey),
+        (_contactPhoneCtrl, _contactPhoneKey),
+      ];
+      for (final (ctrl, key) in checks) {
+        if (ctrl.text.trim().isEmpty) {
+          final ctx = key.currentContext;
+          if (ctx != null) {
+            Scrollable.ensureVisible(
+              ctx,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut,
+              alignment: 0.15,
+            );
+          }
+          return;
+        }
+      }
+    });
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -1765,6 +1840,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
     int? maxLength,
     String? prefixText,
     String? helper,
+    GlobalKey<FormFieldState>? fieldKey,
   }) {
     const color = Color(0xFFD4AF37);
     return Column(
@@ -1773,6 +1849,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
         _sectionLabel(label),
         const SizedBox(height: 6),
         TextFormField(
+          key: fieldKey,
           controller: controller,
           keyboardType: keyboardType,
           textCapitalization: capitalization,
@@ -1906,6 +1983,12 @@ class _TrainPassengerData {
   DateTime? dateOfBirth;
   bool saveDetails = false;
   bool submitted = false;
+
+  // Keys for scroll-to-error
+  final firstNameKey = GlobalKey<FormFieldState>();
+  final lastNameKey = GlobalKey<FormFieldState>();
+  final dobKey = GlobalKey();
+  final documentKey = GlobalKey<FormFieldState>();
 
   Map<String, dynamic> toJson() => {
         'salutation': salutation,

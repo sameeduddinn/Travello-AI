@@ -65,6 +65,7 @@ class _BookingPaymentState extends State<BookingPayment>
 
   // OTP state tracking (Easypaisa / JazzCash)
   String _otpValue = '';
+  bool _isOtpVerified = false;
 
   // Scroll controllers — one per modal sheet to prevent shared-controller crash
   final ScrollController _refundScrollController = ScrollController();
@@ -139,9 +140,11 @@ class _BookingPaymentState extends State<BookingPayment>
           DSValidators.cvv(_cvvController.text.trim()) == null &&
           DSValidators.cardholderName(_cardNameController.text.trim()) == null;
     } else if (_selectedPaymentMethod == 'easypaisa') {
-      return _easypaisaPhoneController.text.trim().length == 11;
+      // Phone was proven valid when OTP was sent — only gate on verification
+      return _isOtpVerified;
     } else if (_selectedPaymentMethod == 'jazzcash') {
-      return _jazzcashPhoneController.text.trim().length == 11;
+      // Phone was proven valid when OTP was sent — only gate on verification
+      return _isOtpVerified;
     }
 
     // For other payment methods (bank transfer, etc.) that don't require form validation
@@ -1711,6 +1714,8 @@ class _BookingPaymentState extends State<BookingPayment>
                       if (_easypaisaPhoneController.text.isNotEmpty) {
                         setState(() {
                           _showEasypaisaOTP = true;
+                          _otpValue = '';
+                          _isOtpVerified = false;
                         });
                         _startOTPTimer();
                       }
@@ -1873,6 +1878,8 @@ class _BookingPaymentState extends State<BookingPayment>
                       if (_jazzcashPhoneController.text.isNotEmpty) {
                         setState(() {
                           _showJazzcashOTP = true;
+                          _otpValue = '';
+                          _isOtpVerified = false;
                         });
                         _startOTPTimer();
                       }
@@ -1994,13 +2001,47 @@ class _BookingPaymentState extends State<BookingPayment>
             ),
           ),
           const SizedBox(height: 20),
-          // Verify & Pay Button
-          DSButton(
-            label: 'Verify & Pay',
-            onTap: _otpValue.length == 6 ? () => _processPayment() : null,
-            disabled: _otpValue.length < 6,
-            height: 50,
-          ),
+          // Step 1: Verify OTP
+          if (!_isOtpVerified)
+            DSButton(
+              label: 'Verify OTP',
+              onTap: _otpValue.length == 6
+                  ? () => setState(() => _isOtpVerified = true)
+                  : null,
+              disabled: _otpValue.length < 6,
+              height: 50,
+            ),
+          // Step 2: Pay Now (only after OTP is verified)
+          if (_isOtpVerified) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green.shade700, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'OTP Verified Successfully',
+                    style: TextStyle(
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            DSButton(
+              label: 'Pay Now',
+              onTap: () => _processPayment(),
+              height: 50,
+            ),
+          ],
           const SizedBox(height: 16),
           // Resend OTP
           Center(

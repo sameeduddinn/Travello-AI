@@ -42,6 +42,11 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
   bool _saveCard = false;
   bool _isProcessing = false;
+
+  // Mobile wallet OTP state
+  bool _showWalletOTP = false;
+  String _otpValue = '';
+  bool _isOtpVerified = false;
   // Detected network prefix for dynamic logo highlighting
   String? _cardNetwork;
   bool _showOutboundDetails = false;
@@ -76,6 +81,14 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
     _mobileNumberController.dispose();
     _pinController.dispose();
     super.dispose();
+  }
+
+  bool get _canPay {
+    if (_selectedPaymentMethod == 'JazzCash' ||
+        _selectedPaymentMethod == 'Easypaisa') {
+      return _isOtpVerified;
+    }
+    return true;
   }
 
   void _processPayment() {
@@ -733,7 +746,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         ),
         child: SafeArea(
           child: ElevatedButton(
-            onPressed: _isProcessing ? null : _processPayment,
+            onPressed: (_isProcessing || !_canPay) ? null : _processPayment,
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
               foregroundColor: Colors.white,
@@ -817,7 +830,12 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
       color: isSelected ? const Color(0xFFF0F7FF) : Colors.transparent,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: () => setState(() => _selectedPaymentMethod = value),
+        onTap: () => setState(() {
+          _selectedPaymentMethod = value;
+          _showWalletOTP = false;
+          _otpValue = '';
+          _isOtpVerified = false;
+        }),
         borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: EdgeInsets.symmetric(
@@ -1262,7 +1280,12 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                     fontWeight: FontWeight.bold,
                     color: Colors.black87)),
             InkWell(
-              onTap: () => setState(() => _selectedPaymentMethod = ''),
+              onTap: () => setState(() {
+                _selectedPaymentMethod = '';
+                _showWalletOTP = false;
+                _otpValue = '';
+                _isOtpVerified = false;
+              }),
               borderRadius: BorderRadius.circular(20),
               child: Padding(
                 padding: const EdgeInsets.all(4),
@@ -1272,95 +1295,193 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
           ]),
           Divider(height: 24, color: Colors.grey.shade200),
 
-          // Phone number label
-          Text('Phone Number',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-          SizedBox(height: spacingUnit(0.75)),
-
-          // Phone field with Pakistan flag
-          Form(
-            key: _mobileFormKey,
-            child: TextFormField(
-              controller: _mobileNumberController,
-              decoration: InputDecoration(
-                hintText: 'Enter a phone number',
-                hintStyle: TextStyle(color: Colors.grey.shade400),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                prefixIcon: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Text('\uD83C\uDDF5\uD83C\uDDF0',
-                        style: TextStyle(fontSize: 18)),
-                    const SizedBox(width: 4),
-                    Icon(Icons.keyboard_arrow_down,
-                        size: 16, color: Colors.grey.shade600),
-                  ]),
+          // ── Step 1: Phone entry (hidden once OTP is sent) ──
+          if (!_showWalletOTP) ...[
+            Text('Phone Number',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            SizedBox(height: spacingUnit(0.75)),
+            Form(
+              key: _mobileFormKey,
+              child: TextFormField(
+                controller: _mobileNumberController,
+                decoration: InputDecoration(
+                  hintText: 'Enter a phone number',
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Text('\uD83C\uDDF5\uD83C\uDDF0',
+                          style: TextStyle(fontSize: 18)),
+                      const SizedBox(width: 4),
+                      Icon(Icons.keyboard_arrow_down,
+                          size: 16, color: Colors.grey.shade600),
+                    ]),
+                  ),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.grey.shade300)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.grey.shade300)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                          color: Color(0xFF1E88E5), width: 1.5)),
                 ),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.grey.shade300)),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.grey.shade300)),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF1E88E5), width: 1.5)),
+                keyboardType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                  _NoLeadingZeroFormatter(),
+                ],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter phone number';
+                  }
+                  String clean =
+                      value.replaceAll('-', '').replaceAll(' ', '');
+                  if (clean.startsWith('0')) {
+                    return 'Do not include leading 0 with +92';
+                  }
+                  if (!clean.startsWith('3') || clean.length != 10) {
+                    return 'Enter valid 10-digit mobile number';
+                  }
+                  return null;
+                },
               ),
-              keyboardType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(10),
-                _NoLeadingZeroFormatter(),
-              ],
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter phone number';
-                }
-                String clean = value.replaceAll('-', '').replaceAll(' ', '');
-                if (clean.startsWith('0')) {
-                  return 'Do not include leading 0 with +92';
-                }
-                if (!clean.startsWith('3') || clean.length != 10) {
-                  return 'Enter valid 10-digit mobile number';
-                }
-                return null;
-              },
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_mobileFormKey.currentState!.validate()) {
+                    setState(() {
+                      _showWalletOTP = true;
+                      _otpValue = '';
+                    });
+                    Get.snackbar(
+                      'Code Sent',
+                      'Verification code sent to ${_mobileNumberController.text}',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.green.shade600,
+                      colorText: Colors.white,
+                      duration: const Duration(seconds: 3),
+                      margin: const EdgeInsets.all(12),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFC49A22),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                child: const Text('Get Code',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
 
-          // Get Code button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                if (_mobileFormKey.currentState!.validate()) {
-                  Get.snackbar(
-                    'Code Sent',
-                    'Verification code sent to ${_mobileNumberController.text}',
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.green.shade600,
-                    colorText: Colors.white,
-                    duration: const Duration(seconds: 3),
-                    margin: const EdgeInsets.all(12),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFC49A22),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                elevation: 0,
+          // ── Step 2: OTP entry + verification ──
+          if (_showWalletOTP) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(
+                6,
+                (index) => Container(
+                  width: 45,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border:
+                        Border.all(color: Colors.grey.shade300, width: 1.5),
+                  ),
+                  child: TextField(
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    maxLength: 1,
+                    decoration: const InputDecoration(
+                      counterText: '',
+                      border: InputBorder.none,
+                    ),
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black),
+                    onChanged: (value) {
+                      setState(() {
+                        if (value.length == 1) {
+                          if (_otpValue.length < 6) _otpValue += value;
+                          if (index < 5) FocusScope.of(context).nextFocus();
+                        } else {
+                          _otpValue = _otpValue.length > index
+                              ? _otpValue.substring(0, index)
+                              : _otpValue;
+                        }
+                      });
+                    },
+                  ),
+                ),
               ),
-              child: const Text('Get Code',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
             ),
-          ),
+            const SizedBox(height: 20),
+            // Verify OTP button (shown until verified)
+            if (!_isOtpVerified)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _otpValue.length == 6
+                      ? () => setState(() => _isOtpVerified = true)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC49A22),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey.shade300,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Verify OTP',
+                      style: TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            // Success banner (shown after verified)
+            if (_isOtpVerified)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.shade300),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle,
+                        color: Colors.green.shade700, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      'OTP Verified Successfully',
+                      style: TextStyle(
+                        color: Colors.green.shade700,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ],
       ),
     );

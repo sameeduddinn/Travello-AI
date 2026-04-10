@@ -65,6 +65,10 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
   Timer? _otpTimer;
   int _otpRemainingSeconds = 27;
 
+  // OTP state tracking (Easypaisa / JazzCash)
+  String _otpValue = '';
+  bool _isOtpVerified = false;
+
   // Form controllers
   final _formKey = GlobalKey<FormState>();
   final _cardNameController = TextEditingController();
@@ -102,9 +106,9 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
           DSValidators.cardholderName(_cardNameController.text.trim()) == null;
       return cardOk && expiryOk && cvvOk && nameOk;
     } else if (_selectedPaymentMethod == 'easypaisa') {
-      return _easypaisaPhoneController.text.trim().length >= 10;
+      return _easypaisaPhoneController.text.trim().length >= 10 && _isOtpVerified;
     } else if (_selectedPaymentMethod == 'jazzcash') {
-      return _jazzcashPhoneController.text.trim().length >= 10;
+      return _jazzcashPhoneController.text.trim().length >= 10 && _isOtpVerified;
     }
     return true;
   }
@@ -1763,6 +1767,8 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                       if (_easypaisaPhoneController.text.isNotEmpty) {
                         setState(() {
                           _showEasypaisaOTP = true;
+                          _otpValue = '';
+                          _isOtpVerified = false;
                         });
                         _startOTPTimer();
                       }
@@ -1926,6 +1932,8 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                       if (_jazzcashPhoneController.text.isNotEmpty) {
                         setState(() {
                           _showJazzcashOTP = true;
+                          _otpValue = '';
+                          _isOtpVerified = false;
                         });
                         _startOTPTimer();
                       }
@@ -2029,21 +2037,63 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                     color: Colors.black,
                   ),
                   onChanged: (value) {
-                    if (value.length == 1 && index < 5) {
-                      FocusScope.of(context).nextFocus();
-                    }
+                    setState(() {
+                      if (value.length == 1) {
+                        if (_otpValue.length < 6) _otpValue += value;
+                        if (index < 5) FocusScope.of(context).nextFocus();
+                      } else {
+                        _otpValue = _otpValue.length > index
+                            ? _otpValue.substring(0, index)
+                            : _otpValue;
+                      }
+                    });
                   },
                 ),
               ),
             ),
           ),
           const SizedBox(height: 20),
-          const DSButton(
-            label: 'Verify & Pay',
-            onTap: null,
-            disabled: true,
-            height: 50,
-          ),
+          // Step 1: Verify OTP
+          if (!_isOtpVerified)
+            DSButton(
+              label: 'Verify OTP',
+              onTap: _otpValue.length == 6
+                  ? () => setState(() => _isOtpVerified = true)
+                  : null,
+              disabled: _otpValue.length < 6,
+              height: 50,
+            ),
+          // Step 2: Pay Now (only after OTP is verified)
+          if (_isOtpVerified) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green.shade700, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'OTP Verified Successfully',
+                    style: TextStyle(
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            DSButton(
+              label: 'Pay Now',
+              onTap: () => _processPayment(),
+              height: 50,
+            ),
+          ],
           const SizedBox(height: 16),
           Center(
             child: RichText(
