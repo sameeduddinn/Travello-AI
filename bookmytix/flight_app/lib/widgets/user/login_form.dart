@@ -475,7 +475,6 @@ class _LoginFormState extends State<LoginForm> {
                 prefixIcon: Icons.email_outlined,
               );
             },
-            validator: FormBuilderValidators.required(),
           ),
           const VSpace(),
           FormBuilderField(
