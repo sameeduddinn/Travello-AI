@@ -13,6 +13,9 @@ void main() async {
 
   // Initialize demo users from user.dart on first launch
   await AuthService.initializeDemoUsers();
+  
+  // TEMPORARY - add this line, run once, then remove it
+  await AuthService.clearAllUsers(); 
 
   // Register global controllers
   Get.put(NotificationController(), permanent: true);

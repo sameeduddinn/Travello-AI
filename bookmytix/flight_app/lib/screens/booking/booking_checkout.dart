@@ -60,6 +60,11 @@ class _BookingCheckoutState extends State<BookingCheckout> {
   bool _agreeToTerms = false;
   bool _showTermsError = false;
 
+  final ScrollController _refundScrollController = ScrollController();
+  final ScrollController _cancellationScrollController = ScrollController();
+  final ScrollController _fareRulesScrollController = ScrollController();
+  final ScrollController _privacyScrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -135,6 +140,15 @@ class _BookingCheckoutState extends State<BookingCheckout> {
     _emergencyEmail = (args['emergencyEmail'] as String?) ?? '';
     _emergencyPhone = (args['emergencyPhone'] as String?) ?? '';
     _emergencyRelation = (args['emergencyRelation'] as String?) ?? '';
+  }
+
+  @override
+  void dispose() {
+    _refundScrollController.dispose();
+    _cancellationScrollController.dispose();
+    _fareRulesScrollController.dispose();
+    _privacyScrollController.dispose();
+    super.dispose();
   }
 
   String _formatPrice(double amount) {
@@ -1267,8 +1281,9 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             '${p['firstName']} ${p['lastName']}${p['salutation'] != null && p['salutation'].toString().isNotEmpty ? ' (${p['salutation']})' : ''}',
@@ -1283,7 +1298,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           ),
                         ],
                       ),
-                      const Spacer(),
+                      ),
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
@@ -2477,7 +2492,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
               Divider(height: 1, color: Colors.grey.shade200),
               Expanded(
                 child: SingleChildScrollView(
-                  controller: scrollController,
+                  controller: _refundScrollController,
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2568,7 +2583,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
               Divider(height: 1, color: Colors.grey.shade200),
               Expanded(
                 child: SingleChildScrollView(
-                  controller: scrollController,
+                  controller: _cancellationScrollController,
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2659,7 +2674,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
               Divider(height: 1, color: Colors.grey.shade200),
               Expanded(
                 child: SingleChildScrollView(
-                  controller: scrollController,
+                  controller: _fareRulesScrollController,
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2750,7 +2765,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
               Divider(height: 1, color: Colors.grey.shade200),
               Expanded(
                 child: SingleChildScrollView(
-                  controller: scrollController,
+                  controller: _privacyScrollController,
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

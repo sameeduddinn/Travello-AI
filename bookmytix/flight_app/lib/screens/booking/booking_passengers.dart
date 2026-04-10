@@ -1548,14 +1548,16 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                     SizedBox(
                                       width: 20,
                                       height: 20,
-                                      child: Radio<String>(
-                                        value: t,
+                                      child: RadioGroup<String>(
                                         groupValue: p.salutation,
                                         onChanged: (v) =>
                                             setState(() => p.salutation = v!),
-                                        activeColor: TravelloTheme.primaryMain,
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
+                                        child: Radio<String>(
+                                          value: t,
+                                          activeColor: TravelloTheme.primaryMain,
+                                          materialTapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 4.8),

@@ -66,6 +66,13 @@ class _BookingPaymentState extends State<BookingPayment>
   // OTP state tracking (Easypaisa / JazzCash)
   String _otpValue = '';
 
+  // Scroll controllers — one per modal sheet to prevent shared-controller crash
+  final ScrollController _refundScrollController = ScrollController();
+  final ScrollController _cancellationScrollController = ScrollController();
+  final ScrollController _fareRulesScrollController = ScrollController();
+  final ScrollController _privacyScrollController = ScrollController();
+  final ScrollController _termsScrollController = ScrollController();
+
   // Form controllers
   final _formKey = GlobalKey<FormState>();
   final _cardNameController = TextEditingController();
@@ -166,6 +173,11 @@ class _BookingPaymentState extends State<BookingPayment>
     _cvvController.dispose();
     _easypaisaPhoneController.dispose();
     _jazzcashPhoneController.dispose();
+    _refundScrollController.dispose();
+    _cancellationScrollController.dispose();
+    _fareRulesScrollController.dispose();
+    _privacyScrollController.dispose();
+    _termsScrollController.dispose();
     super.dispose();
   }
 
@@ -1024,8 +1036,7 @@ class _BookingPaymentState extends State<BookingPayment>
                 ],
               ),
             ),
-            Radio<String>(
-              value: method,
+            RadioGroup<String>(
               groupValue: _selectedPaymentMethod,
               onChanged: (value) {
                 setState(() {
@@ -1033,7 +1044,10 @@ class _BookingPaymentState extends State<BookingPayment>
                   _updatePaymentMethodFees(value);
                 });
               },
-              activeColor: const Color(0xFF1E88E5),
+              child: Radio<String>(
+                value: method,
+                activeColor: const Color(0xFF1E88E5),
+              ),
             ),
           ],
         ),
@@ -2722,7 +2736,7 @@ class _BookingPaymentState extends State<BookingPayment>
               // Content
               Expanded(
                 child: SingleChildScrollView(
-                  controller: scrollController,
+                  controller: _refundScrollController,
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2813,7 +2827,7 @@ class _BookingPaymentState extends State<BookingPayment>
               Divider(height: 1, color: Colors.grey.shade200),
               Expanded(
                 child: SingleChildScrollView(
-                  controller: scrollController,
+                  controller: _cancellationScrollController,
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2904,7 +2918,7 @@ class _BookingPaymentState extends State<BookingPayment>
               Divider(height: 1, color: Colors.grey.shade200),
               Expanded(
                 child: SingleChildScrollView(
-                  controller: scrollController,
+                  controller: _fareRulesScrollController,
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2995,7 +3009,7 @@ class _BookingPaymentState extends State<BookingPayment>
               Divider(height: 1, color: Colors.grey.shade200),
               Expanded(
                 child: SingleChildScrollView(
-                  controller: scrollController,
+                  controller: _privacyScrollController,
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -3091,7 +3105,7 @@ class _BookingPaymentState extends State<BookingPayment>
             Divider(height: 1, color: Colors.grey.shade200),
             Expanded(
               child: SingleChildScrollView(
-                controller: scrollController,
+                controller: _termsScrollController,
                 padding: const EdgeInsets.all(24),
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
