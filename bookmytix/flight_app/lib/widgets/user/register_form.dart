@@ -411,113 +411,98 @@ class _RegisterFormState extends State<RegisterForm> {
           /// INPUT FIELD
           FormBuilderField(
             name: 'name',
-            builder: (FormFieldState<dynamic> field) {
-              return AppTextField(
-                label: 'Full Name',
-                onChanged: (value) => field.didChange(value),
-                errorText:
-                    field.hasError ? 'Please enter your full name' : null,
-                prefixIcon: Icons.person_outline,
-              );
-            },
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(),
+              FormBuilderValidators.required(errorText: 'Name is required'),
+              FormBuilderValidators.match(
+                RegExp(r'^[a-zA-Z ]+$'),
+                errorText: 'Name should contain only letters',
+              ),
               FormBuilderValidators.minLength(3,
                   errorText: 'Name must be at least 3 characters'),
+              FormBuilderValidators.maxLength(50),
             ]),
+            builder: (field) => AppTextField(
+              label: 'Full Name',
+              onChanged: field.didChange,
+              prefixIcon: Icons.person_outline,
+              errorText: field.errorText, // ✅ FIXED
+            ),
           ),
           const VSpace(),
 
           /// EMAIL FIELD
           FormBuilderField(
             name: 'email',
-            builder: (FormFieldState<dynamic> field) {
-              return AppTextField(
-                label: 'Email Address',
-                onChanged: (value) => field.didChange(value),
-                errorText: field.hasError
-                    ? 'Please enter a valid email address'
-                    : null,
-                prefixIcon: Icons.email_outlined,
-                suffix:
-                    field.value != null && field.value.toString().contains('@')
-                        ? TextButton(
-                            onPressed: () {
-                              // Navigate to email verification with email parameter
-                              Get.toNamed(
-                                '${AppLink.emailVerification}?email=${field.value}',
-                              );
-                            },
-                            child: Text(
-                              'Verify',
-                              style: TravelloTheme.caption.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )
-                        : null,
-              );
-            },
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(),
-              FormBuilderValidators.email(),
+              FormBuilderValidators.required(errorText: 'Email is required'),
+              FormBuilderValidators.email(errorText: 'Enter a valid email'),
             ]),
+            builder: (field) => AppTextField(
+              label: 'Email Address',
+              prefixIcon: Icons.email_outlined,
+              onChanged: (value) => field.didChange(value),
+              errorText: field.errorText,
+            ),
           ),
           const VSpace(),
 
           /// PHONE NUMBER FIELD
           FormBuilderField(
             name: 'phone',
-            builder: (FormFieldState<dynamic> field) {
-              return AppTextField(
-                label: 'Phone Number',
-                onChanged: (value) => field.didChange(value),
-                errorText:
-                    field.hasError ? 'Please enter a valid phone number' : null,
-                prefixIcon: Icons.phone_outlined,
-              );
-            },
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(),
-              FormBuilderValidators.numeric(),
-              FormBuilderValidators.minLength(10,
-                  errorText: 'Phone number must be at least 10 digits'),
+              FormBuilderValidators.required(
+                  errorText: 'Phone number is required'),
+              FormBuilderValidators.match(
+                RegExp(r'^03[0-9]{9}$'),
+                errorText: 'Enter a valid phone number (03XXXXXXXXX)',
+              ),
             ]),
+            builder: (field) => AppTextField(
+              label: 'Phone Number',
+              onChanged: field.didChange,
+              prefixIcon: Icons.phone_outlined,
+              errorText: field.errorText, // ✅ FIXED
+            ),
           ),
           const VSpace(),
 
           FormBuilderField(
             name: 'password',
-            builder: (FormFieldState<dynamic> field) {
-              return AppTextField(
-                label: 'Password (min. 8 characters)',
-                obscureText: _hidePassword,
-                onChanged: (value) {
-                  field.didChange(value);
-                  _checkPasswordStrength(value);
-                },
-                errorText: field.hasError
-                    ? 'Password must be at least 8 characters'
-                    : null,
-                prefixIcon: Icons.lock_outline,
-                suffix: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _hidePassword = !_hidePassword;
-                    });
-                  },
-                  icon: _hidePassword
-                      ? const Icon(Icons.visibility_outlined, size: 20)
-                      : const Icon(Icons.visibility_off_outlined, size: 20),
-                ),
-              );
-            },
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(),
+              FormBuilderValidators.required(errorText: 'Password is required'),
               FormBuilderValidators.minLength(8,
                   errorText: 'Password must be at least 8 characters'),
+              FormBuilderValidators.match(
+                RegExp(
+                  r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$',
+                ),
+                errorText: 'Use 8+ chars with upper, lower, number & symbol',
+              ),
             ]),
+            builder: (field) => AppTextField(
+              label: 'Password (min. 8 characters)',
+              obscureText: _hidePassword,
+              onChanged: (value) {
+                field.didChange(value);
+                _checkPasswordStrength(value);
+              },
+              prefixIcon: Icons.lock_outline,
+              errorText: field.errorText, // ✅ FIXED
+              suffix: IconButton(
+                onPressed: () {
+                  setState(() {
+                    _hidePassword = !_hidePassword;
+                  });
+                },
+                icon: _hidePassword
+                    ? const Icon(Icons.visibility_outlined, size: 20)
+                    : const Icon(Icons.visibility_off_outlined, size: 20),
+              ),
+            ),
           ),
 
           /// PASSWORD STRENGTH INDICATOR
@@ -565,35 +550,44 @@ class _RegisterFormState extends State<RegisterForm> {
           FormBuilderField(
             name: 'repeat_password',
             autovalidateMode: AutovalidateMode.onUserInteraction,
-            builder: (FormFieldState<dynamic> field) {
-              return AppTextField(
-                label: 'Confirm Password',
-                obscureText: _hideConfirmPassword,
-                onChanged: (value) => field.didChange(value),
-                errorText: field.hasError ? 'Passwords do not match' : null,
-                prefixIcon: Icons.lock_outline,
-                suffix: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _hideConfirmPassword = !_hideConfirmPassword;
-                    });
-                  },
-                  icon: _hideConfirmPassword
-                      ? const Icon(Icons.visibility_outlined, size: 20)
-                      : const Icon(Icons.visibility_off_outlined, size: 20),
-                ),
-              );
+            validator: (value) {
+              final confirmPassword = (value ?? '').toString().trim();
+              final password =
+                  _registerKey.currentState?.fields['password']?.value ?? '';
+
+              if (confirmPassword.isEmpty) {
+                return 'Confirm your password';
+              }
+
+              if (confirmPassword != password) {
+                return 'Passwords do not match';
+              }
+
+              return null;
             },
-            validator: (value) =>
-                _registerKey.currentState?.fields['password']?.value != value
-                    ? 'Passwords do not match'
-                    : null,
+            builder: (field) => AppTextField(
+              label: 'Confirm Password',
+              obscureText: _hideConfirmPassword,
+              onChanged: field.didChange,
+              prefixIcon: Icons.lock_outline,
+              errorText: field.errorText, // ✅ FIXED
+              suffix: IconButton(
+                onPressed: () {
+                  setState(() {
+                    _hideConfirmPassword = !_hideConfirmPassword;
+                  });
+                },
+                icon: _hideConfirmPassword
+                    ? const Icon(Icons.visibility_outlined, size: 20)
+                    : const Icon(Icons.visibility_off_outlined, size: 20),
+              ),
+            ),
           ),
           const VSpaceShort(),
           FormBuilderCheckbox(
             name: 'accept_terms',
             initialValue: false,
-            title: const Text('Agree with our terms and condtions'),
+            title: const Text('Agree with our terms and conditions'),
             validator: FormBuilderValidators.equal(
               true,
               errorText: 'You must accept terms and conditions to continue',
@@ -607,55 +601,85 @@ class _RegisterFormState extends State<RegisterForm> {
                 onPressed: _isLoading
                     ? null
                     : () async {
-                        if (_registerKey.currentState?.saveAndValidate() ??
-                            false) {
-                          setState(() {
-                            _isLoading = true;
-                          });
+                        final formState = _registerKey.currentState;
+                        if (formState == null) return;
 
-                          final formData = _registerKey.currentState?.value;
+                        if (formState.saveAndValidate()) {
+                          setState(() => _isLoading = true);
 
-                          // Register the user with separate email and phone
-                          final success = await AuthService.registerUser(
-                            name: formData!['name'],
-                            emailOrPhone:
-                                formData['email'], // Primary identifier
-                            email: formData['email'],
-                            phone: formData['phone'],
-                            password: formData['password'],
-                          );
+                          final formData = formState.value;
 
-                          setState(() {
-                            _isLoading = false;
-                          });
+                          /// 🔹 SANITIZE INPUTS
+                          final String name = (formData['name'] ?? '')
+                              .toString()
+                              .trim()
+                              .replaceAll(RegExp(r'\s+'), ' ');
 
-                          if (success) {
-                            // Show success message
+                          final String email = (formData['email'] ?? '')
+                              .toString()
+                              .trim()
+                              .toLowerCase();
+
+                          final String phone = (formData['phone'] ?? '')
+                              .toString()
+                              .trim()
+                              .replaceAll(RegExp(r'\s+|-'), '');
+
+                          final String password =
+                              (formData['password'] ?? '').toString().trim();
+
+                          try {
+                            final success = await AuthService.registerUser(
+                              name: name,
+                              emailOrPhone: email,
+                              email: email,
+                              phone: phone,
+                              password: password,
+                            );
+
+                            setState(() => _isLoading = false);
+
+                            if (success) {
+                              Get.snackbar(
+                                'Registration Successful',
+                                'Please verify your email to continue.',
+                                backgroundColor: Colors.green.shade600,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.TOP,
+                                duration: const Duration(seconds: 2),
+                                icon: const Icon(Icons.check_circle,
+                                    color: Colors.white),
+                                borderRadius: 10,
+                                margin: const EdgeInsets.all(10),
+                              );
+
+                              Get.offNamed(
+                                '${AppLink.emailVerification}?email=$email',
+                              );
+                            } else {
+                              Get.snackbar(
+                                'Registration Failed',
+                                'Email or phone already exists.',
+                                backgroundColor: Colors.orange.shade600,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.TOP,
+                                icon: const Icon(Icons.warning_amber,
+                                    color: Colors.white),
+                                borderRadius: 10,
+                                margin: const EdgeInsets.all(10),
+                                duration: const Duration(seconds: 3),
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => _isLoading = false);
+
                             Get.snackbar(
-                              'Registration Successful',
-                              'Please verify your email to continue.',
-                              backgroundColor: Colors.green.shade600,
+                              'Error',
+                              'Something went wrong. Try again.',
+                              backgroundColor: Colors.red.shade600,
                               colorText: Colors.white,
                               snackPosition: SnackPosition.TOP,
-                              duration: const Duration(seconds: 2),
-                              icon: const Icon(Icons.check_circle,
-                                  color: Colors.white),
-                              borderRadius: 10,
-                              margin: const EdgeInsets.all(10),
-                            );
-                            // Navigate to email verification with email parameter
-                            Get.offNamed(
-                              '${AppLink.emailVerification}?email=${formData['email']}',
-                            );
-                          } else {
-                            // Show error message
-                            Get.snackbar(
-                              'Registration Failed',
-                              'This email or phone number is already registered. Please login instead.',
-                              backgroundColor: Colors.orange.shade600,
-                              colorText: Colors.white,
-                              snackPosition: SnackPosition.TOP,
-                              icon: const Icon(Icons.warning_amber,
+                              icon: const Icon(Icons.error_outline,
                                   color: Colors.white),
                               borderRadius: 10,
                               margin: const EdgeInsets.all(10),

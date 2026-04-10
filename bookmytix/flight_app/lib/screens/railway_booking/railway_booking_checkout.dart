@@ -304,7 +304,12 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) Get.offAllNamed('/');
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFFFAFAFA), // Light background
       appBar: _buildAppBar(),
       body: Column(
@@ -339,7 +344,8 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
           _buildCheckoutButton(),
         ],
       ),
-    );
+    ),   // Scaffold
+    );   // PopScope
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -349,7 +355,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
       centerTitle: true,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => Get.back(),
+        onPressed: () => Get.offAllNamed('/'),
       ),
       title: const Text(
         'Checkout',

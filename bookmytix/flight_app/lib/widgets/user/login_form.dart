@@ -50,7 +50,7 @@ class _LoginFormState extends State<LoginForm> {
                 Navigator.pop(context);
                 // Auto-fill credentials
                 _loginKey.currentState?.patchValue({
-                  'name': credentials['emailOrPhone'],
+                  'emailOrPhone': credentials['emailOrPhone'],
                   'password': credentials['password'],
                 });
 
@@ -464,17 +464,31 @@ class _LoginFormState extends State<LoginForm> {
 
           /// INPUT FIELD
           FormBuilderField(
-            name: 'name',
+            name: 'emailOrPhone',
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             builder: (FormFieldState<dynamic> field) {
               return AppTextField(
                 label: 'Email or Phone Number',
                 onChanged: (value) => field.didChange(value),
-                errorText: field.hasError
-                    ? 'Please enter your email or phone number'
-                    : null,
+                errorText: field.errorText,
                 prefixIcon: Icons.email_outlined,
               );
             },
+            validator: FormBuilderValidators.compose([
+              FormBuilderValidators.required(),
+              (value) {
+                final v = value?.toString().trim() ?? '';
+
+                final emailRegex =
+                    RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                final phoneRegex = RegExp(r'^03[0-9]{9}$');
+
+                if (!emailRegex.hasMatch(v) && !phoneRegex.hasMatch(v)) {
+                  return 'Enter valid email or phone number';
+                }
+                return null;
+              }
+            ]),
           ),
           const VSpace(),
           FormBuilderField(
@@ -484,7 +498,7 @@ class _LoginFormState extends State<LoginForm> {
                 label: 'Password',
                 obscureText: _hidePassword,
                 onChanged: (value) => field.didChange(value),
-                errorText: field.hasError ? 'Please fill your password!' : null,
+                errorText: field.errorText,
                 prefixIcon: Icons.lock_outline,
                 suffix: IconButton(
                     onPressed: () {
@@ -495,7 +509,8 @@ class _LoginFormState extends State<LoginForm> {
                         : const Icon(Icons.visibility_off_outlined, size: 20)),
               );
             },
-            validator: FormBuilderValidators.required(),
+            validator: FormBuilderValidators.required(
+                errorText: 'Password is required'),
           ),
           const VSpace(),
 
@@ -562,82 +577,102 @@ class _LoginFormState extends State<LoginForm> {
                 onPressed: _isLoading
                     ? null
                     : () async {
-                        if (_loginKey.currentState?.saveAndValidate() ??
-                            false) {
-                          setState(() {
-                            _isLoading = true;
-                          });
+                        final formState = _loginKey.currentState;
+                        if (formState == null) return;
 
-                          final formData = _loginKey.currentState?.value;
+                        if (formState.saveAndValidate()) {
+                          setState(() => _isLoading = true);
 
-                          // Login the user
-                          final user = await AuthService.loginUser(
-                            emailOrPhone: formData!['name'],
-                            password: formData['password'],
-                          );
+                          final formData = formState.value;
 
-                          if (!context.mounted) return;
+                          /// 🔹 SANITIZE INPUTS
+                          final rawInput = (formData['emailOrPhone'] ?? '')
+                              .toString()
+                              .trim()
+                              .replaceAll(RegExp(r'\s+'), '');
 
-                          setState(() {
-                            _isLoading = false;
-                          });
+                          final emailOrPhone = rawInput.contains('@')
+                              ? rawInput.toLowerCase()
+                              : rawInput;
+                          final String password =
+                              (formData['password'] ?? '').toString().trim();
 
-                          if (user != null) {
-                            // Save Remember Me if checked
-                            if (_rememberMe) {
-                              await AuthService.saveRememberMe(
-                                formData['name'],
-                                formData['password'],
-                              );
-                            } else {
-                              await AuthService.clearRememberMe();
-                            }
-
-                            if (!context.mounted) return;
-
-                            // Show success message with animation
-                            Get.snackbar(
-                              'Login Successful',
-                              'Welcome back, ${user['name']}!',
-                              backgroundColor: Colors.green.shade600,
-                              colorText: Colors.white,
-                              snackPosition: SnackPosition.TOP,
-                              duration: const Duration(seconds: 2),
-                              icon: const Icon(Icons.check_circle,
-                                  color: Colors.white),
-                              borderRadius: 10,
-                              margin: const EdgeInsets.all(10),
+                          try {
+                            /// 🔹 LOGIN API
+                            final user = await AuthService.loginUser(
+                              emailOrPhone: emailOrPhone,
+                              password: password,
                             );
 
-                            // Check if user has set their origin city
-                            final hasCity =
-                                await LocationPreferenceService.hasOriginCity();
-
                             if (!context.mounted) return;
 
-                            if (!hasCity) {
-                              // Show city selection bottom sheet for personalization
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                isDismissible: false,
-                                enableDrag: false,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => CitySelectionSheet(
-                                  onComplete: () {
-                                    Get.offAllNamed(AppLink.home);
-                                  },
-                                ),
+                            setState(() => _isLoading = false);
+
+                            if (user != null) {
+                              /// 🔹 REMEMBER ME
+                              if (_rememberMe) {
+                                await AuthService.saveRememberMe(
+                                    emailOrPhone, password);
+                              } else {
+                                await AuthService.clearRememberMe();
+                              }
+
+                              if (!context.mounted) return;
+
+                              Get.snackbar(
+                                'Login Successful',
+                                'Welcome back, ${user['name']}!',
+                                backgroundColor: Colors.green.shade600,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.TOP,
+                                duration: const Duration(seconds: 2),
+                                icon: const Icon(Icons.check_circle,
+                                    color: Colors.white),
+                                borderRadius: 10,
+                                margin: const EdgeInsets.all(10),
                               );
+
+                              final hasCity = await LocationPreferenceService
+                                  .hasOriginCity();
+
+                              if (!context.mounted) return;
+
+                              if (!hasCity) {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  isDismissible: false,
+                                  enableDrag: false,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (context) => CitySelectionSheet(
+                                    onComplete: () {
+                                      Get.offAllNamed(AppLink.home);
+                                    },
+                                  ),
+                                );
+                              } else {
+                                Get.offAllNamed(AppLink.home);
+                              }
                             } else {
-                              // Already has city preference, go directly to home
-                              Get.offAllNamed(AppLink.home);
+                              Get.snackbar(
+                                'Login Failed',
+                                'Invalid credentials.',
+                                backgroundColor: Colors.red.shade600,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.TOP,
+                                icon: const Icon(Icons.error_outline,
+                                    color: Colors.white),
+                                borderRadius: 10,
+                                margin: const EdgeInsets.all(10),
+                                duration: const Duration(seconds: 3),
+                              );
                             }
-                          } else {
-                            // Show error message with better styling
+                          } catch (e) {
+                            setState(() => _isLoading = false);
+
                             Get.snackbar(
-                              'Login Failed',
-                              'Invalid credentials. Please check your email/phone and password.',
+                              'Error',
+                              'Something went wrong. Try again.',
                               backgroundColor: Colors.red.shade600,
                               colorText: Colors.white,
                               snackPosition: SnackPosition.TOP,

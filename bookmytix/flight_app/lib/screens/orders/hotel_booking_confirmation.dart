@@ -195,6 +195,16 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
 
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) Get.offAllNamed('/');
+      },
+      child: _buildContent(context),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     const primary = TravelloTheme.primaryMain;
     final isFromList = bookingData['_isFromList'] == true;
 
@@ -218,7 +228,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
         backgroundColor: primary,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Get.back(),
+          onPressed: () => Get.offAllNamed('/'),
         ),
         centerTitle: true,
         title: Text(isFromList ? 'Booking Details' : 'Done',

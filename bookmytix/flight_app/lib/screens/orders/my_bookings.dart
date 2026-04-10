@@ -200,6 +200,7 @@ class _MyBookingsState extends State<MyBookings>
       pinned: true,
       elevation: 0,
       backgroundColor: _gold,
+      automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(
@@ -254,10 +255,7 @@ class _MyBookingsState extends State<MyBookings>
           ),
         ),
       ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-        onPressed: () => Get.back(),
-      ),
+
     );
   }
 
