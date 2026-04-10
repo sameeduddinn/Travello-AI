@@ -101,6 +101,14 @@ class _BookingPassengersState extends State<BookingPassengers> {
   final _emergencyPhoneCtrl = TextEditingController();
   final _emergencyRelationCtrl = TextEditingController();
 
+  // Keys for scroll-to-first-error on the contact page
+  final _contactNameKey = GlobalKey();
+  final _contactEmailKey = GlobalKey();
+  final _contactPhoneKey = GlobalKey();
+  final _emergencyNameKey = GlobalKey();
+  final _emergencyRelationKey = GlobalKey();
+  final _emergencyPhoneKey = GlobalKey();
+
   // Page state: 0..(_totalPassengers-1) = passenger pages, last = contact page
   int _currentPage = 0;
 
@@ -364,7 +372,12 @@ class _BookingPassengersState extends State<BookingPassengers> {
       // mark passenger page as submitted so dropdowns/pickers show errors
       setState(() => _passengers[_currentPage].submitted = true);
     }
-    if (!_formKeys[_currentPage].currentState!.validate()) return;
+    if (!_formKeys[_currentPage].currentState!.validate()) {
+      if (_currentPage < _totalPassengers) {
+        _scrollToFirstPassengerError(_currentPage);
+      }
+      return;
+    }
 
     // validate required custom fields (dropdown / date pickers)
     if (_currentPage < _totalPassengers) {
@@ -438,7 +451,10 @@ class _BookingPassengersState extends State<BookingPassengers> {
   }
 
   Future<void> _submit() async {
-    if (!_formKeys[_totalPassengers].currentState!.validate()) return;
+    if (!_formKeys[_totalPassengers].currentState!.validate()) {
+      _scrollToFirstContactError();
+      return;
+    }
     final passengersData = List.generate(_totalPassengers, (i) {
       final p = _passengers[i];
 
@@ -1583,6 +1599,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                 children: [
                                   _buildTextField(
                                     label: 'First Name',
+                                    fieldKey: p.firstNameKey,
                                     controller: p.firstNameCtrl,
                                     icon: Icons.person_outline,
                                     hint: 'Enter First Name',
@@ -1608,6 +1625,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                   const SizedBox(height: 16),
                                   _buildTextField(
                                     label: 'Last Name',
+                                    fieldKey: p.lastNameKey,
                                     controller: p.lastNameCtrl,
                                     icon: Icons.person_outline,
                                     hint: 'Enter Last Name',
@@ -1638,6 +1656,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                 Expanded(
                                     child: _buildTextField(
                                   label: 'First Name',
+                                  fieldKey: p.firstNameKey,
                                   controller: p.firstNameCtrl,
                                   icon: Icons.person_outline,
                                   hint: 'Enter First Name',
@@ -1663,6 +1682,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                 Expanded(
                                     child: _buildTextField(
                                   label: 'Last Name',
+                                  fieldKey: p.lastNameKey,
                                   controller: p.lastNameCtrl,
                                   icon: Icons.person_outline,
                                   hint: 'Enter Last Name',
@@ -1691,7 +1711,9 @@ class _BookingPassengersState extends State<BookingPassengers> {
                         const SizedBox(height: 16),
 
                         // nationality + date of birth
-                        LayoutBuilder(
+                        Container(
+                          key: p.nationalityDobKey,
+                          child: LayoutBuilder(
                           builder: (context, constraints) {
                             final isMobile = constraints.maxWidth < 600;
                             if (isMobile) {
@@ -1809,6 +1831,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               ],
                             );
                           },
+                        ),
                         ),
                         const SizedBox(height: 16),
 
@@ -2040,6 +2063,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                         if (p.documentType == 'CNIC' && i < _adults) ...[
                           _buildTextField(
                             label: 'National ID (CNIC)',
+                            fieldKey: p.documentFieldKey,
                             controller: p.nationalIdCtrl,
                             icon: Icons.credit_card_outlined,
                             hint: 'Enter CNIC (XXXXX-XXXXXXX-X)',
@@ -2313,6 +2337,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                         if (p.documentType == 'B-Form' && i >= _adults) ...[
                           _buildTextField(
                             label: 'B-Form Number (NADRA Child Certificate)',
+                            fieldKey: p.documentFieldKey,
                             controller: p.bFormCtrl,
                             icon: Icons.credit_card_outlined,
                             hint: 'Enter B-Form (XXXXX-XXXXXXX-X)',
@@ -2379,6 +2404,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               Expanded(
                                 child: _buildTextField(
                                   label: 'Passport Number',
+                                  fieldKey: p.documentFieldKey,
                                   controller: p.passportNumberCtrl,
                                   icon: Icons.article_outlined,
                                   hint: p.nationality == 'Pakistan'
@@ -2517,6 +2543,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                               Expanded(
                                   child: _buildTextField(
                                 label: 'Passport Number',
+                                fieldKey: p.documentFieldKey,
                                 controller: p.passportNumberCtrl,
                                 icon: Icons.article_outlined,
                                 hint: 'e.g., A12345678 (6-12 characters)',
@@ -2771,6 +2798,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                         ),
                         const SizedBox(height: 16),
                         DSInputField(
+                          key: _contactNameKey,
                           label: 'Full Name',
                           controller: _contactNameCtrl,
                           hint: 'Enter full name',
@@ -2792,6 +2820,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                         ),
                         const SizedBox(height: 14.4),
                         DSInputField(
+                          key: _contactEmailKey,
                           label: 'Email Address',
                           controller: _contactEmailCtrl,
                           hint: 'Enter email address',
@@ -2801,6 +2830,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                         ),
                         const SizedBox(height: 14.4),
                         DSInputField(
+                          key: _contactPhoneKey,
                           label: 'Phone Number',
                           controller: _contactPhoneCtrl,
                           hint: '3001234567',
@@ -2891,6 +2921,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                         ),
                         const SizedBox(height: 16),
                         DSInputField(
+                          key: _emergencyNameKey,
                           label: 'Full Name',
                           controller: _emergencyNameCtrl,
                           hint: 'Enter emergency contact name',
@@ -2914,6 +2945,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                         ),
                         const SizedBox(height: 14.4),
                         DSInputField(
+                          key: _emergencyRelationKey,
                           label: 'Relationship',
                           controller: _emergencyRelationCtrl,
                           hint: 'e.g., Father, Mother, Spouse, Sibling',
@@ -2948,6 +2980,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                         ),
                         const SizedBox(height: 14.4),
                         DSInputField(
+                          key: _emergencyPhoneKey,
                           label: 'Phone Number',
                           controller: _emergencyPhoneCtrl,
                           hint: '3001234567',
@@ -3053,6 +3086,60 @@ class _BookingPassengersState extends State<BookingPassengers> {
             fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
       );
 
+  // ── Scroll to first error after failed validation ──────────────────────────
+
+  void _scrollToFirstPassengerError(int i) {
+    final p = _passengers[i];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      GlobalKey? errorKey;
+      if (p.firstNameKey.currentState?.errorText != null) {
+        errorKey = p.firstNameKey;
+      } else if (p.lastNameKey.currentState?.errorText != null) {
+        errorKey = p.lastNameKey;
+      } else if (p.nationality == null || p.dateOfBirth == null) {
+        errorKey = p.nationalityDobKey;
+      } else if (p.documentFieldKey.currentState?.errorText != null) {
+        errorKey = p.documentFieldKey;
+      }
+      final ctx = errorKey?.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          alignment: 0.15,
+        );
+      }
+    });
+  }
+
+  void _scrollToFirstContactError() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final checks = <(TextEditingController, GlobalKey)>[
+        (_contactNameCtrl, _contactNameKey),
+        (_contactEmailCtrl, _contactEmailKey),
+        (_contactPhoneCtrl, _contactPhoneKey),
+        (_emergencyNameCtrl, _emergencyNameKey),
+        (_emergencyRelationCtrl, _emergencyRelationKey),
+        (_emergencyPhoneCtrl, _emergencyPhoneKey),
+      ];
+      for (final (ctrl, key) in checks) {
+        if (ctrl.text.trim().isEmpty) {
+          final ctx = key.currentContext;
+          if (ctx != null) {
+            Scrollable.ensureVisible(
+              ctx,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut,
+              alignment: 0.15,
+            );
+          }
+          return;
+        }
+      }
+    });
+  }
+
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
@@ -3064,6 +3151,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
     TextCapitalization capitalization = TextCapitalization.words,
     List<TextInputFormatter>? inputFormatters,
     String? prefixText,
+    GlobalKey<FormFieldState>? fieldKey,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3073,6 +3161,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
           const SizedBox(height: 5.6),
         ],
         TextFormField(
+          key: fieldKey,
           controller: controller,
           keyboardType: keyboardType,
           textCapitalization: capitalization,
@@ -3344,6 +3433,12 @@ class _PassengerData {
   DateTime? passportExpiryDate;
   bool saveDetails = false;
   bool submitted = false;
+
+  // Keys for scroll-to-first-error
+  final firstNameKey = GlobalKey<FormFieldState>();
+  final lastNameKey = GlobalKey<FormFieldState>();
+  final nationalityDobKey = GlobalKey();
+  final documentFieldKey = GlobalKey<FormFieldState>();
 
   void dispose() {
     firstNameCtrl.dispose();
