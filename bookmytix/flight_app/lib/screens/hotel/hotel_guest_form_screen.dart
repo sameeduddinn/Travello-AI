@@ -899,7 +899,13 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                         children: [
                           _field(_extraNameCtrls[i], 'Full Name *',
                               Icons.person_outline,
-                              required: true),
+                              required: true,
+                              extraValidator: (_) {
+                                if (_hasDuplicateNames()) {
+                                  return 'Guest names must be different';
+                                }
+                                return null;
+                              }),
                           const SizedBox(height: 12),
                           TextFormField(
                             controller: _extraDocCtrls[i],
@@ -917,7 +923,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                               }
                               // Duplicate check against primary guest
                               if (raw == _cnicCtrl.text.replaceAll('-', '')) {
-                                return 'CNIC already used for primary guest';
+                                return 'CNIC numbers must be different';
                               }
                               // Duplicate check against other extra guests
                               for (int j = 0; j < _extraDocCtrls.length; j++) {
@@ -925,7 +931,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                                 final other =
                                     _extraDocCtrls[j].text.replaceAll('-', '');
                                 if (other.isNotEmpty && other == raw) {
-                                  return 'CNIC already used for another guest';
+                                  return 'CNIC numbers must be different';
                                 }
                               }
                               return null;
@@ -1147,7 +1153,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
   }
 
   Widget _field(TextEditingController ctrl, String label, IconData icon,
-      {bool required = false}) {
+      {bool required = false, String? Function(String?)? extraValidator}) {
     return TextFormField(
       controller: ctrl,
       style: const TextStyle(color: Colors.black),
@@ -1166,15 +1172,15 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: TravelloTheme.primaryMain)),
       ),
-      validator: required
-          ? (v) {
-              if (v == null || v.trim().isEmpty) return 'Required';
-              final nameRegex = RegExp(r"^[a-zA-Z .'-]+$");
-              if (!nameRegex.hasMatch(v.trim())) return 'Letters only';
-              if (v.trim().length < 2) return 'Too short';
-              return null;
-            }
-          : null,
+      validator: (v) {
+        if (required) {
+          if (v == null || v.trim().isEmpty) return 'Required';
+          final nameRegex = RegExp(r"^[a-zA-Z .'-]+$");
+          if (!nameRegex.hasMatch(v.trim())) return 'Letters only';
+          if (v.trim().length < 2) return 'Too short';
+        }
+        return extraValidator?.call(v);
+      },
     );
   }
 }

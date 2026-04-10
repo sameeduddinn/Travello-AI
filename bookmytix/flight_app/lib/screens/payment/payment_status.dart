@@ -2050,10 +2050,11 @@ class _PaymentStatusState extends State<PaymentStatus>
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: _buildAppBar(context),
-      body: _isLoading
-          ? _buildLoadingSkeleton()
-          : Stack(
-              children: [
+      body: Stack(
+            children: [
+              if (_isLoading)
+                _buildLoadingSkeleton()
+              else
                 Column(
                   children: [
                     // Step Progress Indicator
@@ -2106,31 +2107,31 @@ class _PaymentStatusState extends State<PaymentStatus>
                     ),
                   ],
                 ),
-                // Confetti Overlay - Optimized for smooth performance
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: ConfettiWidget(
-                    confettiController: _confettiController,
-                    blastDirectionality: BlastDirectionality.explosive,
-                    particleDrag: 0.06,
-                    emissionFrequency: 0.05,
-                    numberOfParticles: 30,
-                    gravity: 0.2,
-                    shouldLoop: false,
-                    maximumSize: const Size(10, 10),
-                    minimumSize: const Size(5, 5),
-                    colors: const [
-                      Color(0xFF10B981), // Green
-                      Color(0xFF3B82F6), // Blue
-                      Color(0xFFEC4899), // Pink
-                      Color(0xFFF59E0B), // Orange
-                      Color(0xFF8B5CF6), // Purple
-                      Color(0xFFFBBF24), // Yellow
-                    ],
-                  ),
+              // Confetti Overlay — always in tree so play() is never missed
+              Align(
+                alignment: Alignment.topCenter,
+                child: ConfettiWidget(
+                  confettiController: _confettiController,
+                  blastDirectionality: BlastDirectionality.explosive,
+                  particleDrag: 0.06,
+                  emissionFrequency: 0.05,
+                  numberOfParticles: 30,
+                  gravity: 0.2,
+                  shouldLoop: false,
+                  maximumSize: const Size(10, 10),
+                  minimumSize: const Size(5, 5),
+                  colors: const [
+                    Color(0xFF10B981), // Green
+                    Color(0xFF3B82F6), // Blue
+                    Color(0xFFEC4899), // Pink
+                    Color(0xFFF59E0B), // Orange
+                    Color(0xFF8B5CF6), // Purple
+                    Color(0xFFFBBF24), // Yellow
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
     );
   }
 
