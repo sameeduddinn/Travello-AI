@@ -757,14 +757,6 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
   final List<ChatMessage> _messages = [];
   bool _isTyping = false;
 
-  // ── Plan Trip state ────────────────────────────────────────────────────────
-  String? _tripDestination;
-  String _tripStyle = 'Adventure';
-  int _tripDuration = 5;
-  String _tripBudget = 'Mid-range';
-  bool _isGenerating = false;
-  _TripItinerary? _generatedTrip;
-
   // ── Saved Trips state ──────────────────────────────────────────────────────
   final List<_TripItinerary> _savedTrips = [
     _TripItinerary(
@@ -791,59 +783,10 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     ),
   ];
 
-  static const List<String> _destinations = [
-    'Hunza Valley',
-    'Skardu',
-    'Swat Valley',
-    'Naran & Kaghan',
-    'Fairy Meadows',
-    'Gilgit',
-    'Chitral',
-    'Gwadar',
-    'Karachi',
-    'Lahore',
-    'Islamabad',
-    'Peshawar',
-    'Multan',
-    'Quetta',
-    'Neelum Valley',
-    'Taxila',
-    'Mohenjo-daro',
-  ];
-  static const List<Map<String, dynamic>> _styles = [
-    {'label': 'Adventure', 'icon': Icons.terrain, 'color': Color(0xFF1565C0)},
-    {
-      'label': 'Cultural',
-      'icon': Icons.account_balance,
-      'color': Color(0xFF880E4F)
-    },
-    {
-      'label': 'Relaxing',
-      'icon': Icons.beach_access,
-      'color': Color(0xFF006064)
-    },
-    {
-      'label': 'Family',
-      'icon': Icons.family_restroom,
-      'color': Color(0xFF4527A0)
-    },
-    {'label': 'Nature', 'icon': Icons.park, 'color': Color(0xFF2E7D32)},
-  ];
-  static const List<int> _durations = [3, 5, 7, 10];
-  static const List<Map<String, dynamic>> _budgets = [
-    {'label': 'Budget', 'range': 'PKR 5K–15K', 'icon': Icons.savings},
-    {
-      'label': 'Mid-range',
-      'range': 'PKR 15K–40K',
-      'icon': Icons.account_balance_wallet
-    },
-    {'label': 'Luxury', 'range': 'PKR 40K+', 'icon': Icons.diamond},
-  ];
-
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _dotController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -891,160 +834,154 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          SliverAppBar(
-            expandedHeight: 200.0,
-            floating: false,
-            pinned: true,
-            elevation: 0,
-            backgroundColor: const Color(0xFFD4AF37),
-            iconTheme: const IconThemeData(color: Color(0xFFD4AF37)),
-            leading: Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 12,
-                    offset: const Offset(0, 3),
-                  ),
+      body: Column(
+        children: [
+          // ── Fixed header (130px) ──────────────────────────────────────────
+          Container(
+            height: 130,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFD4AF37),
+                  Color(0xFFDAB853),
+                  Color(0xFFE8C76A),
                 ],
               ),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new,
-                    color: Color(0xFFD4AF37), size: 18),
-                onPressed: () => Navigator.of(context).maybePop(),
-              ),
             ),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(48),
-              child: Container(
-                color: Colors.white,
-                child: TabBar(
-                  controller: _tabController,
-                  indicatorColor: const Color(0xFFD4AF37),
-                  indicatorWeight: 3,
-                  labelColor: const Color(0xFFD4AF37),
-                  unselectedLabelColor: Colors.black45,
-                  tabs: const [
-                    Tab(
-                        icon: Icon(Icons.chat_bubble_outline, size: 18),
-                        text: 'Chat'),
-                    Tab(
-                        icon: Icon(Icons.map_outlined, size: 18),
-                        text: 'Plan Trip'),
-                    Tab(
-                        icon: Icon(CupertinoIcons.bookmark, size: 18),
-                        text: 'Saved'),
-                  ],
-                ),
-              ),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFFD4AF37),
-                      Color(0xFFDAB853),
-                      Color(0xFFE8C76A),
-                    ],
-                  ),
-                ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      left: 64,
-                      right: 20,
-                      top: 12,
-                      bottom: 56,
+            child: SafeArea(
+              bottom: false,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Back button
+                  Container(
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 12,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                    child: SlideTransition(
-                      position: _headerSlide,
-                      child: FadeTransition(
-                        opacity: _headerFade,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.25),
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.auto_awesome_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Text(
-                                    'AI Planner',
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                      letterSpacing: -0.8,
-                                      height: 1.1,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Your smart Pakistan travel guide',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new,
+                          color: Color(0xFFD4AF37), size: 18),
+                      onPressed: () => Navigator.of(context).maybePop(),
+                    ),
+                  ),
+                  // Title area
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 20),
+                      child: SlideTransition(
+                        position: _headerSlide,
+                        child: FadeTransition(
+                          opacity: _headerFade,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.25),
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
                                       color:
-                                          Colors.white.withValues(alpha: 0.9),
-                                      letterSpacing: 0.2,
-                                      height: 1.2,
+                                          Colors.black.withValues(alpha: 0.1),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.auto_awesome_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Text(
+                                      'AI Planner',
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                        letterSpacing: -0.8,
+                                        height: 1.1,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Your smart Pakistan travel guide',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color:
+                                            Colors.white.withValues(alpha: 0.9),
+                                        letterSpacing: 0.2,
+                                        height: 1.2,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
+          // ── TabBar ───────────────────────────────────────────────────────
+          Container(
+            color: Colors.white,
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: const Color(0xFFD4AF37),
+              indicatorWeight: 3,
+              labelColor: const Color(0xFFD4AF37),
+              unselectedLabelColor: Colors.black45,
+              tabs: const [
+                Tab(
+                    icon: Icon(Icons.chat_bubble_outline, size: 18),
+                    text: 'Chat'),
+                Tab(
+                    icon: Icon(CupertinoIcons.bookmark, size: 18),
+                    text: 'Saved'),
+              ],
+            ),
+          ),
+          // ── Tab content ──────────────────────────────────────────────────
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildChatTab(),
+                _buildSavedTripsTab(),
+              ],
+            ),
+          ),
         ],
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildChatTab(),
-            _buildPlanTripTab(),
-            _buildSavedTripsTab(),
-          ],
-        ),
       ),
     );
   }
@@ -1342,930 +1279,6 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     });
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // TAB 2 — PLAN TRIP
-  // ══════════════════════════════════════════════════════════════════════════
-  Widget _buildPlanTripTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header — animated entry
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 600),
-            curve: Curves.easeOut,
-            builder: (context, value, child) => Opacity(
-              opacity: value,
-              child: Transform.translate(
-                offset: Offset(0, 20 * (1 - value)),
-                child: child,
-              ),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1A237E), Color(0xFF283593)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF1A237E).withValues(alpha: 0.35),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 800),
-                    curve: Curves.elasticOut,
-                    builder: (context, v, child) => Transform.scale(
-                      scale: v,
-                      child: child,
-                    ),
-                    child: const Icon(Icons.auto_awesome,
-                        color: Color(0xFFD4AF37), size: 32),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('AI Trip Planner',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.3)),
-                        SizedBox(height: 3),
-                        Text('Get a personalised day-by-day Pakistan itinerary',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Gold accent line
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 700),
-            curve: Curves.easeOut,
-            builder: (context, value, child) => Opacity(
-              opacity: value,
-              child: Center(
-                child: Container(
-                  width: 40 * value,
-                  height: 2,
-                  margin: const EdgeInsets.only(top: 12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        TravelloTheme.primaryMain.withValues(alpha: 0.0),
-                        TravelloTheme.primaryMain.withValues(alpha: 0.7),
-                        TravelloTheme.primaryMain.withValues(alpha: 0.0),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Step 1 – Destination
-          _buildStepLabel('1', 'Choose Destination'),
-          const SizedBox(height: 8),
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: () => _showDestinationSheet(context),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: _tripDestination != null
-                      ? TravelloTheme.primaryMain.withValues(alpha: 0.06)
-                      : TravelloTheme.paperLightContainerHighest,
-                  border: Border.all(
-                    color: _tripDestination != null
-                        ? TravelloTheme.primaryMain
-                        : colorScheme(context).outline,
-                    width: _tripDestination != null ? 1.5 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.location_on,
-                      color: _tripDestination != null
-                          ? TravelloTheme.primaryMain
-                          : colorScheme(context)
-                              .onSurface
-                              .withValues(alpha: 0.45),
-                      size: 22,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _tripDestination == null
-                          ? Text(
-                              'Select a destination in Pakistan',
-                              style: TextStyle(
-                                color: colorScheme(context)
-                                    .onSurface
-                                    .withValues(alpha: 0.45),
-                                fontSize: 15,
-                              ),
-                            )
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _tripDestination!,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 15),
-                                ),
-                                Text(
-                                  _getProvince(_tripDestination!),
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: colorScheme(context)
-                                          .onSurface
-                                          .withValues(alpha: 0.55)),
-                                ),
-                              ],
-                            ),
-                    ),
-                    Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: _tripDestination != null
-                          ? TravelloTheme.primaryMain
-                          : colorScheme(context)
-                              .onSurface
-                              .withValues(alpha: 0.45),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Step 2 – Trip Style
-          _buildStepLabel('2', 'Travel Style'),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _styles.asMap().entries.map((entry) {
-              final i = entry.key;
-              final style = entry.value;
-              final isSelected = _tripStyle == style['label'];
-              final isHovered = _hoveredStyle == i;
-              return MouseRegion(
-                cursor: SystemMouseCursors.click,
-                onEnter: (_) => setState(() => _hoveredStyle = i),
-                onExit: (_) => setState(() => _hoveredStyle = -1),
-                child: AnimatedScale(
-                  scale: isHovered && !isSelected ? 1.05 : 1.0,
-                  duration: const Duration(milliseconds: 180),
-                  curve: Curves.easeOut,
-                  child: FilterChip(
-                    selected: isSelected,
-                    avatar: AnimatedScale(
-                      scale: isHovered || isSelected ? 1.15 : 1.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(style['icon'] as IconData,
-                          size: 16,
-                          color: isSelected
-                              ? Colors.white
-                              : colorScheme(context).onSurface),
-                    ),
-                    label: Text(style['label'] as String,
-                        style: TextStyle(
-                            color: isSelected ? Colors.white : null,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.normal)),
-                    selectedColor: TravelloTheme.primaryMain,
-                    checkmarkColor: Colors.white,
-                    backgroundColor: isHovered && !isSelected
-                        ? TravelloTheme.primaryMain.withValues(alpha: 0.08)
-                        : null,
-                    elevation: isHovered ? 3 : 0,
-                    shadowColor:
-                        TravelloTheme.primaryMain.withValues(alpha: 0.25),
-                    side: isHovered && !isSelected
-                        ? BorderSide(
-                            color: TravelloTheme.primaryMain
-                                .withValues(alpha: 0.5))
-                        : null,
-                    onSelected: (_) => setState(() {
-                      _tripStyle = style['label'] as String;
-                      _generatedTrip = null;
-                    }),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 20),
-
-          // Step 3 – Duration
-          _buildStepLabel('3', 'Trip Duration'),
-          const SizedBox(height: 8),
-          Row(
-            children: _durations.asMap().entries.map((entry) {
-              final i = entry.key;
-              final d = entry.value;
-              final isSelected = _tripDuration == d;
-              final isHovered = _hoveredDuration == i;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    onEnter: (_) => setState(() => _hoveredDuration = i),
-                    onExit: (_) => setState(() => _hoveredDuration = -1),
-                    child: GestureDetector(
-                      onTap: () => setState(() {
-                        _tripDuration = d;
-                        _generatedTrip = null;
-                      }),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? TravelloTheme.primaryMain
-                              : isHovered
-                                  ? TravelloTheme.primaryMain
-                                      .withValues(alpha: 0.1)
-                                  : colorScheme(context)
-                                      .surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: isSelected || isHovered
-                                  ? TravelloTheme.primaryMain
-                                  : colorScheme(context).outline,
-                              width: isHovered && !isSelected ? 1.5 : 1),
-                          boxShadow: isHovered || isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: TravelloTheme.primaryMain
-                                        .withValues(alpha: 0.25),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  )
-                                ]
-                              : null,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 180),
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: isHovered && !isSelected ? 20 : 18,
-                                  color: isSelected ? Colors.white : null),
-                              child: Text('$d'),
-                            ),
-                            Text('days',
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    color: isSelected
-                                        ? Colors.white70
-                                        : colorScheme(context)
-                                            .onSurface
-                                            .withValues(alpha: 0.6))),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 20),
-
-          // Step 4 – Budget
-          _buildStepLabel('4', 'Budget Range'),
-          const SizedBox(height: 8),
-          Row(
-            children: _budgets.asMap().entries.map((entry) {
-              final i = entry.key;
-              final b = entry.value;
-              final isSelected = _tripBudget == b['label'];
-              final isHovered = _hoveredBudget == i;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    onEnter: (_) => setState(() => _hoveredBudget = i),
-                    onExit: (_) => setState(() => _hoveredBudget = -1),
-                    child: GestureDetector(
-                      onTap: () => setState(() {
-                        _tripBudget = b['label'] as String;
-                        _generatedTrip = null;
-                      }),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        height: 72,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? TravelloTheme.primaryMain
-                              : isHovered
-                                  ? TravelloTheme.primaryMain
-                                      .withValues(alpha: 0.08)
-                                  : colorScheme(context)
-                                      .surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: isSelected || isHovered
-                                  ? TravelloTheme.primaryMain
-                                  : colorScheme(context).outline,
-                              width: isHovered && !isSelected ? 1.5 : 1),
-                          boxShadow: isHovered || isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: TravelloTheme.primaryMain
-                                        .withValues(alpha: 0.22),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  )
-                                ]
-                              : null,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AnimatedScale(
-                              scale: isHovered || isSelected ? 1.15 : 1.0,
-                              duration: const Duration(milliseconds: 200),
-                              child: Icon(b['icon'] as IconData,
-                                  size: 20,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : isHovered
-                                          ? TravelloTheme.primaryMain
-                                          : TravelloTheme.primaryMain),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(b['label'] as String,
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    color: isSelected ? Colors.white : null)),
-                            Text(b['range'] as String,
-                                style: TextStyle(
-                                    fontSize: 9,
-                                    color: isSelected
-                                        ? Colors.white70
-                                        : colorScheme(context)
-                                            .onSurface
-                                            .withValues(alpha: 0.5))),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 24),
-
-          // Generate Button
-          MouseRegion(
-            cursor: _tripDestination == null
-                ? MouseCursor.defer
-                : SystemMouseCursors.click,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: const Duration(milliseconds: 700),
-              curve: Curves.easeOut,
-              builder: (context, value, child) => Opacity(
-                opacity: value,
-                child: Transform.translate(
-                  offset: Offset(0, 12 * (1 - value)),
-                  child: child,
-                ),
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton.icon(
-                  onPressed: _tripDestination == null ? null : _generateTrip,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: TravelloTheme.primaryMain,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor:
-                        colorScheme(context).onSurface.withValues(alpha: 0.12),
-                    disabledForegroundColor:
-                        colorScheme(context).onSurface.withValues(alpha: 0.38),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    elevation: 4,
-                    shadowColor:
-                        TravelloTheme.primaryMain.withValues(alpha: 0.45),
-                  ),
-                  icon: _isGenerating
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.auto_awesome),
-                  label: Text(
-                      _isGenerating
-                          ? 'Generating your plan...'
-                          : 'Generate My Trip Plan',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Generated Itinerary
-          if (_generatedTrip != null) _buildItineraryResult(_generatedTrip!),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepLabel(String step, String label) {
-    final delay = (int.tryParse(step) ?? 1) * 100;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 500 + delay),
-      curve: Curves.easeOut,
-      builder: (context, value, child) => Opacity(
-        opacity: value,
-        child: Transform.translate(
-          offset: Offset(-10 * (1 - value), 0),
-          child: child,
-        ),
-      ),
-      child: Row(
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: 26,
-            height: 26,
-            decoration: BoxDecoration(
-                color: TravelloTheme.primaryMain,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: TravelloTheme.primaryMain.withValues(alpha: 0.35),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  )
-                ]),
-            child: Center(
-                child: Text(step,
-                    style: const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12))),
-          ),
-          const SizedBox(width: 10),
-          Text(label,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                  letterSpacing: 0.2)),
-        ],
-      ),
-    );
-  }
-
-  void _showDestinationSheet(BuildContext context) {
-    final TextEditingController searchCtrl = TextEditingController();
-    List<String> filtered = List.from(_destinations);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(builder: (ctx, setSheetState) {
-          return Container(
-            height: MediaQuery.of(context).size.height * 0.75,
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Column(
-              children: [
-                // Handle
-                Container(
-                  margin: const EdgeInsets.only(top: 10, bottom: 4),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                // Title
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.travel_explore,
-                          color: TravelloTheme.primaryMain, size: 22),
-                      SizedBox(width: 10),
-                      Text(
-                        'Select Destination',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Search bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextField(
-                    controller: searchCtrl,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      hintText: 'Search destinations...',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: searchCtrl.text.isEmpty
-                          ? null
-                          : IconButton(
-                              icon: const Icon(Icons.clear, size: 18),
-                              onPressed: () {
-                                searchCtrl.clear();
-                                setSheetState(() {
-                                  filtered = List.from(_destinations);
-                                });
-                              },
-                            ),
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    onChanged: (q) {
-                      setSheetState(() {
-                        filtered = _destinations
-                            .where((d) =>
-                                d.toLowerCase().contains(q.toLowerCase()) ||
-                                _getProvince(d)
-                                    .toLowerCase()
-                                    .contains(q.toLowerCase()))
-                            .toList();
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Divider(height: 1),
-                // List
-                Expanded(
-                  child: filtered.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.location_off,
-                                  size: 48,
-                                  color: Colors.grey.withValues(alpha: 0.5)),
-                              const SizedBox(height: 8),
-                              const Text('No destinations found',
-                                  style: TextStyle(color: Colors.grey)),
-                            ],
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemCount: filtered.length,
-                          separatorBuilder: (_, __) =>
-                              const Divider(height: 1, indent: 56),
-                          itemBuilder: (_, i) {
-                            final dest = filtered[i];
-                            final province = _getProvince(dest);
-                            final isSelected = dest == _tripDestination;
-                            return ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: isSelected
-                                    ? TravelloTheme.primaryMain
-                                    : TravelloTheme.primaryMain
-                                        .withValues(alpha: 0.12),
-                                radius: 18,
-                                child: Icon(
-                                  Icons.location_on,
-                                  size: 18,
-                                  color: isSelected
-                                      ? Colors.black
-                                      : TravelloTheme.primaryMain,
-                                ),
-                              ),
-                              title: Text(
-                                dest,
-                                style: TextStyle(
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w500,
-                                  color: isSelected
-                                      ? TravelloTheme.primaryMain
-                                      : null,
-                                ),
-                              ),
-                              subtitle: Text(province,
-                                  style: const TextStyle(fontSize: 12)),
-                              trailing: isSelected
-                                  ? const Icon(Icons.check_circle,
-                                      color: TravelloTheme.primaryMain,
-                                      size: 20)
-                                  : null,
-                              onTap: () {
-                                setState(() {
-                                  _tripDestination = dest;
-                                  _generatedTrip = null;
-                                });
-                                Navigator.pop(ctx);
-                              },
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
-          );
-        });
-      },
-    );
-  }
-
-  void _generateTrip() async {
-    setState(() => _isGenerating = true);
-    await Future.delayed(const Duration(milliseconds: 1800));
-    if (!mounted) return;
-    final days = _getItinerary(_tripDestination!, _tripDuration);
-    setState(() {
-      _isGenerating = false;
-      _generatedTrip = _TripItinerary(
-        destination: _tripDestination!,
-        province: _getProvince(_tripDestination!),
-        imageUrl: _getDestinationImage(_tripDestination!),
-        style: _tripStyle,
-        duration: _tripDuration,
-        budget: _tripBudget,
-        days: days,
-      );
-    });
-  }
-
-  Widget _buildItineraryResult(_TripItinerary trip) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Trip header card
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4))
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Stack(
-              children: [
-                SizedBox(
-                  height: 160,
-                  width: double.infinity,
-                  child: Image.network(
-                    trip.imageUrl,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (_, child, progress) => progress == null
-                        ? child
-                        : Container(
-                            color: const Color(0xFF1A237E),
-                            child: const Center(
-                                child: CircularProgressIndicator(
-                                    color: Color(0xFFD4AF37)))),
-                    errorBuilder: (_, __, ___) => Container(
-                        color: const Color(0xFF1A237E),
-                        child: const Center(
-                            child: Icon(Icons.landscape,
-                                color: Color(0xFFD4AF37), size: 48))),
-                  ),
-                ),
-                Positioned.fill(
-                    child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.7)
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                )),
-                Positioned(
-                  left: 16,
-                  bottom: 16,
-                  right: 16,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                              color: TravelloTheme.primaryMain,
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Text(trip.style,
-                              style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Text('${trip.duration} days',
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 11)),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Text(trip.budget,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 11)),
-                        ),
-                      ]),
-                      const SizedBox(height: 6),
-                      Text(trip.destination,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold)),
-                      Text(trip.province,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 13)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Day-by-day cards
-        ...trip.days.map((day) => _buildDayCard(day)),
-        const SizedBox(height: 16),
-
-        // Save button
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              setState(() {
-                _savedTrips.insert(
-                    0,
-                    _TripItinerary(
-                      destination: trip.destination,
-                      province: trip.province,
-                      imageUrl: trip.imageUrl,
-                      style: trip.style,
-                      duration: trip.duration,
-                      budget: trip.budget,
-                      days: trip.days,
-                      savedDate: DateTime.now(),
-                    ));
-              });
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('${trip.destination} trip saved!'),
-                backgroundColor: const Color(0xFF2E7D32),
-                behavior: SnackBarBehavior.floating,
-              ));
-              _tabController.animateTo(2);
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: TravelloTheme.primaryMain,
-              side: const BorderSide(color: TravelloTheme.primaryMain),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
-            ),
-            icon: const Icon(CupertinoIcons.bookmark_fill),
-            label: const Text('Save This Trip Plan',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Quick-action booking row
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A237E).withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-                color: const Color(0xFF1A237E).withValues(alpha: 0.2)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Ready to book?',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Color(0xFF1A237E))),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // Navigate to flights tab (tab index 0 on home)
-                        Navigator.of(context).pop();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: TravelloTheme.primaryMain,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      icon: const Icon(Icons.flight_takeoff, size: 16),
-                      label: const Text('Book Flights',
-                          style: TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1A237E),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      icon: const Icon(Icons.hotel, size: 16),
-                      label: const Text('Find Hotels',
-                          style: TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-      ],
-    );
-  }
 
   Widget _buildDayCard(_DayPlan day) {
     return Container(
@@ -2293,6 +1306,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         title: Text('Day ${day.day}: ${day.title}',
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
         initiallyExpanded: day.day == 1,
+        clipBehavior: Clip.none,
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         children: day.activities
             .map((activity) => Padding(
@@ -2333,19 +1347,10 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             const Text('No saved trips yet',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            Text('Generate a trip plan and save it here',
+            Text('Ask the AI assistant to plan a trip for you',
                 style: TextStyle(
                     color:
                         colorScheme(context).onSurface.withValues(alpha: 0.5))),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => _tabController.animateTo(1),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: TravelloTheme.primaryMain,
-                  foregroundColor: Colors.black),
-              icon: const Icon(Icons.auto_awesome),
-              label: const Text('Plan a Trip'),
-            ),
           ],
         ),
       );
