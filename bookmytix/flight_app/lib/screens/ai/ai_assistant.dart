@@ -670,63 +670,6 @@ Map<String, List<_DayPlan>> _itineraryDB = {
   ],
 };
 
-List<_DayPlan> _getItinerary(String destination, int duration) {
-  final allDays = _itineraryDB[destination] ??
-      [
-        const _DayPlan(
-            day: 1,
-            title: 'Arrival & Check-in',
-            icon: Icons.flight_takeoff,
-            activities: [
-              'Arrive at destination',
-              'Check into hotel',
-              'Local area exploration',
-              'Welcome dinner'
-            ]),
-        const _DayPlan(
-            day: 2,
-            title: 'Main Attractions',
-            icon: Icons.map,
-            activities: [
-              'Visit top landmark',
-              'Local museum or fort',
-              'Traditional lunch',
-              'Souvenir shopping'
-            ]),
-        const _DayPlan(
-            day: 3,
-            title: 'Nature & Outdoors',
-            icon: Icons.park,
-            activities: [
-              'Morning nature walk',
-              'Scenic viewpoint visit',
-              'Picnic lunch',
-              'Sunset photography'
-            ]),
-        const _DayPlan(
-            day: 4,
-            title: 'Culture & Food',
-            icon: Icons.restaurant,
-            activities: [
-              'Local food street tour',
-              'Cultural heritage site',
-              'Traditional crafts shopping',
-              'Farewell dinner'
-            ]),
-        const _DayPlan(
-            day: 5,
-            title: 'Departure',
-            icon: Icons.home,
-            activities: [
-              'Morning leisure',
-              'Last-minute shopping',
-              'Depart to airport',
-              'Head home with memories'
-            ]),
-      ];
-  return allDays.take(duration).toList();
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Screen
 // ─────────────────────────────────────────────────────────────────────────────
@@ -747,9 +690,6 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
 
   // ── Hover state ────────────────────────────────────────────────────────────
   int _hoveredSuggestion = -1;
-  int _hoveredStyle = -1;
-  int _hoveredDuration = -1;
-  int _hoveredBudget = -1;
 
   // ── Chat state ─────────────────────────────────────────────────────────────
   final TextEditingController _messageController = TextEditingController();
@@ -1607,70 +1547,4 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Helpers
-  // ─────────────────────────────────────────────────────────────────────────
-  String _getProvince(String destination) {
-    const map = {
-      'Hunza Valley': 'Gilgit-Baltistan',
-      'Skardu': 'Gilgit-Baltistan',
-      'Swat Valley': 'KPK',
-      'Naran & Kaghan': 'KPK',
-      'Fairy Meadows': 'Gilgit-Baltistan',
-      'Gilgit': 'Gilgit-Baltistan',
-      'Chitral': 'KPK',
-      'Gwadar': 'Balochistan',
-      'Karachi': 'Sindh',
-      'Lahore': 'Punjab',
-      'Islamabad': 'Federal Capital',
-      'Peshawar': 'KPK',
-      'Multan': 'Punjab',
-      'Quetta': 'Balochistan',
-      'Neelum Valley': 'AJK',
-      'Taxila': 'Punjab',
-      'Mohenjo-daro': 'Sindh',
-    };
-    return map[destination] ?? 'Pakistan';
-  }
-
-  String _getDestinationImage(String destination) {
-    const map = {
-      'Hunza Valley':
-          'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&q=80',
-      'Skardu':
-          'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
-      'Swat Valley':
-          'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=80',
-      'Naran & Kaghan':
-          'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80',
-      'Fairy Meadows':
-          'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=800&q=80',
-      'Gilgit':
-          'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=80',
-      'Chitral':
-          'https://images.unsplash.com/photo-1542401886-65d6c61db217?w=800&q=80',
-      'Lahore':
-          'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
-      'Islamabad':
-          'https://images.unsplash.com/photo-1578895101408-1a36b834405b?w=800&q=80',
-      'Peshawar':
-          'https://images.unsplash.com/photo-1539136788836-5699e78bfc75?w=800&q=80',
-      'Multan':
-          'https://images.unsplash.com/photo-1580418827493-f2b22c0a76cb?w=800&q=80',
-      'Karachi':
-          'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=800&q=80',
-      'Gwadar':
-          'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
-      'Quetta':
-          'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=800&q=80',
-      'Neelum Valley':
-          'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80',
-      'Taxila':
-          'https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=800&q=80',
-      'Mohenjo-daro':
-          'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=800&q=80',
-    };
-    return map[destination] ??
-        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80';
-  }
 }
