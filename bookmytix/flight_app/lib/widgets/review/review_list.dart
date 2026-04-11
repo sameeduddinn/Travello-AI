@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flight_app/models/rating.dart';
 import 'package:flight_app/widgets/cards/rating_card.dart';
-import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ReviewList extends StatelessWidget {
   const ReviewList({super.key});

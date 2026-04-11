@@ -5,7 +5,6 @@ import 'package:flight_app/utils/no_data.dart';
 import 'package:flight_app/widgets/cards/voucher_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_system.dart';
 
 class PromoVoucherGrid extends StatelessWidget {
   const PromoVoucherGrid({super.key, required this.dataList});

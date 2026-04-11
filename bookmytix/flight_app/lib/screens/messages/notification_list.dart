@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flight_app/models/notification.dart';
 import 'package:flight_app/widgets/notifications/filters.dart';
 import 'package:flight_app/widgets/notifications/notif_item.dart';
-import 'package:flight_app/ui/themes/theme_system.dart';
 
 class NotificationsList extends StatefulWidget {
   const NotificationsList({super.key});

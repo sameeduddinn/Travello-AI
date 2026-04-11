@@ -600,7 +600,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        iconTheme: IconThemeData(color: TravelloTheme.primaryMain),
+        iconTheme: const IconThemeData(color: TravelloTheme.primaryMain),
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

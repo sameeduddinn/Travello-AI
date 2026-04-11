@@ -3113,7 +3113,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                         children: [
                             Icon(Icons.train_rounded,
                                 color: Colors.white, size: 18),
-                            SizedBox(width: 8),
+                            SizedBox(width: 10),
                             Flexible(
                               child: Text('VIEW & DOWNLOAD TICKET',
                                   style: TextStyle(

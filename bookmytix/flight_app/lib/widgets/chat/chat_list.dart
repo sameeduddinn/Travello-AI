@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:flight_app/models/chat.dart';
 import 'package:flight_app/screens/messages/chat.dart';
 import 'package:flight_app/widgets/chat/chat_item.dart';
-import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ChatList extends StatelessWidget {
   const ChatList({super.key, required this.data});

@@ -10,7 +10,6 @@ import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/utils/format_utils.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/widgets/app_input/ds_input_field.dart';
-import 'package:flight_app/ui/themes/theme_system.dart';
 
 class TrainPassengerForm extends StatefulWidget {
   const TrainPassengerForm({super.key});
@@ -22,6 +21,7 @@ class TrainPassengerForm extends StatefulWidget {
 class _TrainPassengerFormState extends State<TrainPassengerForm> {
   final _pageController = PageController();
   final _scrollController = ScrollController();
+  final _contactScrollController = ScrollController();
 
   late TrainResult train;
   late String selectedClass;
@@ -182,6 +182,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
   void dispose() {
     _pageController.dispose();
     _scrollController.dispose();
+    _contactScrollController.dispose();
     _contactNameCtrl.dispose();
     _contactEmailCtrl.dispose();
     _contactPhoneCtrl.dispose();
@@ -1530,7 +1531,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
 
   Widget _buildContactPage() {
     return SingleChildScrollView(
-      controller: _scrollController,
+      controller: _contactScrollController,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       child: Form(
         key: _formKeys[_totalPassengers],

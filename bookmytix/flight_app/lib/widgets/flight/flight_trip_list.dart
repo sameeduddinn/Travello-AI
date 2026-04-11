@@ -7,7 +7,6 @@ import 'package:flight_app/widgets/cards/flight_card.dart';
 import 'package:flight_app/widgets/cards/flight_wide_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:flight_app/ui/themes/theme_system.dart';
 
 class FlightTripList extends StatelessWidget {
   const FlightTripList(

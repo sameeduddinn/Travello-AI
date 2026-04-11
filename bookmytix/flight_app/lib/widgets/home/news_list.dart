@@ -4,7 +4,6 @@ import 'package:flight_app/models/news.dart';
 import 'package:flight_app/widgets/cards/news_card.dart';
 import 'package:flight_app/widgets/title/title_action.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flight_app/ui/themes/theme_system.dart';
 
 class NewsList extends StatelessWidget {
   const NewsList({super.key});

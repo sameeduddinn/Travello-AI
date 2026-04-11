@@ -1,7 +1,6 @@
 import 'package:flight_app/models/reward.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/widgets/cards/reward_card.dart';
-import 'package:flight_app/ui/themes/theme_system.dart';
 
 class RewardList extends StatelessWidget {
   const RewardList({super.key});

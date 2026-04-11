@@ -45,6 +45,24 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
   String _transferVehicleType = 'Sedan';
   final TextEditingController _transferPickupCtrl = TextEditingController();
 
+  // Arrival transfer (destination station — both one-way and round trip)
+  bool _arrivalTransferAdded = false;
+  String _arrivalTransferVehicleType = 'Sedan';
+  final TextEditingController _arrivalTransferPickupCtrl =
+      TextEditingController();
+
+  // Return transfer (round trip only — destination → return station)
+  bool _returnTransferAdded = false;
+  String _returnTransferVehicleType = 'Sedan';
+  final TextEditingController _returnTransferPickupCtrl =
+      TextEditingController();
+
+  // Final arrival transfer (round trip only — return station → home)
+  bool _finalArrivalTransferAdded = false;
+  String _finalArrivalTransferVehicleType = 'Sedan';
+  final TextEditingController _finalArrivalTransferPickupCtrl =
+      TextEditingController();
+
   // Helper to get required seat count (excluding infants who don't need seats)
   int get _requiredSeats {
     return _passengers.where((p) {
@@ -123,6 +141,9 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
   @override
   void dispose() {
     _transferPickupCtrl.dispose();
+    _arrivalTransferPickupCtrl.dispose();
+    _returnTransferPickupCtrl.dispose();
+    _finalArrivalTransferPickupCtrl.dispose();
     super.dispose();
   }
 
@@ -225,6 +246,57 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
   }
 
   void _onContinue() {
+    // Pickup address validation (Issue 1)
+    if (_transferAdded && _transferPickupCtrl.text.trim().isEmpty) {
+      Get.snackbar(
+        'Pickup Address Required',
+        'Please enter pickup address for departure transfer',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+    if (_arrivalTransferAdded &&
+        _arrivalTransferPickupCtrl.text.trim().isEmpty) {
+      Get.snackbar(
+        'Pickup Address Required',
+        'Please enter pickup address for arrival transfer',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+    if (_isRoundTrip &&
+        _returnTransferAdded &&
+        _returnTransferPickupCtrl.text.trim().isEmpty) {
+      Get.snackbar(
+        'Pickup Address Required',
+        'Please enter pickup address for return transfer',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+    if (_isRoundTrip &&
+        _finalArrivalTransferAdded &&
+        _finalArrivalTransferPickupCtrl.text.trim().isEmpty) {
+      Get.snackbar(
+        'Pickup Address Required',
+        'Please enter pickup address for final arrival transfer',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
     if (_isRoundTrip) {
       // For round trip, validate both journeys
       if (!_areAllJourneysComplete()) {
@@ -248,6 +320,16 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
         'transferAdded': _transferAdded,
         'transferVehicleType': _transferVehicleType,
         'transferPickupLocation': _transferPickupCtrl.text.trim(),
+        'arrivalTransferAdded': _arrivalTransferAdded,
+        'arrivalTransferVehicleType': _arrivalTransferVehicleType,
+        'arrivalTransferPickupLocation': _arrivalTransferPickupCtrl.text.trim(),
+        'returnTransferAdded': _returnTransferAdded,
+        'returnTransferVehicleType': _returnTransferVehicleType,
+        'returnTransferPickupLocation': _returnTransferPickupCtrl.text.trim(),
+        'finalArrivalTransferAdded': _finalArrivalTransferAdded,
+        'finalArrivalTransferVehicleType': _finalArrivalTransferVehicleType,
+        'finalArrivalTransferPickupLocation':
+            _finalArrivalTransferPickupCtrl.text.trim(),
       });
     } else {
       // Original one-way logic
@@ -282,6 +364,9 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
         'transferAdded': _transferAdded,
         'transferVehicleType': _transferVehicleType,
         'transferPickupLocation': _transferPickupCtrl.text.trim(),
+        'arrivalTransferAdded': _arrivalTransferAdded,
+        'arrivalTransferVehicleType': _arrivalTransferVehicleType,
+        'arrivalTransferPickupLocation': _arrivalTransferPickupCtrl.text.trim(),
       });
     }
   }
@@ -438,9 +523,18 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
   // ─────────────────────────────────────────────
   //  GROUND TRANSFER SECTION
   // ─────────────────────────────────────────────
-  Widget _buildTransferSection(BuildContext context) {
-    const Color primaryColor = Color(0xFFD4AF37);
 
+  // Shared card builder used by all transfer sections.
+  Widget _buildTransferCard({
+    required String title,
+    required String subtitle,
+    required bool added,
+    required String vehicleType,
+    required TextEditingController pickupCtrl,
+    required VoidCallback onToggle,
+    required void Function(String) onVehicleChanged,
+  }) {
+    const Color primaryColor = Color(0xFFD4AF37);
     const List<Map<String, dynamic>> vehicles = [
       {'type': 'Sedan', 'desc': '1–3 passengers', 'price': 800},
       {'type': 'SUV', 'desc': '1–5 passengers', 'price': 1200},
@@ -481,21 +575,21 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                       color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Station Transfer',
-                        style: TextStyle(
+                        title,
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFFD4AF37),
                         ),
                       ),
                       Text(
-                        'Pickup or drop-off at your doorstep',
-                        style: TextStyle(
+                        subtitle,
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF666666),
                         ),
@@ -505,29 +599,24 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                 ),
                 // Add / Remove toggle
                 GestureDetector(
-                  onTap: () => setState(() {
-                    _transferAdded = !_transferAdded;
-                    if (!_transferAdded) _transferPickupCtrl.clear();
-                  }),
+                  onTap: onToggle,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(
-                      color: _transferAdded ? Colors.red.shade50 : primaryColor,
+                      color: added ? Colors.red.shade50 : primaryColor,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color:
-                            _transferAdded ? Colors.red.shade300 : primaryColor,
+                        color: added ? Colors.red.shade300 : primaryColor,
                       ),
                     ),
                     child: Text(
-                      _transferAdded ? 'Remove' : '+ Add',
+                      added ? 'Remove' : '+ Add',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color:
-                            _transferAdded ? Colors.red.shade700 : Colors.white,
+                        color: added ? Colors.red.shade700 : Colors.white,
                       ),
                     ),
                   ),
@@ -539,14 +628,11 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
           // ── Expanded details ──
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 250),
-            crossFadeState: _transferAdded
+            crossFadeState: added
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
             firstChild: const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 9.6,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 9.6),
               child: Row(
                 children: [
                   Icon(Icons.info_outline_rounded,
@@ -576,11 +662,10 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                   const SizedBox(height: 8),
                   Row(
                     children: vehicles.map((v) {
-                      final selected = _transferVehicleType == v['type'];
+                      final selected = vehicleType == v['type'];
                       return Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(
-                              () => _transferVehicleType = v['type'] as String),
+                          onTap: () => onVehicleChanged(v['type'] as String),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
                             margin: EdgeInsets.only(
@@ -665,7 +750,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                   ),
                   const SizedBox(height: 6.4),
                   TextField(
-                    controller: _transferPickupCtrl,
+                    controller: pickupCtrl,
                     decoration: InputDecoration(
                       hintText: 'e.g. House 12, Block A, Gulshan, Karachi',
                       hintStyle: const TextStyle(
@@ -678,11 +763,13 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                           horizontal: 12, vertical: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+                        borderSide:
+                            const BorderSide(color: Color(0xFFDDDDDD)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+                        borderSide:
+                            const BorderSide(color: Color(0xFFDDDDDD)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -693,8 +780,8 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                       fillColor: const Color(0xFFFAFAFA),
                     ),
                     maxLines: 2,
-                    style:
-                        const TextStyle(fontSize: 13, color: Color(0xFF222222)),
+                    style: const TextStyle(
+                        fontSize: 13, color: Color(0xFF222222)),
                   ),
 
                   const SizedBox(height: 12),
@@ -733,6 +820,81 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTransferSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Card 1 — always shown
+        _buildTransferCard(
+          title: 'Departure Transfer',
+          subtitle: _isRoundTrip
+              ? 'Home → Departure station'
+              : 'Home → Station',
+          added: _transferAdded,
+          vehicleType: _transferVehicleType,
+          pickupCtrl: _transferPickupCtrl,
+          onToggle: () => setState(() {
+            _transferAdded = !_transferAdded;
+            if (!_transferAdded) _transferPickupCtrl.clear();
+          }),
+          onVehicleChanged: (t) => setState(() => _transferVehicleType = t),
+        ),
+
+        // Card 2 — always shown
+        const SizedBox(height: 16),
+        _buildTransferCard(
+          title: 'Arrival Transfer',
+          subtitle: _isRoundTrip
+              ? 'Arrival station → Destination'
+              : 'Station → Destination',
+          added: _arrivalTransferAdded,
+          vehicleType: _arrivalTransferVehicleType,
+          pickupCtrl: _arrivalTransferPickupCtrl,
+          onToggle: () => setState(() {
+            _arrivalTransferAdded = !_arrivalTransferAdded;
+            if (!_arrivalTransferAdded) _arrivalTransferPickupCtrl.clear();
+          }),
+          onVehicleChanged: (t) =>
+              setState(() => _arrivalTransferVehicleType = t),
+        ),
+
+        // Cards 3 & 4 — round trip only
+        if (_isRoundTrip) ...[
+          const SizedBox(height: 16),
+          _buildTransferCard(
+            title: 'Return Transfer',
+            subtitle: 'Destination → Return station',
+            added: _returnTransferAdded,
+            vehicleType: _returnTransferVehicleType,
+            pickupCtrl: _returnTransferPickupCtrl,
+            onToggle: () => setState(() {
+              _returnTransferAdded = !_returnTransferAdded;
+              if (!_returnTransferAdded) _returnTransferPickupCtrl.clear();
+            }),
+            onVehicleChanged: (t) =>
+                setState(() => _returnTransferVehicleType = t),
+          ),
+          const SizedBox(height: 16),
+          _buildTransferCard(
+            title: 'Final Arrival Transfer',
+            subtitle: 'Return station → Home',
+            added: _finalArrivalTransferAdded,
+            vehicleType: _finalArrivalTransferVehicleType,
+            pickupCtrl: _finalArrivalTransferPickupCtrl,
+            onToggle: () => setState(() {
+              _finalArrivalTransferAdded = !_finalArrivalTransferAdded;
+              if (!_finalArrivalTransferAdded) {
+                _finalArrivalTransferPickupCtrl.clear();
+              }
+            }),
+            onVehicleChanged: (t) =>
+                setState(() => _finalArrivalTransferVehicleType = t),
+          ),
+        ],
+      ],
     );
   }
 
