@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flutter/services.dart';
@@ -1779,7 +1780,15 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
               ),
             )
           else
-            _buildOTPVerification('Easypaisa', _easypaisaPhoneController.text),
+            _buildOTPVerification(
+              'Easypaisa',
+              _easypaisaPhoneController.text,
+              onChangeNumber: () => setState(() {
+                _showEasypaisaOTP = false;
+                _isOtpVerified = false;
+                _otpValue = '';
+              }),
+            ),
         ],
       ),
     );
@@ -1944,7 +1953,15 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
               ),
             )
           else
-            _buildOTPVerification('JazzCash', _jazzcashPhoneController.text),
+            _buildOTPVerification(
+              'JazzCash',
+              _jazzcashPhoneController.text,
+              onChangeNumber: () => setState(() {
+                _showJazzcashOTP = false;
+                _isOtpVerified = false;
+                _otpValue = '';
+              }),
+            ),
         ],
       ),
     );
@@ -1953,7 +1970,8 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
   // ────────────────────────────────────────────────────────────
   // OTP VERIFICATION
   // ────────────────────────────────────────────────────────────
-  Widget _buildOTPVerification(String paymentMethod, String phoneNumber) {
+  Widget _buildOTPVerification(String paymentMethod, String phoneNumber,
+      {required VoidCallback onChangeNumber}) {
     final formattedPhone =
         '$_selectedCountryCode ${phoneNumber.substring(0, math.min(3, phoneNumber.length))} ${phoneNumber.length > 3 ? phoneNumber.substring(3) : ''}';
 
@@ -1975,14 +1993,15 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const TextSpan(text: ' mobile number.'),
-                const TextSpan(
+                const TextSpan(text: ' mobile number. '),
+                TextSpan(
                   text: 'Change Number',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Color(0xFFD4AF37),
                     fontWeight: FontWeight.w600,
                     decoration: TextDecoration.underline,
                   ),
+                  recognizer: TapGestureRecognizer()..onTap = onChangeNumber,
                 ),
               ],
             ),

@@ -8,7 +8,6 @@ import 'package:flight_app/widgets/home/city_destinations/city_destinations_main
 import 'package:flight_app/widgets/home/flight_list_double.dart';
 import 'package:flight_app/widgets/home/package_list_slider.dart';
 import 'package:flight_app/widgets/home/quick_access_features.dart';
-import 'package:flight_app/widgets/home/quick_search_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -348,11 +347,6 @@ class _HomeRailwayState extends State<HomeRailway> {
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 16),
-
-                // Quick Search Bar
-                const QuickSearchBar(),
 
                 const SizedBox(height: 16),
 

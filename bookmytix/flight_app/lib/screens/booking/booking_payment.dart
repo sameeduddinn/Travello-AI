@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flutter/services.dart';
@@ -1726,7 +1727,15 @@ class _BookingPaymentState extends State<BookingPayment>
               ),
             )
           else
-            _buildOTPVerification('Easypaisa', _easypaisaPhoneController.text),
+            _buildOTPVerification(
+              'Easypaisa',
+              _easypaisaPhoneController.text,
+              onChangeNumber: () => setState(() {
+                _showEasypaisaOTP = false;
+                _isOtpVerified = false;
+                _otpValue = '';
+              }),
+            ),
         ],
       ),
     );
@@ -1890,13 +1899,22 @@ class _BookingPaymentState extends State<BookingPayment>
               ),
             )
           else
-            _buildOTPVerification('Jazzcash', _jazzcashPhoneController.text),
+            _buildOTPVerification(
+              'Jazzcash',
+              _jazzcashPhoneController.text,
+              onChangeNumber: () => setState(() {
+                _showJazzcashOTP = false;
+                _isOtpVerified = false;
+                _otpValue = '';
+              }),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildOTPVerification(String paymentMethod, String phoneNumber) {
+  Widget _buildOTPVerification(String paymentMethod, String phoneNumber,
+      {required VoidCallback onChangeNumber}) {
     final formattedPhone =
         '$_selectedCountryCode ${phoneNumber.substring(0, 3)} ${phoneNumber.substring(3)}';
 
@@ -1905,7 +1923,7 @@ class _BookingPaymentState extends State<BookingPayment>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // OTP sent message
+          // OTP sent message + change number link
           RichText(
             text: TextSpan(
               style: const TextStyle(
@@ -1919,14 +1937,15 @@ class _BookingPaymentState extends State<BookingPayment>
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const TextSpan(text: ' mobile number.'),
-                const TextSpan(
+                const TextSpan(text: ' mobile number. '),
+                TextSpan(
                   text: 'Change Number',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Color(0xFF1E88E5),
                     fontWeight: FontWeight.w600,
                     decoration: TextDecoration.underline,
                   ),
+                  recognizer: TapGestureRecognizer()..onTap = onChangeNumber,
                 ),
               ],
             ),

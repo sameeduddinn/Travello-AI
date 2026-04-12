@@ -772,14 +772,14 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // Email (optional)
+                        // Email (required — booking confirmation sent here)
                         TextFormField(
                           controller: _emailCtrl,
                           keyboardType: TextInputType.emailAddress,
                           style: const TextStyle(color: Colors.black),
                           decoration: InputDecoration(
-                            labelText: 'Email (optional)',
-                            hintText: 'For confirmation',
+                            labelText: 'Email Address *',
+                            hintText: 'Booking confirmation will be sent here',
                             prefixIcon: const Icon(Icons.email_outlined),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12)),
@@ -793,10 +793,11 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                                     color: TravelloTheme.primaryMain)),
                           ),
                           validator: (v) {
-                            if (v != null &&
-                                v.isNotEmpty &&
-                                !GetUtils.isEmail(v)) {
-                              return 'Invalid email';
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Email is required for booking confirmation';
+                            }
+                            if (!GetUtils.isEmail(v.trim())) {
+                              return 'Enter a valid email address';
                             }
                             return null;
                           },
