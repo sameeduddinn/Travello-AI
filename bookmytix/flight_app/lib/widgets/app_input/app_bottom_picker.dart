@@ -81,14 +81,16 @@ class _BottomPickerRadioState extends State<BottomPickerRadio> {
                         right: 5,
                       ),
                       minVerticalPadding: 0,
-                      leading: Radio<String>(
-                        visualDensity: const VisualDensity(
-                          horizontal: -4,
-                        ),
-                        value: option.value,
+                      leading: RadioGroup<String>(
                         groupValue: _value,
                         onChanged: (String? value) =>
-                          _onChanged(value, context),
+                            _onChanged(value, context),
+                        child: Radio<String>(
+                          visualDensity: const VisualDensity(
+                            horizontal: -4,
+                          ),
+                          value: option.value,
+                        ),
                       ),
                     ),
                   ),

@@ -122,14 +122,15 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
       if (sortBy == 'price_low') {
         filteredHotels
             .sort((a, b) => a.pricePerNight.compareTo(b.pricePerNight));
-      } else if (sortBy == 'price_high')
+      } else if (sortBy == 'price_high') {
         filteredHotels
             .sort((a, b) => b.pricePerNight.compareTo(a.pricePerNight));
-      else if (sortBy == 'rating')
+      } else if (sortBy == 'rating') {
         filteredHotels.sort((a, b) => b.rating.compareTo(a.rating));
-      else if (sortBy == 'free')
+      } else if (sortBy == 'free') {
         filteredHotels.sort((a, b) =>
             (b.isRefundable ? 1 : 0).compareTo(a.isRefundable ? 1 : 0));
+      }
     });
   }
 
@@ -405,17 +406,19 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
                               final newVal = !checked;
                               if (f['key'] == 'wifi') {
                                 filterWifi = newVal;
-                              } else if (f['key'] == 'parking')
+                              } else if (f['key'] == 'parking') {
                                 filterParking = newVal;
-                              else if (f['key'] == 'breakfast')
+                              } else if (f['key'] == 'breakfast') {
                                 filterBreakfast = newVal;
-                              else if (f['key'] == 'pool')
+                              } else if (f['key'] == 'pool') {
                                 filterPool = newVal;
-                              else if (f['key'] == 'pet')
+                              } else if (f['key'] == 'pet') {
                                 filterPetFriendly = newVal;
-                              else if (f['key'] == 'shuttle')
+                              } else if (f['key'] == 'shuttle') {
                                 filterAirportShuttle = newVal;
-                              else if (f['key'] == 'spa') filterSpa = newVal;
+                              } else if (f['key'] == 'spa') {
+                                filterSpa = newVal;
+                              }
                             }),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 6),

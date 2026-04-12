@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Professional Booking Management Service
@@ -41,7 +42,7 @@ class BookingService {
       return await prefs.setString(_bookingsKey, jsonString);
     } catch (e) {
       // ignore: avoid_print
-      print('BookingService.saveBooking error: $e');
+      debugPrint('BookingService.saveBooking error: $e');
       return false;
     }
   }
@@ -73,7 +74,7 @@ class BookingService {
       List<dynamic> jsonList = jsonDecode(jsonString);
       return jsonList.cast<Map<String, dynamic>>();
     } catch (e) {
-      print('Error getting bookings: $e');
+      debugPrint('Error getting bookings: $e');
       return [];
     }
   }
@@ -121,7 +122,7 @@ class BookingService {
       String jsonString = jsonEncode(bookings);
       return await prefs.setString(_bookingsKey, jsonString);
     } catch (e) {
-      print('Error updating booking status: $e');
+      debugPrint('Error updating booking status: $e');
       return false;
     }
   }
@@ -138,7 +139,7 @@ class BookingService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.setString(_bookingsKey, jsonEncode(bookings));
     } catch (e) {
-      print('Error updating booking field: $e');
+      debugPrint('Error updating booking field: $e');
       return false;
     }
   }
@@ -153,7 +154,7 @@ class BookingService {
       String jsonString = jsonEncode(bookings);
       return await prefs.setString(_bookingsKey, jsonString);
     } catch (e) {
-      print('Error deleting booking: $e');
+      debugPrint('Error deleting booking: $e');
       return false;
     }
   }
@@ -164,7 +165,7 @@ class BookingService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.remove(_bookingsKey);
     } catch (e) {
-      print('Error clearing bookings: $e');
+      debugPrint('Error clearing bookings: $e');
       return false;
     }
   }

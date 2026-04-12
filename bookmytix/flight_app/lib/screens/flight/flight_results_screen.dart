@@ -2485,8 +2485,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
-            transform: Matrix4.identity()
-              ..translate(0.0, isHovered ? -4.0 : 0.0),
+            transform: Matrix4.translationValues(0.0, isHovered ? -4.0 : 0.0, 0.0),
             child: Card(
               margin: const EdgeInsets.only(bottom: 16),
               elevation: isHovered ? 8 : 2,

@@ -65,7 +65,6 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
   }
 
   void _resendCode() {
-    // TODO: Implement actual resend logic
     Get.snackbar(
       'Code Resent',
       'A new verification code has been sent to ${widget.email}',

@@ -105,9 +105,11 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
           DSValidators.cardholderName(_cardNameController.text.trim()) == null;
       return cardOk && expiryOk && cvvOk && nameOk;
     } else if (_selectedPaymentMethod == 'easypaisa') {
-      return _easypaisaPhoneController.text.trim().length >= 10 && _isOtpVerified;
+      return _easypaisaPhoneController.text.trim().length >= 10 &&
+          _isOtpVerified;
     } else if (_selectedPaymentMethod == 'jazzcash') {
-      return _jazzcashPhoneController.text.trim().length >= 10 && _isOtpVerified;
+      return _jazzcashPhoneController.text.trim().length >= 10 &&
+          _isOtpVerified;
     }
     return true;
   }
@@ -1070,8 +1072,7 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                 ],
               ),
             ),
-            Radio<String>(
-              value: method,
+            RadioGroup<String>(
               groupValue: _selectedPaymentMethod,
               onChanged: (value) {
                 setState(() {
@@ -1079,7 +1080,10 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                   _updatePaymentMethodFees(value);
                 });
               },
-              activeColor: const Color(0xFFD4AF37),
+              child: Radio<String>(
+                value: method,
+                activeColor: const Color(0xFFD4AF37),
+              ),
             ),
           ],
         ),
@@ -2084,7 +2088,8 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
               ),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.green.shade700, size: 18),
+                  Icon(Icons.check_circle,
+                      color: Colors.green.shade700, size: 18),
                   const SizedBox(width: 8),
                   Text(
                     'OTP Verified Successfully',

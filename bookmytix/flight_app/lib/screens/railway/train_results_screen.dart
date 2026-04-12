@@ -120,7 +120,6 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
   Future<void> _fetchTrains() async {
     setState(() => _isLoading = true);
     try {
-      // TODO: Replace this block with API call when backend is ready:
       // final response = await TrainApiService.searchTrains(
       //   from: (searchParams['fromStation'] as RailwayStation).code,
       //   to:   (searchParams['toStation']   as RailwayStation).code,
@@ -796,7 +795,8 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Price Range', style: TravelloTheme.subtitle),
+                          const Text('Price Range',
+                              style: TravelloTheme.subtitle),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -2799,8 +2799,8 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
-            transform: Matrix4.identity()
-              ..translate(0.0, isHovered ? -4.0 : 0.0),
+            transform:
+                Matrix4.translationValues(0.0, isHovered ? -4.0 : 0.0, 0.0),
             child: Card(
               margin: const EdgeInsets.only(bottom: 16),
               elevation: isHovered ? 8 : (isSelectedOutbound ? 4 : 2),
@@ -2975,8 +2975,8 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                               const SizedBox(width: 4),
                                               Text(
                                                 train.duration,
-                                                style:
-                                                    TravelloTheme.caption.copyWith(
+                                                style: TravelloTheme.caption
+                                                    .copyWith(
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
@@ -3053,7 +3053,8 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                           children: [
                                             Text(
                                               train.arrivalTime,
-                                              style: TravelloTheme.title2.copyWith(
+                                              style:
+                                                  TravelloTheme.title2.copyWith(
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -3142,7 +3143,8 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                                         children: [
                                           Text(
                                             train.trainName,
-                                            style: TravelloTheme.caption.copyWith(
+                                            style:
+                                                TravelloTheme.caption.copyWith(
                                               fontWeight: FontWeight.bold,
                                               color: Colors.black87,
                                             ),

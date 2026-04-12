@@ -238,8 +238,8 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                       builder: (context) => Container(
                         decoration: const BoxDecoration(
                           color: TravelloTheme.paperLight,
-                          borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(24)),
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(24)),
                         ),
                         padding: const EdgeInsets.all(24),
                         child: Column(
@@ -255,7 +255,8 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
-                            const Text('Train Class', style: TravelloTheme.title2),
+                            const Text('Train Class',
+                                style: TravelloTheme.title2),
                             const SizedBox(height: 24),
                             ..._trainClasses
                                 .where((c) => c != 'All')
@@ -293,8 +294,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                               }
 
                               return Container(
-                                margin:
-                                    const EdgeInsets.only(bottom: 12),
+                                margin: const EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
                                   border: Border.all(
                                     color: isSelected
@@ -304,7 +304,8 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                   color: isSelected
-                                      ? const Color(0xFFD4AF37).withValues(alpha: 0.1)
+                                      ? const Color(0xFFD4AF37)
+                                          .withValues(alpha: 0.1)
                                       : Colors.transparent,
                                 ),
                                 child: InkWell(
@@ -321,8 +322,7 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                                     child: Row(
                                       children: [
                                         Container(
-                                          padding:
-                                              const EdgeInsets.all(8),
+                                          padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
                                             color: classColor.withValues(
                                                 alpha: 0.1),
@@ -343,8 +343,8 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                                             children: [
                                               Text(
                                                 trainClass,
-                                                style:
-                                                    TravelloTheme.subtitle.copyWith(
+                                                style: TravelloTheme.subtitle
+                                                    .copyWith(
                                                   fontWeight: isSelected
                                                       ? FontWeight.bold
                                                       : FontWeight.normal,
@@ -361,15 +361,18 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
                                             ],
                                           ),
                                         ),
-                                        Radio<String>(
-                                          value: trainClass,
+                                        RadioGroup<String>(
                                           groupValue: _selectedClass,
-                                          activeColor: const Color(0xFFD4AF37),
                                           onChanged: (value) {
                                             setState(() =>
                                                 _selectedClass = trainClass);
                                             Navigator.pop(context);
                                           },
+                                          child: Radio<String>(
+                                            value: trainClass,
+                                            activeColor:
+                                                const Color(0xFFD4AF37),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -493,4 +496,3 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
     );
   }
 }
-

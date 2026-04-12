@@ -676,14 +676,17 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                     SizedBox(
                                       width: 20,
                                       height: 20,
-                                      child: Radio<String>(
-                                        value: t,
+                                      child: RadioGroup<String>(
                                         groupValue: p.salutation,
                                         onChanged: (v) =>
                                             setState(() => p.salutation = v!),
-                                        activeColor: const Color(0xFFD4AF37),
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
+                                        child: Radio<String>(
+                                          value: t,
+                                          activeColor:
+                                              const Color(0xFFD4AF37),
+                                          materialTapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 5),

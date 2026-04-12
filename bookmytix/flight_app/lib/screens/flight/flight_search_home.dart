@@ -290,9 +290,8 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
               onPressed: count > minCount ? () => onChanged(count - 1) : null,
               icon: Icon(
                 CupertinoIcons.minus_circle_fill,
-                color: count > minCount
-                    ? TravelloTheme.primaryMain
-                    : Colors.grey,
+                color:
+                    count > minCount ? TravelloTheme.primaryMain : Colors.grey,
               ),
             ),
             SizedBox(
@@ -534,8 +533,7 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                         final isSelected = _tripType == type;
                         return Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: InkWell(
                               onTap: () {
                                 setState(() {
@@ -546,8 +544,8 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                 });
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? TravelloTheme.primaryMain
@@ -912,8 +910,8 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                       Container(
                                         width: 40,
                                         height: 4,
-                                        margin: const EdgeInsets.only(
-                                            bottom: 16),
+                                        margin:
+                                            const EdgeInsets.only(bottom: 16),
                                         decoration: BoxDecoration(
                                           color: Colors.grey[300],
                                           borderRadius:
@@ -955,8 +953,8 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                         }
 
                                         return Container(
-                                          margin: const EdgeInsets.only(
-                                              bottom: 12),
+                                          margin:
+                                              const EdgeInsets.only(bottom: 12),
                                           decoration: BoxDecoration(
                                             border: Border.all(
                                               color: isSelected
@@ -982,15 +980,16 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                             borderRadius:
                                                 BorderRadius.circular(12),
                                             child: Padding(
-                                              padding: const EdgeInsets.symmetric(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
                                                 horizontal: 16,
                                                 vertical: 12,
                                               ),
                                               child: Row(
                                                 children: [
                                                   Container(
-                                                    padding: const EdgeInsets.all(
-                                                        8),
+                                                    padding:
+                                                        const EdgeInsets.all(8),
                                                     decoration: BoxDecoration(
                                                       color:
                                                           classColor.withValues(
@@ -1005,12 +1004,12 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                                       size: 24,
                                                     ),
                                                   ),
-                                                  const SizedBox(
-                                                      width: 16),
+                                                  const SizedBox(width: 16),
                                                   Expanded(
                                                     child: Text(
                                                       cabinClass,
-                                                      style: TravelloTheme.subtitle
+                                                      style: TravelloTheme
+                                                          .subtitle
                                                           .copyWith(
                                                         fontWeight: isSelected
                                                             ? FontWeight.bold
@@ -1018,18 +1017,20 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                                       ),
                                                     ),
                                                   ),
-                                                  Radio<String>(
-                                                    value: cabinClass,
+                                                  RadioGroup<String>(
                                                     groupValue: _cabinClass,
-                                                    activeColor:
-                                                        colorScheme(context)
-                                                            .primary,
                                                     onChanged: (value) {
                                                       setState(() =>
                                                           _cabinClass =
                                                               cabinClass);
                                                       Navigator.pop(context);
                                                     },
+                                                    child: Radio<String>(
+                                                      value: cabinClass,
+                                                      activeColor:
+                                                          colorScheme(context)
+                                                              .primary,
+                                                    ),
                                                   ),
                                                 ],
                                               ),

@@ -93,7 +93,7 @@ class _PanelPointState extends State<PanelPoint>
         }
       }
     } catch (e) {
-      print('Error loading booking data: $e');
+      debugPrint('Error loading booking data: $e');
     } finally {
       setState(() {
         _isLoading = false;

@@ -273,6 +273,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
     with SingleTickerProviderStateMixin {
   Map<String, dynamic> _booking = {};
   bool _isRoundTrip = false;
+  bool _hidePdfOption = false;
   bool _generatingPdf = false;
   late AnimationController _entryController;
   late Animation<double> _fadeAnimation;
@@ -309,9 +310,12 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
   void _loadBookingData() {
     final raw = Get.arguments;
     if (raw is Map<String, dynamic>) {
+      final data = Map<String, dynamic>.from(raw);
+      final hidePdfOption = data.remove('hidePdfOption') == true;
       setState(() {
-        _booking = raw;
-        _isRoundTrip = raw['isRoundTrip'] == true;
+        _booking = data;
+        _isRoundTrip = data['isRoundTrip'] == true;
+        _hidePdfOption = hidePdfOption;
       });
     }
   }
@@ -406,27 +410,29 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
       ),
       centerTitle: true,
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: TextButton.icon(
-            onPressed: _generatingPdf ? null : _downloadPdf,
-            icon: _generatingPdf
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.download_rounded, size: 18),
-            label: Text(
-              'PDF',
-              style: DS.chipText(color: DS.brandBlue),
-            ),
-            style: TextButton.styleFrom(
-              foregroundColor: DS.brandBlue,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        if (!_hidePdfOption)
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: TextButton.icon(
+              onPressed: _generatingPdf ? null : _downloadPdf,
+              icon: _generatingPdf
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.download_rounded, size: 18),
+              label: Text(
+                'PDF',
+                style: DS.chipText(color: DS.brandBlue),
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: DS.brandBlue,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
             ),
           ),
-        ),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
@@ -578,8 +584,8 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                     const SizedBox(height: DS.space4),
                     Text(
                       'Your e-ticket is ready',
-                      style:
-                          DS.captionText(color: Colors.white.withValues(alpha: 0.9)),
+                      style: DS.captionText(
+                          color: Colors.white.withValues(alpha: 0.9)),
                     ),
                   ],
                 ),
@@ -597,7 +603,8 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
               children: [
                 Text(
                   'CONFIRMATION CODE',
-                  style: DS.labelText(color: Colors.white.withValues(alpha: 0.8)),
+                  style:
+                      DS.labelText(color: Colors.white.withValues(alpha: 0.8)),
                 ),
                 const SizedBox(height: DS.space8),
                 Row(
@@ -1282,7 +1289,12 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                       version: QrVersions.auto,
                       size: 120,
                       backgroundColor: DS.surfaceWhite,
-                      foregroundColor: DS.brandNavy,
+                      eyeStyle: const QrEyeStyle(
+                        color: DS.brandNavy,
+                      ),
+                      dataModuleStyle: const QrDataModuleStyle(
+                        color: DS.brandNavy,
+                      ),
                     ),
                   ),
                   const SizedBox(height: DS.space8),
@@ -1986,7 +1998,8 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                                       style: pw.TextStyle(
                                         fontSize: 20,
                                         fontWeight: pw.FontWeight.bold,
-                                        color: const PdfColor(0.145, 0.388, 0.922),
+                                        color:
+                                            const PdfColor(0.145, 0.388, 0.922),
                                       ),
                                     ),
                                   ),

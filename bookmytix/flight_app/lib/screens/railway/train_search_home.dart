@@ -138,8 +138,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
             return Container(
               decoration: const BoxDecoration(
                 color: TravelloTheme.paperLight,
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -270,14 +269,16 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                           ),
                           child: Row(
                             children: [
-                              Radio<String>(
-                                value: seatType,
+                              RadioGroup<String>(
                                 groupValue: tempClass,
-                                activeColor: const Color(0xFFD4AF37),
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
                                 onChanged: (v) =>
                                     setSheetState(() => tempClass = seatType),
+                                child: Radio<String>(
+                                  value: seatType,
+                                  activeColor: const Color(0xFFD4AF37),
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
                               ),
                               const SizedBox(width: 4),
                               Container(
@@ -498,7 +499,8 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                       padding: const EdgeInsets.only(top: 16),
                       child: Text(
                         'Each infant must be accompanied by an adult',
-                        style: TravelloTheme.caption.copyWith(color: Colors.red),
+                        style:
+                            TravelloTheme.caption.copyWith(color: Colors.red),
                       ),
                     ),
 
@@ -792,8 +794,7 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                         final isSelected = _tripType == type;
                         return Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: InkWell(
                               onTap: () {
                                 setState(() {
@@ -804,8 +805,8 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                                 });
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? const Color(0xFFD4AF37)

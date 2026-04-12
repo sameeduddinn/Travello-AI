@@ -2051,87 +2051,87 @@ class _PaymentStatusState extends State<PaymentStatus>
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: _buildAppBar(context),
       body: Stack(
-            children: [
-              if (_isLoading)
-                _buildLoadingSkeleton()
-              else
-                Column(
-                  children: [
-                    // Step Progress Indicator
-                    _buildStepProgress(),
+        children: [
+          if (_isLoading)
+            _buildLoadingSkeleton()
+          else
+            Column(
+              children: [
+                // Step Progress Indicator
+                _buildStepProgress(),
 
-                    // Main Content
-                    Expanded(
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // 2️⃣ Success Header with Animation
-                              _buildSuccessHeader(context),
-                              const SizedBox(height: 20),
+                // Main Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 2️⃣ Success Header with Animation
+                          _buildSuccessHeader(context),
+                          const SizedBox(height: 20),
 
-                              // 3️⃣ Booking Reference & PNR
-                              _buildBookingReference(context),
-                              const SizedBox(height: 16),
+                          // 3️⃣ Booking Reference & PNR
+                          _buildBookingReference(context),
+                          const SizedBox(height: 16),
 
-                              // 4️⃣ Transaction Details
-                              _buildTransactionDetails(context),
-                              const SizedBox(height: 16),
+                          // 4️⃣ Transaction Details
+                          _buildTransactionDetails(context),
+                          const SizedBox(height: 16),
 
-                              // 5️⃣ E-Ticket & QR Code Section
-                              _buildETicketSection(context),
-                              const SizedBox(height: 16),
+                          // 5️⃣ E-Ticket & QR Code Section
+                          _buildETicketSection(context),
+                          const SizedBox(height: 16),
 
-                              // 6️⃣ Payment Summary
-                              _buildPaymentSummary(context),
-                              const SizedBox(height: 16),
+                          // 6️⃣ Payment Summary
+                          _buildPaymentSummary(context),
+                          const SizedBox(height: 16),
 
-                              // 7️⃣ Important Travel Information
-                              _buildTravelInformation(context),
-                              const SizedBox(height: 16),
+                          // 7️⃣ Important Travel Information
+                          _buildTravelInformation(context),
+                          const SizedBox(height: 16),
 
-                              // 8️⃣ AI Smart Add-ons
-                              _buildSmartAddons(context),
-                              const SizedBox(height: 16),
+                          // 8️⃣ AI Smart Add-ons
+                          _buildSmartAddons(context),
+                          const SizedBox(height: 16),
 
-                              // 🔟 Action Buttons
-                              _buildActionButtons(context),
-                              const SizedBox(height: 16),
-                            ],
-                          ),
-                        ),
+                          // 🔟 Action Buttons
+                          _buildActionButtons(context),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              // Confetti Overlay — always in tree so play() is never missed
-              Align(
-                alignment: Alignment.topCenter,
-                child: ConfettiWidget(
-                  confettiController: _confettiController,
-                  blastDirectionality: BlastDirectionality.explosive,
-                  particleDrag: 0.06,
-                  emissionFrequency: 0.05,
-                  numberOfParticles: 30,
-                  gravity: 0.2,
-                  shouldLoop: false,
-                  maximumSize: const Size(10, 10),
-                  minimumSize: const Size(5, 5),
-                  colors: const [
-                    Color(0xFF10B981), // Green
-                    Color(0xFF3B82F6), // Blue
-                    Color(0xFFEC4899), // Pink
-                    Color(0xFFF59E0B), // Orange
-                    Color(0xFF8B5CF6), // Purple
-                    Color(0xFFFBBF24), // Yellow
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
+          // Confetti Overlay — always in tree so play() is never missed
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              particleDrag: 0.06,
+              emissionFrequency: 0.05,
+              numberOfParticles: 30,
+              gravity: 0.2,
+              shouldLoop: false,
+              maximumSize: const Size(10, 10),
+              minimumSize: const Size(5, 5),
+              colors: const [
+                Color(0xFF10B981), // Green
+                Color(0xFF3B82F6), // Blue
+                Color(0xFFEC4899), // Pink
+                Color(0xFFF59E0B), // Orange
+                Color(0xFF8B5CF6), // Purple
+                Color(0xFFFBBF24), // Yellow
+              ],
+            ),
           ),
+        ],
+      ),
     );
   }
 
@@ -3458,8 +3458,13 @@ class _PaymentStatusState extends State<PaymentStatus>
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
             child: GestureDetector(
-              onTap: () =>
-                  Get.toNamed(AppLink.eTicket, arguments: _bookingData),
+              onTap: () => Get.toNamed(
+                AppLink.eTicket,
+                arguments: {
+                  ..._bookingData,
+                  'hidePdfOption': true,
+                },
+              ),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 decoration: BoxDecoration(
@@ -3504,19 +3509,19 @@ class _PaymentStatusState extends State<PaymentStatus>
                 isLoading: _downloadingPdf,
                 accent: blue,
               )),
-              const SizedBox(width: 10),
-              Expanded(
-                  child: _ticketActionButton(
-                icon: Icons.email_outlined,
-                label: 'Email',
-                onTap: _emailTicket,
-                accent: const Color(0xFF7C3AED),
-              )),
+              // const SizedBox(width: 10),
+              // Expanded(
+              //     child: _ticketActionButton(
+              //   icon: Icons.email_outlined,
+              //   label: 'Email',
+              //   onTap: _emailTicket,
+              //   accent: const Color(0xFF7C3AED),
+              // )),
               const SizedBox(width: 10),
               Expanded(
                   child: _ticketActionButton(
                 icon: Icons.copy_rounded,
-                label: 'Share',
+                label: 'Copy',
                 onTap: _shareTicket,
                 accent: emerald,
               )),

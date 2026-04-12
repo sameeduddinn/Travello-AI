@@ -801,7 +801,6 @@ class _LoginFormState extends State<LoginForm> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () {
-                  // TODO: Implement Google Sign In
                   Get.snackbar(
                     'Coming Soon',
                     'Google Sign In will be available soon!',
@@ -884,7 +883,6 @@ class _LoginFormState extends State<LoginForm> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () {
-                  // TODO: Implement Apple Sign In
                   Get.snackbar(
                     'Coming Soon',
                     'Apple Sign In will be available soon!',

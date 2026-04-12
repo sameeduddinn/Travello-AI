@@ -413,8 +413,7 @@ class _BookingDetailState extends State<BookingDetail> {
         children: [
           // ── Header ──
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-                20, 20, 20, 0),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: Row(
               children: [
                 Icon(isTrainBooking ? Icons.train : Icons.flight,
@@ -422,15 +421,14 @@ class _BookingDetailState extends State<BookingDetail> {
                 const SizedBox(width: 8),
                 Text(
                   'JOURNEY DETAILS',
-                  style:
-                      TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.w800),
+                  style: TravelloTheme.subtitle
+                      .copyWith(fontWeight: FontWeight.w800),
                 ),
                 const Spacer(),
                 if (isRoundTrip)
                   Container(
                     padding: EdgeInsets.symmetric(
-                        horizontal: 9.6,
-                        vertical: spacingUnit(0.4)),
+                        horizontal: 9.6, vertical: spacingUnit(0.4)),
                     decoration: BoxDecoration(
                       color: accentColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
@@ -459,8 +457,7 @@ class _BookingDetailState extends State<BookingDetail> {
 
           // ── Outbound Leg ──
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-                20, 16, 20, 0),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -471,8 +468,8 @@ class _BookingDetailState extends State<BookingDetail> {
                   isTrainBooking
                       ? _buildTrainRouteText(details)
                       : _buildFlightRouteText(details),
-                  style:
-                      TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.w800),
+                  style: TravelloTheme.subtitle
+                      .copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 20),
                 isTrainBooking
@@ -497,8 +494,7 @@ class _BookingDetailState extends State<BookingDetail> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 9.6,
-                          vertical: 4),
+                          horizontal: 9.6, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(8),
@@ -519,8 +515,7 @@ class _BookingDetailState extends State<BookingDetail> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12,
-                  20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -962,7 +957,8 @@ class _BookingDetailState extends State<BookingDetail> {
                               (index) => Container(
                                 width: 3,
                                 height: 2,
-                                color: const Color(0xFF059669).withValues(alpha: 0.4),
+                                color: const Color(0xFF059669)
+                                    .withValues(alpha: 0.4),
                               ),
                             ),
                           );
@@ -971,8 +967,7 @@ class _BookingDetailState extends State<BookingDetail> {
                     ),
                     // Train icon
                     const Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 4),
+                      padding: EdgeInsets.symmetric(horizontal: 4),
                       child: Icon(
                         Icons.train_rounded,
                         color: Color(0xFF059669),
@@ -990,7 +985,8 @@ class _BookingDetailState extends State<BookingDetail> {
                               (index) => Container(
                                 width: 3,
                                 height: 2,
-                                color: const Color(0xFF059669).withValues(alpha: 0.4),
+                                color: const Color(0xFF059669)
+                                    .withValues(alpha: 0.4),
                               ),
                             ),
                           );
@@ -1233,7 +1229,8 @@ class _BookingDetailState extends State<BookingDetail> {
                               (index) => Container(
                                 width: 3,
                                 height: 2,
-                                color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+                                color: const Color(0xFF3B82F6)
+                                    .withValues(alpha: 0.4),
                               ),
                             ),
                           );
@@ -1242,8 +1239,7 @@ class _BookingDetailState extends State<BookingDetail> {
                     ),
                     // Flight icon (rotated to face destination)
                     Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Transform.rotate(
                         angle: 1.5708, // 90 degrees in radians (pi/2)
                         child: const Icon(
@@ -1264,7 +1260,8 @@ class _BookingDetailState extends State<BookingDetail> {
                               (index) => Container(
                                 width: 3,
                                 height: 2,
-                                color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+                                color: const Color(0xFF3B82F6)
+                                    .withValues(alpha: 0.4),
                               ),
                             ),
                           );
@@ -1718,8 +1715,7 @@ class _BookingDetailState extends State<BookingDetail> {
 
   Widget _buildBaggageChip(Map<String, String> info) {
     return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: 8, vertical: spacingUnit(0.4)),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: spacingUnit(0.4)),
       decoration: BoxDecoration(
         color: const Color(0xFF3B82F6).withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(6),
@@ -2172,8 +2168,7 @@ class _BookingDetailState extends State<BookingDetail> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          16, 0, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -2503,7 +2498,8 @@ class _BookingDetailState extends State<BookingDetail> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: TravelloTheme.primaryMain.withValues(alpha: 0.12),
+                          color:
+                              TravelloTheme.primaryMain.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.luggage_rounded,
@@ -2787,6 +2783,8 @@ class _BookingDetailState extends State<BookingDetail> {
                           height: 50,
                           child: ElevatedButton(
                             onPressed: () async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              final sheetNavigator = Navigator.of(ctx);
                               final updated = List.generate(
                                 passengerCount,
                                 (i) {
@@ -2817,13 +2815,13 @@ class _BookingDetailState extends State<BookingDetail> {
                                 _booking['returnBaggageData'] = updated;
                               });
 
-                              if (mounted) Navigator.pop(ctx);
+                              if (mounted) sheetNavigator.pop();
 
                               if (mounted) {
                                 final chargeMsg = totalCharge > 0
                                     ? 'PKR ${_formatPKR(totalCharge)} payable at check-in.'
                                     : 'No extra charge — included in fare.';
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   SnackBar(
                                     content: Row(
                                       children: [
@@ -3937,7 +3935,6 @@ class _BookingDetailState extends State<BookingDetail> {
     }
   }
 
-
   void _addRailwayTicketPage(
     pw.Document doc, {
     required Map<String, dynamic>? td,
@@ -4204,5 +4201,4 @@ class _BookingDetailState extends State<BookingDetail> {
       ),
     ));
   }
-
 }

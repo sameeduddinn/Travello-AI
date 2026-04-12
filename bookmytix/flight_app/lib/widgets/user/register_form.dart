@@ -804,7 +804,6 @@ class _RegisterFormState extends State<RegisterForm> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () {
-                  // TODO: Implement Google Sign Up
                   Get.snackbar(
                     'Coming Soon',
                     'Google Sign Up will be available soon!',
@@ -886,7 +885,6 @@ class _RegisterFormState extends State<RegisterForm> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () {
-                  // TODO: Implement Apple Sign Up
                   Get.snackbar(
                     'Coming Soon',
                     'Apple Sign Up will be available soon!',
