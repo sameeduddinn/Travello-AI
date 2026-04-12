@@ -147,7 +147,7 @@ class _BookingPaymentState extends State<BookingPayment>
       return _isOtpVerified;
     }
 
-    // For other payment methods (bank transfer, etc.) that don't require form validation
+    // Other non-form methods are considered valid once selected.
     return true;
   }
 
@@ -406,10 +406,6 @@ class _BookingPaymentState extends State<BookingPayment>
                   ],
                   if (_selectedPaymentMethod == 'jazzcash') ...[
                     _buildJazzcashForm(),
-                    const SizedBox(height: 16),
-                  ],
-                  if (_selectedPaymentMethod == 'bank') ...[
-                    _buildBankTransferDetails(),
                     const SizedBox(height: 16),
                   ],
                   _buildTravelInsurance(),
@@ -959,13 +955,6 @@ class _BookingPaymentState extends State<BookingPayment>
             'Easypaisa',
             'Pay with Easypaisa wallet',
             Icons.account_balance_wallet,
-            color: const Color(0xFFD4AF37),
-          ),
-          _buildPaymentOption(
-            'bank',
-            'Bank Transfer',
-            'Direct bank transfer',
-            Icons.account_balance,
             color: const Color(0xFFD4AF37),
           ),
         ],
@@ -2040,7 +2029,8 @@ class _BookingPaymentState extends State<BookingPayment>
               ),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.green.shade700, size: 18),
+                  Icon(Icons.check_circle,
+                      color: Colors.green.shade700, size: 18),
                   const SizedBox(width: 8),
                   Text(
                     'OTP Verified Successfully',
@@ -2079,74 +2069,6 @@ class _BookingPaymentState extends State<BookingPayment>
                   ),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBankTransferDetails() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Bank Transfer Details',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildInfoRow('Bank Name', 'Meezan Bank'),
-          const SizedBox(height: 12),
-          _buildInfoRow('Account Title', 'Travello AI'),
-          const SizedBox(height: 12),
-          _buildInfoRow('Account Number', '0123456789012'),
-          const SizedBox(height: 12),
-          _buildInfoRow('IBAN', 'PK12MEZN0000120123456789'),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF3E0),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFFFB74D)),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.info_outline,
-                  color: Color(0xFFE65100),
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Transfer the amount and share receipt via email',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.orange.shade900,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
         ],

@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/route_manager.dart';
 import 'package:intl/intl.dart';
-import 'package:confetti/confetti.dart';
 import 'dart:math' show pi;
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
 import 'package:flight_app/screens/railway/train_results_screen.dart';
@@ -82,21 +81,12 @@ class _PaymentStatusState extends State<PaymentStatus>
   late Animation<double> _scaleAnimation;
   late Animation<double> _checkmarkScale;
   late Animation<double> _checkmarkRotation;
-  late ConfettiController _confettiController;
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
     _loadBookingData();
-    _confettiController =
-        ConfettiController(duration: const Duration(seconds: 3));
-    // Trigger confetti smoothly after checkmark appears
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        _confettiController.play();
-      }
-    });
   }
 
   void _initializeAnimations() {
@@ -144,10 +134,18 @@ class _PaymentStatusState extends State<PaymentStatus>
         curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
       ),
     );
+  }
 
-    _animationController.forward();
+  void _playSuccessAnimations() {
+    _animationController
+      ..reset()
+      ..forward();
+
+    _checkmarkController.reset();
     Future.delayed(const Duration(milliseconds: 400), () {
-      _checkmarkController.forward();
+      if (mounted) {
+        _checkmarkController.forward();
+      }
     });
   }
 
@@ -401,6 +399,7 @@ class _PaymentStatusState extends State<PaymentStatus>
     _pushBookingNotification(bookingType, args);
 
     setState(() => _isLoading = false);
+    _playSuccessAnimations();
   }
 
   void _pushBookingNotification(String bookingType, Map<String, dynamic> args) {
@@ -466,7 +465,6 @@ class _PaymentStatusState extends State<PaymentStatus>
   void dispose() {
     _animationController.dispose();
     _checkmarkController.dispose();
-    _confettiController.dispose();
     super.dispose();
   }
 
@@ -1313,6 +1311,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                 build: (_) async => pdfBytes,
                 canChangeOrientation: false,
                 canChangePageFormat: false,
+                canDebug: false,
                 allowPrinting: true,
                 allowSharing: true,
                 initialPageFormat: PdfPageFormat.a4,
@@ -1692,6 +1691,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                 build: (_) async => pdfBytes,
                 canChangeOrientation: false,
                 canChangePageFormat: false,
+                canDebug: false,
                 allowPrinting: true,
                 allowSharing: true,
                 initialPageFormat: PdfPageFormat.a4,
@@ -2051,6 +2051,7 @@ class _PaymentStatusState extends State<PaymentStatus>
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: _buildAppBar(context),
       body: Stack(
+        clipBehavior: Clip.none,
         children: [
           if (_isLoading)
             _buildLoadingSkeleton()
@@ -2107,29 +2108,6 @@ class _PaymentStatusState extends State<PaymentStatus>
                 ),
               ],
             ),
-          // Confetti Overlay — always in tree so play() is never missed
-          Align(
-            alignment: Alignment.topCenter,
-            child: ConfettiWidget(
-              confettiController: _confettiController,
-              blastDirectionality: BlastDirectionality.explosive,
-              particleDrag: 0.06,
-              emissionFrequency: 0.05,
-              numberOfParticles: 30,
-              gravity: 0.2,
-              shouldLoop: false,
-              maximumSize: const Size(10, 10),
-              minimumSize: const Size(5, 5),
-              colors: const [
-                Color(0xFF10B981), // Green
-                Color(0xFF3B82F6), // Blue
-                Color(0xFFEC4899), // Pink
-                Color(0xFFF59E0B), // Orange
-                Color(0xFF8B5CF6), // Purple
-                Color(0xFFFBBF24), // Yellow
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -5904,6 +5882,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                 build: (_) async => pdfBytes,
                 canChangeOrientation: false,
                 canChangePageFormat: false,
+                canDebug: false,
                 allowPrinting: true,
                 allowSharing: true,
                 initialPageFormat: PdfPageFormat.a4,

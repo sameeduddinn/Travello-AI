@@ -316,6 +316,7 @@ class AuthService {
     await prefs.remove(_usersKey);
     await prefs.remove(_currentUserKey);
     await prefs.setBool(_isLoggedInKey, false);
+    await prefs.remove('finishedIntro');
   }
 
   // Update current user profile (name, phone, email)

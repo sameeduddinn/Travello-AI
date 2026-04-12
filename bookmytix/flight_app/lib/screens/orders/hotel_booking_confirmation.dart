@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:confetti/confetti.dart';
 import 'dart:math' show pi;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -35,17 +34,12 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
   late Animation<double> _scaleAnim;
   late Animation<double> _checkScale;
   late Animation<double> _checkRotation;
-  late ConfettiController _confetti;
 
   @override
   void initState() {
     super.initState();
     _initAnimations();
     _loadData();
-    _confetti = ConfettiController(duration: const Duration(seconds: 4));
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) _confetti.play();
-    });
   }
 
   void _initAnimations() {
@@ -181,7 +175,6 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
   void dispose() {
     _animController.dispose();
     _checkController.dispose();
-    _confetti.dispose();
     super.dispose();
   }
 
@@ -189,7 +182,6 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     if (amount == null || amount == 0) return 'PKR 0';
     return 'PKR ${NumberFormat('#,##,###', 'en_PK').format(amount.round())}';
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -280,28 +272,6 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
               ],
             ),
           ),
-          Align(
-            alignment: Alignment.topCenter,
-            child: ConfettiWidget(
-              confettiController: _confetti,
-              blastDirectionality: BlastDirectionality.explosive,
-              particleDrag: 0.06,
-              emissionFrequency: 0.05,
-              numberOfParticles: 30,
-              gravity: 0.2,
-              shouldLoop: false,
-              maximumSize: const Size(10, 10),
-              minimumSize: const Size(5, 5),
-              colors: const [
-                Color(0xFF10B981),
-                Color(0xFF3B82F6),
-                Color(0xFFEC4899),
-                Color(0xFFF59E0B),
-                Color(0xFF8B5CF6),
-                Color(0xFFFBBF24),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -311,8 +281,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     const goldColor = Color(0xFFD4AF37);
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(
-          horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: const Row(
         children: [
           _ProgStep(num: 1, label: 'Hotel', done: true, primary: goldColor),
@@ -388,8 +357,8 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                       letterSpacing: 0.5)),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
@@ -521,7 +490,6 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
       ),
     );
   }
-
 
   Widget _buildPaymentSummary(BuildContext context, Color primary, double total,
       String txnId, List<String> extras) {

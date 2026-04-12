@@ -60,44 +60,28 @@ class _IntroScreenState extends State<IntroScreen>
         'desc':
             'Book flights and railways across Pakistan with ease and convenience.',
         'image': ImgApi.intro[0],
-        'gradient': const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFEC4899)],
-        ),
+        'gradient': TravelloTheme.gradientHeroGold,
       },
       {
         'title': 'AI Travel Assistant',
         'desc':
             'Chat with AI to plan your perfect journey and get personalized recommendations.',
         'image': ImgApi.intro[1],
-        'gradient': const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF10B981), Color(0xFF14B8A6), Color(0xFF06B6D4)],
-        ),
+        'gradient': TravelloTheme.gradientSkyTravel,
       },
       {
         'title': 'Safe & Smart Travel',
         'desc':
             'Get real-time weather alerts and healthcare guidance for a secure journey.',
         'image': ImgApi.intro[2],
-        'gradient': const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFF59E0B), Color(0xFFF97316), Color(0xFFEF4444)],
-        ),
+        'gradient': TravelloTheme.gradientSunsetTravel,
       },
       {
         'title': 'Made for Pakistan',
         'desc':
             'Designed for domestic travel with local cities, stations, and cultural understanding.',
         'image': ImgApi.intro[0],
-        'gradient': const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFEC4899), Color(0xFFD946EF), Color(0xFFA855F7)],
-        ),
+        'gradient': TravelloTheme.gradientBeigeLight,
       },
     ];
 
@@ -172,10 +156,7 @@ class _IntroScreenState extends State<IntroScreen>
               ),
               const SizedBox(height: 20),
               Padding(
-                padding: const EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    bottom: 32),
+                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 32),
                 child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -195,7 +176,8 @@ class _IntroScreenState extends State<IntroScreen>
                                   .merge(ThemeButton.tonalPrimary(context)),
                               onPressed: () => _sliderRef.nextPage(),
                               child: Row(children: [
-                                const Text('NEXT', style: TravelloTheme.subtitle),
+                                const Text('NEXT',
+                                    style: TravelloTheme.subtitle),
                                 const SizedBox(width: 4),
                                 Icon(Icons.arrow_forward_ios,
                                     size: 16,

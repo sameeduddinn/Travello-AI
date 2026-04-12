@@ -254,8 +254,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
           children: [
             // Progress Stepper
             Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
@@ -607,8 +606,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                       children: [
                         // ── Section header inside card ────────────────────
                         const Padding(
-                          padding: EdgeInsets.fromLTRB(16,
-                              16, 16, 8),
+                          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
                           child: Row(children: [
                             Icon(Icons.credit_card,
                                 color: Color(0xFFD4AF37), size: 22),
@@ -638,12 +636,14 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                             bgColor: const Color(0xFFFBF5DC),
                             iconColor: const Color(0xFFD4AF37),
                             icon: Icons.account_balance_wallet_rounded),
-                        _dividerLine(),
-                        _buildMethodRow('Bank Transfer', 'Bank Transfer',
-                            'Direct bank transfer',
-                            bgColor: const Color(0xFFFBF5DC),
-                            iconColor: const Color(0xFFD4AF37),
-                            icon: Icons.account_balance),
+                        if (bookingType == 'transport') ...[
+                          _dividerLine(),
+                          _buildMethodRow('Bank Transfer', 'Bank Transfer',
+                              'Direct bank transfer',
+                              bgColor: const Color(0xFFFBF5DC),
+                              iconColor: const Color(0xFFD4AF37),
+                              icon: Icons.account_balance),
+                        ],
                       ],
                     ),
                   ),
@@ -656,7 +656,8 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                   else if (_selectedPaymentMethod == 'JazzCash' ||
                       _selectedPaymentMethod == 'Easypaisa')
                     _buildMobileWalletForm()
-                  else
+                  else if (bookingType == 'transport' &&
+                      _selectedPaymentMethod == 'Bank Transfer')
                     _buildBankTransferInfo(),
 
                   const SizedBox(height: 16),
@@ -832,8 +833,8 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         }),
         borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: 16, vertical: spacingUnit(1.75)),
+          padding:
+              EdgeInsets.symmetric(horizontal: 16, vertical: spacingUnit(1.75)),
           child: Row(children: [
             Container(
               width: 44,
@@ -1335,8 +1336,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter phone number';
                   }
-                  String clean =
-                      value.replaceAll('-', '').replaceAll(' ', '');
+                  String clean = value.replaceAll('-', '').replaceAll(' ', '');
                   if (clean.startsWith('0')) {
                     return 'Do not include leading 0 with +92';
                   }
@@ -1395,8 +1395,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
-                    border:
-                        Border.all(color: Colors.grey.shade300, width: 1.5),
+                    border: Border.all(color: Colors.grey.shade300, width: 1.5),
                   ),
                   child: TextField(
                     textAlign: TextAlign.center,
@@ -1445,8 +1444,8 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                     elevation: 0,
                   ),
                   child: const Text('Verify OTP',
-                      style: TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                 ),
               ),
             // Success banner (shown after verified)
@@ -1565,8 +1564,8 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             right: -16,
             bottom: 16,
           ),
-          padding: EdgeInsets.symmetric(
-              horizontal: 16, vertical: spacingUnit(1.75)),
+          padding:
+              EdgeInsets.symmetric(horizontal: 16, vertical: spacingUnit(1.75)),
           color: primary,
           child: const Row(children: [
             Icon(CupertinoIcons.airplane, color: Colors.white, size: 20),
@@ -1676,8 +1675,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         children: [
           // Outbound Train Header
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: TravelloTheme.primaryMainContainer,
               borderRadius: BorderRadius.circular(6),
@@ -1711,8 +1709,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
           // Return Train Header
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: TravelloTheme.primaryMainContainer,
               borderRadius: BorderRadius.circular(6),
@@ -1902,8 +1899,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color:
-                  TravelloTheme.primaryMainContainer.withValues(alpha: 0.3),
+              color: TravelloTheme.primaryMainContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: TravelloTheme.primaryMain.withValues(alpha: 0.2),
@@ -2013,8 +2009,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                     Container(
                       width: 2,
                       height: 30,
-                      color:
-                          TravelloTheme.primaryMain.withValues(alpha: 0.3),
+                      color: TravelloTheme.primaryMain.withValues(alpha: 0.3),
                     ),
                     const SizedBox(width: 12),
                     Icon(
@@ -2145,8 +2140,8 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         // ── Hotel Summary header bar ─────────────────────────────────────
         Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(
-              horizontal: 16, vertical: spacingUnit(1.25)),
+          padding:
+              EdgeInsets.symmetric(horizontal: 16, vertical: spacingUnit(1.25)),
           decoration: const BoxDecoration(
             color: primary,
             borderRadius: BorderRadius.only(
@@ -2394,8 +2389,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color:
-                  TravelloTheme.primaryMainContainer.withValues(alpha: 0.3),
+              color: TravelloTheme.primaryMainContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
