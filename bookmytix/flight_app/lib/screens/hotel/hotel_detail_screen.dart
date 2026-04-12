@@ -1161,278 +1161,282 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
     );
   }
 
-
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    bottomNavigationBar: _buildBookingBar(),
-    body: Column(
-      children: [
-        // ── Image carousel (compact) ────────────────────────────────
-        SizedBox(
-          height: 200,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              PageView.builder(
-                itemCount: hotel.images.length,
-                onPageChanged: (index) =>
-                    setState(() => _currentImageIndex = index),
-                itemBuilder: (context, index) => Image.network(
-                  hotel.images[index],
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: Colors.grey.shade300,
-                    child: const Icon(Icons.hotel, size: 64),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      bottomNavigationBar: _buildBookingBar(),
+      body: Column(
+        children: [
+          // ── Image carousel (compact) ────────────────────────────────
+          SizedBox(
+            height: 200,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                PageView.builder(
+                  itemCount: hotel.images.length,
+                  onPageChanged: (index) =>
+                      setState(() => _currentImageIndex = index),
+                  itemBuilder: (context, index) => Image.network(
+                    hotel.images[index],
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: Colors.grey.shade300,
+                      child: const Icon(Icons.hotel, size: 64),
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: SafeArea(
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Get.back(),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.help_outline, color: Colors.white),
-                        onPressed: () => Get.toNamed('/faq'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (hotel.images.length > 1)
                 Positioned(
-                  bottom: 10,
+                  top: 0,
                   left: 0,
                   right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      hotel.images.length,
-                      (index) => Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _currentImageIndex == index
-                              ? Colors.white
-                              : Colors.white.withValues(alpha: 0.5),
+                  child: SafeArea(
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon:
+                              const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Get.back(),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.help_outline,
+                              color: Colors.white),
+                          onPressed: () => Get.toNamed('/faq'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (hotel.images.length > 1)
+                  Positioned(
+                    bottom: 10,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        hotel.images.length,
+                        (index) => Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _currentImageIndex == index
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.5),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        // ── Hotel name / location / rating (compact single row) ─────
-        Container(
-          color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(hotel.name,
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 3),
-                    Row(children: [
-                      const Icon(Icons.location_on,
-                          size: 13, color: Color(0xFFB3B3B3)),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: Text(
-                          '${hotel.address} · ${hotel.distanceFromCenter.toStringAsFixed(1)} km',
-                          style: TravelloTheme.caption.copyWith(fontSize: 11),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ]),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colorScheme(context)
-                          .primary
-                          .withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(hotel.category,
-                        style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: TravelloTheme.primaryMain)),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.orange,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(children: [
-                        const Icon(Icons.star, size: 12, color: Colors.white),
-                        const SizedBox(width: 3),
-                        Text(hotel.rating.toString(),
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12)),
-                      ]),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(_getRatingText(hotel.rating),
-                        style: TravelloTheme.caption
-                            .copyWith(fontSize: 11, fontWeight: FontWeight.w600)),
-                  ]),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const Divider(height: 1),
-
-        // ── Sticky TabBar ───────────────────────────────────────────
-        Container(
-          color: Colors.white,
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            labelColor: TravelloTheme.primaryMain,
-            unselectedLabelColor: Colors.grey,
-            labelStyle:
-                const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-            unselectedLabelStyle:
-                const TextStyle(fontSize: 13, fontWeight: FontWeight.normal),
-            indicatorColor: TravelloTheme.primaryMain,
-            indicatorWeight: 3,
-            tabs: const [
-              Tab(text: 'Overview'),
-              Tab(text: 'Rooms'),
-              Tab(text: 'Amenities'),
-              Tab(text: 'Reviews'),
-              Tab(text: 'Policies'),
-            ],
-          ),
-        ),
-
-        const Divider(height: 1),
-
-        // ── Tab content — fills all remaining space ─────────────────
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildOverviewTab(),
-              _buildRoomsTab(),
-              _buildAmenitiesTab(),
-              _buildReviewsTab(),
-              _buildPoliciesTab(),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-Widget _buildBookingBar() {
-  return Container(
-    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.08),
-          blurRadius: 8,
-          offset: const Offset(0, -2),
-        ),
-      ],
-    ),
-    child: SafeArea(
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'PKR ${NumberFormat('#,##0').format(totalPrice.round())}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: TravelloTheme.primaryMain,
-                  ),
-                ),
-                if (selectedRoom != null)
-                  Text(
-                    selectedRoom!.name,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  )
-                else
-                  Text(
-                    '$numberOfNights night${numberOfNights == 1 ? '' : 's'} · $rooms room${rooms == 1 ? '' : 's'}',
-                    style: TravelloTheme.caption.copyWith(fontSize: 12),
                   ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: _proceedToBooking,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: TravelloTheme.primaryMain,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+
+          // ── Hotel name / location / rating (compact single row) ─────
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(hotel.name,
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 3),
+                      Row(children: [
+                        const Icon(Icons.location_on,
+                            size: 13, color: Color(0xFFB3B3B3)),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            '${hotel.address} · ${hotel.distanceFromCenter.toStringAsFixed(1)} km',
+                            style: TravelloTheme.caption.copyWith(fontSize: 11),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ]),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: colorScheme(context)
+                            .primary
+                            .withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(hotel.category,
+                          style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: TravelloTheme.primaryMain)),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.star, size: 12, color: Colors.white),
+                          const SizedBox(width: 3),
+                          Text(hotel.rating.toString(),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12)),
+                        ]),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(_getRatingText(hotel.rating),
+                          style: TravelloTheme.caption.copyWith(
+                              fontSize: 11, fontWeight: FontWeight.w600)),
+                    ]),
+                  ],
+                ),
+              ],
             ),
-            child: Text(
-              selectedRoom == null ? 'Select a Room' : 'Book Now',
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+
+          const Divider(height: 1),
+
+          // ── Sticky TabBar ───────────────────────────────────────────
+          Container(
+            color: Colors.white,
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              labelColor: TravelloTheme.primaryMain,
+              unselectedLabelColor: Colors.grey,
+              labelStyle:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              unselectedLabelStyle:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.normal),
+              indicatorColor: TravelloTheme.primaryMain,
+              indicatorWeight: 3,
+              tabs: const [
+                Tab(text: 'Overview'),
+                Tab(text: 'Rooms'),
+                Tab(text: 'Amenities'),
+                Tab(text: 'Reviews'),
+                Tab(text: 'Policies'),
+              ],
+            ),
+          ),
+
+          const Divider(height: 1),
+
+          // ── Tab content — fills all remaining space ─────────────────
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildOverviewTab(),
+                _buildRoomsTab(),
+                _buildAmenitiesTab(),
+                _buildReviewsTab(),
+                _buildPoliciesTab(),
+              ],
             ),
           ),
         ],
       ),
-    ),
-  );
-}
+    );
+  }
+
+  Widget _buildBookingBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'PKR ${NumberFormat('#,##0').format(totalPrice.round())}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: TravelloTheme.primaryMain,
+                    ),
+                  ),
+                  if (selectedRoom != null)
+                    Text(
+                      selectedRoom!.name,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  else
+                    Text(
+                      '$numberOfNights night${numberOfNights == 1 ? '' : 's'} · $rooms room${rooms == 1 ? '' : 's'}',
+                      style: TravelloTheme.caption.copyWith(fontSize: 12),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: _proceedToBooking,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: TravelloTheme.primaryMain,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                selectedRoom == null ? 'Select a Room' : 'Book Now',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Overview Tab
   Widget _buildOverviewTab() {
     return SingleChildScrollView(
@@ -1452,12 +1456,12 @@ Widget _buildBookingBar() {
             ),
             child: Row(
               children: [
-                _summaryCell('Check-in',
-                    DateFormat('EEE, MMM d').format(checkInDate)),
+                _summaryCell(
+                    'Check-in', DateFormat('EEE, MMM d').format(checkInDate)),
                 const Icon(Icons.arrow_forward,
                     size: 16, color: TravelloTheme.primaryMain),
-                _summaryCell('Check-out',
-                    DateFormat('EEE, MMM d').format(checkOutDate)),
+                _summaryCell(
+                    'Check-out', DateFormat('EEE, MMM d').format(checkOutDate)),
                 const VerticalDivider(width: 20, thickness: 1),
                 _summaryCell(
                     '$numberOfNights ${numberOfNights == 1 ? 'Night' : 'Nights'}',
@@ -1580,7 +1584,8 @@ Widget _buildBookingBar() {
 
                 // Specs chips row
                 Row(children: [
-                  _specChip(Icons.people_outline, '${room.maxOccupancy} guests'),
+                  _specChip(
+                      Icons.people_outline, '${room.maxOccupancy} guests'),
                   const SizedBox(width: 8),
                   _specChip(Icons.bed_outlined, room.bedType),
                   const SizedBox(width: 8),
@@ -1592,16 +1597,19 @@ Widget _buildBookingBar() {
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,
-                  children: room.amenities.take(3).map((a) => Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Text(a,
-                        style: const TextStyle(fontSize: 10)),
-                  )).toList(),
+                  children: room.amenities
+                      .take(3)
+                      .map((a) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child:
+                                Text(a, style: const TextStyle(fontSize: 10)),
+                          ))
+                      .toList(),
                 ),
                 const SizedBox(height: 8),
 
@@ -1659,18 +1667,22 @@ Widget _buildBookingBar() {
                     ElevatedButton(
                       onPressed: () {
                         setState(() => selectedRoom = room);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('${room.name} selected'),
+                        Get.snackbar(
+                          'Room Selected',
+                          '${room.name} selected',
+                          snackPosition: SnackPosition.TOP,
                           duration: const Duration(seconds: 2),
-                          behavior: SnackBarBehavior.floating,
-                        ));
+                        );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            isSelected ? TravelloTheme.primaryMain : Colors.white,
-                        foregroundColor:
-                            isSelected ? Colors.white : TravelloTheme.primaryMain,
-                        side: const BorderSide(color: TravelloTheme.primaryMain),
+                        backgroundColor: isSelected
+                            ? TravelloTheme.primaryMain
+                            : Colors.white,
+                        foregroundColor: isSelected
+                            ? Colors.white
+                            : TravelloTheme.primaryMain,
+                        side:
+                            const BorderSide(color: TravelloTheme.primaryMain),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 8),
                         minimumSize: Size.zero,
@@ -1764,7 +1776,8 @@ Widget _buildBookingBar() {
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                           color: TravelloTheme.primaryMain)),
-                  Text('/ 5', style: TravelloTheme.caption.copyWith(fontSize: 11)),
+                  Text('/ 5',
+                      style: TravelloTheme.caption.copyWith(fontSize: 11)),
                   const SizedBox(height: 2),
                   Text(_getRatingText(hotel.rating),
                       style: const TextStyle(
@@ -1791,15 +1804,24 @@ Widget _buildBookingBar() {
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
 
-          _buildReviewCard('Excellent Stay',
+          _buildReviewCard(
+              'Excellent Stay',
               'Amazing hotel with great facilities and friendly staff. Highly recommended!',
-              'Ahmed K.', 5.0, '2 days ago'),
-          _buildReviewCard('Great Location',
+              'Ahmed K.',
+              5.0,
+              '2 days ago'),
+          _buildReviewCard(
+              'Great Location',
               'Perfect location in the city. Easy access to attractions. Breakfast was delicious.',
-              'Sara M.', 4.5, '5 days ago'),
-          _buildReviewCard('Good Value',
+              'Sara M.',
+              4.5,
+              '5 days ago'),
+          _buildReviewCard(
+              'Good Value',
               'Nice hotel for the price. Staff was very helpful and rooms were clean.',
-              'Bilal R.', 4.0, '1 week ago'),
+              'Bilal R.',
+              4.0,
+              '1 week ago'),
         ],
       ),
     );
@@ -1857,12 +1879,12 @@ Widget _buildBookingBar() {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(author,
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 12)),
-              Text(time,
-                  style: TravelloTheme.caption.copyWith(fontSize: 10)),
+              Text(time, style: TravelloTheme.caption.copyWith(fontSize: 10)),
             ]),
           ),
           Container(
@@ -1882,11 +1904,9 @@ Widget _buildBookingBar() {
         ]),
         const SizedBox(height: 6),
         Text(title,
-            style:
-                const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
         const SizedBox(height: 2),
-        Text(review,
-            style: TravelloTheme.caption.copyWith(fontSize: 11)),
+        Text(review, style: TravelloTheme.caption.copyWith(fontSize: 11)),
       ]),
     );
   }
@@ -1901,21 +1921,29 @@ Widget _buildBookingBar() {
           const Text('Hotel Policies',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
-          _buildPolicyItem(Icons.check_circle, 'Cancellation',
+          _buildPolicyItem(
+              Icons.check_circle,
+              'Cancellation',
               hotel.isRefundable
                   ? 'Free cancellation up to 24 hrs before check-in.'
                   : 'Non-refundable. No refunds for cancellations.'),
           _buildPolicyItem(Icons.access_time, 'Check-in / Check-out',
               'Check-in: 2:00 PM · Check-out: 12:00 PM\nEarly/late available on request.'),
-          _buildPolicyItem(Icons.restaurant, 'Breakfast',
+          _buildPolicyItem(
+              Icons.restaurant,
+              'Breakfast',
               hotel.hasBreakfast
                   ? 'Complimentary breakfast — 7:00 AM to 10:30 AM daily.'
                   : 'Breakfast not included. Available at restaurant.'),
-          _buildPolicyItem(Icons.wifi, 'WiFi',
+          _buildPolicyItem(
+              Icons.wifi,
+              'WiFi',
               hotel.hasFreeWifi
                   ? 'Free high-speed WiFi throughout the property.'
                   : 'WiFi available for purchase at reception.'),
-          _buildPolicyItem(Icons.local_parking, 'Parking',
+          _buildPolicyItem(
+              Icons.local_parking,
+              'Parking',
               hotel.hasParking
                   ? 'Free on-site parking. Valet available.'
                   : 'Street parking nearby (charges may apply).'),
@@ -1936,16 +1964,15 @@ Widget _buildBookingBar() {
         Icon(icon, size: 18, color: TravelloTheme.primaryMain),
         const SizedBox(width: 10),
         Expanded(
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 13)),
-                const SizedBox(height: 2),
-                Text(description,
-                    style: TravelloTheme.caption.copyWith(fontSize: 12)),
-              ]),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title,
+                style:
+                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            const SizedBox(height: 2),
+            Text(description,
+                style: TravelloTheme.caption.copyWith(fontSize: 12)),
+          ]),
         ),
       ]),
     );

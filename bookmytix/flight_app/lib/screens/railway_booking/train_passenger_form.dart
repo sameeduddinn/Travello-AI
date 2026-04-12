@@ -162,18 +162,14 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
             'dob': p.dateOfBirth?.toIso8601String(),
           }));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Row(children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 18),
-            SizedBox(width: 8),
-            Text('Passenger details saved!'),
-          ]),
+        Get.snackbar(
+          'Saved',
+          'Passenger details saved!',
+          snackPosition: SnackPosition.TOP,
           backgroundColor: const Color(0xFFD4AF37),
-          behavior: SnackBarBehavior.floating,
+          colorText: Colors.white,
           duration: const Duration(seconds: 2),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ));
+        );
       }
     } catch (_) {}
   }
@@ -682,8 +678,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                             setState(() => p.salutation = v!),
                                         child: Radio<String>(
                                           value: t,
-                                          activeColor:
-                                              const Color(0xFFD4AF37),
+                                          activeColor: const Color(0xFFD4AF37),
                                           materialTapTargetSize:
                                               MaterialTapTargetSize.shrinkWrap,
                                         ),
@@ -728,7 +723,8 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                       if (s.length < 2) {
                                         return 'Minimum 2 characters';
                                       }
-                                      if (!RegExp(r'^[a-zA-Z ]+$').hasMatch(s)) {
+                                      if (!RegExp(r'^[a-zA-Z ]+$')
+                                          .hasMatch(s)) {
                                         return 'Letters only';
                                       }
                                       return null;
@@ -748,11 +744,15 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                     ],
                                     validator: (v) {
                                       final s = v?.trim() ?? '';
-                                      if (s.isEmpty) return 'Last name is required';
+                                      if (s.isEmpty) {
+                                        return 'Last name is required';
+                                      }
+
                                       if (s.length < 2) {
                                         return 'Minimum 2 characters';
                                       }
-                                      if (!RegExp(r'^[a-zA-Z ]+$').hasMatch(s)) {
+                                      if (!RegExp(r'^[a-zA-Z ]+$')
+                                          .hasMatch(s)) {
                                         return 'Letters only';
                                       }
                                       return null;
@@ -783,7 +783,8 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                       if (s.length < 2) {
                                         return 'Minimum 2 characters';
                                       }
-                                      if (!RegExp(r'^[a-zA-Z ]+$').hasMatch(s)) {
+                                      if (!RegExp(r'^[a-zA-Z ]+$')
+                                          .hasMatch(s)) {
                                         return 'Letters only';
                                       }
                                       return null;
@@ -805,11 +806,15 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                     ],
                                     validator: (v) {
                                       final s = v?.trim() ?? '';
-                                      if (s.isEmpty) return 'Last name is required';
+                                      if (s.isEmpty){
+                                        return 'Last name is required';
+                                      }
+
                                       if (s.length < 2) {
                                         return 'Minimum 2 characters';
                                       }
-                                      if (!RegExp(r'^[a-zA-Z ]+$').hasMatch(s)) {
+                                      if (!RegExp(r'^[a-zA-Z ]+$')
+                                          .hasMatch(s)) {
                                         return 'Letters only';
                                       }
                                       return null;
@@ -842,40 +847,42 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
 
                                       if (i >= _adults + _children) {
                                         // Infant: Under 3 years (0-1095 days)
-                                        firstDate = _departureDate
-                                            .subtract(const Duration(days: 1095));
+                                        firstDate = _departureDate.subtract(
+                                            const Duration(days: 1095));
                                         lastDate = _departureDate;
-                                        initialDate = _departureDate
-                                            .subtract(const Duration(days: 365));
+                                        initialDate = _departureDate.subtract(
+                                            const Duration(days: 365));
                                         ageHint =
                                             'Infant: Under 3 years at travel date';
                                       } else if (i >= _adults) {
                                         // Child: 3-11 years (1095-4383 days)
-                                        firstDate = _departureDate
-                                            .subtract(const Duration(days: 4383));
-                                        lastDate = _departureDate
-                                            .subtract(const Duration(days: 1095));
-                                        initialDate = _departureDate
-                                            .subtract(const Duration(days: 2555));
+                                        firstDate = _departureDate.subtract(
+                                            const Duration(days: 4383));
+                                        lastDate = _departureDate.subtract(
+                                            const Duration(days: 1095));
+                                        initialDate = _departureDate.subtract(
+                                            const Duration(days: 2555));
                                         ageHint =
                                             'Child: 3-11 years at travel date';
                                       } else {
                                         // Adult: 12+ years (4383+ days)
                                         firstDate = DateTime(1920);
-                                        lastDate = _departureDate
-                                            .subtract(const Duration(days: 4383));
+                                        lastDate = _departureDate.subtract(
+                                            const Duration(days: 4383));
                                         initialDate = DateTime(1990);
-                                        ageHint = 'Adult: 12+ years at travel date';
+                                        ageHint =
+                                            'Adult: 12+ years at travel date';
                                       }
 
                                       return _buildDatePicker(
                                         label: 'Date of Birth',
                                         selectedDate: p.dateOfBirth,
-                                        showError:
-                                            p.submitted && p.dateOfBirth == null,
+                                        showError: p.submitted &&
+                                            p.dateOfBirth == null,
                                         ageHint: ageHint,
                                         onTap: () async {
-                                          DateTime safeInitialDate = initialDate;
+                                          DateTime safeInitialDate =
+                                              initialDate;
                                           if (p.dateOfBirth != null) {
                                             if (p.dateOfBirth!
                                                 .isBefore(firstDate)) {
@@ -898,13 +905,15 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                               data: Theme.of(ctx).copyWith(
                                                 colorScheme:
                                                     const ColorScheme.light(
-                                                        primary: Color(0xFFD4AF37)),
+                                                        primary:
+                                                            Color(0xFFD4AF37)),
                                               ),
                                               child: child!,
                                             ),
                                           );
                                           if (picked != null) {
-                                            setState(() => p.dateOfBirth = picked);
+                                            setState(
+                                                () => p.dateOfBirth = picked);
                                           }
                                         },
                                       );
@@ -928,17 +937,22 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                         if (clean.length != 13) {
                                           return 'Must be 13 digits';
                                         }
-                                        for (int j = 0; j < _passengers.length; j++) {
+                                        for (int j = 0;
+                                            j < _passengers.length;
+                                            j++) {
                                           if (j == i) continue;
-                                          final otherCnic =
-                                              _passengers[j].cnicCtrl.text.replaceAll('-', '');
-                                          if (otherCnic.isNotEmpty && otherCnic == clean) {
+                                          final otherCnic = _passengers[j]
+                                              .cnicCtrl
+                                              .text
+                                              .replaceAll('-', '');
+                                          if (otherCnic.isNotEmpty &&
+                                              otherCnic == clean) {
                                             return 'CNIC already used for another passenger';
                                           }
                                         }
                                         return null;
                                       },
-                                    fieldKey: p.documentKey,
+                                      fieldKey: p.documentKey,
                                     ),
                                   ],
                                 ],
@@ -949,128 +963,138 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                               children: [
                                 Expanded(
                                   child: Builder(
-                                builder: (context) {
-                                  // Age-based date range
-                                  final DateTime firstDate;
-                                  final DateTime lastDate;
-                                  final DateTime initialDate;
-                                  final String ageHint;
+                                    builder: (context) {
+                                      // Age-based date range
+                                      final DateTime firstDate;
+                                      final DateTime lastDate;
+                                      final DateTime initialDate;
+                                      final String ageHint;
 
-                                  if (i >= _adults + _children) {
-                                    // Infant: Under 3 years (0-1095 days)
-                                    firstDate = _departureDate
-                                        .subtract(const Duration(days: 1095));
-                                    lastDate = _departureDate;
-                                    initialDate = _departureDate
-                                        .subtract(const Duration(days: 365));
-                                    ageHint =
-                                        'Infant: Under 3 years at travel date';
-                                  } else if (i >= _adults) {
-                                    // Child: 3-11 years (1095-4383 days)
-                                    firstDate = _departureDate
-                                        .subtract(const Duration(days: 4383));
-                                    lastDate = _departureDate
-                                        .subtract(const Duration(days: 1095));
-                                    initialDate = _departureDate
-                                        .subtract(const Duration(days: 2555));
-                                    ageHint =
-                                        'Child: 3-11 years at travel date';
-                                  } else {
-                                    // Adult: 12+ years (4383+ days)
-                                    firstDate = DateTime(1920);
-                                    lastDate = _departureDate
-                                        .subtract(const Duration(days: 4383));
-                                    initialDate = DateTime(1990);
-                                    ageHint = 'Adult: 12+ years at travel date';
-                                  }
-
-                                  return _buildDatePicker(
-                                    label: 'Date of Birth',
-                                    selectedDate: p.dateOfBirth,
-                                    showError:
-                                        p.submitted && p.dateOfBirth == null,
-                                    ageHint: ageHint,
-                                    onTap: () async {
-                                      // Ensure initialDate is within valid range
-                                      DateTime safeInitialDate = initialDate;
-                                      if (p.dateOfBirth != null) {
-                                        if (p.dateOfBirth!
-                                            .isBefore(firstDate)) {
-                                          safeInitialDate = firstDate;
-                                        } else if (p.dateOfBirth!
-                                            .isAfter(lastDate)) {
-                                          safeInitialDate = lastDate;
-                                        } else {
-                                          safeInitialDate = p.dateOfBirth!;
-                                        }
+                                      if (i >= _adults + _children) {
+                                        // Infant: Under 3 years (0-1095 days)
+                                        firstDate = _departureDate.subtract(
+                                            const Duration(days: 1095));
+                                        lastDate = _departureDate;
+                                        initialDate = _departureDate.subtract(
+                                            const Duration(days: 365));
+                                        ageHint =
+                                            'Infant: Under 3 years at travel date';
+                                      } else if (i >= _adults) {
+                                        // Child: 3-11 years (1095-4383 days)
+                                        firstDate = _departureDate.subtract(
+                                            const Duration(days: 4383));
+                                        lastDate = _departureDate.subtract(
+                                            const Duration(days: 1095));
+                                        initialDate = _departureDate.subtract(
+                                            const Duration(days: 2555));
+                                        ageHint =
+                                            'Child: 3-11 years at travel date';
+                                      } else {
+                                        // Adult: 12+ years (4383+ days)
+                                        firstDate = DateTime(1920);
+                                        lastDate = _departureDate.subtract(
+                                            const Duration(days: 4383));
+                                        initialDate = DateTime(1990);
+                                        ageHint =
+                                            'Adult: 12+ years at travel date';
                                       }
 
-                                      final picked = await showDatePicker(
-                                        context: context,
-                                        initialDate: safeInitialDate,
-                                        firstDate: firstDate,
-                                        lastDate: lastDate,
-                                        helpText: ageHint,
-                                        builder: (ctx, child) => Theme(
-                                          data: Theme.of(ctx).copyWith(
-                                            colorScheme:
-                                                const ColorScheme.light(
-                                                    primary: Color(0xFFD4AF37)),
-                                          ),
-                                          child: child!,
-                                        ),
+                                      return _buildDatePicker(
+                                        label: 'Date of Birth',
+                                        selectedDate: p.dateOfBirth,
+                                        showError: p.submitted &&
+                                            p.dateOfBirth == null,
+                                        ageHint: ageHint,
+                                        onTap: () async {
+                                          // Ensure initialDate is within valid range
+                                          DateTime safeInitialDate =
+                                              initialDate;
+                                          if (p.dateOfBirth != null) {
+                                            if (p.dateOfBirth!
+                                                .isBefore(firstDate)) {
+                                              safeInitialDate = firstDate;
+                                            } else if (p.dateOfBirth!
+                                                .isAfter(lastDate)) {
+                                              safeInitialDate = lastDate;
+                                            } else {
+                                              safeInitialDate = p.dateOfBirth!;
+                                            }
+                                          }
+
+                                          final picked = await showDatePicker(
+                                            context: context,
+                                            initialDate: safeInitialDate,
+                                            firstDate: firstDate,
+                                            lastDate: lastDate,
+                                            helpText: ageHint,
+                                            builder: (ctx, child) => Theme(
+                                              data: Theme.of(ctx).copyWith(
+                                                colorScheme:
+                                                    const ColorScheme.light(
+                                                        primary:
+                                                            Color(0xFFD4AF37)),
+                                              ),
+                                              child: child!,
+                                            ),
+                                          );
+                                          if (picked != null) {
+                                            setState(
+                                                () => p.dateOfBirth = picked);
+                                          }
+                                        },
                                       );
-                                      if (picked != null) {
-                                        setState(() => p.dateOfBirth = picked);
-                                      }
                                     },
-                                  );
-                                },
-                              ),
-                            ),
-                            // Only show CNIC for adults (not for children and infants)
-                            if (i < _adults) ...[
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildTextField(
-                                  controller: p.cnicCtrl,
-                                  label: 'CNIC',
-                                  icon: Icons.article_outlined,
-                                  hint: 'XXXXX-XXXXXXX-X',
-                                  keyboardType: TextInputType.number,
-                                  maxLength: 15,
-                                  inputFormatters: [_CnicFormatter()],
-                                  validator: (v) {
-                                    if (v == null || v.trim().isEmpty) {
-                                      return 'CNIC is required';
-                                    }
-                                    final clean = v.replaceAll('-', '');
-                                    if (clean.length != 13) {
-                                      return 'Must be 13 digits';
-                                    }
-                                    // Uniqueness: no two passengers may share the same CNIC
-                                    final entered = v.trim();
-                                    for (int j = 0; j < _totalPassengers; j++) {
-                                      if (j == i) continue;
-                                      if (_passengers[j].cnicCtrl.text.trim() ==
-                                          entered) {
-                                        return 'This CNIC is already used for another passenger';
-                                      }
-                                    }
-                                    return null;
-                                  },
-                                  fieldKey: p.documentKey,
+                                  ),
                                 ),
-                              ),
-                            ],
-                            if (i >= _adults) const Expanded(child: SizedBox()),
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
+                                // Only show CNIC for adults (not for children and infants)
+                                if (i < _adults) ...[
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildTextField(
+                                      controller: p.cnicCtrl,
+                                      label: 'CNIC',
+                                      icon: Icons.article_outlined,
+                                      hint: 'XXXXX-XXXXXXX-X',
+                                      keyboardType: TextInputType.number,
+                                      maxLength: 15,
+                                      inputFormatters: [_CnicFormatter()],
+                                      validator: (v) {
+                                        if (v == null || v.trim().isEmpty) {
+                                          return 'CNIC is required';
+                                        }
+                                        final clean = v.replaceAll('-', '');
+                                        if (clean.length != 13) {
+                                          return 'Must be 13 digits';
+                                        }
+                                        // Uniqueness: no two passengers may share the same CNIC
+                                        final entered = v.trim();
+                                        for (int j = 0;
+                                            j < _totalPassengers;
+                                            j++) {
+                                          if (j == i) continue;
+                                          if (_passengers[j]
+                                                  .cnicCtrl
+                                                  .text
+                                                  .trim() ==
+                                              entered) {
+                                            return 'This CNIC is already used for another passenger';
+                                          }
+                                        }
+                                        return null;
+                                      },
+                                      fieldKey: p.documentKey,
+                                    ),
+                                  ),
+                                ],
+                                if (i >= _adults)
+                                  const Expanded(child: SizedBox()),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
 
-                    // Notice section
+                        // Notice section
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -1728,8 +1752,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Expanded(

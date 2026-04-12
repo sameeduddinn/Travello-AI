@@ -1537,22 +1537,22 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                         child: ElevatedButton(
                           onPressed: () {
                             if (selectedFrom == null || selectedTo == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Please select origin and destination stations'),
-                                  backgroundColor: Colors.red,
-                                ),
+                              Get.snackbar(
+                                'Validation Error',
+                                'Please select origin and destination stations',
+                                snackPosition: SnackPosition.TOP,
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
                               );
                               return;
                             }
                             if (selectedFrom?.code == selectedTo?.code) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Origin and destination cannot be the same'),
-                                  backgroundColor: Colors.red,
-                                ),
+                              Get.snackbar(
+                                'Validation Error',
+                                'Origin and destination cannot be the same',
+                                snackPosition: SnackPosition.TOP,
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
                               );
                               return;
                             }
@@ -1589,14 +1589,13 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                             _fetchTrains();
                             Navigator.pop(context);
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Search updated: ${selectedFrom?.code} → ${selectedTo?.code}'),
-                                backgroundColor: const Color(0xFFD4AF37),
-                                duration: const Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                              ),
+                            Get.snackbar(
+                              'Search Updated',
+                              'Search updated: ${selectedFrom?.code} → ${selectedTo?.code}',
+                              snackPosition: SnackPosition.TOP,
+                              backgroundColor: const Color(0xFFD4AF37),
+                              colorText: Colors.white,
+                              duration: const Duration(seconds: 2),
                             );
                           },
                           style: ElevatedButton.styleFrom(

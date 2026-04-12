@@ -1643,9 +1643,8 @@ class _BookingFacilitesState extends State<BookingFacilites> {
         // Card 1 — always shown
         _buildTransferCard(
           title: 'Departure Transfer',
-          subtitle: _isRoundTrip
-              ? 'Home → Departure airport'
-              : 'Home → Airport',
+          subtitle:
+              _isRoundTrip ? 'Home → Departure airport' : 'Home → Airport',
           added: _transferAdded,
           vehicleType: _transferVehicleType,
           pickupCtrl: _transferPickupCtrl,

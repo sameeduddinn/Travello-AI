@@ -602,23 +602,28 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
 
   void _searchTrains() {
     if (_fromStation == null || _toStation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select departure and arrival stations')),
+      Get.snackbar(
+        'Validation Error',
+        'Please select departure and arrival stations',
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }
 
     if (_travelDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select travel date')),
+      Get.snackbar(
+        'Validation Error',
+        'Please select travel date',
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }
 
     if (_tripType == 'Round-trip' && _returnDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select return date')),
+      Get.snackbar(
+        'Validation Error',
+        'Please select return date',
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }

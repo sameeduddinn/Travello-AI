@@ -250,24 +250,33 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
   Future<void> _proceedToPayment() async {
     // Issue 2 fix: show explicit duplicate errors before form validation
     if (_hasDuplicateNames()) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Guest names must be different'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating));
+      Get.snackbar(
+        'Validation Error',
+        'Guest names must be different',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
     if (_hasDuplicateCnics()) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('CNIC numbers must be different'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating));
+      Get.snackbar(
+        'Validation Error',
+        'CNIC numbers must be different',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
     if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Please fill all required fields'),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating));
+      Get.snackbar(
+        'Validation Error',
+        'Please fill all required fields',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
       return;
     }
 
@@ -899,14 +908,13 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                       child: Column(
                         children: [
                           _field(_extraNameCtrls[i], 'Full Name *',
-                              Icons.person_outline,
-                              required: true,
+                              Icons.person_outline, required: true,
                               extraValidator: (_) {
-                                if (_hasDuplicateNames()) {
-                                  return 'Guest names must be different';
-                                }
-                                return null;
-                              }),
+                            if (_hasDuplicateNames()) {
+                              return 'Guest names must be different';
+                            }
+                            return null;
+                          }),
                           const SizedBox(height: 12),
                           TextFormField(
                             controller: _extraDocCtrls[i],

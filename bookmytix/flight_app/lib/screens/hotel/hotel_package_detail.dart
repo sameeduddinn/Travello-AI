@@ -128,8 +128,7 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
                 if (!_isGuestMode)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                          16, 16, 16, 0),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                       child: _buildCityBanner(),
                     ),
                   ),
@@ -137,8 +136,7 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
                 // ── Stats row ─────────────────────────────────────────
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                        16, 16, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                     child: _buildStatsRow(),
                   ),
                 ),
@@ -160,8 +158,7 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
                               const guestCount = 1;
 
                               return Padding(
-                                padding:
-                                    const EdgeInsets.only(bottom: 16),
+                                padding: const EdgeInsets.only(bottom: 16),
                                 child: _HotelDealCard(
                                   hotel: h,
                                   nights: _nights,
@@ -198,8 +195,7 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
 
   Widget _buildCityBanner() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 16, vertical: 9.6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9.6),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFD4AF37), Color(0xFFB8935C)],
@@ -225,8 +221,7 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
   Widget _buildFilterBar() {
     return Container(
       color: _gold,
-      padding: const EdgeInsets.fromLTRB(
-          16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Row(children: [
         _filterChip('All'),
         const SizedBox(width: 8),
@@ -269,8 +264,7 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
     final fourStar = base.where((h) => h.category.contains('4')).length;
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -385,20 +379,13 @@ class _HotelDealCardState extends State<_HotelDealCard>
       setState(() => _wishlisted = added);
       _heartCtrl.forward(from: 0);
       if (added) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(children: [
-              Icon(Icons.favorite, color: Colors.red, size: 16),
-              SizedBox(width: 8),
-              Text('Added to Saved',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-            ]),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            backgroundColor: const Color(0xFF1A1A1A),
-          ),
+        Get.snackbar(
+          'Saved',
+          'Added to Saved',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: const Color(0xFF1A1A1A),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
         );
       }
     }

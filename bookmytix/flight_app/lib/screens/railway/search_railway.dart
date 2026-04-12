@@ -50,17 +50,19 @@ class _SearchRailwayScreenState extends State<SearchRailwayScreen> {
   void _searchTrains() {
     if (_formKey.currentState!.validate()) {
       if (_selectedFromStation == null || _selectedToStation == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select both stations')),
+        Get.snackbar(
+          'Validation Error',
+          'Please select both stations',
+          snackPosition: SnackPosition.TOP,
         );
         return;
       }
 
       if (_selectedFromStation!.code == _selectedToStation!.code) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content:
-                  Text('Departure and arrival stations cannot be the same')),
+        Get.snackbar(
+          'Validation Error',
+          'Departure and arrival stations cannot be the same',
+          snackPosition: SnackPosition.TOP,
         );
         return;
       }

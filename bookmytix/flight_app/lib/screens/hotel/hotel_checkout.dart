@@ -83,7 +83,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
       Get.snackbar(
         'Terms Required',
         'Please accept Terms & Conditions and Privacy Policy to continue',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         duration: const Duration(seconds: 3),
@@ -126,8 +126,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
           // ── Progress Bar ────────────────────────────────────────────────
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: const Row(
               children: [
                 _HStep(num: 1, label: 'Hotel', done: true),
@@ -188,8 +187,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
 
           // ── Bottom Button ────────────────────────────────────────────────
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 12,
-                16, 20),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -318,8 +316,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
         // ── Room type section ────────────────────────────────────────────
         if (_roomType != null) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-                16, 12, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Divider(color: Colors.grey.shade200),
@@ -372,8 +369,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
             child: Column(children: [
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                     color: Colors.green.shade50,
                     borderRadius: BorderRadius.circular(8),
@@ -406,8 +403,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
         // Amenities
         if (_hotel.amenities.isNotEmpty) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12,
-                16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: Wrap(
               spacing: 16,
               runSpacing: 4,
@@ -535,8 +531,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
         const SizedBox(height: 12),
         // Nights · Rooms · Guests strip
         Container(
-          padding: const EdgeInsets.symmetric(
-              vertical: 12, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
               color: primary.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(12)),
@@ -584,8 +579,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
             return Column(children: [
               if (i > 0) Divider(height: 1, color: Colors.grey.shade200),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(children: [
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -713,8 +708,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
         ],
         const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
               color: primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10)),
@@ -817,8 +811,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
 
             // T&C checkbox
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16,
-                  20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -871,7 +864,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                                         WidgetSpan(
                                           child: GestureDetector(
                                             onTap: _showTermsPage,
-                                            child: const Text('Terms & Conditions',
+                                            child: const Text(
+                                                'Terms & Conditions',
                                                 style: TextStyle(
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.w600,
@@ -930,8 +924,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Row(children: [
             Container(
               padding: const EdgeInsets.all(8),
@@ -1027,8 +1020,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                   borderRadius: BorderRadius.circular(2)),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8,
-                  8, 16),
+              padding: const EdgeInsets.fromLTRB(24, 8, 8, 16),
               child: Row(children: [
                 Expanded(
                   child: Text(title,
@@ -1054,8 +1046,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: items
                         .map((item) => Padding(
-                              padding:
-                                  const EdgeInsets.only(bottom: 20),
+                              padding: const EdgeInsets.only(bottom: 20),
                               child: _policySection(item.title, item.body),
                             ))
                         .toList()),

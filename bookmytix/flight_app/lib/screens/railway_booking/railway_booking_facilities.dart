@@ -391,7 +391,8 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Departure', style: TravelloTheme.sectionHeading),
+                    const Text('Departure',
+                        style: TravelloTheme.sectionHeading),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
@@ -602,8 +603,8 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                   onTap: onToggle,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 7),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(
                       color: added ? Colors.red.shade50 : primaryColor,
                       borderRadius: BorderRadius.circular(20),
@@ -628,9 +629,8 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
           // ── Expanded details ──
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 250),
-            crossFadeState: added
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
+            crossFadeState:
+                added ? CrossFadeState.showSecond : CrossFadeState.showFirst,
             firstChild: const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 9.6),
               child: Row(
@@ -763,13 +763,11 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                           horizontal: 12, vertical: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide:
-                            const BorderSide(color: Color(0xFFDDDDDD)),
+                        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide:
-                            const BorderSide(color: Color(0xFFDDDDDD)),
+                        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -780,8 +778,8 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                       fillColor: const Color(0xFFFAFAFA),
                     ),
                     maxLines: 2,
-                    style: const TextStyle(
-                        fontSize: 13, color: Color(0xFF222222)),
+                    style:
+                        const TextStyle(fontSize: 13, color: Color(0xFF222222)),
                   ),
 
                   const SizedBox(height: 12),
@@ -830,9 +828,8 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
         // Card 1 — always shown
         _buildTransferCard(
           title: 'Departure Transfer',
-          subtitle: _isRoundTrip
-              ? 'Home → Departure station'
-              : 'Home → Station',
+          subtitle:
+              _isRoundTrip ? 'Home → Departure station' : 'Home → Station',
           added: _transferAdded,
           vehicleType: _transferVehicleType,
           pickupCtrl: _transferPickupCtrl,
@@ -1040,8 +1037,8 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
               children: [
                 Text(
                   _train.trainName,
-                  style:
-                      TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.bold),
+                  style: TravelloTheme.subtitle
+                      .copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
                   '${_train.trainNumber}  ·  ${_train.departureTime} → ${_train.arrivalTime}',
@@ -1052,8 +1049,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: classColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
@@ -1114,8 +1110,8 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
               children: [
                 Text(
                   _returnTrain!.trainName,
-                  style:
-                      TravelloTheme.subtitle.copyWith(fontWeight: FontWeight.bold),
+                  style: TravelloTheme.subtitle
+                      .copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
                   '${_returnTrain!.trainNumber}  ·  ${_returnTrain!.departureTime} → ${_returnTrain!.arrivalTime}',
@@ -1126,8 +1122,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: classColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
@@ -1203,8 +1198,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16,
-              20, 16),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

@@ -244,7 +244,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
       Get.snackbar(
         'Terms Required',
         'Please accept Terms & Conditions and Privacy Policy to continue',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         duration: const Duration(seconds: 3),
@@ -2638,8 +2638,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                   borderRadius: BorderRadius.circular(2)),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8,
-                  8, 16),
+              padding: const EdgeInsets.fromLTRB(24, 8, 8, 16),
               child: Row(children: [
                 Expanded(
                   child: Text(title,
@@ -2665,8 +2664,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: items
                         .map((item) => Padding(
-                              padding:
-                                  const EdgeInsets.only(bottom: 20),
+                              padding: const EdgeInsets.only(bottom: 20),
                               child: _buildPolicySection(item.title, item.body),
                             ))
                         .toList()),

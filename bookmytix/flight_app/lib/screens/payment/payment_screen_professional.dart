@@ -100,7 +100,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
       Get.snackbar(
         'Validation Error',
         'Please fill in all required fields correctly',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.withValues(alpha: 0.8),
         colorText: Colors.white,
         duration: const Duration(seconds: 2),
@@ -1362,7 +1362,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                     Get.snackbar(
                       'Code Sent',
                       'Verification code sent to ${_mobileNumberController.text}',
-                      snackPosition: SnackPosition.BOTTOM,
+                      snackPosition: SnackPosition.TOP,
                       backgroundColor: Colors.green.shade600,
                       colorText: Colors.white,
                       duration: const Duration(seconds: 3),

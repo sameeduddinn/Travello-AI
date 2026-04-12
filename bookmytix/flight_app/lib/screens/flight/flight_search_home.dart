@@ -340,23 +340,28 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
 
   void _searchFlights() {
     if (_fromAirport == null || _toAirport == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select departure and arrival airports')),
+      Get.snackbar(
+        'Validation Error',
+        'Please select departure and arrival airports',
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }
 
     if (_departureDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select departure date')),
+      Get.snackbar(
+        'Validation Error',
+        'Please select departure date',
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }
 
     if (_tripType == 'Round-trip' && _returnDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select return date')),
+      Get.snackbar(
+        'Validation Error',
+        'Please select return date',
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }

@@ -817,8 +817,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           )
                         ],
                       ),
-                      child:
-                          const Icon(Icons.flight_rounded, color: primary, size: 21),
+                      child: const Icon(Icons.flight_rounded,
+                          color: primary, size: 21),
                     ),
                     const SizedBox(width: 13),
                     // Airline info
@@ -1164,8 +1164,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           )
                         ],
                       ),
-                      child:
-                          const Icon(Icons.flight_rounded, color: primary, size: 21),
+                      child: const Icon(Icons.flight_rounded,
+                          color: primary, size: 21),
                     ),
                     const SizedBox(width: 13),
                     // Airline info
@@ -1284,20 +1284,20 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${p['firstName']} ${p['lastName']}${p['salutation'] != null && p['salutation'].toString().isNotEmpty ? ' (${p['salutation']})' : ''}',
-                            style: const TextStyle(
-                                fontSize: 15, fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Passenger ${index + 1} · $pType',
-                            style: const TextStyle(
-                                fontSize: 12, color: Color(0xFF666666)),
-                          ),
-                        ],
-                      ),
+                          children: [
+                            Text(
+                              '${p['firstName']} ${p['lastName']}${p['salutation'] != null && p['salutation'].toString().isNotEmpty ? ' (${p['salutation']})' : ''}',
+                              style: const TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Passenger ${index + 1} · $pType',
+                              style: const TextStyle(
+                                  fontSize: 12, color: Color(0xFF666666)),
+                            ),
+                          ],
+                        ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(

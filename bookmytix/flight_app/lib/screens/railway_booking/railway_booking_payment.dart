@@ -121,11 +121,13 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
 
   void _showPkPhoneValidationError() {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Enter valid PK mobile number (3XXXXXXXXX)'),
-        behavior: SnackBarBehavior.floating,
-      ),
+    Get.snackbar(
+      'Invalid Number',
+      'Enter valid PK mobile number (3XXXXXXXXX)',
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.orange.shade100,
+      colorText: Colors.orange.shade900,
+      duration: const Duration(seconds: 2),
     );
   }
 

@@ -188,8 +188,7 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                     borderRadius: BorderRadius.circular(2)),
               ),
               const Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
                     Icon(Icons.search, color: TravelloTheme.primaryMain),
@@ -214,8 +213,7 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                       title: Text(e.key,
                           style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color:
-                                  isSel ? TravelloTheme.primaryMain : null)),
+                              color: isSel ? TravelloTheme.primaryMain : null)),
                       subtitle: Text(e.value),
                       trailing: isSel
                           ? const Icon(Icons.check_circle,
@@ -266,18 +264,18 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
 
   void _search() {
     if (_selectedCity == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select a destination'),
-            behavior: SnackBarBehavior.floating),
+      Get.snackbar(
+        'Validation Error',
+        'Please select a destination',
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }
     if (_checkInDate == null || _checkOutDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select check-in and check-out dates'),
-            behavior: SnackBarBehavior.floating),
+      Get.snackbar(
+        'Validation Error',
+        'Please select check-in and check-out dates',
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }
@@ -296,8 +294,7 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
     return Scaffold(
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-              16, 0, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: ElevatedButton.icon(
             onPressed: _search,
             icon: const Icon(Icons.search),
@@ -362,9 +359,7 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                         padding: EdgeInsets.only(
                           left: 20,
                           right: 20,
-                          top: constraints.maxHeight > 120
-                              ? 24
-                              : 16,
+                          top: constraints.maxHeight > 120 ? 24 : 16,
                           bottom: 8,
                         ),
                         child: SlideTransition(
@@ -759,8 +754,7 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(Icons.history,
-                                    size: 15,
-                                    color: TravelloTheme.primaryMain),
+                                    size: 15, color: TravelloTheme.primaryMain),
                                 const SizedBox(width: 5),
                                 Text(
                                   s['info'] != null
@@ -866,8 +860,7 @@ class _GuestsRoomsSheetState extends State<_GuestsRoomsSheet> {
         color: TravelloTheme.paperLight,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.fromLTRB(
-          24, 8, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

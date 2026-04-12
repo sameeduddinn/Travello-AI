@@ -228,11 +228,6 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
             icon: const Icon(Icons.help_outline, color: Colors.white),
             onPressed: () => Get.toNamed('/faq'),
           ),
-          IconButton(
-            icon: const Icon(Icons.share_outlined, color: Colors.white),
-            tooltip: 'Share Booking',
-            onPressed: _shareHotelBooking,
-          ),
         ],
       ),
       body: Stack(
@@ -859,48 +854,6 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
         ],
       ),
     );
-  }
-
-  Future<void> _shareHotelBooking() async {
-    final hotel = bookingData['hotelName'] as String? ??
-        bookingData['_hotelName'] as String? ??
-        'Hotel';
-    final ref = bookingData['bookingRef'] as String? ??
-        bookingData['bookingReference'] as String? ??
-        bookingReference;
-    final checkIn = bookingData['_checkInStr'] as String? ??
-        (bookingData['checkInDate'] is DateTime
-            ? DateFormat('d MMM yyyy')
-                .format(bookingData['checkInDate'] as DateTime)
-            : 'N/A');
-    final checkOut = bookingData['_checkOutStr'] as String? ??
-        (bookingData['checkOutDate'] is DateTime
-            ? DateFormat('d MMM yyyy')
-                .format(bookingData['checkOutDate'] as DateTime)
-            : 'N/A');
-    final city = bookingData['_city'] as String? ??
-        bookingData['city'] as String? ??
-        bookingData['destination'] as String? ??
-        'N/A';
-    final summary = 'Travello AI - Hotel Booking\n'
-        'Hotel: $hotel\n'
-        'City: $city\n'
-        'Booking Ref: $ref\n'
-        'Check-in: $checkIn  |  Check-out: $checkOut\n'
-        '━━━━━━━━━━━━━━━━━━━━━━━━\n'
-        'Booked via Travello AI';
-    await Clipboard.setData(ClipboardData(text: summary));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Row(children: [
-          Icon(Icons.copy_rounded, color: Colors.white, size: 16),
-          SizedBox(width: 8),
-          Text('Booking details copied to clipboard'),
-        ]),
-        backgroundColor: Color(0xFF1A1A1A),
-        behavior: SnackBarBehavior.floating,
-      ));
-    }
   }
 
   // ══════════════════════════════════════════════════════════════════════════

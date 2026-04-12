@@ -1496,23 +1496,23 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           onPressed: () {
                             // Validate
                             if (selectedFrom == null || selectedTo == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Please select both origin and destination'),
-                                  backgroundColor: Colors.red,
-                                ),
+                              Get.snackbar(
+                                'Validation Error',
+                                'Please select both origin and destination',
+                                snackPosition: SnackPosition.TOP,
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
                               );
                               return;
                             }
 
                             if (selectedFrom?.code == selectedTo?.code) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Origin and destination cannot be the same'),
-                                  backgroundColor: Colors.red,
-                                ),
+                              Get.snackbar(
+                                'Validation Error',
+                                'Origin and destination cannot be the same',
+                                snackPosition: SnackPosition.TOP,
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
                               );
                               return;
                             }
@@ -1555,14 +1555,13 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                             Navigator.pop(context);
 
                             // Success
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Search updated: ${selectedFrom?.code} → ${selectedTo?.code}'),
-                                backgroundColor: TravelloTheme.primaryMain,
-                                duration: const Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                              ),
+                            Get.snackbar(
+                              'Search Updated',
+                              'Search updated: ${selectedFrom?.code} → ${selectedTo?.code}',
+                              snackPosition: SnackPosition.TOP,
+                              backgroundColor: TravelloTheme.primaryMain,
+                              colorText: Colors.white,
+                              duration: const Duration(seconds: 2),
                             );
                           },
                           style: ElevatedButton.styleFrom(
@@ -1725,7 +1724,6 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
     required int infants,
     required Function(Map<String, int>) onChanged,
   }) {
-
     // Build display text
     String passengerText = '';
     if (adults > 0) {
@@ -2485,7 +2483,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
-            transform: Matrix4.translationValues(0.0, isHovered ? -4.0 : 0.0, 0.0),
+            transform:
+                Matrix4.translationValues(0.0, isHovered ? -4.0 : 0.0, 0.0),
             child: Card(
               margin: const EdgeInsets.only(bottom: 16),
               elevation: isHovered ? 8 : 2,
@@ -2506,13 +2505,13 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                     _applyFilters();
 
                     // Show message
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'Outbound flight selected. Now select return flight.'),
-                        backgroundColor: TravelloTheme.primaryMain,
-                        duration: Duration(seconds: 2),
-                      ),
+                    Get.snackbar(
+                      'Outbound Selected',
+                      'Outbound flight selected. Now select return flight.',
+                      snackPosition: SnackPosition.TOP,
+                      backgroundColor: TravelloTheme.primaryMain,
+                      colorText: Colors.white,
+                      duration: const Duration(seconds: 2),
                     );
                   } else {
                     // One-way or return journey selected, go directly to passenger form

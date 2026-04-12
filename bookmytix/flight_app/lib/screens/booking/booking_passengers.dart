@@ -278,33 +278,25 @@ class _BookingPassengersState extends State<BookingPassengers> {
 
       // Show success message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text('Passenger details saved successfully!'),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
+        Get.snackbar(
+          'Saved',
+          'Passenger details saved successfully!',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
         );
       }
     } catch (e) {
       // Show error message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to save passenger details'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 2),
-          ),
+        Get.snackbar(
+          'Error',
+          'Failed to save passenger details',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
         );
       }
     }
@@ -725,7 +717,8 @@ class _BookingPassengersState extends State<BookingPassengers> {
                       )
                     ],
                   ),
-                  child: const Icon(Icons.flight_rounded, color: primary, size: 20),
+                  child: const Icon(Icons.flight_rounded,
+                      color: primary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 // Airline name + code
@@ -1102,7 +1095,8 @@ class _BookingPassengersState extends State<BookingPassengers> {
                       )
                     ],
                   ),
-                  child: const Icon(Icons.flight_rounded, color: primary, size: 20),
+                  child: const Icon(Icons.flight_rounded,
+                      color: primary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 // Airline name + code
@@ -1570,7 +1564,8 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                             setState(() => p.salutation = v!),
                                         child: Radio<String>(
                                           value: t,
-                                          activeColor: TravelloTheme.primaryMain,
+                                          activeColor:
+                                              TravelloTheme.primaryMain,
                                           materialTapTargetSize:
                                               MaterialTapTargetSize.shrinkWrap,
                                         ),
@@ -1714,12 +1709,70 @@ class _BookingPassengersState extends State<BookingPassengers> {
                         Container(
                           key: p.nationalityDobKey,
                           child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final isMobile = constraints.maxWidth < 600;
-                            if (isMobile) {
-                              return Column(
+                            builder: (context, constraints) {
+                              final isMobile = constraints.maxWidth < 600;
+                              if (isMobile) {
+                                return Column(
+                                  children: [
+                                    _buildDropdown(
+                                      label: 'Nationality',
+                                      icon: Icons.language,
+                                      value: p.nationality,
+                                      hint: 'Select',
+                                      items: _kCountries,
+                                      onChanged: (v) =>
+                                          setState(() => p.nationality = v),
+                                      showError:
+                                          p.submitted && p.nationality == null,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildDatePicker(
+                                      context: context,
+                                      label: 'Date of Birth',
+                                      icon: Icons.calendar_month_outlined,
+                                      value: p.dateOfBirth,
+                                      hint: 'Select',
+                                      // Age-based date range
+                                      firstDate: i >= _adults + _children
+                                          ? _departureDate.subtract(
+                                              const Duration(days: 730))
+                                          : i >= _adults
+                                              ? _departureDate.subtract(
+                                                  const Duration(days: 4383))
+                                              : DateTime(1920),
+                                      lastDate: i >= _adults + _children
+                                          ? _departureDate
+                                          : i >= _adults
+                                              ? _departureDate.subtract(
+                                                  const Duration(days: 730))
+                                              : _departureDate.subtract(
+                                                  const Duration(days: 4383)),
+                                      initialPickerDate: i >=
+                                              _adults + _children
+                                          ? _departureDate.subtract(
+                                              const Duration(days: 180))
+                                          : i >= _adults
+                                              ? _departureDate.subtract(
+                                                  const Duration(days: 2190))
+                                              : _departureDate.subtract(
+                                                  const Duration(days: 9125)),
+                                      ageHint: i >= _adults + _children
+                                          ? 'Infant: 0 – 24 months at travel date'
+                                          : i >= _adults
+                                              ? 'Child: 2 – 12 years at travel date'
+                                              : 'Adult: 12+ years at travel date',
+                                      onPicked: (d) =>
+                                          setState(() => p.dateOfBirth = d),
+                                      showError:
+                                          p.submitted && p.dateOfBirth == null,
+                                    ),
+                                  ],
+                                );
+                              }
+                              return Row(
                                 children: [
-                                  _buildDropdown(
+                                  Expanded(
+                                      child: _buildDropdown(
                                     label: 'Nationality',
                                     icon: Icons.language,
                                     value: p.nationality,
@@ -1729,9 +1782,10 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                         setState(() => p.nationality = v),
                                     showError:
                                         p.submitted && p.nationality == null,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  _buildDatePicker(
+                                  )),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                      child: _buildDatePicker(
                                     context: context,
                                     label: 'Date of Birth',
                                     icon: Icons.calendar_month_outlined,
@@ -1769,69 +1823,11 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                         setState(() => p.dateOfBirth = d),
                                     showError:
                                         p.submitted && p.dateOfBirth == null,
-                                  ),
+                                  )),
                                 ],
                               );
-                            }
-                            return Row(
-                              children: [
-                                Expanded(
-                                    child: _buildDropdown(
-                                  label: 'Nationality',
-                                  icon: Icons.language,
-                                  value: p.nationality,
-                                  hint: 'Select',
-                                  items: _kCountries,
-                                  onChanged: (v) =>
-                                      setState(() => p.nationality = v),
-                                  showError:
-                                      p.submitted && p.nationality == null,
-                                )),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                    child: _buildDatePicker(
-                                  context: context,
-                                  label: 'Date of Birth',
-                                  icon: Icons.calendar_month_outlined,
-                                  value: p.dateOfBirth,
-                                  hint: 'Select',
-                                  // Age-based date range
-                                  firstDate: i >= _adults + _children
-                                      ? _departureDate
-                                          .subtract(const Duration(days: 730))
-                                      : i >= _adults
-                                          ? _departureDate.subtract(
-                                              const Duration(days: 4383))
-                                          : DateTime(1920),
-                                  lastDate: i >= _adults + _children
-                                      ? _departureDate
-                                      : i >= _adults
-                                          ? _departureDate.subtract(
-                                              const Duration(days: 730))
-                                          : _departureDate.subtract(
-                                              const Duration(days: 4383)),
-                                  initialPickerDate: i >= _adults + _children
-                                      ? _departureDate
-                                          .subtract(const Duration(days: 180))
-                                      : i >= _adults
-                                          ? _departureDate.subtract(
-                                              const Duration(days: 2190))
-                                          : _departureDate.subtract(
-                                              const Duration(days: 9125)),
-                                  ageHint: i >= _adults + _children
-                                      ? 'Infant: 0 – 24 months at travel date'
-                                      : i >= _adults
-                                          ? 'Child: 2 – 12 years at travel date'
-                                          : 'Adult: 12+ years at travel date',
-                                  onPicked: (d) =>
-                                      setState(() => p.dateOfBirth = d),
-                                  showError:
-                                      p.submitted && p.dateOfBirth == null,
-                                )),
-                              ],
-                            );
-                          },
-                        ),
+                            },
+                          ),
                         ),
                         const SizedBox(height: 16),
 
@@ -1998,15 +1994,15 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                   : Icons
                                                       .radio_button_unchecked,
                                               size: 20,
-                                              color:
-                                                  p.documentType == 'Passport'
-                                                      ? Theme.of(context)
-                                                          .colorScheme
-                                                          .primary
-                                                      : Theme.of(context)
-                                                          .colorScheme
-                                                          .onSurface
-                                                          .withValues(alpha: 0.5),
+                                              color: p.documentType ==
+                                                      'Passport'
+                                                  ? Theme.of(context)
+                                                      .colorScheme
+                                                      .primary
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface
+                                                      .withValues(alpha: 0.5),
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
@@ -2213,15 +2209,15 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                     : Icons
                                                         .radio_button_unchecked,
                                                 size: 20,
-                                                color:
-                                                    p.documentType == 'B-Form'
-                                                        ? Theme.of(context)
-                                                            .colorScheme
-                                                            .primary
-                                                        : Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurface
-                                                            .withValues(alpha: 0.5),
+                                                color: p.documentType ==
+                                                        'B-Form'
+                                                    ? Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                    : Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface
+                                                        .withValues(alpha: 0.5),
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
@@ -2291,15 +2287,15 @@ class _BookingPassengersState extends State<BookingPassengers> {
                                                     : Icons
                                                         .radio_button_unchecked,
                                                 size: 20,
-                                                color:
-                                                    p.documentType == 'Passport'
-                                                        ? Theme.of(context)
-                                                            .colorScheme
-                                                            .primary
-                                                        : Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurface
-                                                            .withValues(alpha: 0.5),
+                                                color: p.documentType ==
+                                                        'Passport'
+                                                    ? Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                    : Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface
+                                                        .withValues(alpha: 0.5),
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
