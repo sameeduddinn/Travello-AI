@@ -1,10 +1,9 @@
 import 'package:flight_app/models/trip.dart';
-import 'package:flight_app/widgets/cards/flight_portrait_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 
-// Real city photos — no placeholder dependency
 const _cityImages = {
   'karachi':
       'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&q=80',
@@ -36,7 +35,7 @@ const _cityImages = {
       'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
 };
 
-const _fallbackImage =
+const _fallback =
     'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80';
 
 class CitySearchResults extends StatefulWidget {
@@ -61,8 +60,8 @@ class _CitySearchResultsState extends State<CitySearchResults>
 
     final args = Get.arguments as Map<String, dynamic>?;
     cityName = args?['cityName'] ?? '';
-
     final lower = cityName.toLowerCase();
+
     _departures = tripList
         .where((t) => t.from.name.toLowerCase() == lower)
         .take(10)
@@ -85,12 +84,12 @@ class _CitySearchResultsState extends State<CitySearchResults>
     super.dispose();
   }
 
-  String get _imageUrl =>
-      _cityImages[cityName.toLowerCase()] ?? _fallbackImage;
+  String get _imageUrl => _cityImages[cityName.toLowerCase()] ?? _fallback;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F7FB),
       body: CustomScrollView(
         slivers: [
           // ── Hero header ────────────────────────────────────────────────────
@@ -112,31 +111,25 @@ class _CitySearchResultsState extends State<CitySearchResults>
                     fontSize: 18,
                     shadows: [Shadow(color: Colors.black54, blurRadius: 6)]),
               ),
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.network(
-                    _imageUrl,
+              background: Stack(fit: StackFit.expand, children: [
+                Image.network(_imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: TravelloTheme.primaryDark,
+                    errorBuilder: (_, __, ___) =>
+                        Container(color: TravelloTheme.primaryDark)),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.65)
+                      ],
+                      stops: const [0.45, 1.0],
                     ),
                   ),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.65),
-                        ],
-                        stops: const [0.45, 1.0],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ]),
             ),
           ),
 
@@ -153,7 +146,7 @@ class _CitySearchResultsState extends State<CitySearchResults>
                   BoxShadow(
                       color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 8,
-                      offset: const Offset(0, 2)),
+                      offset: const Offset(0, 2))
                 ],
               ),
               child: Row(
@@ -180,8 +173,8 @@ class _CitySearchResultsState extends State<CitySearchResults>
                 unselectedLabelColor: Colors.grey.shade500,
                 indicatorColor: TravelloTheme.primaryMain,
                 indicatorWeight: 2.5,
-                labelStyle: const TextStyle(
-                    fontWeight: FontWeight.w700, fontSize: 13),
+                labelStyle:
+                    const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                 unselectedLabelStyle:
                     const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                 tabs: const [
@@ -209,6 +202,8 @@ class _CitySearchResultsState extends State<CitySearchResults>
     );
   }
 
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
   Widget _stat(IconData icon, String value, String label) {
     return Column(children: [
       Icon(icon, color: TravelloTheme.primaryMain, size: 22),
@@ -219,8 +214,7 @@ class _CitySearchResultsState extends State<CitySearchResults>
               fontWeight: FontWeight.w800,
               color: Color(0xFF111827))),
       Text(label,
-          style:
-              const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+          style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
     ]);
   }
 
@@ -246,23 +240,237 @@ class _CitySearchResultsState extends State<CitySearchResults>
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       itemCount: trips.length,
-      itemBuilder: (context, i) {
-        final t = trips[i];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: FlightPortraitCard(
-            from: t.from.code,
-            to: t.to.code,
-            date: '${t.depart.day}/${t.depart.month}/${t.depart.year}',
-            price: t.price,
-            plane: t.plane,
-          ),
-        );
-      },
+      itemBuilder: (context, i) => Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: GestureDetector(
+          onTap: () => Get.toNamed('/flight-search-home'),
+          child: _FlightCard(trip: trips[i]),
+        ),
+      ),
     );
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Modern flight result card
+// ═══════════════════════════════════════════════════════════════════════════════
+class _FlightCard extends StatelessWidget {
+  final Trip trip;
+  const _FlightCard({required this.trip});
+
+  String _fmt(DateTime dt) => DateFormat('HH:mm').format(dt);
+  String _date(DateTime dt) => DateFormat('d MMM yyyy').format(dt);
+
+  String _duration() {
+    final diff = trip.arrival.difference(trip.depart);
+    final h = diff.inHours;
+    final m = diff.inMinutes % 60;
+    return '${h}h ${m}m';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final stops = trip.transit == 0
+        ? 'Direct'
+        : trip.transit == 1
+            ? '1 Stop'
+            : '${trip.transit} Stops';
+    final stopColor =
+        trip.transit == 0 ? const Color(0xFF059669) : const Color(0xFFD97706);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3))
+        ],
+      ),
+      child: Column(
+        children: [
+          // ── Airline header ────────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Image.network(
+                    trip.plane.logo,
+                    width: 22,
+                    height: 22,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.flight,
+                        size: 20, color: TravelloTheme.primaryMain),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        trip.plane.name,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: Color(0xFF111827)),
+                      ),
+                      const Text('Economy',
+                          style: TextStyle(
+                              fontSize: 10, color: Color(0xFF9CA3AF))),
+                    ],
+                  ),
+                ),
+                // Stops badge
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: stopColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: stopColor.withValues(alpha: 0.4), width: 0.8),
+                  ),
+                  child: Text(stops,
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: stopColor)),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Route ─────────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Row(
+              children: [
+                // Departure
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(_fmt(trip.depart),
+                          style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF111827))),
+                      const SizedBox(height: 2),
+                      Text(trip.from.code,
+                          style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF2563EB))),
+                      Text(trip.from.name,
+                          style: const TextStyle(
+                              fontSize: 11, color: Color(0xFF6B7280))),
+                    ],
+                  ),
+                ),
+
+                // Duration + arrow
+                Column(
+                  children: [
+                    Text(_duration(),
+                        style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF9CA3AF),
+                            fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      Container(
+                          width: 28, height: 1, color: const Color(0xFFD1D5DB)),
+                      const Icon(Icons.flight,
+                          size: 16, color: Color(0xFF2563EB)),
+                      Container(
+                          width: 28, height: 1, color: const Color(0xFFD1D5DB)),
+                    ]),
+                  ],
+                ),
+
+                // Arrival
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(_fmt(trip.arrival),
+                          style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF111827))),
+                      const SizedBox(height: 2),
+                      Text(trip.to.code,
+                          style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF2563EB))),
+                      Text(trip.to.name,
+                          style: const TextStyle(
+                              fontSize: 11, color: Color(0xFF6B7280))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Footer ────────────────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+              border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today_outlined,
+                    size: 12, color: Colors.grey.shade500),
+                const SizedBox(width: 4),
+                Text(_date(trip.depart),
+                    style:
+                        TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                const SizedBox(width: 12),
+                Icon(Icons.swap_horiz, size: 13, color: Colors.grey.shade500),
+                const SizedBox(width: 4),
+                Text(trip.roundTrip ? 'Round-trip' : 'One-way',
+                    style:
+                        TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                const Spacer(),
+                RichText(
+                  text: TextSpan(children: [
+                    TextSpan(
+                        text: 'PKR ',
+                        style: TextStyle(
+                            fontSize: 11, color: Colors.grey.shade500)),
+                    TextSpan(
+                        text: NumberFormat('#,###').format(trip.price.toInt()),
+                        style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFD4AF37))),
+                  ]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Tab bar delegate ──────────────────────────────────────────────────────────
 class _TabDelegate extends SliverPersistentHeaderDelegate {
   final TabBar tabBar;
   const _TabDelegate(this.tabBar);
@@ -275,10 +483,7 @@ class _TabDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: TravelloTheme.paperLight,
-      child: tabBar,
-    );
+    return Container(color: Colors.white, child: tabBar);
   }
 
   @override

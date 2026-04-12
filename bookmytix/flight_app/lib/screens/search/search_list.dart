@@ -62,34 +62,54 @@ class _Dest {
 }
 
 const _destinations = [
-  _Dest('Hunza', 'Northern Gem',
+  _Dest(
+      'Hunza',
+      'Northern Gem',
       'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=400&q=80',
       Color(0xFF4A90D9)),
-  _Dest('Skardu', 'Mountain Paradise',
+  _Dest(
+      'Skardu',
+      'Mountain Paradise',
       'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80',
       Color(0xFF2E7D32)),
-  _Dest('Murree', 'Hill Station',
+  _Dest(
+      'Murree',
+      'Hill Station',
       'https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=80',
       Color(0xFF6A1B9A)),
-  _Dest('Lahore', 'City of Gardens',
+  _Dest(
+      'Lahore',
+      'City of Gardens',
       'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80',
       Color(0xFFE65100)),
-  _Dest('Karachi', 'City of Lights',
+  _Dest(
+      'Karachi',
+      'City of Lights',
       'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400&q=80',
       Color(0xFF0277BD)),
-  _Dest('Islamabad', 'Capital City',
+  _Dest(
+      'Islamabad',
+      'Capital City',
       'https://images.unsplash.com/photo-1578895101408-1a36b834405b?w=400&q=80',
       Color(0xFF1B5E20)),
-  _Dest('Swat', 'Switzerland of East',
+  _Dest(
+      'Swat',
+      'Switzerland of East',
       'https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=80',
       Color(0xFFAD1457)),
-  _Dest('Peshawar', 'City of Flowers',
+  _Dest(
+      'Peshawar',
+      'City of Flowers',
       'https://images.unsplash.com/photo-1539136788836-5699e78bfc75?w=400&q=80',
       Color(0xFF4E342E)),
-  _Dest('Quetta', 'Fruit Basket',
+  _Dest(
+      'Quetta',
+      'Fruit Basket',
       'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=400&q=80',
       Color(0xFF558B2F)),
-  _Dest('Naran', 'Kaghan Valley',
+  _Dest(
+      'Naran',
+      'Kaghan Valley',
       'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=80',
       Color(0xFF00695C)),
 ];
@@ -141,10 +161,13 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
   Future<void> _navigate(String cityName, String type) async {
     if (type == 'flight') {
       await SearchHistoryService.saveFlightSearch(cityName);
-    } else {
+      Get.toNamed('/flight-search-home');
+    } else if (type == 'train') {
       await SearchHistoryService.saveTrainSearch(cityName);
+      Get.toNamed('/train-search-home');
+    } else {
+      Get.toNamed('/hotel-search');
     }
-    Get.toNamed('/city-search-results', arguments: {'cityName': cityName});
   }
 
   void _fillSearch(String text) => setState(() {
@@ -187,23 +210,31 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
   Widget _buildResults() {
     final kw = _textRef.text.trim().toLowerCase();
 
+    // Filter by active tab
+    // _catIndex: 0=All, 1=Flights, 2=Trains, 3=Hotels
+    final showFlights = _catIndex == 0 || _catIndex == 1;
+    final showTrains = _catIndex == 0 || _catIndex == 2;
+
     // Airports
-    final airports = airportList
-        .where((a) =>
-            '${a.location} ${a.name} ${a.code}'.toLowerCase().contains(kw))
-        .toList();
+    final airports = showFlights
+        ? airportList
+            .where((a) =>
+                '${a.location} ${a.name} ${a.code}'.toLowerCase().contains(kw))
+            .toList()
+        : <Airport>[];
 
     // Train Stations
-    final stations = PakistanRailwayStations.getAllStations()
-        .where(
-            (s) => '${s.name} ${s.city} ${s.code}'.toLowerCase().contains(kw))
-        .toList();
+    final stations = showTrains
+        ? PakistanRailwayStations.getAllStations()
+            .where((s) =>
+                '${s.name} ${s.city} ${s.code}'.toLowerCase().contains(kw))
+            .toList()
+        : <RailwayStation>[];
 
     if (airports.isEmpty && stations.isEmpty) {
       return _buildNoResults();
     }
 
-    // Build combined list with section headers
     final items = <Widget>[];
 
     if (airports.isNotEmpty) {
@@ -218,7 +249,6 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
           code: a.code,
           onTap: () => _navigate(a.location, 'flight'),
         ));
-        // Show outbound + inbound hint
         items.add(_directionHint(a.location, a.code));
       }
     }
@@ -757,8 +787,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
                     Image.network(
                       d.imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          Container(color: d.color),
+                      errorBuilder: (_, __, ___) => Container(color: d.color),
                     ),
                     DecoratedBox(
                       decoration: BoxDecoration(

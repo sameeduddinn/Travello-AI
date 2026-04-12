@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/components/home/service_tabs.dart';
 import 'package:flight_app/components/home/hero_section.dart';
-import 'package:flight_app/widgets/home/quick_search_bar.dart';
 import 'package:flight_app/widgets/home/quick_access_features.dart';
 import 'package:flight_app/widgets/home/dynamic_destination_cards.dart';
 import 'package:flight_app/widgets/home/package_list_slider.dart';
@@ -355,12 +354,6 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                 ),
               ],
             ),
-
-            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            // 🔍 QUICK SEARCH BAR
-            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            const SizedBox(height: 16),
-            QuickSearchBar(service: _selectedService),
 
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             // ⚡ FEATURES SECTION

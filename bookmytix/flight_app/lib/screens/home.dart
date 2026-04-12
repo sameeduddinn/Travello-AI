@@ -3,8 +3,7 @@ import 'package:flight_app/widgets/bottom_navigation/bottom_nav_menu.dart';
 import 'package:flight_app/widgets/home/city_destinations/city_destinations_main.dart';
 import 'package:flight_app/widgets/home/header.dart';
 import 'package:flight_app/widgets/home/package_list_slider.dart';
-import 'package:flight_app/widgets/home/search.dart';
-import 'package:flight_app/widgets/home/quick_search_bar.dart';
+import 'package:flight_app/widgets/home/banner.dart';
 import 'package:flight_app/widgets/home/flight_list_double.dart';
 import 'package:flight_app/widgets/home/quick_access_features.dart';
 import 'package:flight_app/widgets/home/travello_features.dart';
@@ -100,9 +99,7 @@ class _HomeState extends State<Home> {
           controller: _scrollref,
           child: Column(
             children: [
-              const SearchHome(),
-              const VSpaceShort(),
-              const QuickSearchBar(),
+              const HomeBanner(),
               const VSpace(),
               const QuickAccessFeatures(),
               const VSpace(),
