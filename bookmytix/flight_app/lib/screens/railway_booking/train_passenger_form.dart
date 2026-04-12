@@ -806,7 +806,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                                     ],
                                     validator: (v) {
                                       final s = v?.trim() ?? '';
-                                      if (s.isEmpty){
+                                      if (s.isEmpty) {
                                         return 'Last name is required';
                                       }
 
@@ -1779,14 +1779,15 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                   ],
                 ),
               ),
-              DSButton(
-                label: isContact ? 'CONFIRM' : 'NEXT',
-                trailingIcon: Icons.arrow_forward_rounded,
-                onTap: isContact ? _submit : _goNext,
-                width: 148,
-                height: 52,
-                color: const Color(0xFFD4AF37),
-                textColor: Colors.white,
+              Expanded(
+                child: DSButton(
+                  label: isContact ? 'CONFIRM' : 'NEXT',
+                  trailingIcon: Icons.arrow_forward_rounded,
+                  onTap: isContact ? _submit : _goNext,
+                  height: 52,
+                  color: const Color(0xFFD4AF37),
+                  textColor: Colors.white,
+                ),
               ),
             ],
           ),

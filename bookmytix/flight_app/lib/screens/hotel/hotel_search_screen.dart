@@ -264,19 +264,11 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
 
   void _search() {
     if (_selectedCity == null) {
-      Get.snackbar(
-        'Validation Error',
-        'Please select a destination',
-        snackPosition: SnackPosition.TOP,
-      );
+      _showValidationError('Please select a destination');
       return;
     }
     if (_checkInDate == null || _checkOutDate == null) {
-      Get.snackbar(
-        'Validation Error',
-        'Please select check-in and check-out dates',
-        snackPosition: SnackPosition.TOP,
-      );
+      _showValidationError('Please select check-in and check-out dates');
       return;
     }
     _saveRecentSearch();
@@ -287,6 +279,20 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
       'rooms': _rooms,
       'guests': _adults + _children,
     });
+  }
+
+  void _showValidationError(String message) {
+    Get.snackbar(
+      'Validation Error',
+      message,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: const Color(0xFFD32F2F),
+      colorText: Colors.white,
+      icon: const Icon(Icons.error_outline, color: Colors.white),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      borderRadius: 12,
+      duration: const Duration(seconds: 2),
+    );
   }
 
   @override

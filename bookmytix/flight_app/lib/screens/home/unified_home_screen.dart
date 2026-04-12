@@ -577,7 +577,7 @@ class _HotelWeekendDealsSectionState extends State<_HotelWeekendDealsSection> {
           alignment: Alignment.center,
           children: [
             SizedBox(
-              height: 356,
+              height: max(356.0, MediaQuery.of(context).size.height * 0.40),
               child: ListView.separated(
                 controller: _scroll,
                 scrollDirection: Axis.horizontal,
@@ -595,7 +595,8 @@ class _HotelWeekendDealsSectionState extends State<_HotelWeekendDealsSection> {
                   final finalPrice = origPrice * (1 - discountPct / 100);
                   final guestCount = Random().nextInt(2) + 1; // 1 or 2
                   return SizedBox(
-                    height: 352,
+                    height:
+                        max(352.0, MediaQuery.of(context).size.height * 0.40),
                     child: _HotelWeekendDealCard(
                       hotel: h,
                       nights: widget.nights,
@@ -820,7 +821,7 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          width: 230,
+          width: MediaQuery.of(context).size.width * 0.55,
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
             borderRadius: BorderRadius.circular(14),
@@ -968,7 +969,7 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                       // Hotel name
                       Text(
                         h.name,
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13,
@@ -1100,6 +1101,7 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                       Text(
                         'PKR ${fmt.format(widget.finalPrice.round())} total · ${widget.nights} nights · ${widget.guests} ${widget.guests == 1 ? 'guest' : 'guests'}',
                         overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                         style: TextStyle(
                             fontSize: 10, color: Colors.grey.shade500),
                       ),
@@ -1290,7 +1292,7 @@ class _TopHotelsOfPakistanSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         SizedBox(
-          height: 295,
+          height: max(295.0, MediaQuery.of(context).size.height * 0.35),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.only(bottom: 4),
@@ -1322,7 +1324,7 @@ class _TopHotelCard extends StatelessWidget {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: Container(
-        width: 210,
+        width: MediaQuery.of(context).size.width * 0.55,
         decoration: BoxDecoration(
           color: TravelloTheme.paperLight,
           borderRadius: BorderRadius.circular(16),
@@ -1354,11 +1356,11 @@ class _TopHotelCard extends StatelessWidget {
                 children: [
                   Image.network(
                     hotel.imageUrl,
-                    width: 210,
+                    width: MediaQuery.of(context).size.width * 0.55,
                     height: 140,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
-                      width: 210,
+                      width: MediaQuery.of(context).size.width * 0.55,
                       height: 140,
                       color: hotel.accentColor.withValues(alpha: 0.2),
                       child:
@@ -1367,7 +1369,7 @@ class _TopHotelCard extends StatelessWidget {
                     loadingBuilder: (_, child, progress) {
                       if (progress == null) return child;
                       return Container(
-                        width: 210,
+                        width: MediaQuery.of(context).size.width * 0.55,
                         height: 140,
                         color: Colors.grey.shade100,
                         child: const Center(
@@ -1623,13 +1625,14 @@ class _HotelExplorePakistanSectionState
     {
       'city': 'Peshawar',
       'properties': 64,
-      'image': 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400'
+      'image':
+          'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=400&q=80'
     },
     {
       'city': 'Bhurban',
       'properties': 80,
       'image':
-          'https://images.unsplash.com/photo-1574615552267-e8516b7aade0?w=400'
+          'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400&q=80'
     },
     {
       'city': 'Sialkot',
@@ -1678,7 +1681,7 @@ class _HotelExplorePakistanSectionState
           alignment: Alignment.center,
           children: [
             SizedBox(
-              height: 264,
+              height: max(264.0, MediaQuery.of(context).size.height * 0.35),
               child: ListView.separated(
                 controller: _scroll,
                 scrollDirection: Axis.horizontal,
@@ -1717,11 +1720,12 @@ class _HotelExplorePakistanSectionState
                               borderRadius: BorderRadius.circular(12),
                               child: Image.network(
                                 d['image'] as String,
-                                width: 200,
+                                width: MediaQuery.of(context).size.width * 0.55,
                                 height: 178,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => Container(
-                                  width: 200,
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.55,
                                   height: 178,
                                   color: Colors.grey.shade200,
                                   child: const Icon(Icons.location_city,

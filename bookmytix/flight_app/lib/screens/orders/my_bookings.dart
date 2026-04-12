@@ -212,8 +212,7 @@ class _MyBookingsState extends State<MyBookings>
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8,
-                  16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -255,7 +254,6 @@ class _MyBookingsState extends State<MyBookings>
           ),
         ),
       ),
-
     );
   }
 
@@ -304,8 +302,7 @@ class _MyBookingsState extends State<MyBookings>
         }),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(
-              horizontal: 4, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected ? _gold : Colors.white,
             borderRadius: BorderRadius.circular(10),
@@ -347,8 +344,8 @@ class _MyBookingsState extends State<MyBookings>
       }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(
-            horizontal: 16, vertical: spacingUnit(0.75)),
+        padding:
+            EdgeInsets.symmetric(horizontal: 16, vertical: spacingUnit(0.75)),
         decoration: BoxDecoration(
           color: isSelected ? _goldLight : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
@@ -414,8 +411,8 @@ class _MyBookingsState extends State<MyBookings>
               children: [
                 Row(children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                         color: accentColor,
                         borderRadius: BorderRadius.circular(6)),
@@ -434,8 +431,8 @@ class _MyBookingsState extends State<MyBookings>
                     bookingType == 'hotel'
                         ? 'Ref: ${booking['pnr'] ?? 'N/A'}'
                         : 'PNR: ${booking['pnr'] ?? 'N/A'}',
-                    style:
-                        TravelloTheme.caption.copyWith(fontWeight: FontWeight.w600),
+                    style: TravelloTheme.caption
+                        .copyWith(fontWeight: FontWeight.w600),
                   ),
                 ]),
                 _buildStatusBadge(booking['status'] ?? 'confirmed'),
@@ -518,8 +515,7 @@ class _MyBookingsState extends State<MyBookings>
         ]),
         const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
               color: _goldLight, borderRadius: BorderRadius.circular(10)),
           child: Row(children: [
@@ -537,8 +533,7 @@ class _MyBookingsState extends State<MyBookings>
                       fontSize: 13, fontWeight: FontWeight.w700)),
             ])),
             Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                   color: _gold.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6)),
@@ -594,7 +589,8 @@ class _MyBookingsState extends State<MyBookings>
                 style: TravelloTheme.headline.copyWith(
                     color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
             Text(train['from'] ?? 'N/A',
-                style: TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
+                style:
+                    TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ])),
@@ -645,7 +641,8 @@ class _MyBookingsState extends State<MyBookings>
                 style: TravelloTheme.headline.copyWith(
                     color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
             Text(train['to'] ?? 'N/A',
-                style: TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
+                style:
+                    TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end),
@@ -676,7 +673,8 @@ class _MyBookingsState extends State<MyBookings>
                 style: TravelloTheme.headline.copyWith(
                     color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
             Text(fromStr.replaceAll(RegExp(r'\s*\([A-Z]{3}\)'), ''),
-                style: TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
+                style:
+                    TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ])),
@@ -727,7 +725,8 @@ class _MyBookingsState extends State<MyBookings>
                 style: TravelloTheme.headline.copyWith(
                     color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
             Text(toStr.replaceAll(RegExp(r'\s*\([A-Z]{3}\)'), ''),
-                style: TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
+                style:
+                    TravelloTheme.caption.copyWith(color: Colors.grey.shade400),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end),
@@ -766,8 +765,7 @@ class _MyBookingsState extends State<MyBookings>
         icon = Icons.access_time;
     }
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration:
           BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
       child: Row(children: [
@@ -810,12 +808,12 @@ class _MyBookingsState extends State<MyBookings>
             ),
             const SizedBox(height: 8),
             Text('Start exploring and book your next trip!',
-                style:
-                    TravelloTheme.paragraph.copyWith(color: Colors.grey.shade600),
+                style: TravelloTheme.paragraph
+                    .copyWith(color: Colors.grey.shade600),
                 textAlign: TextAlign.center),
             const SizedBox(height: 24),
-            SizedBox(
-              width: 200,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 160, maxWidth: 280),
               child: FilledButton(
                 onPressed: () => Get.toNamed(AppLink.home),
                 style:

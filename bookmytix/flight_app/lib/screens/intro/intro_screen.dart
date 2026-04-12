@@ -101,7 +101,7 @@ class _IntroScreenState extends State<IntroScreen>
               Expanded(
                 child: Center(
                   child: SizedBox(
-                      height: 400,
+                      height: MediaQuery.of(context).size.height * 0.55,
                       child: CarouselSlider(
                           items: introList
                               .map((item) => _contentIntro(
@@ -123,7 +123,7 @@ class _IntroScreenState extends State<IntroScreen>
                               aspectRatio: 1,
                               viewportFraction: 1,
                               disableCenter: true,
-                              height: 400,
+                              height: MediaQuery.of(context).size.height * 0.55,
                               onPageChanged: (index, reason) {
                                 setState(() {
                                   _current = index;

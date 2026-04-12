@@ -525,24 +525,28 @@ class _BookingPassengersState extends State<BookingPassengers> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: _buildAppBar(context),
-      body: Column(
-        children: [
-          _buildStepper(context),
-          Container(height: 1, color: Colors.grey.shade200),
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _totalPassengers + 1,
-              itemBuilder: (_, i) {
-                if (i < _totalPassengers) {
-                  return _buildPassengerPage(context, i);
-                }
-                return _buildContactPage(context);
-              },
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: Column(
+          children: [
+            _buildStepper(context),
+            Container(height: 1, color: Colors.grey.shade200),
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _totalPassengers + 1,
+                itemBuilder: (_, i) {
+                  if (i < _totalPassengers) {
+                    return _buildPassengerPage(context, i);
+                  }
+                  return _buildContactPage(context);
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: _buildBottomBar(context),
     );
@@ -2868,10 +2872,10 @@ class _BookingPassengersState extends State<BookingPassengers> {
                           padding: const EdgeInsets.all(6.4),
                           decoration: BoxDecoration(
                             color: Colors.red.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Icon(Icons.emergency_outlined,
-                              color: Colors.red.shade700, size: 18),
+                              color: Colors.red.shade700, size: 12),
                         ),
                         const SizedBox(width: 9.6),
                         const Text('Emergency Contact',
@@ -3031,6 +3035,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
         ],
       ),
       child: SafeArea(
+        top: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
@@ -3059,13 +3064,14 @@ class _BookingPassengersState extends State<BookingPassengers> {
                   ],
                 ),
               ),
-              DSButton(
-                label: _isContactPage ? 'CONFIRM' : 'NEXT',
-                trailingIcon: Icons.arrow_forward_rounded,
-                onTap: _isContactPage ? _submit : _goNext,
-                disabled: _isContactPage ? !_isContactFormValid : false,
-                width: 148,
-                height: 52,
+              Expanded(
+                child: DSButton(
+                  label: _isContactPage ? 'CONFIRM' : 'NEXT',
+                  trailingIcon: Icons.arrow_forward_rounded,
+                  onTap: _isContactPage ? _submit : _goNext,
+                  disabled: _isContactPage ? !_isContactFormValid : false,
+                  height: 52,
+                ),
               ),
             ],
           ),

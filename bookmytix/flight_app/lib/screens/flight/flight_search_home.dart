@@ -340,29 +340,17 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
 
   void _searchFlights() {
     if (_fromAirport == null || _toAirport == null) {
-      Get.snackbar(
-        'Validation Error',
-        'Please select departure and arrival airports',
-        snackPosition: SnackPosition.TOP,
-      );
+      _showValidationError('Please select departure and arrival airports');
       return;
     }
 
     if (_departureDate == null) {
-      Get.snackbar(
-        'Validation Error',
-        'Please select departure date',
-        snackPosition: SnackPosition.TOP,
-      );
+      _showValidationError('Please select departure date');
       return;
     }
 
     if (_tripType == 'Round-trip' && _returnDate == null) {
-      Get.snackbar(
-        'Validation Error',
-        'Please select return date',
-        snackPosition: SnackPosition.TOP,
-      );
+      _showValidationError('Please select return date');
       return;
     }
 
@@ -380,6 +368,20 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
         'infants': _infants,
         'cabinClass': _cabinClass,
       },
+    );
+  }
+
+  void _showValidationError(String message) {
+    Get.snackbar(
+      'Validation Error',
+      message,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: const Color(0xFFD32F2F),
+      colorText: Colors.white,
+      icon: const Icon(Icons.error_outline, color: Colors.white),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      borderRadius: 12,
+      duration: const Duration(seconds: 2),
     );
   }
 

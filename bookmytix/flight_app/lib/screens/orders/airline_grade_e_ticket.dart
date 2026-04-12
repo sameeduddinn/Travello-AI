@@ -1531,7 +1531,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
         margin: const pw.EdgeInsets.all(24),
         build: (_) => pw.Center(
           child: pw.SizedBox(
-            width: 460,
+            width: math.max(460.0, MediaQuery.of(context).size.width),
             child: pw.Column(
               mainAxisSize: pw.MainAxisSize.min,
               crossAxisAlignment: pw.CrossAxisAlignment.stretch,

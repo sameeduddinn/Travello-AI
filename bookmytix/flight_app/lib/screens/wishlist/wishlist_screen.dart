@@ -332,7 +332,7 @@ class _SavedHotelCard extends StatelessWidget {
               children: [
                 // Image
                 SizedBox(
-                  width: 120,
+                  width: MediaQuery.of(context).size.width * 0.30,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [

@@ -501,13 +501,16 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
               const Text('Payment Summary',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ]),
-            GestureDetector(
-              onTap: _showInvoiceModal,
-              child: Text('View Invoice',
-                  style: TextStyle(
-                      color: primary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600)),
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: _showInvoiceModal,
+                child: Text('View Invoice',
+                    style: TextStyle(
+                        color: primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600)),
+              ),
             ),
           ]),
           const SizedBox(height: 12),

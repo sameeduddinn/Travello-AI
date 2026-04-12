@@ -2681,14 +2681,18 @@ class _BookingPaymentState extends State<BookingPayment>
                     ),
                   ],
                 ),
-                DSButton(
-                  label: 'Pay Now',
-                  trailingIcon: Icons.arrow_forward_rounded,
-                  loading: _isProcessing,
-                  disabled: !_isPaymentDetailsValid,
-                  onTap: _processPayment,
-                  width: 152,
-                  height: 52,
+                ConstrainedBox(
+                  constraints:
+                      const BoxConstraints(minWidth: 140, maxWidth: 200),
+                  child: DSButton(
+                    label: 'Pay Now',
+                    trailingIcon: Icons.arrow_forward_rounded,
+                    loading: _isProcessing,
+                    disabled: !_isPaymentDetailsValid,
+                    onTap: _processPayment,
+                    height: 52,
+                    color: const Color(0xFFD4AF37),
+                  ),
                 ),
               ],
             ),

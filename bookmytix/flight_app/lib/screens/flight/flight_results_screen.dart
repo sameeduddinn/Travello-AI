@@ -1,3 +1,4 @@
+import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -9,7 +10,6 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/format_utils.dart';
 import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
 import 'package:intl/intl.dart';
-import 'package:flight_app/ui/themes/theme_system.dart';
 
 // Flight model for results
 class FlightResult {
@@ -1497,10 +1497,10 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                             // Validate
                             if (selectedFrom == null || selectedTo == null) {
                               Get.snackbar(
-                                'Validation Error',
+                                'Missing Information',
                                 'Please select both origin and destination',
                                 snackPosition: SnackPosition.TOP,
-                                backgroundColor: Colors.red,
+                                backgroundColor: TravelloTheme.primaryMain,
                                 colorText: Colors.white,
                               );
                               return;
@@ -1508,10 +1508,10 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
 
                             if (selectedFrom?.code == selectedTo?.code) {
                               Get.snackbar(
-                                'Validation Error',
+                                'Same Located Selected',
                                 'Origin and destination cannot be the same',
                                 snackPosition: SnackPosition.TOP,
-                                backgroundColor: Colors.red,
+                                backgroundColor: TravelloTheme.primaryMain,
                                 colorText: Colors.white,
                               );
                               return;

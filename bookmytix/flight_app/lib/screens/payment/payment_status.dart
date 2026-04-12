@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/route_manager.dart';
 import 'package:intl/intl.dart';
+import 'dart:math' as math;
 import 'dart:math' show pi;
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
 import 'package:flight_app/screens/railway/train_results_screen.dart';
@@ -4570,7 +4571,7 @@ class _PaymentStatusState extends State<PaymentStatus>
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: 520,
+        width: math.max(520.0, MediaQuery.of(context).size.width),
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade300),
@@ -4586,11 +4587,15 @@ class _PaymentStatusState extends State<PaymentStatus>
                     SizedBox(
                         width: 60,
                         child: Text('FLIGHT',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                             style: TextStyle(
                                 fontSize: 9, fontWeight: FontWeight.bold))),
                     SizedBox(
                         width: 90,
                         child: Text('DEPART/ARRIVE',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                             style: TextStyle(
                                 fontSize: 9, fontWeight: FontWeight.bold))),
                     Expanded(
@@ -4600,6 +4605,8 @@ class _PaymentStatusState extends State<PaymentStatus>
                     SizedBox(
                         width: 90,
                         child: Text('CHECK-IN OPENS',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                             style: TextStyle(
                                 fontSize: 9, fontWeight: FontWeight.bold))),
                     SizedBox(
@@ -5005,7 +5012,7 @@ class _PaymentStatusState extends State<PaymentStatus>
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: 520,
+        width: math.max(520.0, MediaQuery.of(context).size.width),
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade300),
@@ -5251,7 +5258,7 @@ class _PaymentStatusState extends State<PaymentStatus>
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: 540,
+        width: math.max(540.0, MediaQuery.of(context).size.width),
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade300),
@@ -5432,7 +5439,7 @@ class _PaymentStatusState extends State<PaymentStatus>
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: 540,
+        width: math.max(540.0, MediaQuery.of(context).size.width),
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade300),

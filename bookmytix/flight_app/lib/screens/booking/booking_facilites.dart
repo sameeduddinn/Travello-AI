@@ -2505,12 +2505,13 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  DSButton(
-                    label: 'CONTINUE',
-                    trailingIcon: Icons.arrow_forward_rounded,
-                    onTap: _onContinue,
-                    width: 158,
-                    height: 56,
+                  Expanded(
+                    child: DSButton(
+                      label: 'CONTINUE',
+                      trailingIcon: Icons.arrow_forward_rounded,
+                      onTap: _onContinue,
+                      height: 56,
+                    ),
                   ),
                 ],
               ),

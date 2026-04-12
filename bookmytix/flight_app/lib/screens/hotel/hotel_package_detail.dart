@@ -447,7 +447,7 @@ class _HotelDealCardState extends State<_HotelDealCard>
               children: [
                 // ── Image ──────────────────────────────────────────────
                 SizedBox(
-                  width: 130,
+                  width: MediaQuery.of(context).size.width * 0.30,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [

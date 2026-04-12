@@ -5,39 +5,42 @@ import 'package:flutter/services.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 //  Static Pakistan slides — never change regardless of selected tab
 // ─────────────────────────────────────────────────────────────────────────────
-const List<_Slide> _pakistanSlides = [
-  _Slide(
-    // Attabad Lake, Hunza Valley
-    url: 'https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=900',
-    location: 'Hunza Valley, Gilgit',
-    tagline: 'Heaven on Earth',
-  ),
-  _Slide(
-    // Badshahi Mosque, Lahore
-    url: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=900',
-    location: 'Lahore, Punjab',
-    tagline: 'City of Gardens & Culture',
-  ),
-  _Slide(
-    // Faisal Mosque, Islamabad
-    url: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=900',
-    location: 'Islamabad',
-    tagline: "Pakistan's Green Capital",
-  ),
-  _Slide(
-    // Karachi Sea View / Clifton
-    url:
-        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900&q=80',
-    location: 'Karachi, Sindh',
-    tagline: 'City of Lights & The Sea',
-  ),
-  _Slide(
-    // Swat Valley green landscape
-    url: 'https://images.unsplash.com/photo-1597149441099-47f7e2e4e468?w=900',
-    location: 'Swat Valley, KPK',
-    tagline: 'The Switzerland of Pakistan',
-  ),
-];
+List<_Slide> get _pakistanSlides => const [
+      _Slide(
+        // Attabad Lake, Hunza Valley
+        url:
+            'https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=900',
+        location: 'Hunza Valley, Gilgit',
+        tagline: 'Heaven on Earth',
+      ),
+      _Slide(
+        // Badshahi Mosque, Lahore
+        url:
+            'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=900',
+        location: 'Lahore, Punjab',
+        tagline: 'City of Gardens & Culture',
+      ),
+      _Slide(
+        // Faisal Mosque, Islamabad
+        url: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=900',
+        location: 'Islamabad',
+        tagline: "Pakistan's Green Capital",
+      ),
+      _Slide(
+        // Karachi Sea View / Clifton
+        url:
+            'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900&q=80',
+        location: 'Karachi, Sindh',
+        tagline: 'City of Lights & The Sea',
+      ),
+      _Slide(
+        // Swat Valley green landscape
+        url:
+            'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=900&q=80',
+        location: 'Swat Valley, KPK',
+        tagline: 'The Switzerland of Pakistan',
+      ),
+    ];
 
 class _Slide {
   final String url;

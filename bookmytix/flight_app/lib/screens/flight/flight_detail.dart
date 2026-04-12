@@ -76,125 +76,129 @@ class _FlightDetailState extends State<FlightDetail> {
                   color: colorScheme(context).onSurface))
         ],
       ),
-      body: SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
-        child: Stack(alignment: Alignment.topCenter, children: [
-          /// DECORATION BG
-          Container(
-            alignment: Alignment.bottomCenter,
-            width: double.infinity,
-            height: 100,
-            color: TravelloTheme.primaryMainContainer,
-          ),
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: Stack(alignment: Alignment.topCenter, children: [
+            /// DECORATION BG
+            Container(
+              alignment: Alignment.bottomCenter,
+              width: double.infinity,
+              height: 100,
+              color: TravelloTheme.primaryMainContainer,
+            ),
 
-          /// DECORATION ROUNDED
-          Positioned(
-            top: 80,
-            left: -10,
-            child: CustomPaint(
-              painter: OvalShape(
-                  color: TravelloTheme.paperLightContainerLowest,
-                  width: MediaQuery.of(context).size.width + 20),
+            /// DECORATION ROUNDED
+            Positioned(
+              top: 80,
+              left: -10,
+              child: CustomPaint(
+                painter: OvalShape(
+                    color: TravelloTheme.paperLightContainerLowest,
+                    width: MediaQuery.of(context).size.width + 20),
+              ),
             ),
-          ),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            wideScreen
-                ? FlightSummaryWide(
-                    from: fromCity,
-                    to: toCity,
-                    price: flightPrice,
-                    discount: flightDiscount,
-                    label: discountLabel,
-                    plane: flightPlane,
-                  )
-                : FlightSummary(
-                    from: fromCity,
-                    to: toCity,
-                    price: flightPrice,
-                    discount: flightDiscount,
-                    label: discountLabel,
-                    plane: flightPlane,
-                  ),
-            wideScreen
-                ? FlightRoutesHorizontal(
-                    title: 'Departure', routes: departRoute)
-                : FlightRoutes(
-                    title: 'Departure',
-                    routes: departRoute,
-                  ),
-            const VSpace(),
-            const FacilitiesSlider(),
-            const VSpace(),
-            PackageOptions(
-              getVal: (type, val) {
-                updatePrice(type, val);
-              },
-            ),
-            const VSpace(),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: AlertInfo(
-                  type: AlertType.warning,
-                  text:
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis congue euismod elit'),
-            ),
-            const VSpace(),
-          ])
-        ]),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              wideScreen
+                  ? FlightSummaryWide(
+                      from: fromCity,
+                      to: toCity,
+                      price: flightPrice,
+                      discount: flightDiscount,
+                      label: discountLabel,
+                      plane: flightPlane,
+                    )
+                  : FlightSummary(
+                      from: fromCity,
+                      to: toCity,
+                      price: flightPrice,
+                      discount: flightDiscount,
+                      label: discountLabel,
+                      plane: flightPlane,
+                    ),
+              wideScreen
+                  ? FlightRoutesHorizontal(
+                      title: 'Departure', routes: departRoute)
+                  : FlightRoutes(
+                      title: 'Departure',
+                      routes: departRoute,
+                    ),
+              const VSpace(),
+              const FacilitiesSlider(),
+              const VSpace(),
+              PackageOptions(
+                getVal: (type, val) {
+                  updatePrice(type, val);
+                },
+              ),
+              const VSpace(),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: AlertInfo(
+                    type: AlertType.warning,
+                    text:
+                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis congue euismod elit'),
+              ),
+              const VSpace(),
+            ])
+          ]),
+        ),
       ),
       bottomNavigationBar: BottomAppBar(
         elevation: 20,
         shadowColor: Colors.black,
         height: 80,
         color: TravelloTheme.paperLight,
-        padding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 8),
-        child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              wideScreen
-                  ? SizedBox(width: MediaQuery.of(context).size.width * 0.5)
-                  : Container(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('\$$price',
-                      textAlign: TextAlign.end,
-                      style: TravelloTheme.headline.copyWith(
-                          color: colorScheme(context).onSurfaceVariant,
-                          decoration: TextDecoration.lineThrough,
-                          height: 1)),
-                  Text('\$$_finalPrice',
-                      textAlign: TextAlign.end,
-                      style: TravelloTheme.title.copyWith(
-                          color: TravelloTheme.primaryMain,
-                          height: 1,
-                          fontWeight: FontWeight.bold)),
-                ],
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: SizedBox(
-                  height: 50,
-                  child: FilledButton(
-                      onPressed: () async {
-                        // Auth gate at booking intent — search was free
-                        final isGuest = await AuthService.isGuestMode();
-                        if (isGuest && context.mounted) {
-                          AuthGateSheet.show(context,
-                              action: 'to book this flight');
-                          return;
-                        }
-                        Get.toNamed(AppLink.bookingStep1);
-                      },
-                      style: ThemeButton.btnBig.merge(ThemeButton.primary),
-                      child:
-                          const Text('BOOK NOW', style: TravelloTheme.subtitle2)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: SafeArea(
+          top: false,
+          child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                wideScreen ? const Spacer() : Container(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('\$$price',
+                        textAlign: TextAlign.end,
+                        style: TravelloTheme.headline.copyWith(
+                            color: colorScheme(context).onSurfaceVariant,
+                            decoration: TextDecoration.lineThrough,
+                            height: 1)),
+                    Text('\$$_finalPrice',
+                        textAlign: TextAlign.end,
+                        style: TravelloTheme.title.copyWith(
+                            color: TravelloTheme.primaryMain,
+                            height: 1,
+                            fontWeight: FontWeight.bold)),
+                  ],
                 ),
-              )
-            ]),
+                const SizedBox(width: 24),
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: FilledButton(
+                        onPressed: () async {
+                          // Auth gate at booking intent — search was free
+                          final isGuest = await AuthService.isGuestMode();
+                          if (isGuest && context.mounted) {
+                            AuthGateSheet.show(context,
+                                action: 'to book this flight');
+                            return;
+                          }
+                          Get.toNamed(AppLink.bookingStep1);
+                        },
+                        style: ThemeButton.btnBig.merge(ThemeButton.primary),
+                        child: const Text('BOOK NOW',
+                            style: TravelloTheme.subtitle2)),
+                  ),
+                )
+              ]),
+        ),
       ),
     );
   }
