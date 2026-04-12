@@ -23,12 +23,6 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
   final _mobileFormKey = GlobalKey<FormState>();
 
   String _selectedPaymentMethod = 'Card';
-  final List<String> _paymentMethods = [
-    'Card',
-    'JazzCash',
-    'Easypaisa',
-    'Bank Transfer',
-  ];
 
   // Card details
   final TextEditingController _cardNumberController = TextEditingController();
@@ -109,6 +103,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
     }
 
     setState(() => _isProcessing = true);
+    final nav = Navigator.of(context);
 
     // Simulate payment processing
     Future.delayed(const Duration(seconds: 2), () {
@@ -149,10 +144,8 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
       }
 
       // Show success dialog for non-hotel bookings
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
+      Get.dialog(
+        AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -213,7 +206,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  nav.pop();
                   Get.until((route) => route.isFirst);
                 },
                 style: ElevatedButton.styleFrom(
@@ -229,6 +222,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             ],
           ),
         ),
+        barrierDismissible: false,
       );
     });
   }
@@ -2776,40 +2770,6 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
     ];
     final days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return '${days[date.weekday % 7]}, ${date.day} ${months[date.month - 1]}';
-  }
-
-  Widget _buildStepIndicator(String label, bool isActive, Color activeColor) {
-    return Column(
-      children: [
-        Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color:
-                isActive ? Colors.white : Colors.white.withValues(alpha: 0.3),
-            border: isActive ? Border.all(color: Colors.white, width: 2) : null,
-          ),
-          child: isActive
-              ? Icon(
-                  Icons.check,
-                  color: activeColor,
-                  size: 16,
-                )
-              : null,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TravelloTheme.caption.copyWith(
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-            color:
-                isActive ? Colors.white : Colors.white.withValues(alpha: 0.6),
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildStepIndicatorWithNumber(int step, String label, bool isCompleted,

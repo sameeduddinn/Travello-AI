@@ -109,14 +109,6 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
     _fetchTrains();
   }
 
-  List<DateTime> _generateDateRange(DateTime centerDate) {
-    List<DateTime> dates = [];
-    for (int i = -7; i <= 7; i++) {
-      dates.add(centerDate.add(Duration(days: i)));
-    }
-    return dates;
-  }
-
   // ─────────────────────────────────────────────────────────────────────────
   // DATA FETCHING
   // When backend is ready:
@@ -3316,9 +3308,11 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
 
   void _handleTrainSelection(TrainResult train, String trainClass) async {
     // Auth gate at Select — industry standard (browsing was free)
+    final nav = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final isGuest = await AuthService.isGuestMode();
-    if (isGuest && context.mounted) {
-      AuthGateSheet.show(context, action: 'to book this train');
+    if (isGuest && mounted) {
+      AuthGateSheet.show(nav.context, action: 'to book this train');
       return;
     }
     // Handle round-trip selection
@@ -3333,7 +3327,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
       _fetchTrains();
 
       // Show message
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Outbound train selected. Now select return train.'),
           backgroundColor: Color(0xFFD4AF37),

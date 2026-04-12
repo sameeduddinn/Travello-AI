@@ -70,9 +70,10 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
 
   void _onBookNow() async {
     // Auth gate at booking intent — browsing train details was free
+    final nav = Navigator.of(context);
     final isGuest = await AuthService.isGuestMode();
-    if (isGuest && context.mounted) {
-      AuthGateSheet.show(context, action: 'to book this train');
+    if (isGuest && mounted) {
+      AuthGateSheet.show(nav.context, action: 'to book this train');
       return;
     }
     final pkg = _pkg;

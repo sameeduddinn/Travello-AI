@@ -21,7 +21,6 @@ class TrainPackageSlider extends StatefulWidget {
 
 class _TrainPackageSliderState extends State<TrainPackageSlider> {
   final ScrollController _scrollController = ScrollController();
-  String _userOriginCityCode = 'KHI'; // Default fallback
   String _userOriginCityName = 'Karachi';
   bool _isLoading = true;
   bool _isGuestMode = false;
@@ -39,7 +38,6 @@ class _TrainPackageSliderState extends State<TrainPackageSlider> {
     if (mounted) {
       setState(() {
         _isGuestMode = isGuest;
-        _userOriginCityCode = cityData['cityCode']!;
         _userOriginCityName = cityData['cityName']!;
         _isLoading = false;
       });
@@ -298,19 +296,6 @@ class _TrainPackageSliderState extends State<TrainPackageSlider> {
     // Show upcoming departure date — trip type shown via badge, time in train info
     final base = DateTime.now().add(Duration(days: 7 + index));
     return DateFormat('d MMM yyyy').format(base);
-  }
-
-  double _getDiscountPercent(TrainPackage package) {
-    switch (package.packageType) {
-      case 'business':
-        return 30;
-      case 'sleeper':
-        return 20;
-      case 'express':
-        return 15;
-      default:
-        return 10;
-    }
   }
 
   String _getDiscountLabel(TrainPackage package) {

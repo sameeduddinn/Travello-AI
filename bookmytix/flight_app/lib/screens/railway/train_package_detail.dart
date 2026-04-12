@@ -25,7 +25,6 @@ class TrainPackageDetail extends StatefulWidget {
 
 class _TrainPackageDetailState extends State<TrainPackageDetail> {
   String _selectedFilter = 'All';
-  String _userOriginCityCode = 'KHI';
   String _userOriginCityName = 'Karachi';
   bool _isLoading = true;
   bool _isGuestMode = false;
@@ -42,7 +41,6 @@ class _TrainPackageDetailState extends State<TrainPackageDetail> {
     if (mounted) {
       setState(() {
         _isGuestMode = isGuest;
-        _userOriginCityCode = cityData['cityCode']!;
         _userOriginCityName = cityData['cityName']!;
         _isLoading = false;
       });
@@ -111,13 +109,6 @@ class _TrainPackageDetailState extends State<TrainPackageDetail> {
       default:
         return '10% OFF';
     }
-  }
-
-  String _shortStation(String full) => full.split(' ').first;
-
-  String _dateString(TrainPackage pkg, int index) {
-    final base = DateTime.now().add(Duration(days: 7 + index));
-    return '${DateFormat('d MMM yyyy').format(base)} · ${pkg.departureTime}';
   }
 
   @override

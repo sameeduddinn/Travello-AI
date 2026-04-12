@@ -700,7 +700,7 @@ class _DestinationCardState extends State<_DestinationCard>
                   Text(
                     d.province.toUpperCase(),
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 10,
                       color: Colors.white.withValues(alpha: 0.75),
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.8,
@@ -748,7 +748,7 @@ class _DestinationCardState extends State<_DestinationCard>
                               child: Text(
                                 h,
                                 style: const TextStyle(
-                                  fontSize: 8.5,
+                                  fontSize: 10,
                                   color: Colors.white,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -821,7 +821,7 @@ class _DestinationCardState extends State<_DestinationCard>
 
             // Content
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -843,7 +843,7 @@ class _DestinationCardState extends State<_DestinationCard>
                         child: Text(
                           d.category.toUpperCase(),
                           style: const TextStyle(
-                            fontSize: 7.5,
+                            fontSize: 9,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
                             letterSpacing: 0.7,
@@ -887,7 +887,7 @@ class _DestinationCardState extends State<_DestinationCard>
                   Text(
                     d.province,
                     style: TextStyle(
-                      fontSize: 9.5,
+                      fontSize: 11,
                       color: Colors.white.withValues(alpha: 0.7),
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.4,
@@ -906,19 +906,18 @@ class _DestinationCardState extends State<_DestinationCard>
                   const SizedBox(height: 7),
 
                   // Description
-                  Expanded(
-                    child: Text(
-                      d.description,
-                      style: TextStyle(
-                        fontSize: 9.5,
-                        color: Colors.white.withValues(alpha: 0.88),
-                        height: 1.45,
-                      ),
-                      overflow: TextOverflow.fade,
+                  Text(
+                    d.description,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: Colors.white.withValues(alpha: 0.88),
+                      height: 1.35,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
 
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 5),
 
                   // Highlights (all 3)
                   Wrap(
@@ -939,7 +938,7 @@ class _DestinationCardState extends State<_DestinationCard>
                               child: Text(
                                 h,
                                 style: const TextStyle(
-                                  fontSize: 8,
+                                  fontSize: 10,
                                   color: Colors.white,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -955,28 +954,32 @@ class _DestinationCardState extends State<_DestinationCard>
                     children: [
                       Icon(
                         Icons.calendar_today_outlined,
-                        size: 9,
+                        size: 10,
                         color: Colors.white.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'Best time: ',
                         style: TextStyle(
-                          fontSize: 9,
+                          fontSize: 10,
                           color: Colors.white.withValues(alpha: 0.6),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Text(
-                        d.bestTime,
-                        style: const TextStyle(
-                          fontSize: 9,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
+                      Expanded(
+                        child: Text(
+                          d.bestTime,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
+
                 ],
               ),
             ),

@@ -1,9 +1,43 @@
-import 'package:flight_app/models/city.dart';
 import 'package:flight_app/models/trip.dart';
 import 'package:flight_app/widgets/cards/flight_portrait_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+
+// Real city photos — no placeholder dependency
+const _cityImages = {
+  'karachi':
+      'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&q=80',
+  'lahore':
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
+  'islamabad':
+      'https://images.unsplash.com/photo-1578895101408-1a36b834405b?w=800&q=80',
+  'rawalpindi':
+      'https://images.unsplash.com/photo-1578895101408-1a36b834405b?w=800&q=80',
+  'peshawar':
+      'https://images.unsplash.com/photo-1539136788836-5699e78bfc75?w=800&q=80',
+  'quetta':
+      'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=800&q=80',
+  'multan':
+      'https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=800&q=80',
+  'faisalabad':
+      'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&q=80',
+  'skardu':
+      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
+  'gilgit':
+      'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=80',
+  'hunza':
+      'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&q=80',
+  'swat':
+      'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=80',
+  'murree':
+      'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=80',
+  'gwadar':
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+};
+
+const _fallbackImage =
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80';
 
 class CitySearchResults extends StatefulWidget {
   const CitySearchResults({super.key});
@@ -15,25 +49,34 @@ class CitySearchResults extends StatefulWidget {
 class _CitySearchResultsState extends State<CitySearchResults>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String cityName = '';
-  City? selectedCity;
+  late String cityName;
+  late List<Trip> _departures;
+  late List<Trip> _arrivals;
+  late List<Trip> _routes;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
 
-    // Get city from arguments
     final args = Get.arguments as Map<String, dynamic>?;
     cityName = args?['cityName'] ?? '';
 
-    // Find city in cityList
-    try {
-      selectedCity = cityList.firstWhere(
-          (city) => city.name.toLowerCase() == cityName.toLowerCase());
-    } catch (e) {
-      selectedCity = null;
-    }
+    final lower = cityName.toLowerCase();
+    _departures = tripList
+        .where((t) => t.from.name.toLowerCase() == lower)
+        .take(10)
+        .toList();
+    _arrivals = tripList
+        .where((t) => t.to.name.toLowerCase() == lower)
+        .take(10)
+        .toList();
+    _routes = tripList
+        .where((t) =>
+            t.from.name.toLowerCase() == lower ||
+            t.to.name.toLowerCase() == lower)
+        .take(8)
+        .toList();
   }
 
   @override
@@ -42,157 +85,122 @@ class _CitySearchResultsState extends State<CitySearchResults>
     super.dispose();
   }
 
-  List<Trip> _getDepartureFlights() {
-    if (selectedCity == null) return [];
-    return tripList
-        .where((trip) => trip.from.name.toLowerCase() == cityName.toLowerCase())
-        .take(10)
-        .toList();
-  }
-
-  List<Trip> _getArrivalFlights() {
-    if (selectedCity == null) return [];
-    return tripList
-        .where((trip) => trip.to.name.toLowerCase() == cityName.toLowerCase())
-        .take(10)
-        .toList();
-  }
-
-  List<Trip> _getPopularRoutes() {
-    if (selectedCity == null) return [];
-    return tripList
-        .where((trip) =>
-            trip.from.name.toLowerCase() == cityName.toLowerCase() ||
-            trip.to.name.toLowerCase() == cityName.toLowerCase())
-        .take(8)
-        .toList();
-  }
+  String get _imageUrl =>
+      _cityImages[cityName.toLowerCase()] ?? _fallbackImage;
 
   @override
   Widget build(BuildContext context) {
-    if (selectedCity == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Search Results'),
-        ),
-        body: const Center(
-          child: Text('City not found'),
-        ),
-      );
-    }
-
-    final departureFlights = _getDepartureFlights();
-    final arrivalFlights = _getArrivalFlights();
-    final popularRoutes = _getPopularRoutes();
-
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // App Bar with City Info
+          // ── Hero header ────────────────────────────────────────────────────
           SliverAppBar(
             expandedHeight: 200,
             pinned: true,
+            surfaceTintColor: Colors.transparent,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new,
+                  color: Colors.white, size: 20),
+              onPressed: () => Get.back(),
+            ),
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 cityName,
-                style: TravelloTheme.title2.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                    shadows: [Shadow(color: Colors.black54, blurRadius: 6)]),
               ),
               background: Stack(
                 fit: StackFit.expand,
                 children: [
                   Image.network(
-                    selectedCity!.photos[0],
+                    _imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: TravelloTheme.primaryMain,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: TravelloTheme.primaryDark,
                     ),
                   ),
-                  Container(
+                  DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.7),
+                          Colors.black.withValues(alpha: 0.65),
                         ],
+                        stops: const [0.45, 1.0],
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-              onPressed: () => Get.back(),
-            ),
           ),
 
-          // Quick Stats
+          // ── Stats row ──────────────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: TravelloTheme.paperLightContainerLow,
-                borderRadius: ThemeRadius.medium,
-                boxShadow: [ThemeShade.shadeSoft(context)],
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2)),
+                ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatItem(
-                    context,
-                    Icons.flight_takeoff,
-                    '${departureFlights.length}',
-                    'Departures',
-                  ),
-                  _buildStatItem(
-                    context,
-                    Icons.flight_land,
-                    '${arrivalFlights.length}',
-                    'Arrivals',
-                  ),
-                  _buildStatItem(
-                    context,
-                    Icons.route,
-                    '${popularRoutes.length}',
-                    'Routes',
-                  ),
+                  _stat(Icons.flight_takeoff, '${_departures.length}',
+                      'Departures'),
+                  _divider(),
+                  _stat(Icons.flight_land, '${_arrivals.length}', 'Arrivals'),
+                  _divider(),
+                  _stat(Icons.route, '${_routes.length}', 'Routes'),
                 ],
               ),
             ),
           ),
 
-          // Tab Bar
+          // ── Pinned tab bar ─────────────────────────────────────────────────
           SliverPersistentHeader(
             pinned: true,
-            delegate: _SliverAppBarDelegate(
+            delegate: _TabDelegate(
               TabBar(
                 controller: _tabController,
                 labelColor: TravelloTheme.primaryMain,
-                unselectedLabelColor: colorScheme(context).onSurfaceVariant,
+                unselectedLabelColor: Colors.grey.shade500,
                 indicatorColor: TravelloTheme.primaryMain,
+                indicatorWeight: 2.5,
+                labelStyle: const TextStyle(
+                    fontWeight: FontWeight.w700, fontSize: 13),
+                unselectedLabelStyle:
+                    const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                 tabs: const [
                   Tab(text: 'Departures'),
                   Tab(text: 'Arrivals'),
-                  Tab(text: 'Popular Routes'),
+                  Tab(text: 'All Routes'),
                 ],
               ),
             ),
           ),
 
-          // Tab Content
+          // ── Tab content ────────────────────────────────────────────────────
           SliverFillRemaining(
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildFlightList(departureFlights, 'No departures found'),
-                _buildFlightList(arrivalFlights, 'No arrivals found'),
-                _buildFlightList(popularRoutes, 'No routes found'),
+                _flightList(_departures, 'No departures from $cityName'),
+                _flightList(_arrivals, 'No arrivals to $cityName'),
+                _flightList(_routes, 'No routes found for $cityName'),
               ],
             ),
           ),
@@ -201,65 +209,53 @@ class _CitySearchResultsState extends State<CitySearchResults>
     );
   }
 
-  Widget _buildStatItem(
-      BuildContext context, IconData icon, String value, String label) {
-    return Column(
-      children: [
-        Icon(icon, color: TravelloTheme.primaryMain, size: 28),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TravelloTheme.title.copyWith(
-            fontWeight: FontWeight.bold,
-            color: TravelloTheme.primaryMain,
-          ),
-        ),
-        Text(
-          label,
-          style: TravelloTheme.caption.copyWith(
-            color: colorScheme(context).onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
+  Widget _stat(IconData icon, String value, String label) {
+    return Column(children: [
+      Icon(icon, color: TravelloTheme.primaryMain, size: 22),
+      const SizedBox(height: 4),
+      Text(value,
+          style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF111827))),
+      Text(label,
+          style:
+              const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+    ]);
   }
 
-  Widget _buildFlightList(List<Trip> flights, String emptyMessage) {
-    if (flights.isEmpty) {
+  Widget _divider() =>
+      Container(width: 1, height: 40, color: const Color(0xFFE5E7EB));
+
+  Widget _flightList(List<Trip> trips, String emptyMsg) {
+    if (trips.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.flight_outlined,
-              size: 64,
-              color: colorScheme(context).outlineVariant,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              emptyMessage,
-              style: TravelloTheme.subtitle.copyWith(
-                color: colorScheme(context).onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.flight_outlined, size: 56, color: Colors.grey.shade300),
+          const SizedBox(height: 12),
+          Text(emptyMsg,
+              style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade500,
+                  fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center),
+        ]),
       );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: flights.length,
-      itemBuilder: (context, index) {
-        final trip = flights[index];
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      itemCount: trips.length,
+      itemBuilder: (context, i) {
+        final t = trips[i];
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: FlightPortraitCard(
-            from: trip.from.code,
-            to: trip.to.code,
-            date: '${trip.depart.day}/${trip.depart.month}/${trip.depart.year}',
-            price: trip.price,
-            plane: trip.plane,
+            from: t.from.code,
+            to: t.to.code,
+            date: '${t.depart.day}/${t.depart.month}/${t.depart.year}',
+            price: t.price,
+            plane: t.plane,
           ),
         );
       },
@@ -267,28 +263,24 @@ class _CitySearchResultsState extends State<CitySearchResults>
   }
 }
 
-class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  _SliverAppBarDelegate(this._tabBar);
-
-  final TabBar _tabBar;
-
-  @override
-  double get minExtent => _tabBar.preferredSize.height;
+class _TabDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+  const _TabDelegate(this.tabBar);
 
   @override
-  double get maxExtent => _tabBar.preferredSize.height;
+  double get minExtent => tabBar.preferredSize.height;
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       color: TravelloTheme.paperLight,
-      child: _tabBar,
+      child: tabBar,
     );
   }
 
   @override
-  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return false;
-  }
+  bool shouldRebuild(_TabDelegate old) => false;
 }

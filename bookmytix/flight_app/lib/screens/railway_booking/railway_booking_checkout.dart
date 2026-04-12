@@ -2705,41 +2705,6 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
     );
   }
 
-  Widget _buildFullPageSection(String title, String content) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-              letterSpacing: -0.4,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            content,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFFB3B3B3),
-              height: 1.7,
-              letterSpacing: -0.1,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCheckoutButton() {
     return Container(
       padding: const EdgeInsets.all(16),

@@ -1,5 +1,8 @@
-﻿import 'package:flight_app/app/app_link.dart';
+import 'dart:math';
+import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/models/flight_package.dart';
+import 'package:flight_app/utils/auth_service.dart';
+import 'package:flight_app/utils/location_preference_service.dart';
 import 'package:flight_app/widgets/cards/package_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
@@ -7,7 +10,6 @@ import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 
 const _gold = Color(0xFFD4AF37);
-const _goldLight = Color(0xFFFEF9EC);
 const _goldDark = Color(0xFFB8935C);
 
 class PromoDetail extends StatefulWidget {
@@ -19,6 +21,53 @@ class PromoDetail extends StatefulWidget {
 
 class _PromoDetailState extends State<PromoDetail> {
   String _selectedFilter = 'All';
+  String _userOriginCityCode = 'KHI';
+  String _userOriginCityName = 'Karachi';
+  bool _isLoading = true;
+  bool _isGuestMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserOriginCity();
+  }
+
+  Future<void> _loadUserOriginCity() async {
+    final isGuest = await AuthService.isGuestMode();
+    final cityData = await LocationPreferenceService.getOriginCity();
+    if (mounted) {
+      setState(() {
+        _isGuestMode = isGuest;
+        _userOriginCityCode = cityData['cityCode']!;
+        _userOriginCityName = cityData['cityName']!;
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Packages from user's origin city (mirrors package_list_slider.dart logic)
+  List<FlightPackage> get _cityPackages {
+    if (_isGuestMode) {
+      final seed = DateTime.now().day * 31 + DateTime.now().month;
+      final rng = Random(seed);
+      final all = List<FlightPackage>.from(flightPackageList);
+      all.shuffle(rng);
+      return all;
+    }
+    final lowerCity = _userOriginCityName.toLowerCase();
+    final isISBZone = lowerCity == 'islamabad' || lowerCity == 'rawalpindi';
+    return flightPackageList.where((pkg) {
+      final fromName = pkg.from.name.toLowerCase();
+      if (isISBZone) {
+        return fromName == 'islamabad' ||
+            fromName == 'rawalpindi' ||
+            pkg.from.code == 'ISB' ||
+            pkg.from.code == 'RWP';
+      }
+      return fromName.contains(lowerCity) ||
+          pkg.from.code == _userOriginCityCode;
+    }).toList();
+  }
 
   static const Map<String, String> _durationMap = {
     'Karachi-Lahore': '1h 30m',
@@ -66,20 +115,24 @@ class _PromoDetailState extends State<PromoDetail> {
   String _duration(String from, String to) => _durationMap['$from-$to'] ?? '';
 
   List<FlightPackage> get _filtered {
-    if (_selectedFilter == 'One-Way') {
-      return flightPackageList.where((p) => !p.roundTrip).toList();
-    }
-    if (_selectedFilter == 'Round-Trip') {
-      return flightPackageList.where((p) => p.roundTrip).toList();
-    }
-    return flightPackageList;
+    final base = _cityPackages;
+    if (_selectedFilter == 'One-Way') return base.where((p) => !p.roundTrip).toList();
+    if (_selectedFilter == 'Round-Trip') return base.where((p) => p.roundTrip).toList();
+    return base;
+  }
+
+  String get _appBarTitle {
+    if (_isLoading || _isGuestMode) return 'Featured Packages';
+    return 'Flight Packages from $_userOriginCityName';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F5E8),
-      body: CustomScrollView(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: _gold))
+          : CustomScrollView(
         slivers: [
           // ── App Bar ──────────────────────────────────────────────────────
           SliverAppBar(
@@ -91,11 +144,11 @@ class _PromoDetailState extends State<PromoDetail> {
                   color: Colors.white, size: 20),
               onPressed: () => Get.back(),
             ),
-            title: const Text('Featured Packages',
-                style: TextStyle(
+            title: Text(_appBarTitle,
+                style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
-                    fontSize: 18)),
+                    fontSize: 17)),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(52),
               child: _buildFilterBar(),
@@ -202,9 +255,10 @@ class _PromoDetailState extends State<PromoDetail> {
   }
 
   Widget _buildStatsRow() {
-    final all = flightPackageList.length;
-    final oneWay = flightPackageList.where((p) => !p.roundTrip).length;
-    final roundTrip = flightPackageList.where((p) => p.roundTrip).length;
+    final base = _cityPackages;
+    final all = base.length;
+    final oneWay = base.where((p) => !p.roundTrip).length;
+    final roundTrip = base.where((p) => p.roundTrip).length;
 
     return Container(
       padding: const EdgeInsets.symmetric(

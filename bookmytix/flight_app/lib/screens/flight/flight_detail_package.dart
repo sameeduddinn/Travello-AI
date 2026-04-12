@@ -183,9 +183,10 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
     final Airport toAirport = _airportForCity(toCity);
     final bool isRoundTrip = pkg?.roundTrip ?? false;
     // Auth gate at BOOK NOW — browsing package detail was free
+    final nav = Navigator.of(context);
     final isGuest = await AuthService.isGuestMode();
-    if (isGuest && context.mounted) {
-      AuthGateSheet.show(context, action: 'to book this flight package');
+    if (isGuest && mounted) {
+      AuthGateSheet.show(nav.context, action: 'to book this flight package');
       return;
     }
     // For round-trip the package price covers both legs; split evenly so the

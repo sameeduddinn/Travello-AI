@@ -6,6 +6,8 @@ import 'package:flight_app/widgets/cards/paper_card.dart';
 import 'package:flight_app/widgets/settings/account_info.dart';
 import 'package:flight_app/widgets/title/title_basic.dart';
 import 'package:flight_app/utils/auth_service.dart';
+import 'package:flight_app/utils/location_preference_service.dart';
+import 'package:flight_app/widgets/onboarding/city_selection_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 
@@ -18,6 +20,7 @@ class SettingList extends StatefulWidget {
 
 class _SettingListState extends State<SettingList> {
   bool _isGuestMode = false;
+  String _currentCityName = 'Karachi';
 
   @override
   void initState() {
@@ -28,10 +31,36 @@ class _SettingListState extends State<SettingList> {
   Future<void> _checkAuthStatus() async {
     final isGuest = await AuthService.isGuestMode();
     final isLoggedIn = await AuthService.isLoggedIn();
+    final cityData = await LocationPreferenceService.getOriginCity();
+    if (mounted) {
+      setState(() {
+        _isGuestMode = isGuest || !isLoggedIn;
+        _currentCityName = cityData['cityName']!;
+      });
+    }
+  }
 
-    setState(() {
-      _isGuestMode = isGuest || !isLoggedIn;
-    });
+  void _openCityPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CitySelectionSheet(
+        onComplete: () {
+          Navigator.pop(context);
+          _checkAuthStatus(); // refresh the displayed city name
+          Get.snackbar(
+            'Home City Updated',
+            'Featured packages will now show from $_currentCityName',
+            backgroundColor: Colors.green.shade600,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+            duration: const Duration(seconds: 3),
+            icon: const Icon(Icons.location_city, color: Colors.white),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -112,6 +141,20 @@ class _SettingListState extends State<SettingList> {
                         );
                       });
                 },
+              ),
+              const LineList(),
+              ListTile(
+                leading: const Icon(Icons.location_city,
+                    color: Color(0xFFD4AF37)),
+                title: const Text('Home City'),
+                subtitle: Text(
+                  _currentCityName,
+                  style: const TextStyle(
+                      color: Color(0xFFD4AF37),
+                      fontWeight: FontWeight.w600),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 12),
+                onTap: _openCityPicker,
               ),
               const LineList(),
               ListTile(

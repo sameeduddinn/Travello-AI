@@ -3165,47 +3165,6 @@ class _PaymentStatusState extends State<PaymentStatus>
   }
 
   // ── Booking info chip (Coach / Class / Date / Train No.) ─────────────────
-  Widget _buildBookingChip({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color green,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: green.withValues(alpha: 0.18)),
-        ),
-        child: Row(children: [
-          Icon(icon, size: 14, color: green.withValues(alpha: 0.65)),
-          const SizedBox(width: 8),
-          Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 9,
-                      color: Colors.grey.shade500,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5)),
-              const SizedBox(height: 2),
-              Text(value,
-                  style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1A1A1A)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-            ]),
-          ),
-        ]),
-      ),
-    );
-  }
-
   // ── Flight E-Ticket Section ──
   Widget _buildFlightTicketSection(BuildContext context) {
     const navy = Color(0xFF1A1A2E);
@@ -4126,45 +4085,6 @@ class _PaymentStatusState extends State<PaymentStatus>
   Widget _buildExtraCard(_TravelExtra ex) => _ExtraCardTile(ex: ex);
 
   // ── 9️⃣ Quick Actions ──
-  Widget _buildQuickActions(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _quickActionButton(
-              icon: Icons.history,
-              label: 'Order History',
-              color: TravelloTheme.tertiaryDark,
-              bgColor: TravelloTheme.tertiaryLight,
-              onTap: () => Get.toNamed(AppLink.orderHistory),
-            ),
-            _quickActionButton(
-              icon: Icons.share_outlined,
-              label: 'Share',
-              color: TravelloTheme.primaryDark,
-              bgColor: TravelloTheme.primaryLight,
-              onTap: _shareTicket,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _quickActionButton({
     required IconData icon,
     required String label,

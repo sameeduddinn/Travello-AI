@@ -14,7 +14,6 @@ import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 
 const _gold = Color(0xFFD4AF37);
-const _goldLight = Color(0xFFFEF9EC);
 const _goldDark = Color(0xFFB8935C);
 
 class PromoDetail extends StatefulWidget {

@@ -1107,6 +1107,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
   }
 
   void _proceedToBooking() async {
+    final messenger = ScaffoldMessenger.of(context);
     // Auth gate at booking intent — browsing hotel details was free
     final isGuest = await AuthService.isGuestMode();
     if (isGuest && mounted) {
@@ -1114,7 +1115,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
       return;
     }
     if (selectedRoom == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content:
               Text('Please select a room type', style: TextStyle(fontSize: 14)),
@@ -1128,7 +1129,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
     // Occupancy check: total guests must not exceed maxOccupancy × rooms
     final maxCapacity = selectedRoom!.maxOccupancy * rooms;
     if (guests > maxCapacity) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             'This room holds $maxCapacity guest${maxCapacity == 1 ? '' : 's'} max ($rooms room${rooms == 1 ? '' : 's'} × ${selectedRoom!.maxOccupancy} per room). '

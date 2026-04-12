@@ -56,24 +56,42 @@ const _trainRoutes = [
 ];
 
 class _Dest {
-  final String name, tagline;
-  final IconData icon;
+  final String name, tagline, imageUrl;
   final Color color;
-  const _Dest(this.name, this.icon, this.tagline, this.color);
+  const _Dest(this.name, this.tagline, this.imageUrl, this.color);
 }
 
 const _destinations = [
-  _Dest('Hunza', Icons.terrain, 'Northern Gem', Color(0xFF4A90D9)),
-  _Dest('Skardu', Icons.terrain, 'Mountain Paradise', Color(0xFF2E7D32)),
-  _Dest('Murree', Icons.terrain, 'Hill Station', Color(0xFF6A1B9A)),
-  _Dest('Lahore', Icons.account_balance, 'City of Gardens', Color(0xFFE65100)),
-  _Dest('Karachi', Icons.waves, 'City of Lights', Color(0xFF0277BD)),
-  _Dest('Islamabad', Icons.eco, 'Capital City', Color(0xFF1B5E20)),
-  _Dest('Swat', Icons.local_florist, 'Switzerland of East', Color(0xFFAD1457)),
-  _Dest(
-      'Peshawar', Icons.account_balance, 'City of Flowers', Color(0xFF4E342E)),
-  _Dest('Quetta', Icons.landscape, 'Fruit Basket', Color(0xFF558B2F)),
-  _Dest('Naran', Icons.park, 'Kaghan Valley', Color(0xFF00695C)),
+  _Dest('Hunza', 'Northern Gem',
+      'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=400&q=80',
+      Color(0xFF4A90D9)),
+  _Dest('Skardu', 'Mountain Paradise',
+      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80',
+      Color(0xFF2E7D32)),
+  _Dest('Murree', 'Hill Station',
+      'https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=80',
+      Color(0xFF6A1B9A)),
+  _Dest('Lahore', 'City of Gardens',
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80',
+      Color(0xFFE65100)),
+  _Dest('Karachi', 'City of Lights',
+      'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400&q=80',
+      Color(0xFF0277BD)),
+  _Dest('Islamabad', 'Capital City',
+      'https://images.unsplash.com/photo-1578895101408-1a36b834405b?w=400&q=80',
+      Color(0xFF1B5E20)),
+  _Dest('Swat', 'Switzerland of East',
+      'https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=80',
+      Color(0xFFAD1457)),
+  _Dest('Peshawar', 'City of Flowers',
+      'https://images.unsplash.com/photo-1539136788836-5699e78bfc75?w=400&q=80',
+      Color(0xFF4E342E)),
+  _Dest('Quetta', 'Fruit Basket',
+      'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=400&q=80',
+      Color(0xFF558B2F)),
+  _Dest('Naran', 'Kaghan Valley',
+      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=80',
+      Color(0xFF00695C)),
 ];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -216,7 +234,7 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
           title: s.name,
           subtitle: s.city,
           code: s.code,
-          onTap: () => _navigate(s.name, 'train'),
+          onTap: () => _navigate(s.city, 'train'),
         ));
       }
     }
@@ -361,8 +379,6 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
           children: [
             _buildPopularSearches(),
             const SizedBox(height: 20),
-            _buildHintCards(),
-            const SizedBox(height: 20),
             _buildQuickBook(),
             const SizedBox(height: 20),
             if (_history.isNotEmpty) ...[
@@ -486,84 +502,6 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
   }
 
   // ── Hint Cards ────────────────────────────────────────────────────────────
-  Widget _buildHintCards() {
-    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(
-          child: _hintCard(
-              'FLIGHTS',
-              Icons.flight,
-              const Color(0xFFEFF6FF),
-              _flightBlue,
-              [
-                'City to city (KHI-LHE)',
-                'Airline (PIA, AirBlue, AirSial)',
-                'One-way or Return',
-                'Business class seats'
-              ],
-              AppLink.flightSearchHome)),
-      const SizedBox(width: 8),
-      Expanded(
-          child: _hintCard(
-              'TRAINS & HOTELS',
-              Icons.train,
-              const Color(0xFFF0FDF4),
-              _trainGreen,
-              [
-                'Train name (Tezgam)',
-                'Route (KHI → LHE)',
-                'Hotel in a city',
-                'Budget / 5-star hotels'
-              ],
-              AppLink.trainSearchHome)),
-    ]);
-  }
-
-  Widget _hintCard(String title, IconData icon, Color bg, Color accent,
-      List<String> hints, String route) {
-    return GestureDetector(
-      onTap: () => Get.toNamed(route),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: accent.withValues(alpha: 0.15)),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(icon, size: 13, color: accent),
-            const SizedBox(width: 4),
-            Text(title,
-                style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: accent,
-                    letterSpacing: 0.6)),
-          ]),
-          const SizedBox(height: 8),
-          ...hints.map((h) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('• ',
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: accent,
-                              fontWeight: FontWeight.w700)),
-                      Expanded(
-                          child: Text(h,
-                              style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF374151),
-                                  height: 1.4))),
-                    ]),
-              )),
-        ]),
-      ),
-    );
-  }
-
   // ── Quick Book ────────────────────────────────────────────────────────────
   Widget _buildQuickBook() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -797,47 +735,74 @@ class _SearchListState extends State<SearchList> with TickerProviderStateMixin {
 
   // ── Destinations ──────────────────────────────────────────────────────────
   Widget _buildDestinations() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          childAspectRatio: 0.72),
-      itemCount: _destinations.length,
-      itemBuilder: (context, i) {
-        final d = _destinations[i];
-        return GestureDetector(
-          onTap: () => _fillSearch(d.name),
-          child: Column(children: [
-            Container(
-              width: double.infinity,
-              height: 52,
-              decoration: BoxDecoration(
-                color: d.color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: d.color.withValues(alpha: 0.2)),
+    return SizedBox(
+      height: 136,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: _destinations.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, i) {
+          final d = _destinations[i];
+          return GestureDetector(
+            onTap: () => _fillSearch(d.name),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: 100,
+                height: 136,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      d.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          Container(color: d.color),
+                    ),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.72),
+                          ],
+                          stops: const [0.4, 1.0],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 8,
+                      right: 8,
+                      bottom: 8,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(d.name,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.2)),
+                          Text(d.tagline,
+                              style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontSize: 9.5),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Center(child: Icon(d.icon, size: 24, color: d.color)),
             ),
-            const SizedBox(height: 4),
-            Text(d.name,
-                style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF111827)),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
-            Text(d.tagline,
-                style: const TextStyle(fontSize: 8, color: Color(0xFF9CA3AF)),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
-          ]),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

@@ -2046,24 +2046,6 @@ class _CnicFormatter extends TextInputFormatter {
   }
 }
 
-class _BFormFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
-    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
-    final buffer = StringBuffer();
-    for (int i = 0; i < digits.length && i < 13; i++) {
-      if (i == 5 || i == 12) buffer.write('-');
-      buffer.write(digits[i]);
-    }
-    final str = buffer.toString();
-    return TextEditingValue(
-      text: str,
-      selection: TextSelection.collapsed(offset: str.length),
-    );
-  }
-}
-
 class _NoLeadingZeroFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(

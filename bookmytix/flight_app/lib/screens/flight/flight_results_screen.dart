@@ -112,14 +112,6 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
     _applyFilters();
   }
 
-  List<DateTime> _generateDateRange(DateTime centerDate) {
-    List<DateTime> dates = [];
-    for (int i = -7; i <= 7; i++) {
-      dates.add(centerDate.add(Duration(days: i)));
-    }
-    return dates;
-  }
-
   void _loadDummyFlights() {
     // Generate price variation based on selected date
     final dayOffset = _selectedDate.difference(DateTime.now()).inDays;
@@ -856,7 +848,6 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
     final isMobile = screenWidth < 600;
 
     // Calculate total passengers
-    final totalPassengers = _adults + _children + _infants;
 
     // Build passenger display text
     String passengerText = '';
@@ -1734,7 +1725,6 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
     required int infants,
     required Function(Map<String, int>) onChanged,
   }) {
-    final totalPassengers = adults + children + infants;
 
     // Build display text
     String passengerText = '';
@@ -2822,9 +2812,11 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           ElevatedButton(
                             onPressed: () async {
                               // Auth gate at Select — industry standard (browsing was free)
+                              final nav = Navigator.of(context);
+                              final messenger = ScaffoldMessenger.of(context);
                               final isGuest = await AuthService.isGuestMode();
-                              if (isGuest && context.mounted) {
-                                AuthGateSheet.show(context,
+                              if (isGuest && mounted) {
+                                AuthGateSheet.show(nav.context,
                                     action: 'to book this flight');
                                 return;
                               }
@@ -2841,7 +2833,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                 _applyFilters();
 
                                 // Show message
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   const SnackBar(
                                     content: Text(
                                         'Outbound flight selected. Now select return flight.'),

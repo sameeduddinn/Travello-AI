@@ -207,9 +207,6 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
   Widget _buildContent(BuildContext context) {
     const primary = TravelloTheme.primaryMain;
     final isFromList = bookingData['_isFromList'] == true;
-
-    final checkIn = bookingData['checkInDate'] as DateTime?;
-    final checkOut = bookingData['checkOutDate'] as DateTime?;
     final basePrice = (bookingData['basePrice'] as num?)?.toDouble() ?? 0.0;
     final totalPrice = (bookingData['totalPrice'] as num?)?.toDouble() ?? 0.0;
     final serviceCharge = basePrice * 0.05;
@@ -528,239 +525,8 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
   }
 
   // ── Hotel Details Card (image 1 style) ─────────────────────────────────
-  Widget _buildHotelDetailsCard(
-      BuildContext context, Color primary, dynamic hotel) {
-    return FadeTransition(
-      opacity: _fadeAnim,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: _card(),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(Icons.bed, color: primary, size: 20),
-            const SizedBox(width: 8),
-            const Text('Hotel Details',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ]),
-          const SizedBox(height: 12),
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: hotel?.images != null && (hotel.images as List).isNotEmpty
-                  ? Image.network(
-                      hotel.images[0],
-                      width: 72,
-                      height: 72,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _hotelPlaceholder(),
-                    )
-                  : _hotelPlaceholder(),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(hotel?.name ?? 'Hotel',
-                        style: const TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 5),
-                    Row(children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                            color: primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6)),
-                        child: Text(hotel?.category ?? '',
-                            style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: primary)),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.star, size: 14, color: Colors.orange),
-                      Text(' ${hotel?.rating ?? ''}',
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w600)),
-                    ]),
-                    const SizedBox(height: 5),
-                    Row(children: [
-                      Icon(Icons.location_on,
-                          size: 13, color: Colors.grey.shade600),
-                      const SizedBox(width: 2),
-                      Expanded(
-                        child: Text(hotel?.address ?? '',
-                            style: TextStyle(
-                                fontSize: 12, color: Colors.grey.shade600),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis),
-                      ),
-                    ]),
-                  ]),
-            ),
-          ]),
-        ]),
-      ),
-    );
-  }
-
   // ── Room Type Card (image 1 style) ───────────────────────────────────────
-  Widget _buildRoomTypeCard(
-      BuildContext context, Color primary, dynamic roomType) {
-    return FadeTransition(
-      opacity: _fadeAnim,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: _card(),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(Icons.bed, color: primary, size: 20),
-            const SizedBox(width: 8),
-            const Text('Room Type',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ]),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade200)),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(roomType.name ?? 'Room',
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(roomType.description ?? '',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-              const SizedBox(height: 8),
-              Row(children: [
-                Icon(Icons.people_outline,
-                    size: 14, color: Colors.grey.shade600),
-                const SizedBox(width: 4),
-                Text('${roomType.maxOccupancy ?? 2} guests',
-                    style:
-                        TextStyle(fontSize: 12, color: Colors.grey.shade700)),
-                const SizedBox(width: 16),
-                Icon(Icons.aspect_ratio, size: 14, color: Colors.grey.shade600),
-                const SizedBox(width: 4),
-                Text('${roomType.sizeInSqFt ?? ''} sq ft',
-                    style:
-                        TextStyle(fontSize: 12, color: Colors.grey.shade700)),
-              ]),
-              const SizedBox(height: 6),
-              Row(children: [
-                Icon(Icons.bed, size: 14, color: Colors.grey.shade600),
-                const SizedBox(width: 4),
-                Text(roomType.bedType ?? '',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade800)),
-              ]),
-            ]),
-          ),
-        ]),
-      ),
-    );
-  }
-
   // ── Stay Details Card (image 1 style) ────────────────────────────────────
-  Widget _buildStayDetailsCard(
-      BuildContext context,
-      Color primary,
-      DateTime? checkIn,
-      DateTime? checkOut,
-      int nights,
-      int rooms,
-      int guests) {
-    return FadeTransition(
-      opacity: _fadeAnim,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: _card(),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(Icons.calendar_month, color: primary, size: 20),
-            const SizedBox(width: 8),
-            const Text('Stay Details',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ]),
-          const SizedBox(height: 16),
-          // Check-in / Check-out row
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Icon(Icons.login, size: 14, color: primary),
-                      const SizedBox(width: 4),
-                      Text('CHECK-IN',
-                          style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: primary,
-                              letterSpacing: 0.5)),
-                    ]),
-                    const SizedBox(height: 4),
-                    Text(_fmtDate(checkIn),
-                        style: const TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.bold)),
-                    Text('2:00 PM',
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.grey.shade600)),
-                  ]),
-            ),
-            Expanded(
-              child:
-                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                  Text('CHECK-OUT',
-                      style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: primary,
-                          letterSpacing: 0.5)),
-                  const SizedBox(width: 4),
-                  Icon(Icons.logout, size: 14, color: primary),
-                ]),
-                const SizedBox(height: 4),
-                Text(_fmtDate(checkOut),
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.bold)),
-                Text('12:00 PM',
-                    style:
-                        TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-              ]),
-            ),
-          ]),
-          const SizedBox(height: 12),
-          // Nights / Rooms / Guests strip
-          Container(
-            padding: const EdgeInsets.symmetric(
-                vertical: 12, horizontal: 8),
-            decoration: BoxDecoration(
-                color: primary.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12)),
-            child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _statItem(Icons.nights_stay, '$nights Nights', primary),
-                  _vDivider(primary),
-                  _statItem(Icons.meeting_room, '$rooms Rooms', primary),
-                  _vDivider(primary),
-                  _statItem(Icons.people, '$guests Guests', primary),
-                ]),
-          ),
-        ]),
-      ),
-    );
-  }
-
   Widget _hotelPlaceholder() => Container(
         width: 80,
         height: 80,
@@ -781,78 +547,6 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
 
   Widget _vDivider(Color primary) =>
       Container(width: 1, height: 30, color: primary.withValues(alpha: 0.3));
-
-  Widget _roomStat(IconData icon, String label) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: Colors.grey.shade600),
-          const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
-        ],
-      );
-
-  Widget _buildGuestInfo(BuildContext context, Color primary, List guestsData) {
-    return FadeTransition(
-      opacity: _fadeAnim,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: _card(),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(Icons.people_outline, color: primary, size: 20),
-            const SizedBox(width: 8),
-            const Text('Guest Information',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ]),
-          const SizedBox(height: 12),
-          ...guestsData.asMap().entries.map((e) {
-            final g = e.value as Map;
-            final name = g['firstName'] != null
-                ? '${g['firstName']} ${g['lastName'] ?? ''}'.trim()
-                : (g['fullName'] ?? 'Guest ${e.key + 1}');
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade200)),
-              child: Row(children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                      color: primary.withValues(alpha: 0.1),
-                      shape: BoxShape.circle),
-                  child: Icon(Icons.person, color: primary, size: 18),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(name,
-                            style: const TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.w600)),
-                        if (g['cnic'] != null &&
-                            g['cnic'].toString().isNotEmpty)
-                          Text('CNIC: ${g['cnic']}',
-                              style: TextStyle(
-                                  fontSize: 12, color: Colors.grey.shade600)),
-                        if (g['phone'] != null &&
-                            g['phone'].toString().isNotEmpty)
-                          Text('Phone: ${g['phone']}',
-                              style: TextStyle(
-                                  fontSize: 12, color: Colors.grey.shade600)),
-                      ]),
-                ),
-              ]),
-            );
-          }),
-        ]),
-      ),
-    );
-  }
 
   Widget _buildPaymentSummary(BuildContext context, Color primary, double total,
       String txnId, List<String> extras) {
@@ -1224,45 +918,6 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeAnim,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _quickActionButton(
-              icon: Icons.history,
-              label: 'Order History',
-              color: TravelloTheme.tertiaryDark,
-              bgColor: TravelloTheme.tertiaryLight,
-              onTap: () => Get.toNamed(AppLink.orderHistory),
-            ),
-            _quickActionButton(
-              icon: Icons.share_outlined,
-              label: 'Share',
-              color: TravelloTheme.primaryDark,
-              bgColor: TravelloTheme.primaryLight,
-              onTap: _shareHotelBooking,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _quickActionButton({
     required IconData icon,
     required String label,
@@ -1362,12 +1017,11 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     final hotelCity = hotel?.city ?? bookingData['_city'] as String? ?? '';
     final roomTypeName =
         roomType?.name ?? bookingData['_roomType'] as String? ?? 'Room';
+    final checkIn = bookingData['checkInDate'] as DateTime?;
+    final checkOut = bookingData['checkOutDate'] as DateTime?;
     final hotelRatingN = (hotel?.rating as num?)?.toDouble() ??
         (bookingData['_rating'] as num?)?.toDouble() ??
         0.0;
-
-    final checkIn = bookingData['checkInDate'] as DateTime?;
-    final checkOut = bookingData['checkOutDate'] as DateTime?;
     final checkInStr = checkIn != null
         ? DateFormat('EEE, MMM d, yyyy').format(checkIn)
         : bookingData['_checkInStr'] as String? ?? 'N/A';

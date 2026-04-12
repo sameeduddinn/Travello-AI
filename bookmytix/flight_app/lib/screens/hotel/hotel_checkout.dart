@@ -30,7 +30,6 @@ class _HotelCheckoutState extends State<HotelCheckout> {
   late int _guests;
   late double _basePrice;
   late double _extrasTotal;
-  late double _totalPrice;
   bool _breakfastAdded = false;
   bool _airportTransferAdded = false;
   bool _lateCheckoutAdded = false;
@@ -58,7 +57,6 @@ class _HotelCheckoutState extends State<HotelCheckout> {
     _guests = (_args['guests'] as int?) ?? 1;
     _basePrice = (_args['basePrice'] as num?)?.toDouble() ?? 0.0;
     _extrasTotal = (_args['extrasTotal'] as num?)?.toDouble() ?? 0.0;
-    _totalPrice = (_args['totalPrice'] as num?)?.toDouble() ?? 0.0;
     _breakfastAdded = (_args['breakfastAdded'] as bool?) ?? false;
     _airportTransferAdded = (_args['airportTransferAdded'] as bool?) ?? false;
     _lateCheckoutAdded = (_args['lateCheckoutAdded'] as bool?) ?? false;
@@ -468,15 +466,6 @@ class _HotelCheckoutState extends State<HotelCheckout> {
     if (n.contains('bar')) return Icons.local_bar;
     return Icons.check_circle_outline;
   }
-
-  Widget _placeholder() => Container(
-        width: 72,
-        height: 72,
-        decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(10)),
-        child: const Icon(Icons.hotel, size: 32, color: Colors.grey),
-      );
 
   // ── 2. Stay Details ───────────────────────────────────────────────────────
   Widget _buildStayDetails(Color primary) {
