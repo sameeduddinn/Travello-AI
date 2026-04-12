@@ -80,9 +80,15 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
   bool get _canPay {
     if (_selectedPaymentMethod == 'JazzCash' ||
         _selectedPaymentMethod == 'Easypaisa') {
-      return _isOtpVerified;
+      return _isOtpVerified &&
+          _isValidPkWalletPhone(_mobileNumberController.text);
     }
     return true;
+  }
+
+  bool _isValidPkWalletPhone(String value) {
+    final clean = value.replaceAll(RegExp(r'\D'), '');
+    return clean.length == 10 && clean.startsWith('3');
   }
 
   void _processPayment() {
@@ -1336,12 +1342,8 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter phone number';
                   }
-                  String clean = value.replaceAll('-', '').replaceAll(' ', '');
-                  if (clean.startsWith('0')) {
-                    return 'Do not include leading 0 with +92';
-                  }
-                  if (!clean.startsWith('3') || clean.length != 10) {
-                    return 'Enter valid 10-digit mobile number';
+                  if (!_isValidPkWalletPhone(value)) {
+                    return 'Enter valid PK mobile number (3XXXXXXXXX)';
                   }
                   return null;
                 },

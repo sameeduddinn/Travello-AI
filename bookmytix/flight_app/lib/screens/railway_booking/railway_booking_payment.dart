@@ -105,13 +105,28 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
           DSValidators.cardholderName(_cardNameController.text.trim()) == null;
       return cardOk && expiryOk && cvvOk && nameOk;
     } else if (_selectedPaymentMethod == 'easypaisa') {
-      return _easypaisaPhoneController.text.trim().length >= 10 &&
+      return _isValidPkWalletPhone(_easypaisaPhoneController.text) &&
           _isOtpVerified;
     } else if (_selectedPaymentMethod == 'jazzcash') {
-      return _jazzcashPhoneController.text.trim().length >= 10 &&
+      return _isValidPkWalletPhone(_jazzcashPhoneController.text) &&
           _isOtpVerified;
     }
     return true;
+  }
+
+  bool _isValidPkWalletPhone(String value) {
+    final clean = value.replaceAll(RegExp(r'\D'), '');
+    return clean.length == 10 && clean.startsWith('3');
+  }
+
+  void _showPkPhoneValidationError() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Enter valid PK mobile number (3XXXXXXXXX)'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -1760,13 +1775,16 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                   DSButton(
                     label: 'Get Code',
                     onTap: () {
-                      if (_easypaisaPhoneController.text.isNotEmpty) {
+                      if (_isValidPkWalletPhone(
+                          _easypaisaPhoneController.text)) {
                         setState(() {
                           _showEasypaisaOTP = true;
                           _otpValue = '';
                           _isOtpVerified = false;
                         });
                         _startOTPTimer();
+                      } else {
+                        _showPkPhoneValidationError();
                       }
                     },
                     height: 50,
@@ -1933,13 +1951,16 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                   DSButton(
                     label: 'Get Code',
                     onTap: () {
-                      if (_jazzcashPhoneController.text.isNotEmpty) {
+                      if (_isValidPkWalletPhone(
+                          _jazzcashPhoneController.text)) {
                         setState(() {
                           _showJazzcashOTP = true;
                           _otpValue = '';
                           _isOtpVerified = false;
                         });
                         _startOTPTimer();
+                      } else {
+                        _showPkPhoneValidationError();
                       }
                     },
                     height: 50,

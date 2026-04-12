@@ -16,7 +16,6 @@ import 'package:barcode_widget/barcode_widget.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1368,41 +1367,6 @@ class _PaymentStatusState extends State<PaymentStatus>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 2),
       ));
-    }
-  }
-
-  Future<void> _emailTicket() async {
-    final pnr = _bookingData['pnr'] as String? ?? 'N/A';
-    final name = _bookingData['passengerName'] as String? ?? 'N/A';
-    final email = _bookingData['email'] as String? ?? '';
-    final fd = _bookingData['flightDetails'] as Map<String, dynamic>?;
-    final from = fd?['from'] as String? ?? 'N/A';
-    final to = fd?['to'] as String? ?? 'N/A';
-    final dep = fd?['departure'] as String? ?? 'N/A';
-    final date = fd?['date'] as String? ?? 'N/A';
-    final fltNum = fd?['flightNumber'] as String? ?? 'N/A';
-    final subject = Uri.encodeComponent('Travello AI E-Ticket - PNR: $pnr');
-    final body = Uri.encodeComponent('Dear $name,\n\n'
-        'Your e-ticket details:\n'
-        'PNR       : $pnr\n'
-        'Flight    : $fltNum\n'
-        'Route     : $from  →  $to\n'
-        'Date      : $date\n'
-        'Departure : $dep\n\n'
-        'Thank you for choosing Travello AI.\n'
-        'Support: support@travello.pk | +92 300 1234567');
-    final mailUrl = Uri.parse('mailto:$email?subject=$subject&body=$body');
-    if (await canLaunchUrl(mailUrl)) {
-      await launchUrl(mailUrl);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Could not open email app'),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ));
-      }
     }
   }
 
@@ -3107,7 +3071,7 @@ class _PaymentStatusState extends State<PaymentStatus>
             ),
           ),
 
-          // ── Action bar: Download / Email / Share ──────────────────────
+          // ── Action bar: Download / Share ──────────────────────────────
           Container(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
             child: Row(children: [
@@ -3122,16 +3086,8 @@ class _PaymentStatusState extends State<PaymentStatus>
               const SizedBox(width: 10),
               Expanded(
                   child: _ticketActionButton(
-                icon: Icons.email_outlined,
-                label: 'Email',
-                onTap: _emailTicket,
-                accent: const Color(0xFF7C3AED),
-              )),
-              const SizedBox(width: 10),
-              Expanded(
-                  child: _ticketActionButton(
                 icon: Icons.copy_rounded,
-                label: 'Share',
+                label: 'Copy',
                 onTap: _shareRailwayTicket,
                 accent: emerald,
               )),
@@ -3487,14 +3443,6 @@ class _PaymentStatusState extends State<PaymentStatus>
                 isLoading: _downloadingPdf,
                 accent: blue,
               )),
-              // const SizedBox(width: 10),
-              // Expanded(
-              //     child: _ticketActionButton(
-              //   icon: Icons.email_outlined,
-              //   label: 'Email',
-              //   onTap: _emailTicket,
-              //   accent: const Color(0xFF7C3AED),
-              // )),
               const SizedBox(width: 10),
               Expanded(
                   child: _ticketActionButton(

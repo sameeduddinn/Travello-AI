@@ -260,7 +260,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
       Get.snackbar(
         'Terms Required',
         'Please accept Terms & Conditions and Privacy Policy to continue',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         duration: const Duration(seconds: 3),

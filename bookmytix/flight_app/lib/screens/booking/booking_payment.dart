@@ -141,14 +141,33 @@ class _BookingPaymentState extends State<BookingPayment>
           DSValidators.cardholderName(_cardNameController.text.trim()) == null;
     } else if (_selectedPaymentMethod == 'easypaisa') {
       // Phone was proven valid when OTP was sent — only gate on verification
-      return _isOtpVerified;
+      return _isValidPkWalletPhone(_easypaisaPhoneController.text) &&
+          _isOtpVerified;
     } else if (_selectedPaymentMethod == 'jazzcash') {
       // Phone was proven valid when OTP was sent — only gate on verification
-      return _isOtpVerified;
+      return _isValidPkWalletPhone(_jazzcashPhoneController.text) &&
+          _isOtpVerified;
     }
 
     // Other non-form methods are considered valid once selected.
     return true;
+  }
+
+  bool _isValidPkWalletPhone(String value) {
+    final clean = value.replaceAll(RegExp(r'\D'), '');
+    return clean.length == 10 && clean.startsWith('3');
+  }
+
+  void _showPkPhoneValidationError() {
+    if (!mounted) return;
+    Get.snackbar(
+      'Invalid Number',
+      'Enter valid PK mobile number (3XXXXXXXXX)',
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.orange.shade100,
+      colorText: Colors.orange.shade900,
+      duration: const Duration(seconds: 2),
+    );
   }
 
   @override
@@ -307,7 +326,7 @@ class _BookingPaymentState extends State<BookingPayment>
       Get.snackbar(
         'Payment Method Required',
         'Please select a payment method',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.orange.shade100,
         colorText: Colors.orange.shade900,
       );
@@ -1700,13 +1719,16 @@ class _BookingPaymentState extends State<BookingPayment>
                   DSButton(
                     label: 'Get Code',
                     onTap: () {
-                      if (_easypaisaPhoneController.text.isNotEmpty) {
+                      if (_isValidPkWalletPhone(
+                          _easypaisaPhoneController.text)) {
                         setState(() {
                           _showEasypaisaOTP = true;
                           _otpValue = '';
                           _isOtpVerified = false;
                         });
                         _startOTPTimer();
+                      } else {
+                        _showPkPhoneValidationError();
                       }
                     },
                     height: 50,
@@ -1872,13 +1894,16 @@ class _BookingPaymentState extends State<BookingPayment>
                   DSButton(
                     label: 'Get Code',
                     onTap: () {
-                      if (_jazzcashPhoneController.text.isNotEmpty) {
+                      if (_isValidPkWalletPhone(
+                          _jazzcashPhoneController.text)) {
                         setState(() {
                           _showJazzcashOTP = true;
                           _otpValue = '';
                           _isOtpVerified = false;
                         });
                         _startOTPTimer();
+                      } else {
+                        _showPkPhoneValidationError();
                       }
                     },
                     height: 50,

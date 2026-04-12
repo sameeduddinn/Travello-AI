@@ -374,7 +374,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
       Get.snackbar(
         'Pickup Address Required',
         'Please enter pickup address for departure transfer',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,
         duration: const Duration(seconds: 3),
@@ -388,7 +388,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
       Get.snackbar(
         'Pickup Address Required',
         'Please enter pickup address for return transfer',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,
         duration: const Duration(seconds: 3),
@@ -401,7 +401,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
       Get.snackbar(
         'Pickup Address Required',
         'Please enter pickup address for arrival transfer',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,
         duration: const Duration(seconds: 3),
@@ -415,7 +415,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
       Get.snackbar(
         'Pickup Address Required',
         'Please enter pickup address for final arrival transfer',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,
         duration: const Duration(seconds: 3),
@@ -488,7 +488,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
           Get.snackbar(
             'No Seats Selected',
             'Seats will be assigned at check-in. Select now to choose your preferred seats.',
-            snackPosition: SnackPosition.BOTTOM,
+            snackPosition: SnackPosition.TOP,
             backgroundColor: Colors.blue.shade100,
             colorText: Colors.blue.shade900,
             duration: const Duration(seconds: 3),
@@ -500,7 +500,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
           Get.snackbar(
             'Incomplete Selection',
             'Please complete seat selection for all passengers on the outbound flight',
-            snackPosition: SnackPosition.BOTTOM,
+            snackPosition: SnackPosition.TOP,
             backgroundColor: Colors.orange.shade100,
             colorText: Colors.orange.shade900,
             duration: const Duration(seconds: 3),
@@ -514,7 +514,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
           Get.snackbar(
             'Select Return Seats',
             'Now select seats for your return flight',
-            snackPosition: SnackPosition.BOTTOM,
+            snackPosition: SnackPosition.TOP,
             backgroundColor: Colors.green.shade100,
             colorText: Colors.green.shade900,
             duration: const Duration(seconds: 2),
@@ -559,7 +559,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
           Get.snackbar(
             'Incomplete Selection',
             'Please select seats for all passengers or clear all selections',
-            snackPosition: SnackPosition.BOTTOM,
+            snackPosition: SnackPosition.TOP,
             backgroundColor: Colors.orange.shade100,
             colorText: Colors.orange.shade900,
             duration: const Duration(seconds: 3),
@@ -570,7 +570,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
           Get.snackbar(
             'No Seats Selected',
             'Seats will be assigned at check-in. Select now to choose your preferred seats.',
-            snackPosition: SnackPosition.BOTTOM,
+            snackPosition: SnackPosition.TOP,
             backgroundColor: Colors.blue.shade100,
             colorText: Colors.blue.shade900,
             duration: const Duration(seconds: 2),

@@ -251,7 +251,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
       Get.snackbar(
         'Pickup Address Required',
         'Please enter pickup address for departure transfer',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,
         duration: const Duration(seconds: 3),
@@ -263,7 +263,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
       Get.snackbar(
         'Pickup Address Required',
         'Please enter pickup address for arrival transfer',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,
         duration: const Duration(seconds: 3),
@@ -276,7 +276,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
       Get.snackbar(
         'Pickup Address Required',
         'Please enter pickup address for return transfer',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,
         duration: const Duration(seconds: 3),
@@ -289,7 +289,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
       Get.snackbar(
         'Pickup Address Required',
         'Please enter pickup address for final arrival transfer',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,
         duration: const Duration(seconds: 3),
@@ -303,7 +303,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
         Get.snackbar(
           'Incomplete Selection',
           'Please complete seat selection for both outbound and return journeys',
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.orange.shade100,
           colorText: Colors.orange.shade900,
           duration: const Duration(seconds: 3),
@@ -337,7 +337,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
         Get.snackbar(
           'Seat Selection Required',
           'Please select seats for all passengers before continuing',
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.red.shade100,
           colorText: Colors.red.shade900,
           duration: const Duration(seconds: 3),
@@ -349,7 +349,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
         Get.snackbar(
           'Incomplete Selection',
           'Please select $_requiredSeats seat(s) (infants do not require seats)',
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.orange.shade100,
           colorText: Colors.orange.shade900,
           duration: const Duration(seconds: 3),
