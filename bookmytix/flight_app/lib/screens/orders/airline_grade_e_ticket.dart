@@ -1614,15 +1614,12 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                                 ),
                               ),
                               child: pw.Center(
-                                child: pw.Transform.rotate(
-                                  angle: 0.785398,
-                                  child: pw.Text(
-                                    '✈',
-                                    style: pw.TextStyle(
-                                      color: PdfColors.white,
-                                      fontSize: 24,
-                                      fontWeight: pw.FontWeight.bold,
-                                    ),
+                                child: pw.Text(
+                                  '>>',
+                                  style: pw.TextStyle(
+                                    color: PdfColors.white,
+                                    fontSize: 18,
+                                    fontWeight: pw.FontWeight.bold,
                                   ),
                                 ),
                               ),
@@ -1769,15 +1766,12 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                                           padding:
                                               const pw.EdgeInsets.symmetric(
                                                   horizontal: 8),
-                                          child: pw.Transform.rotate(
-                                            angle: 0.785398,
-                                            child: pw.Text(
-                                              '✈',
-                                              style: pw.TextStyle(
-                                                color: pdfBlue,
-                                                fontSize: 14,
-                                                fontWeight: pw.FontWeight.bold,
-                                              ),
+                                          child: pw.Text(
+                                            '>>',
+                                            style: pw.TextStyle(
+                                              color: pdfBlue,
+                                              fontSize: 12,
+                                              fontWeight: pw.FontWeight.bold,
                                             ),
                                           ),
                                         ),
@@ -1988,9 +1982,11 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                                   ),
                                   child: pw.Center(
                                     child: pw.Text(
-                                      '\u{1F464}',
-                                      style: const pw.TextStyle(
+                                      'P',
+                                      style: pw.TextStyle(
                                         fontSize: 20,
+                                        fontWeight: pw.FontWeight.bold,
+                                        color: const PdfColor(0.145, 0.388, 0.922),
                                       ),
                                     ),
                                   ),
@@ -2318,24 +2314,8 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
 
   pw.Widget _buildPdfDetailChip(
       String label, String value, PdfColor labelColor, PdfColor valueColor) {
-    // Map icons as unicode or simple glyphs
-    String iconGlyph = '';
-    if (label == 'SEAT') iconGlyph = '\u{1FA91}'; // chair
-    if (label == 'GATE') iconGlyph = '\u{1F6AA}'; // door
-    if (label == 'TERMINAL') iconGlyph = '\u{1F3E2}'; // building
-    if (label == 'BOARDS') iconGlyph = '\u{1F550}'; // clock
-
     return pw.Column(
       children: [
-        if (iconGlyph.isNotEmpty)
-          pw.Text(
-            iconGlyph,
-            style: const pw.TextStyle(
-              fontSize: 14,
-              color: PdfColor(0.145, 0.388, 0.922), // pdfBlue
-            ),
-          ),
-        if (iconGlyph.isNotEmpty) pw.SizedBox(height: 4),
         pw.Text(
           label,
           style: pw.TextStyle(

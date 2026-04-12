@@ -190,8 +190,6 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     return 'PKR ${NumberFormat('#,##,###', 'en_PK').format(amount.round())}';
   }
 
-  String _fmtDate(DateTime? d) =>
-      d != null ? DateFormat('EEE, MMM d, yyyy').format(d) : 'N/A';
 
   @override
   Widget build(BuildContext context) {
@@ -524,29 +522,6 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     );
   }
 
-  // ── Hotel Details Card (image 1 style) ─────────────────────────────────
-  // ── Room Type Card (image 1 style) ───────────────────────────────────────
-  // ── Stay Details Card (image 1 style) ────────────────────────────────────
-  Widget _hotelPlaceholder() => Container(
-        width: 80,
-        height: 80,
-        color: Colors.grey.shade200,
-        child: const Icon(Icons.hotel, size: 36, color: Colors.grey),
-      );
-
-  Widget _statItem(IconData icon, String label, Color primary) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: primary),
-          const SizedBox(height: 4),
-          Text(label,
-              style:
-                  const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-        ],
-      );
-
-  Widget _vDivider(Color primary) =>
-      Container(width: 1, height: 30, color: primary.withValues(alpha: 0.3));
 
   Widget _buildPaymentSummary(BuildContext context, Color primary, double total,
       String txnId, List<String> extras) {
@@ -914,47 +889,6 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
           ...extras.map((ex) => _HotelExtraCardTile(ex: ex)),
           const SizedBox(height: 4),
         ],
-      ),
-    );
-  }
-
-  Widget _quickActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required Color bgColor,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 8,
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: bgColor,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 26, color: color),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }

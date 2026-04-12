@@ -726,7 +726,6 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
   }
 
   Widget _buildHotelCard(Hotel hotel, int index, NumberFormat fmt) {
-    final totalPrice = hotel.pricePerNight * numberOfNights;
     final ratingLabel = hotel.rating >= 4.7
         ? 'Exceptional'
         : hotel.rating >= 4.5

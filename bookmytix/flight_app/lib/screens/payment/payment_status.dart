@@ -4084,48 +4084,6 @@ class _PaymentStatusState extends State<PaymentStatus>
 
   Widget _buildExtraCard(_TravelExtra ex) => _ExtraCardTile(ex: ex);
 
-  // ── 9️⃣ Quick Actions ──
-  Widget _quickActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required Color bgColor,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 8,
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: bgColor,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 26, color: color),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ── 🔟 Action Buttons ──
   Widget _buildActionButtons(BuildContext context) {
     return FadeTransition(
@@ -5732,9 +5690,9 @@ class _PaymentStatusState extends State<PaymentStatus>
                     ),
                     child: pw.Center(
                       child: pw.Text(
-                        '✈',
+                        'AI',
                         style: pw.TextStyle(
-                          fontSize: 32,
+                          fontSize: 22,
                           color: PdfColors.white,
                           fontWeight: pw.FontWeight.bold,
                         ),

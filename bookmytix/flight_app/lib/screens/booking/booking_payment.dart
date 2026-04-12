@@ -52,7 +52,6 @@ class _BookingPaymentState extends State<BookingPayment>
   // Payment state
   String _selectedPaymentMethod = '';
   bool _isPriceBreakdownExpanded = false;
-  // unused: _agreedToTerms and _showTermsError removed
   bool _saveCard = false;
   bool _addTravelInsurance = false;
   bool _isProcessing = false;
@@ -2612,160 +2611,6 @@ class _BookingPaymentState extends State<BookingPayment>
     );
   }
 
-  // Policy Modals
-  void _showPrivacyPolicyModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  24,
-                  8,
-                  8,
-                  16,
-                ),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Privacy Policy',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black87,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded,
-                          color: Color(0xFFB3B3B3)),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(height: 1, color: Colors.grey.shade200),
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: _privacyScrollController,
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildPolicySection(
-                        'Data Collection',
-                        'We collect personal information necessary for booking and providing travel services, including name, contact details, and payment information.',
-                      ),
-                      const SizedBox(height: 20),
-                      _buildPolicySection(
-                        'Data Usage',
-                        'Your information is used to process bookings, send confirmations, provide customer support, and improve our services.',
-                      ),
-                      const SizedBox(height: 20),
-                      _buildPolicySection(
-                        'Data Security',
-                        'We implement industry-standard security measures to protect your personal information from unauthorized access, disclosure, or destruction.',
-                      ),
-                      const SizedBox(height: 20),
-                      _buildPolicySection(
-                        'Third-Party Sharing',
-                        'Information may be shared with airlines, payment processors, and service providers necessary to complete your booking.',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPolicySection(String title, String content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
-            letterSpacing: -0.3,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          content,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFFB3B3B3),
-            height: 1.6,
-            letterSpacing: -0.1,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFullPageSection(String title, String content) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-              letterSpacing: -0.4,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            content,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFFB3B3B3),
-              height: 1.7,
-              letterSpacing: -0.1,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSecurityBadges() {
     return Container(
       decoration: BoxDecoration(
@@ -2905,12 +2750,6 @@ class _BookingPaymentState extends State<BookingPayment>
       ),
     );
   }
-}
-
-class _PolicyItem {
-  final String title;
-  final String body;
-  const _PolicyItem(this.title, this.body);
 }
 
 // Card number input formatter
