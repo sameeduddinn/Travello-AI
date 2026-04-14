@@ -1,57 +1,126 @@
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flight_app/models/user.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
 
 class AuthService {
-  static const String _usersKey = 'registered_users';
-  static const String _currentUserKey = 'current_user';
-  static const String _isLoggedInKey = 'is_logged_in';
-  static const String _demoUsersInitialized = 'demo_users_initialized';
+  static final SupabaseClient _supabase = Supabase.instance.client;
+
   static const String _rememberMeKey = 'remember_me';
   static const String _rememberedUserKey = 'remembered_user';
   static const String _guestModeKey = 'guest_mode';
+  static String? _lastAuthError;
 
-  // Initialize demo users from user.dart on first app launch
+  static String? get lastAuthError => _lastAuthError;
+
+  static void _setAuthError(String? message) {
+    _lastAuthError = message;
+  }
+
+  /// Translates raw Supabase / network error messages into user-friendly text.
+  static String _friendlyAuthError(String raw) {
+    final msg = raw.toLowerCase();
+    if (msg.contains('already registered') ||
+        msg.contains('already exists') ||
+        msg.contains('email address is already')) {
+      return 'This email is already registered. Please sign in instead.';
+    }
+    if (msg.contains('invalid email') ||
+        msg.contains('invalid format') ||
+        msg.contains('unable to validate email')) {
+      return 'Please enter a valid email address.';
+    }
+    if (msg.contains('password') &&
+        (msg.contains('weak') ||
+            msg.contains('short') ||
+            msg.contains('at least') ||
+            msg.contains('characters'))) {
+      return 'Password is too weak. Use 8+ characters with upper, lower, number & symbol.';
+    }
+    if (msg.contains('rate limit') || msg.contains('too many requests')) {
+      return 'Too many attempts. Please wait a moment and try again.';
+    }
+    if (msg.contains('network') ||
+        msg.contains('connection') ||
+        msg.contains('timeout') ||
+        msg.contains('socket')) {
+      return 'Network error. Please check your internet connection.';
+    }
+    return raw;
+  }
+
+  // Retained for backward compatibility with existing startup flow.
   static Future<void> initializeDemoUsers() async {
-    final prefs = await SharedPreferences.getInstance();
-    final initialized = prefs.getBool(_demoUsersInitialized) ?? false;
-
-    if (!initialized) {
-      List<Map<String, dynamic>> users = [];
-
-      // Add all demo users from userList with name as username and idCard as password
-      for (var user in userList) {
-        users.add({
-          'name': user.name,
-          'emailOrPhone': user.name, // Use name as login identifier
-          'password': user.idCard, // Use idCard as password
-          'email': user.email,
-          'phone': user.phone,
-          'createdAt': DateTime.now().toIso8601String(),
-        });
-      }
-
-      // Save all users
-      await prefs.setString(_usersKey, jsonEncode(users));
-      await prefs.setBool(_demoUsersInitialized, true);
-    }
+    return;
   }
 
-  // Get all registered users
+  // Legacy API retained for compatibility with older UI code.
   static Future<List<Map<String, dynamic>>> getRegisteredUsers() async {
-    final prefs = await SharedPreferences.getInstance();
-    final usersJson = prefs.getString(_usersKey);
-
-    if (usersJson == null || usersJson.isEmpty) {
-      return [];
-    }
-
-    final List<dynamic> usersList = jsonDecode(usersJson);
-    return usersList.cast<Map<String, dynamic>>();
+    return [];
   }
 
-  // Register new user
+  static Future<Map<String, dynamic>?> _fetchProfile(String userId) async {
+    try {
+      final data = await _supabase
+          .from('profiles')
+          .select('full_name, phone, avatar_url')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (data == null) return null;
+      return Map<String, dynamic>.from(data);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Map<String, dynamic> _toAppUser(
+    User user, {
+    Map<String, dynamic>? profile,
+  }) {
+    final metadata = user.userMetadata ?? <String, dynamic>{};
+
+    final name = (profile?['full_name'] ?? metadata['full_name'] ?? '')
+        .toString()
+        .trim();
+    final phone =
+        (profile?['phone'] ?? metadata['phone'] ?? '').toString().trim();
+    final avatar = (profile?['avatar_url'] ?? metadata['avatar_url'] ?? '')
+        .toString()
+        .trim();
+
+    return {
+      'id': user.id,
+      'name': name.isEmpty ? 'User' : name,
+      'email': user.email ?? '',
+      'phone': phone,
+      'avatar': avatar,
+      'createdAt': user.createdAt,
+    };
+  }
+
+  static Future<void> _upsertOwnProfile({
+    String? name,
+    String? phone,
+    String? avatarUrl,
+  }) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    final payload = <String, dynamic>{
+      'id': user.id,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+
+    if (name != null) payload['full_name'] = name;
+    if (phone != null) payload['phone'] = phone;
+    if (avatarUrl != null) payload['avatar_url'] = avatarUrl;
+
+    await _supabase.from('profiles').upsert(payload);
+  }
+
   static Future<bool> registerUser({
     required String name,
     required String emailOrPhone,
@@ -60,149 +129,193 @@ class AuthService {
     String? email,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      _setAuthError(null);
+      final normalizedEmail =
+          ((email ?? emailOrPhone).toString()).trim().toLowerCase();
+      final normalizedPhone = (phone ?? '').trim();
 
-      // Get existing users
-      List<Map<String, dynamic>> users = await getRegisteredUsers();
-
-      // Check if user already exists - check BOTH email AND phone separately
-      bool userExists = users.any((user) {
-        // Check email match if provided
-        if (email != null && email.trim().isNotEmpty) {
-          final userEmail =
-              user['email']?.toString().toLowerCase().trim() ?? '';
-          if (userEmail == email.toLowerCase().trim()) return true;
-        }
-
-        // Check phone match if provided
-        if (phone != null && phone.trim().isNotEmpty) {
-          final userPhone = user['phone']?.toString().trim() ?? '';
-          if (userPhone == phone.trim()) return true;
-        }
-
-        // Also check emailOrPhone field for backward compatibility
-        final userEmailOrPhone =
-            user['emailOrPhone']?.toString().toLowerCase().trim() ?? '';
-        if (userEmailOrPhone == emailOrPhone.toLowerCase().trim()) return true;
-
+      // Basic client-side email sanity check before hitting the network.
+      if (!normalizedEmail.contains('@') || !normalizedEmail.contains('.')) {
+        _setAuthError('Please enter a valid email address.');
         return false;
-      });
-
-      if (userExists) {
-        return false; // User already exists
       }
 
-      // Add new user with separate fields
-      users.add({
-        'name': name,
-        'emailOrPhone': emailOrPhone,
-        'email': email ?? emailOrPhone,
-        'phone': phone ?? '',
-        'password': password,
-        'createdAt': DateTime.now().toIso8601String(),
-      });
+      final response = await _supabase.auth.signUp(
+        email: normalizedEmail,
+        password: password,
+        data: {
+          'full_name': name.trim(),
+          'phone': normalizedPhone,
+        },
+      );
 
-      // Save to SharedPreferences
-      await prefs.setString(_usersKey, jsonEncode(users));
+      // When email confirmation is enabled, Supabase does NOT throw for a
+      // duplicate email — it silently returns a user whose identities list is
+      // empty.  Detect this case and surface a clear error.
+      final user = response.user;
+      if (user != null &&
+          user.identities != null &&
+          user.identities!.isEmpty) {
+        _setAuthError(
+          'This email is already registered. Please sign in instead.',
+        );
+        return false;
+      }
+
       return true;
+    } on AuthException catch (e) {
+      _setAuthError(_friendlyAuthError(e.message));
+      return false;
     } catch (e) {
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('socketexception') ||
+          msg.contains('network') ||
+          msg.contains('connection') ||
+          msg.contains('timeout')) {
+        _setAuthError(
+            'Network error. Please check your internet connection.');
+      } else {
+        _setAuthError('Something went wrong. Please try again.');
+      }
       return false;
     }
   }
 
-  // Login user - supports email, phone, or name
   static Future<Map<String, dynamic>?> loginUser({
     required String emailOrPhone,
     required String password,
   }) async {
     try {
-      List<Map<String, dynamic>> users = await getRegisteredUsers();
-
-      // Find user by emailOrPhone, name, email, or phone
-      Map<String, dynamic>? user = users.firstWhere(
-        (user) {
-          String input = emailOrPhone.toLowerCase().trim();
-          String userEmailOrPhone =
-              (user['emailOrPhone'] ?? '').toLowerCase().trim();
-          String userName = (user['name'] ?? '').toLowerCase().trim();
-          String userEmail = (user['email'] ?? '').toLowerCase().trim();
-          String userPhone = (user['phone'] ?? '').toLowerCase().trim();
-
-          return (userEmailOrPhone == input ||
-                  userName == input ||
-                  userEmail == input ||
-                  userPhone == input) &&
-              user['password'] == password;
-        },
-        orElse: () => {},
-      );
-
-      if (user.isEmpty) {
-        return null; // User not found or wrong password
-      }
-
-      // Save current user and login status
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_currentUserKey, jsonEncode(user));
-      await prefs.setBool(_isLoggedInKey, true);
-
-      // Clear guest mode if user logs in
-      await prefs.remove(_guestModeKey);
-
-      return user;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  // Get current logged-in user
-  static Future<Map<String, dynamic>?> getCurrentUser() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userJson = prefs.getString(_currentUserKey);
-
-      if (userJson == null || userJson.isEmpty) {
+      _setAuthError(null);
+      final login = emailOrPhone.trim().toLowerCase();
+      if (!login.contains('@')) {
+        _setAuthError('Please use a valid email address.');
         return null;
       }
 
-      return jsonDecode(userJson);
+      final response = await _supabase.auth.signInWithPassword(
+        email: login,
+        password: password,
+      );
+
+      final user = response.user;
+      if (user == null) return null;
+
+      final profile = await _fetchProfile(user.id);
+      final appUser = _toAppUser(user, profile: profile);
+
+      await _upsertOwnProfile(
+        name: appUser['name']?.toString(),
+        phone: appUser['phone']?.toString(),
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_guestModeKey);
+
+      return appUser;
+    } on AuthException catch (e) {
+      _setAuthError(e.message);
+      return null;
     } catch (e) {
+      _setAuthError(e.toString());
       return null;
     }
   }
 
-  // Check if user is logged in
+  static Future<bool> signInWithGoogle() async {
+    try {
+      _setAuthError(null);
+      await _supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? null : 'travelloai://auth-callback',
+        authScreenLaunchMode: kIsWeb
+            ? LaunchMode.platformDefault
+            : LaunchMode.externalApplication,
+      );
+      return true;
+    } on AuthException catch (e) {
+      _setAuthError(e.message);
+      return false;
+    } catch (e) {
+      _setAuthError(e.toString());
+      return false;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> waitForAuthenticatedUser({
+    Duration timeout = const Duration(seconds: 40),
+    Duration interval = const Duration(milliseconds: 350),
+  }) async {
+    final startedAt = DateTime.now();
+
+    while (DateTime.now().difference(startedAt) < timeout) {
+      final user = await getCurrentUser();
+      if (user != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_guestModeKey);
+        return user;
+      }
+
+      await Future.delayed(interval);
+    }
+
+    final isDesktop = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.windows ||
+            defaultTargetPlatform == TargetPlatform.macOS ||
+            defaultTargetPlatform == TargetPlatform.linux);
+
+    if (isDesktop) {
+      _setAuthError(
+        'OAuth callback did not return to app. On desktop debug builds, custom URI scheme may require protocol registration. Test Google login on Android/iOS for now.',
+      );
+    } else {
+      _setAuthError('OAuth timed out. Please try again.');
+    }
+
+    return null;
+  }
+
+  static Future<Map<String, dynamic>?> getCurrentUser() async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return null;
+
+      final profile = await _fetchProfile(user.id);
+      return _toAppUser(user, profile: profile);
+    } catch (e) {
+      _setAuthError(e.toString());
+      return null;
+    }
+  }
+
   static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_isLoggedInKey) ?? false;
+    final isGuest = prefs.getBool(_guestModeKey) ?? false;
+    return !isGuest && _supabase.auth.currentSession != null;
   }
 
-  // Logout user
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_currentUserKey);
-    await prefs.setBool(_isLoggedInKey, false);
+    await _supabase.auth.signOut();
+    await prefs.remove(_guestModeKey);
 
-    // Clear city preference on logout (Professional standard - different users may be in different cities)
+    // Different users may be in different cities.
     await LocationPreferenceService.clearOriginCity();
-
-    // Don't remove remembered credentials on logout
   }
 
-  // Save Remember Me credentials
   static Future<void> saveRememberMe(
       String emailOrPhone, String password) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_rememberMeKey, true);
     await prefs.setString(
-        _rememberedUserKey,
-        jsonEncode({
-          'emailOrPhone': emailOrPhone,
-          'password': password,
-        }));
+      _rememberedUserKey,
+      jsonEncode({
+        'emailOrPhone': emailOrPhone,
+        'password': password,
+      }),
+    );
   }
 
-  // Get remembered credentials
   static Future<Map<String, String>?> getRememberedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     final rememberMe = prefs.getBool(_rememberMeKey) ?? false;
@@ -210,174 +323,231 @@ class AuthService {
     if (!rememberMe) return null;
 
     final credentialsJson = prefs.getString(_rememberedUserKey);
-    if (credentialsJson == null) return null;
+    if (credentialsJson == null || credentialsJson.isEmpty) return null;
 
-    final Map<String, dynamic> credentials = jsonDecode(credentialsJson);
+    final decoded = jsonDecode(credentialsJson) as Map<String, dynamic>;
+    final emailOrPhone = (decoded['emailOrPhone'] ?? '').toString();
+    final password = (decoded['password'] ?? '').toString();
+
+    if (emailOrPhone.isEmpty || password.isEmpty) return null;
+
     return {
-      'emailOrPhone': credentials['emailOrPhone'] as String,
-      'password': credentials['password'] as String,
+      'emailOrPhone': emailOrPhone,
+      'password': password,
     };
   }
 
-  // Clear Remember Me
   static Future<void> clearRememberMe() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_rememberMeKey);
     await prefs.remove(_rememberedUserKey);
   }
 
-  // Check if email exists
+  // Kept for compatibility. In Supabase auth, existence checks should not be exposed.
   static Future<bool> checkEmailExists(String email) async {
-    try {
-      List<Map<String, dynamic>> users = await getRegisteredUsers();
+    return email.trim().isNotEmpty;
+  }
 
-      return users.any((user) =>
-          user['email']?.toLowerCase() == email.toLowerCase() ||
-          user['emailOrPhone']?.toLowerCase() == email.toLowerCase());
+  static Future<bool> resendSignupCode(String email) async {
+    try {
+      _setAuthError(null);
+      await _supabase.auth.resend(
+        type: OtpType.signup,
+        email: email.trim().toLowerCase(),
+      );
+      return true;
+    } on AuthException catch (e) {
+      _setAuthError(e.message);
+      return false;
     } catch (e) {
+      _setAuthError(e.toString());
       return false;
     }
   }
 
-  // Reset Password
+  static Future<bool> verifySignupCode({
+    required String email,
+    required String code,
+  }) async {
+    try {
+      _setAuthError(null);
+      final response = await _supabase.auth.verifyOTP(
+        email: email.trim().toLowerCase(),
+        token: code.trim(),
+        type: OtpType.signup,
+      );
+
+      return response.user != null || response.session != null;
+    } on AuthException catch (e) {
+      _setAuthError(e.message);
+      return false;
+    } catch (e) {
+      _setAuthError(e.toString());
+      return false;
+    }
+  }
+
+  static Future<bool> sendPasswordResetCode(String emailOrPhone) async {
+    try {
+      _setAuthError(null);
+      final email = emailOrPhone.trim().toLowerCase();
+      if (!email.contains('@')) return false;
+
+      await _supabase.auth.resetPasswordForEmail(email);
+      return true;
+    } on AuthException catch (e) {
+      _setAuthError(e.message);
+      return false;
+    } catch (e) {
+      _setAuthError(e.toString());
+      return false;
+    }
+  }
+
+  static Future<bool> verifyPasswordResetCode({
+    required String emailOrPhone,
+    required String code,
+  }) async {
+    try {
+      _setAuthError(null);
+      final email = emailOrPhone.trim().toLowerCase();
+
+      final response = await _supabase.auth.verifyOTP(
+        email: email,
+        token: code.trim(),
+        type: OtpType.recovery,
+      );
+
+      return response.user != null || response.session != null;
+    } on AuthException catch (e) {
+      _setAuthError(e.message);
+      return false;
+    } catch (e) {
+      _setAuthError(e.toString());
+      return false;
+    }
+  }
+
   static Future<bool> resetPassword({
     required String emailOrPhone,
     required String newPassword,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      List<Map<String, dynamic>> users = await getRegisteredUsers();
-
-      // Find user by email or phone
-      int userIndex = users.indexWhere((user) =>
-          user['email']?.toLowerCase() == emailOrPhone.toLowerCase() ||
-          user['emailOrPhone']?.toLowerCase() == emailOrPhone.toLowerCase() ||
-          user['phone'] == emailOrPhone);
-
-      if (userIndex == -1) {
-        return false; // User not found
-      }
-
-      // Update password
-      users[userIndex]['password'] = newPassword;
-
-      // Save updated users
-      await prefs.setString(_usersKey, jsonEncode(users));
-
-      // Update current user if logged in
-      final currentUser = await getCurrentUser();
-      if (currentUser != null &&
-          (currentUser['email']?.toLowerCase() == emailOrPhone.toLowerCase() ||
-              currentUser['emailOrPhone']?.toLowerCase() ==
-                  emailOrPhone.toLowerCase())) {
-        await prefs.setString(_currentUserKey, jsonEncode(users[userIndex]));
-      }
-
+      _setAuthError(null);
+      await _supabase.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
       return true;
+    } on AuthException catch (e) {
+      _setAuthError(e.message);
+      return false;
     } catch (e) {
+      _setAuthError(e.toString());
       return false;
     }
   }
 
-  // Enable Guest Mode
   static Future<void> enableGuestMode() async {
     final prefs = await SharedPreferences.getInstance();
+    await _supabase.auth.signOut();
     await prefs.setBool(_guestModeKey, true);
-    await prefs.setBool(_isLoggedInKey, false);
-    await prefs.remove(_currentUserKey);
   }
 
-  // Check if in Guest Mode
   static Future<bool> isGuestMode() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_guestModeKey) ?? false;
   }
 
-  // Exit Guest Mode
   static Future<void> exitGuestMode() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_guestModeKey);
   }
 
-  // Get Guest User Data
   static Map<String, dynamic> getGuestUser() {
     return {
       'name': 'Guest User',
       'email': 'guest@example.com',
       'phone': '',
-      'avatar': '', // Empty avatar for guest
+      'avatar': '',
       'isGuest': true,
     };
   }
 
-  // Clear all users (for testing purposes)
   static Future<void> clearAllUsers() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_usersKey);
-    await prefs.remove(_currentUserKey);
-    await prefs.setBool(_isLoggedInKey, false);
+    await _supabase.auth.signOut();
+    await prefs.remove(_rememberMeKey);
+    await prefs.remove(_rememberedUserKey);
+    await prefs.remove(_guestModeKey);
     await prefs.remove('finishedIntro');
   }
 
-  // Update current user profile (name, phone, email)
   static Future<bool> updateUserProfile({
     required String name,
     required String phone,
     required String email,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final currentUser = await getCurrentUser();
+      _setAuthError(null);
+      final currentUser = _supabase.auth.currentUser;
       if (currentUser == null) return false;
 
-      // Update in users list
-      List<Map<String, dynamic>> users = await getRegisteredUsers();
-      final idx = users.indexWhere((u) =>
-          u['emailOrPhone'] == currentUser['emailOrPhone'] ||
-          u['email'] == currentUser['email']);
-      if (idx != -1) {
-        users[idx]['name'] = name;
-        users[idx]['phone'] = phone;
-        users[idx]['email'] = email;
-        await prefs.setString(_usersKey, jsonEncode(users));
+      final trimmedName = name.trim();
+      final trimmedPhone = phone.trim();
+      final trimmedEmail = email.trim().toLowerCase();
+
+      if (trimmedEmail.isNotEmpty &&
+          trimmedEmail != (currentUser.email ?? '')) {
+        await _supabase.auth.updateUser(UserAttributes(email: trimmedEmail));
       }
 
-      // Update current user cache
-      currentUser['name'] = name;
-      currentUser['phone'] = phone;
-      currentUser['email'] = email;
-      await prefs.setString(_currentUserKey, jsonEncode(currentUser));
+      await _supabase.auth.updateUser(
+        UserAttributes(
+          data: {
+            'full_name': trimmedName,
+            'phone': trimmedPhone,
+          },
+        ),
+      );
+
+      await _upsertOwnProfile(name: trimmedName, phone: trimmedPhone);
       return true;
+    } on AuthException catch (e) {
+      _setAuthError(e.message);
+      return false;
     } catch (e) {
+      _setAuthError(e.toString());
       return false;
     }
   }
 
-  // Change password – verifies old password first
   static Future<String> changePassword({
     required String currentPassword,
     required String newPassword,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final currentUser = await getCurrentUser();
-      if (currentUser == null) return 'not_logged_in';
+      final user = _supabase.auth.currentUser;
+      if (user == null) return 'not_logged_in';
+      final email = user.email;
+      if (email == null || email.isEmpty) return 'error';
 
-      if (currentUser['password'] != currentPassword) return 'wrong_password';
-
-      List<Map<String, dynamic>> users = await getRegisteredUsers();
-      final idx = users.indexWhere((u) =>
-          u['emailOrPhone'] == currentUser['emailOrPhone'] ||
-          u['email'] == currentUser['email']);
-      if (idx != -1) {
-        users[idx]['password'] = newPassword;
-        await prefs.setString(_usersKey, jsonEncode(users));
+      try {
+        await _supabase.auth.signInWithPassword(
+          email: email,
+          password: currentPassword,
+        );
+      } on AuthException {
+        return 'wrong_password';
       }
 
-      currentUser['password'] = newPassword;
-      await prefs.setString(_currentUserKey, jsonEncode(currentUser));
+      await _supabase.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+
       return 'success';
-    } catch (e) {
+    } on AuthException {
+      return 'error';
+    } catch (_) {
       return 'error';
     }
   }

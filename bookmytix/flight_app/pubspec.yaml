@@ -29,6 +29,7 @@ dependencies:
   scroll_to_hide: ^2.1.0
   shared_preferences: ^2.3.2
   shimmer: ^3.0.0
+  supabase_flutter: ^2.5.6
   url_launcher: ^6.3.1
   zoom_tap_animation: ^1.1.0
   confetti: ^0.7.0

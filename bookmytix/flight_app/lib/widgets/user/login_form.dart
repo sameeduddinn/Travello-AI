@@ -99,6 +99,93 @@ class _LoginFormState extends State<LoginForm> {
     });
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final started = await AuthService.signInWithGoogle();
+    if (!mounted) return;
+
+    if (!started) {
+      setState(() {
+        _isLoading = false;
+      });
+      final errorMessage = AuthService.lastAuthError ??
+          'Unable to start Google sign-in. Please try again.';
+      Get.snackbar(
+        'Google Sign-In Failed',
+        errorMessage,
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+        borderRadius: 10,
+        margin: const EdgeInsets.all(10),
+      );
+      return;
+    }
+
+    final user = await AuthService.waitForAuthenticatedUser();
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (user == null) {
+      final errorMessage = AuthService.lastAuthError ??
+          'Complete sign-in in browser and return to the app.';
+      Get.snackbar(
+        'Continue Google Sign-In',
+        errorMessage,
+        backgroundColor: Colors.blue.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.open_in_new, color: Colors.white),
+        borderRadius: 10,
+        margin: const EdgeInsets.all(10),
+      );
+      return;
+    }
+
+    Get.snackbar(
+      'Login Successful',
+      'Welcome, ${user['name']}!',
+      backgroundColor: Colors.green.shade600,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+      duration: const Duration(seconds: 2),
+      icon: const Icon(Icons.check_circle, color: Colors.white),
+      borderRadius: 10,
+      margin: const EdgeInsets.all(10),
+    );
+
+    final hasCity = await LocationPreferenceService.hasOriginCity();
+    if (!mounted) return;
+
+    if (!hasCity) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: false,
+        enableDrag: false,
+        backgroundColor: Colors.transparent,
+        builder: (context) => CitySelectionSheet(
+          onComplete: () {
+            Get.offAllNamed(AppLink.home);
+          },
+        ),
+      );
+    } else {
+      Get.offAllNamed(AppLink.home);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
@@ -468,7 +555,7 @@ class _LoginFormState extends State<LoginForm> {
             autovalidateMode: AutovalidateMode.onUserInteraction,
             builder: (FormFieldState<dynamic> field) {
               return AppTextField(
-                label: 'Email or Phone Number',
+                label: 'Email Address',
                 onChanged: (value) => field.didChange(value),
                 errorText: field.errorText,
                 prefixIcon: Icons.email_outlined,
@@ -481,10 +568,9 @@ class _LoginFormState extends State<LoginForm> {
 
                 final emailRegex =
                     RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-                final phoneRegex = RegExp(r'^03[0-9]{9}$');
 
-                if (!emailRegex.hasMatch(v) && !phoneRegex.hasMatch(v)) {
-                  return 'Enter valid email or phone number';
+                if (!emailRegex.hasMatch(v)) {
+                  return 'Enter a valid email address';
                 }
                 return null;
               }
@@ -591,9 +677,7 @@ class _LoginFormState extends State<LoginForm> {
                               .trim()
                               .replaceAll(RegExp(r'\s+'), '');
 
-                          final emailOrPhone = rawInput.contains('@')
-                              ? rawInput.toLowerCase()
-                              : rawInput;
+                          final emailOrPhone = rawInput.toLowerCase();
                           final String password =
                               (formData['password'] ?? '').toString().trim();
 
@@ -800,19 +884,7 @@ class _LoginFormState extends State<LoginForm> {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () {
-                  Get.snackbar(
-                    'Coming Soon',
-                    'Google Sign In will be available soon!',
-                    backgroundColor: Colors.blue.shade600,
-                    colorText: Colors.white,
-                    snackPosition: SnackPosition.TOP,
-                    duration: const Duration(seconds: 2),
-                    icon: const Icon(Icons.info_outline, color: Colors.white),
-                    borderRadius: 10,
-                    margin: const EdgeInsets.all(10),
-                  );
-                },
+                onTap: _handleGoogleSignIn,
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),

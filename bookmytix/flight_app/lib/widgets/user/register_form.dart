@@ -8,6 +8,8 @@ import 'package:flight_app/widgets/app_input/app_textfield.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flight_app/utils/location_preference_service.dart';
+import 'package:flight_app/widgets/onboarding/city_selection_sheet.dart';
 
 class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
@@ -58,6 +60,93 @@ class _RegisterFormState extends State<RegisterForm> {
         _strengthValue = 1.0;
       }
     });
+  }
+
+  Future<void> _handleGoogleSignUp() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final started = await AuthService.signInWithGoogle();
+    if (!mounted) return;
+
+    if (!started) {
+      setState(() {
+        _isLoading = false;
+      });
+      final errorMessage = AuthService.lastAuthError ??
+          'Unable to start Google sign-up. Please try again.';
+      Get.snackbar(
+        'Google Sign-Up Failed',
+        errorMessage,
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+        borderRadius: 10,
+        margin: const EdgeInsets.all(10),
+      );
+      return;
+    }
+
+    final user = await AuthService.waitForAuthenticatedUser();
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (user == null) {
+      final errorMessage = AuthService.lastAuthError ??
+          'Complete sign-up in browser and return to the app.';
+      Get.snackbar(
+        'Continue Google Sign-Up',
+        errorMessage,
+        backgroundColor: Colors.blue.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.open_in_new, color: Colors.white),
+        borderRadius: 10,
+        margin: const EdgeInsets.all(10),
+      );
+      return;
+    }
+
+    Get.snackbar(
+      'Welcome',
+      'Google account connected successfully.',
+      backgroundColor: Colors.green.shade600,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+      duration: const Duration(seconds: 2),
+      icon: const Icon(Icons.check_circle, color: Colors.white),
+      borderRadius: 10,
+      margin: const EdgeInsets.all(10),
+    );
+
+    final hasCity = await LocationPreferenceService.hasOriginCity();
+    if (!mounted) return;
+
+    if (!hasCity) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: false,
+        enableDrag: false,
+        backgroundColor: Colors.transparent,
+        builder: (context) => CitySelectionSheet(
+          onComplete: () {
+            Get.offAllNamed(AppLink.home);
+          },
+        ),
+      );
+    } else {
+      Get.offAllNamed(AppLink.home);
+    }
   }
 
   @override
@@ -478,7 +567,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   errorText: 'Password must be at least 8 characters'),
               FormBuilderValidators.match(
                 RegExp(
-                  r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$',
+                  r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()\-_=+\[\]{};:,.<>|~`]).{8,}$',
                 ),
                 errorText: 'Use 8+ chars with upper, lower, number & symbol',
               ),
@@ -604,78 +693,83 @@ class _RegisterFormState extends State<RegisterForm> {
                         final formState = _registerKey.currentState;
                         if (formState == null) return;
 
-                        if (formState.saveAndValidate()) {
-                          setState(() => _isLoading = true);
+                        if (!formState.saveAndValidate()) {
+                          // Validation failed — fields already show inline
+                          // errors, but also show a top-level hint so the
+                          // user knows why the button didn't proceed.
+                          Get.snackbar(
+                            'Check Your Details',
+                            'Please fix the highlighted errors before continuing.',
+                            backgroundColor: Colors.orange.shade700,
+                            colorText: Colors.white,
+                            snackPosition: SnackPosition.TOP,
+                            duration: const Duration(seconds: 3),
+                            icon: const Icon(Icons.warning_amber,
+                                color: Colors.white),
+                            borderRadius: 10,
+                            margin: const EdgeInsets.all(10),
+                          );
+                          return;
+                        }
 
-                          final formData = formState.value;
+                        setState(() => _isLoading = true);
 
-                          /// 🔹 SANITIZE INPUTS
-                          final String name = (formData['name'] ?? '')
-                              .toString()
-                              .trim()
-                              .replaceAll(RegExp(r'\s+'), ' ');
+                        final formData = formState.value;
 
-                          final String email = (formData['email'] ?? '')
-                              .toString()
-                              .trim()
-                              .toLowerCase();
+                        /// 🔹 SANITIZE INPUTS
+                        final String name = (formData['name'] ?? '')
+                            .toString()
+                            .trim()
+                            .replaceAll(RegExp(r'\s+'), ' ');
 
-                          final String phone = (formData['phone'] ?? '')
-                              .toString()
-                              .trim()
-                              .replaceAll(RegExp(r'\s+|-'), '');
+                        final String email = (formData['email'] ?? '')
+                            .toString()
+                            .trim()
+                            .toLowerCase();
 
-                          final String password =
-                              (formData['password'] ?? '').toString().trim();
+                        final String phone = (formData['phone'] ?? '')
+                            .toString()
+                            .trim()
+                            .replaceAll(RegExp(r'\s+|-'), '');
 
-                          try {
-                            final success = await AuthService.registerUser(
-                              name: name,
-                              emailOrPhone: email,
-                              email: email,
-                              phone: phone,
-                              password: password,
+                        final String password =
+                            (formData['password'] ?? '').toString().trim();
+
+                        try {
+                          final success = await AuthService.registerUser(
+                            name: name,
+                            emailOrPhone: email,
+                            email: email,
+                            phone: phone,
+                            password: password,
+                          );
+
+                          if (!mounted) return;
+                          setState(() => _isLoading = false);
+
+                          if (success) {
+                            Get.snackbar(
+                              'Registration Successful',
+                              'Please verify your email to continue.',
+                              backgroundColor: Colors.green.shade600,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.TOP,
+                              duration: const Duration(seconds: 2),
+                              icon: const Icon(Icons.check_circle,
+                                  color: Colors.white),
+                              borderRadius: 10,
+                              margin: const EdgeInsets.all(10),
                             );
 
-                            setState(() => _isLoading = false);
-
-                            if (success) {
-                              Get.snackbar(
-                                'Registration Successful',
-                                'Please verify your email to continue.',
-                                backgroundColor: Colors.green.shade600,
-                                colorText: Colors.white,
-                                snackPosition: SnackPosition.TOP,
-                                duration: const Duration(seconds: 2),
-                                icon: const Icon(Icons.check_circle,
-                                    color: Colors.white),
-                                borderRadius: 10,
-                                margin: const EdgeInsets.all(10),
-                              );
-
-                              Get.offNamed(
-                                '${AppLink.emailVerification}?email=$email',
-                              );
-                            } else {
-                              Get.snackbar(
-                                'Registration Failed',
-                                'Email or phone already exists.',
-                                backgroundColor: Colors.orange.shade600,
-                                colorText: Colors.white,
-                                snackPosition: SnackPosition.TOP,
-                                icon: const Icon(Icons.warning_amber,
-                                    color: Colors.white),
-                                borderRadius: 10,
-                                margin: const EdgeInsets.all(10),
-                                duration: const Duration(seconds: 3),
-                              );
-                            }
-                          } catch (e) {
-                            setState(() => _isLoading = false);
-
+                            Get.offNamed(
+                              '${AppLink.emailVerification}?email=$email',
+                            );
+                          } else {
+                            final errorMessage = AuthService.lastAuthError ??
+                                'Registration failed. Please try again.';
                             Get.snackbar(
-                              'Error',
-                              'Something went wrong. Try again.',
+                              'Registration Failed',
+                              errorMessage,
                               backgroundColor: Colors.red.shade600,
                               colorText: Colors.white,
                               snackPosition: SnackPosition.TOP,
@@ -683,9 +777,25 @@ class _RegisterFormState extends State<RegisterForm> {
                                   color: Colors.white),
                               borderRadius: 10,
                               margin: const EdgeInsets.all(10),
-                              duration: const Duration(seconds: 3),
+                              duration: const Duration(seconds: 4),
                             );
                           }
+                        } catch (e) {
+                          if (!mounted) return;
+                          setState(() => _isLoading = false);
+
+                          Get.snackbar(
+                            'Error',
+                            'Something went wrong. Please try again.',
+                            backgroundColor: Colors.red.shade600,
+                            colorText: Colors.white,
+                            snackPosition: SnackPosition.TOP,
+                            icon: const Icon(Icons.error_outline,
+                                color: Colors.white),
+                            borderRadius: 10,
+                            margin: const EdgeInsets.all(10),
+                            duration: const Duration(seconds: 3),
+                          );
                         }
                       },
                 style: ThemeButton.btnBig.merge(FilledButton.styleFrom(
@@ -803,19 +913,7 @@ class _RegisterFormState extends State<RegisterForm> {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () {
-                  Get.snackbar(
-                    'Coming Soon',
-                    'Google Sign Up will be available soon!',
-                    backgroundColor: Colors.blue.shade600,
-                    colorText: Colors.white,
-                    snackPosition: SnackPosition.TOP,
-                    duration: const Duration(seconds: 2),
-                    icon: const Icon(Icons.info_outline, color: Colors.white),
-                    borderRadius: 10,
-                    margin: const EdgeInsets.all(10),
-                  );
-                },
+                onTap: _handleGoogleSignUp,
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),

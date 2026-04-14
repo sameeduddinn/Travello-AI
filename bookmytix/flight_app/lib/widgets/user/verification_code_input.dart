@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/route_manager.dart';
 import 'dart:async';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/auth_service.dart';
 
 class VerificationCodeInput extends StatefulWidget {
   final String email;
@@ -31,6 +32,7 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
   int _secondsRemaining = 60;
   Timer? _timer;
   bool _isVerifying = false;
+  bool _isResending = false;
 
   @override
   void initState() {
@@ -64,22 +66,48 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
     });
   }
 
-  void _resendCode() {
+  Future<void> _resendCode() async {
+    setState(() {
+      _isResending = true;
+    });
+
+    final sent = await AuthService.resendSignupCode(widget.email);
+
+    if (!mounted) return;
+    setState(() {
+      _isResending = false;
+    });
+
+    if (sent) {
+      Get.snackbar(
+        'Code Resent',
+        'A new verification code has been sent to ${widget.email}',
+        backgroundColor: Colors.green.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 2),
+        icon: const Icon(Icons.email_outlined, color: Colors.white),
+        borderRadius: 10,
+        margin: const EdgeInsets.all(10),
+      );
+      _startTimer();
+      return;
+    }
+
     Get.snackbar(
-      'Code Resent',
-      'A new verification code has been sent to ${widget.email}',
-      backgroundColor: Colors.green.shade600,
+      'Resend Failed',
+      'Unable to resend verification code. Please try again.',
+      backgroundColor: Colors.red.shade600,
       colorText: Colors.white,
       snackPosition: SnackPosition.TOP,
       duration: const Duration(seconds: 2),
-      icon: const Icon(Icons.email_outlined, color: Colors.white),
+      icon: const Icon(Icons.error_outline, color: Colors.white),
       borderRadius: 10,
       margin: const EdgeInsets.all(10),
     );
-    _startTimer();
   }
 
-  void _verifyCode() async {
+  Future<void> _verifyCode() async {
     final code = _controllers.map((c) => c.text).join();
     if (code.length != 6) {
       Get.snackbar(
@@ -100,15 +128,18 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
       _isVerifying = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    final verified = await AuthService.verifySignupCode(
+      email: widget.email,
+      code: code,
+    );
+
+    if (!mounted) return;
 
     setState(() {
       _isVerifying = false;
     });
 
-    // For demo, accept "123456" as valid code
-    if (code == '123456') {
+    if (verified) {
       Get.snackbar(
         'Verified',
         'Email verified successfully!',
@@ -287,15 +318,23 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                       ],
                     )
                   : TextButton.icon(
-                      onPressed: _resendCode,
+                      onPressed: _isResending ? null : _resendCode,
                       icon: const Icon(Icons.refresh, size: 18),
-                      label: const Text(
-                        'Resend Code',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
+                      label: _isResending
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Resend Code',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
                     ),
 
               const SizedBox(height: 16),
@@ -325,7 +364,7 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
 
               const SizedBox(height: 12),
 
-              // Demo hint
+              // OTP helper
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -345,7 +384,7 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Demo: Use code 123456 to verify',
+                        'Enter the 6-digit code sent to your email.',
                         style: TravelloTheme.caption.copyWith(
                           color: colorScheme.onSurface,
                           fontSize: 13,

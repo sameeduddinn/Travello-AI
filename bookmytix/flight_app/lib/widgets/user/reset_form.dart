@@ -35,7 +35,6 @@ class _ResetFormState extends State<ResetForm> {
   Timer? _timer;
   int _remainingSeconds = 60;
   bool _canResend = false;
-  String _verificationCode = ''; // Stores the sent code
 
   @override
   void initState() {
@@ -83,28 +82,70 @@ class _ResetFormState extends State<ResetForm> {
     });
   }
 
-  void _sendVerificationCode() {
-    // Generate random 6-digit code (in production, send via email/SMS)
-    _verificationCode = '123456'; // Demo code
-    _startTimer();
+  Future<bool> _sendVerificationCode() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final sent = await AuthService.sendPasswordResetCode(
+      _emailController.text.trim().toLowerCase(),
+    );
+
+    if (!mounted) return false;
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (sent) {
+      _startTimer();
+      Get.snackbar(
+        'Verification Code Sent',
+        'A 6-digit code has been sent to ${_emailController.text}',
+        backgroundColor: Colors.green.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.mark_email_read, color: Colors.white),
+        borderRadius: 10,
+        margin: const EdgeInsets.all(10),
+      );
+      return true;
+    }
 
     Get.snackbar(
-      'Verification Code Sent',
-      'A 6-digit code has been sent to ${_emailController.text}',
-      backgroundColor: Colors.green.shade600,
+      'Send Failed',
+      'Unable to send verification code. Check your email and try again.',
+      backgroundColor: Colors.red.shade600,
       colorText: Colors.white,
       snackPosition: SnackPosition.TOP,
       duration: const Duration(seconds: 3),
-      icon: const Icon(Icons.mark_email_read, color: Colors.white),
+      icon: const Icon(Icons.error_outline, color: Colors.white),
       borderRadius: 10,
       margin: const EdgeInsets.all(10),
     );
+
+    return false;
   }
 
-  void _verifyCode() async {
+  Future<void> _verifyCode() async {
     final enteredCode = _codeControllers.map((c) => c.text).join();
 
-    if (enteredCode == _verificationCode) {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final verified = await AuthService.verifyPasswordResetCode(
+      emailOrPhone: _emailController.text.trim().toLowerCase(),
+      code: enteredCode,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (verified) {
       setState(() {
         _currentStep = 3;
       });
@@ -141,36 +182,15 @@ class _ResetFormState extends State<ResetForm> {
 
   Future<void> _handleEmailSubmit() async {
     if (_emailFormKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      // Check if email exists
-      final emailExists =
-          await AuthService.checkEmailExists(_emailController.text);
+      final sent = await _sendVerificationCode();
+      if (!sent) return;
 
       setState(() {
-        _isLoading = false;
+        _currentStep = 2;
+        for (var controller in _codeControllers) {
+          controller.clear();
+        }
       });
-
-      if (emailExists) {
-        setState(() {
-          _currentStep = 2;
-        });
-        _sendVerificationCode();
-      } else {
-        Get.snackbar(
-          'Email Not Found',
-          'No account found with this email',
-          backgroundColor: Colors.red.shade600,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
-          duration: const Duration(seconds: 2),
-          icon: const Icon(Icons.error_outline, color: Colors.white),
-          borderRadius: 10,
-          margin: const EdgeInsets.all(10),
-        );
-      }
     }
   }
 

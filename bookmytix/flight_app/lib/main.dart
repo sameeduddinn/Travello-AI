@@ -7,15 +7,27 @@ import 'package:flight_app/controllers/notification_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/config/supabase_config.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize demo users from user.dart on first launch
+  if (!SupabaseConfig.isConfigured) {
+    throw StateError(
+      'Supabase anon key is not configured. Update lib/config/supabase_config.dart first.',
+    );
+  }
+
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+  );
+
   await AuthService.initializeDemoUsers();
 
   // TEMPORARY - add this line, run once, then remove it
-  // await AuthService.clearAllUsers(); 
+  // await AuthService.clearAllUsers();
 
   // Register global controllers
   Get.put(NotificationController(), permanent: true);

@@ -73,6 +73,7 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
             Positioned(
               top: 8,
               left: 16,
+              right: 80, // keeps username clear of action buttons on the right
               child: AnimatedOpacity(
                 opacity: showItem ? 0 : 1,
                 duration: const Duration(milliseconds: 300),
@@ -85,7 +86,14 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                             userAvatar.isEmpty ? userDummy.avatar : userAvatar),
                       ),
                       const SizedBox(width: 8),
-                      Text(userName, style: TravelloTheme.title2),
+                      Flexible(
+                        child: Text(
+                          userName,
+                          style: TravelloTheme.title2,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
                     ]),
               ),
             ),
