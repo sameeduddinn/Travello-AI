@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Static Pakistan slides — never change regardless of selected tab
@@ -63,19 +64,16 @@ class PremiumCarousel extends StatefulWidget {
 
 class _PremiumCarouselState extends State<PremiumCarousel> {
   late final PageController _ctrl;
-  double _page = 0;
+  int _current = 0;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = PageController(viewportFraction: 0.88)
-      ..addListener(() {
-        setState(() => _page = _ctrl.page ?? 0);
-      });
+    _ctrl = PageController(viewportFraction: 0.88);
     _timer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!mounted) return;
-      final next = (_page + 1).round() % _pakistanSlides.length;
+      final next = (_current + 1) % _pakistanSlides.length;
       _ctrl.animateToPage(next,
           duration: const Duration(milliseconds: 600),
           curve: Curves.easeInOutCubic);
@@ -98,25 +96,20 @@ class _PremiumCarouselState extends State<PremiumCarousel> {
           child: PageView.builder(
             controller: _ctrl,
             itemCount: _pakistanSlides.length,
-            onPageChanged: (_) => HapticFeedback.lightImpact(),
+            onPageChanged: (index) {
+              setState(() => _current = index);
+              HapticFeedback.lightImpact();
+            },
             itemBuilder: (context, index) {
-              final diff = (index - _page).abs();
-              final scale = (1 - diff * 0.08).clamp(0.0, 1.0);
-              final opacity = (1 - diff * 0.35).clamp(0.0, 1.0);
-              return Transform.scale(
-                scale: scale,
-                child: Opacity(
-                  opacity: opacity,
-                  child: _Card(slide: _pakistanSlides[index]),
-                ),
-              );
+              return RepaintBoundary(
+                  child: _Card(slide: _pakistanSlides[index]));
             },
           ),
         ),
         const SizedBox(height: 10),
         _Dots(
           count: _pakistanSlides.length,
-          current: _page.round() % _pakistanSlides.length,
+          current: _current,
           context: context,
         ),
       ],
@@ -192,20 +185,20 @@ class _Card extends StatelessWidget {
 
             // Text — bottom left
             Positioned(
-              bottom: 16,
-              left: 16,
-              right: 16,
+              bottom: R.r(context, 16),
+              left: R.r(context, 16),
+              right: R.r(context, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     slide.location,
-                    style: const TextStyle(
-                      fontSize: 18,
+                    style: TextStyle(
+                      fontSize: R.sp(context, 18),
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
-                      shadows: [
+                      shadows: const [
                         Shadow(
                             color: Colors.black54,
                             blurRadius: 8,
@@ -217,7 +210,7 @@ class _Card extends StatelessWidget {
                   Text(
                     slide.tagline,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: R.sp(context, 12),
                       fontWeight: FontWeight.w400,
                       color: Colors.white.withValues(alpha: 0.88),
                       shadows: const [

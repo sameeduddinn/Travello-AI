@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:flight_app/app/app_link.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key, required this.saveIntroStatus});
@@ -234,9 +235,9 @@ class _IntroScreenState extends State<IntroScreen>
             opacity: _fadeAnimation,
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 28,
+                fontSize: R.sp(context, 28),
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,

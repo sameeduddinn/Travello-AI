@@ -358,9 +358,7 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                       colorScheme(context).outlineVariant),
                   _legendItem('Your Seat', TravelloTheme.primaryMain,
                       Colors.transparent),
-                  _legendItem(
-                      'Other Pax',
-                      TravelloTheme.secondaryMainContainer,
+                  _legendItem('Other Pax', TravelloTheme.secondaryMainContainer,
                       Colors.transparent),
                   _legendItem(
                       'Reserved', Colors.grey.shade300, Colors.transparent),
@@ -405,8 +403,8 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color:
-                        TravelloTheme.primaryMainContainer.withValues(alpha: 0.5),
+                    color: TravelloTheme.primaryMainContainer
+                        .withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -436,14 +434,15 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
           LayoutBuilder(
             builder: (context, constraints) {
               // Available content width = container width minus:
-              //   - container padding: 12*2 ≈ 24px
+              //   - container padding: 12*2 = 24px
+              //   - container border:   2*2 =  4px (Border.all width:2)
               //   - row number column + aisle column: each = rowNumWidth
               // We solve iteratively: rowNumWidth = seatCell*0.7
-              // seatCell = (avail - 24 - 2*rowNumWidth) / 6
-              //          = (avail - 24 - 2*seatCell*0.7) / 6
-              // 6*seatCell + 1.4*seatCell = avail - 24
-              // seatCell = (avail - 24) / 7.4
-              final contentWidth = constraints.maxWidth - 24;
+              // seatCell = (avail - 28 - 2*rowNumWidth) / 6
+              //          = (avail - 28 - 2*seatCell*0.7) / 6
+              // 6*seatCell + 1.4*seatCell = avail - 28
+              // seatCell = (avail - 28) / 7.4
+              final contentWidth = constraints.maxWidth - 28;
               final seatCell = (contentWidth / 7.4).clamp(26.0, 40.0);
               final seatSize = seatCell - 4;
               final rowNumWidth = seatCell * 0.7;
@@ -533,19 +532,26 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
             child: Column(
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Seats Selected:',
-                      style: TravelloTheme.subtitle2.copyWith(
-                        color: colorScheme(context).onSurface,
+                    Expanded(
+                      child: Text(
+                        'Seats Selected:',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TravelloTheme.subtitle2.copyWith(
+                          color: colorScheme(context).onSurface,
+                        ),
                       ),
                     ),
-                    Text(
-                      '$_selectedCount / ${widget.totalPassengers}',
-                      style: TravelloTheme.subtitle.copyWith(
-                        color: TravelloTheme.primaryMain,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(width: 8),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '$_selectedCount / ${widget.totalPassengers}',
+                        style: TravelloTheme.subtitle.copyWith(
+                          color: TravelloTheme.primaryMain,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -561,18 +567,27 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '  Standard seats (FREE):',
-                            style: TravelloTheme.caption.copyWith(
-                              color: colorScheme(context).onSurfaceVariant,
+                          Expanded(
+                            child: Text(
+                              '  Standard seats (FREE):',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TravelloTheme.caption.copyWith(
+                                color: colorScheme(context).onSurfaceVariant,
+                              ),
                             ),
                           ),
-                          Text(
-                            '$_freeSeatsCount × ₨0',
-                            style: TravelloTheme.caption.copyWith(
-                              color: colorScheme(context).onSurfaceVariant,
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              '$_freeSeatsCount × ₨0',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                              style: TravelloTheme.caption.copyWith(
+                                color: colorScheme(context).onSurfaceVariant,
+                              ),
                             ),
                           ),
                         ],
@@ -583,18 +598,27 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '  Front rows (1-3):',
-                            style: TravelloTheme.caption.copyWith(
-                              color: colorScheme(context).onSurfaceVariant,
+                          Expanded(
+                            child: Text(
+                              '  Front rows (1-3):',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TravelloTheme.caption.copyWith(
+                                color: colorScheme(context).onSurfaceVariant,
+                              ),
                             ),
                           ),
-                          Text(
-                            '$_frontRowSeatsCount × ₨${_frontRowPrice.toStringAsFixed(0)}',
-                            style: TravelloTheme.caption.copyWith(
-                              color: colorScheme(context).onSurfaceVariant,
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              '$_frontRowSeatsCount × ₨${_frontRowPrice.toStringAsFixed(0)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                              style: TravelloTheme.caption.copyWith(
+                                color: colorScheme(context).onSurfaceVariant,
+                              ),
                             ),
                           ),
                         ],
@@ -605,18 +629,27 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '  Exit rows (12-13):',
-                            style: TravelloTheme.caption.copyWith(
-                              color: colorScheme(context).onSurfaceVariant,
+                          Expanded(
+                            child: Text(
+                              '  Exit rows (12-13):',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TravelloTheme.caption.copyWith(
+                                color: colorScheme(context).onSurfaceVariant,
+                              ),
                             ),
                           ),
-                          Text(
-                            '$_exitRowSeatsCount × ₨${_exitRowPrice.toStringAsFixed(0)}',
-                            style: TravelloTheme.caption.copyWith(
-                              color: colorScheme(context).onSurfaceVariant,
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              '$_exitRowSeatsCount × ₨${_exitRowPrice.toStringAsFixed(0)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                              style: TravelloTheme.caption.copyWith(
+                                color: colorScheme(context).onSurfaceVariant,
+                              ),
                             ),
                           ),
                         ],
@@ -625,22 +658,31 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                 ],
                 const SizedBox(height: 8),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Seat Selection Fee:',
-                      style: TravelloTheme.subtitle2.copyWith(
-                        color: colorScheme(context).onSurface,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        'Seat Selection Fee:',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TravelloTheme.subtitle2.copyWith(
+                          color: colorScheme(context).onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    Text(
-                      'PKR ${_totalCost.toStringAsFixed(0)}',
-                      style: TravelloTheme.subtitle.copyWith(
-                        color: _totalCost > 0
-                            ? TravelloTheme.primaryMain
-                            : Colors.green,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'PKR ${_totalCost.toStringAsFixed(0)}',
+                        textAlign: TextAlign.end,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TravelloTheme.subtitle.copyWith(
+                          color: _totalCost > 0
+                              ? TravelloTheme.primaryMain
+                              : Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],

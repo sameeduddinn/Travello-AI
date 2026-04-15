@@ -6,6 +6,7 @@ import 'package:flight_app/widgets/booking/flight_seat_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Cabin class baggage policy
@@ -1452,9 +1453,13 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                   Icon(Icons.info_outline_rounded,
                       size: 14, color: Color(0xFF999999)),
                   SizedBox(width: 6),
-                  Text(
-                    'AC vehicle — driver assigned 2 hrs before departure',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF888888)),
+                  Expanded(
+                    child: Text(
+                      'AC vehicle — driver assigned 2 hrs before departure',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: Color(0xFF888888)),
+                    ),
                   ),
                 ],
               ),
@@ -2486,8 +2491,10 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                         const SizedBox(height: 2),
                         Text(
                           _formatPKR(grandTotal),
-                          style: const TextStyle(
-                            fontSize: 22,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: R.sp(context, 22),
                             fontWeight: FontWeight.bold,
                             color: TravelloTheme.primaryMain,
                             letterSpacing: -0.5,
@@ -2510,7 +2517,7 @@ class _BookingFacilitesState extends State<BookingFacilites> {
                       label: 'CONTINUE',
                       trailingIcon: Icons.arrow_forward_rounded,
                       onTap: _onContinue,
-                      height: 56,
+                      height: R.rh(context, 56),
                     ),
                   ),
                 ],
@@ -2547,22 +2554,34 @@ class _BookingFacilitesState extends State<BookingFacilites> {
             children: [
               Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style:
                     const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),
               Text(
                 sublabel,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
               ),
             ],
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: valueColor,
+        const SizedBox(width: 8),
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: valueColor,
+              ),
+            ),
           ),
         ),
       ],

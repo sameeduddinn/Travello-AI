@@ -142,31 +142,38 @@ class _HomeHeaderState extends State<HomeHeader> {
             ),
           ),
           const SizedBox(width: 8),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_userName,
-                style: TravelloTheme.title2.copyWith(
-                    color: widget.isFixed
-                        ? colorScheme(context).onSurface
-                        : Colors.white)),
-            Container(
-                margin: const EdgeInsets.only(top: 4),
-                padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
-                decoration: BoxDecoration(
-                  borderRadius: ThemeRadius.small,
-                  color: TravelloTheme.paperLight.withValues(alpha: 0.8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.location_on, size: 12, color: Colors.red),
-                    const SizedBox(
-                      width: 2,
-                    ),
-                    Text('Karachi • $_userCountry',
-                        style: const TextStyle(
-                            fontSize: 11, fontWeight: FontWeight.w500)),
-                  ],
-                ))
-          ])
+          Flexible(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(_userName,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TravelloTheme.title2.copyWith(
+                      color: widget.isFixed
+                          ? colorScheme(context).onSurface
+                          : Colors.white)),
+              Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: ThemeRadius.small,
+                    color: TravelloTheme.paperLight.withValues(alpha: 0.8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.location_on, size: 12, color: Colors.red),
+                      const SizedBox(width: 2),
+                      Flexible(
+                        child: Text('Karachi • $_userCountry',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: const TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.w500)),
+                      ),
+                    ],
+                  ))
+            ]),
+          )
         ]),
       ),
 

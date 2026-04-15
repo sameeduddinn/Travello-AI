@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 /// ✨ ENTERPRISE-GRADE DYNAMIC HERO SECTION
 
@@ -30,7 +31,8 @@ class HeroSection extends StatelessWidget {
         };
       case 'hotel':
         return {
-          'image': 'assets/images/search_banner.jpg',
+          'image': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80',
+          'isNetwork': true,
           'title': 'Find Your Perfect Stay',
           'subtitle': 'Discover hotels at best nightly rates',
           'cta': 'Book Your Stay',
@@ -79,7 +81,9 @@ class HeroSection extends StatelessWidget {
         width: double.infinity,
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage(content['image']),
+            image: (content['isNetwork'] == true)
+                ? NetworkImage(content['image']) as ImageProvider
+                : AssetImage(content['image']),
             fit: BoxFit.cover,
             alignment: Alignment.center,
             colorFilter: ColorFilter.mode(
@@ -113,9 +117,9 @@ class HeroSection extends StatelessWidget {
                       child: child,
                     ),
                     child: Container(
-                      width: isMobile ? 36 : 48,
+                      width: R.r(context, isMobile ? 36 : 48),
                       height: 2,
-                      margin: const EdgeInsets.only(bottom: 14),
+                      margin: EdgeInsets.only(bottom: R.rh(context, 14)),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -147,7 +151,7 @@ class HeroSection extends StatelessWidget {
                       content['title'],
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: isMobile ? 26 : 36,
+                        fontSize: R.sp(context, isMobile ? 26 : 36),
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                         height: 1.2,
@@ -163,7 +167,7 @@ class HeroSection extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: R.rh(context, 16)),
 
                   // Subtitle
                   TweenAnimationBuilder<double>(
@@ -183,7 +187,7 @@ class HeroSection extends StatelessWidget {
                       content['subtitle'],
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: R.sp(context, 16),
                         fontWeight: FontWeight.w400,
                         color: Colors.white.withValues(alpha: 0.95),
                         height: 1.5,
@@ -215,7 +219,7 @@ class HeroSection extends StatelessWidget {
                         ),
                       );
                     },
-                    child: _buildPremiumCTA(content['cta'], isMobile),
+                    child: _buildPremiumCTA(context, content['cta'], isMobile),
                   ),
                 ],
               ),
@@ -226,7 +230,7 @@ class HeroSection extends StatelessWidget {
     );
   }
 
-  Widget _buildPremiumCTA(String label, bool isMobile) {
+  Widget _buildPremiumCTA(BuildContext context, String label, bool isMobile) {
     return _HoverScaleButton(
       onTap: onCtaTap,
       child: Container(
@@ -264,16 +268,16 @@ class HeroSection extends StatelessWidget {
               label,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: isMobile ? 15 : 18,
+                fontSize: R.sp(context, isMobile ? 15 : 18),
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(width: 12),
-            const Icon(
+            SizedBox(width: R.r(context, 12)),
+            Icon(
               Icons.arrow_forward_rounded,
               color: Colors.white,
-              size: 22,
+              size: R.r(context, 22),
             ),
           ],
         ),

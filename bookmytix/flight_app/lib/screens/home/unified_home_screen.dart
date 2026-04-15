@@ -19,6 +19,7 @@ import 'package:flight_app/models/hotel.dart';
 import 'package:flight_app/utils/wishlist_service.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 /// 🔥 TRAVELLO AI - UNIFIED HOME SCREEN
 ///
@@ -135,7 +136,7 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
             bottom: false,
             child: Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 12.0 : 16.0,
+                horizontal: isSmallScreen ? R.r(context, 12) : R.r(context, 16),
                 vertical: 8.0,
               ),
               child: Row(
@@ -495,7 +496,7 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
           Text(
             'Curated stays in Pakistan\'s most beautiful locations',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: R.sp(context, 14),
               color: colorScheme(context).onSurface.withValues(alpha: 0.6),
             ),
           ),

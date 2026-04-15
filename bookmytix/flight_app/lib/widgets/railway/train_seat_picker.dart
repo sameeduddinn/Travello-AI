@@ -283,18 +283,25 @@ class _TrainSeatPickerState extends State<TrainSeatPicker> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '${_seatSelections.where((s) => s['seatName'].toString().isNotEmpty).length}/${widget.totalPassengers} Selected',
-              style: const TextStyle(
-                color: Color(0xFFD4AF37),
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${_seatSelections.where((s) => s['seatName'].toString().isNotEmpty).length}/${widget.totalPassengers} Selected',
+                  style: const TextStyle(
+                    color: Color(0xFFD4AF37),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ),
@@ -360,7 +367,8 @@ class _TrainSeatPickerState extends State<TrainSeatPicker> {
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                                color: const Color(0xFFD4AF37)
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               )
@@ -405,15 +413,14 @@ class _TrainSeatPickerState extends State<TrainSeatPicker> {
   Widget _buildLegend() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 12,
+        runSpacing: 8,
         children: [
           _buildLegendItem('Available', Colors.grey.shade300),
-          const SizedBox(width: 12),
           _buildLegendItem('Recommend', Colors.orange.shade100),
-          const SizedBox(width: 12),
           _buildLegendItem('Select', const Color(0xFF2196F3)),
-          const SizedBox(width: 12),
           _buildLegendItem('Booked', Colors.grey.shade500),
         ],
       ),
@@ -734,166 +741,182 @@ class _TrainSeatPickerState extends State<TrainSeatPicker> {
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: Colors.grey.shade200),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFD4AF37),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
-                    ),
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: constraints.maxWidth,
+                    maxWidth: constraints.maxWidth,
                   ),
-                  child: const Row(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          'Name',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                      // Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFD4AF37),
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10),
                           ),
                         ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          'Seat Name',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: const Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                'Name',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                'Seat Name',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                'Coach',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          'Coach',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Passenger rows
-                ...List.generate(_seatSelections.length, (index) {
-                  final selection = _seatSelections[index];
-                  final isCurrentPassenger = index == _currentPassengerIndex;
+                      // Passenger rows
+                      ...List.generate(_seatSelections.length, (index) {
+                        final selection = _seatSelections[index];
+                        final isCurrentPassenger =
+                            index == _currentPassengerIndex;
 
-                  return GestureDetector(
-                    onTap: () => setState(() => _currentPassengerIndex = index),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isCurrentPassenger
-                            ? const Color(0xFFF5E6D3)
-                            : Colors.white,
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.grey.shade200,
-                            width: 1,
-                          ),
-                          left: isCurrentPassenger
-                              ? const BorderSide(
-                                  color: Color(0xFFD4AF37), width: 3)
-                              : BorderSide.none,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
+                        return GestureDetector(
+                          onTap: () =>
+                              setState(() => _currentPassengerIndex = index),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isCurrentPassenger
+                                  ? const Color(0xFFF5E6D3)
+                                  : Colors.white,
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: Colors.grey.shade200,
+                                  width: 1,
+                                ),
+                                left: isCurrentPassenger
+                                    ? const BorderSide(
+                                        color: Color(0xFFD4AF37), width: 3)
+                                    : BorderSide.none,
+                              ),
+                            ),
                             child: Row(
                               children: [
-                                Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: BoxDecoration(
-                                    color: isCurrentPassenger
-                                        ? const Color(0xFFD4AF37)
-                                        : Colors.grey.shade300,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      '${index + 1}',
-                                      style: TextStyle(
-                                        color: isCurrentPassenger
-                                            ? Colors.white
-                                            : Colors.black87,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
+                                Expanded(
+                                  flex: 3,
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 28,
+                                        height: 28,
+                                        decoration: BoxDecoration(
+                                          color: isCurrentPassenger
+                                              ? const Color(0xFFD4AF37)
+                                              : Colors.grey.shade300,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '${index + 1}',
+                                            style: TextStyle(
+                                              color: isCurrentPassenger
+                                                  ? Colors.white
+                                                  : Colors.black87,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
                                       ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          selection['passengerName'],
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: isCurrentPassenger
+                                                ? FontWeight.w600
+                                                : FontWeight.normal,
+                                            color: Colors.black87,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    selection['seatName'].toString().isEmpty
+                                        ? '-'
+                                        : selection['seatName'],
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: selection['seatName']
+                                              .toString()
+                                              .isEmpty
+                                          ? Colors.grey.shade400
+                                          : const Color(0xFFD4AF37),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
                                 Expanded(
+                                  flex: 2,
                                   child: Text(
-                                    selection['passengerName'],
+                                    selection['coach'].toString().isEmpty
+                                        ? '-'
+                                        : selection['coach'],
+                                    textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: isCurrentPassenger
-                                          ? FontWeight.w600
-                                          : FontWeight.normal,
-                                      color: Colors.black87,
+                                      fontSize: 12,
+                                      color:
+                                          selection['coach'].toString().isEmpty
+                                              ? Colors.grey.shade400
+                                              : Colors.black87,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              selection['seatName'].toString().isEmpty
-                                  ? '-'
-                                  : selection['seatName'],
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: selection['seatName'].toString().isEmpty
-                                    ? Colors.grey.shade400
-                                    : const Color(0xFFD4AF37),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              selection['coach'].toString().isEmpty
-                                  ? '-'
-                                  : selection['coach'],
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: selection['coach'].toString().isEmpty
-                                    ? Colors.grey.shade400
-                                    : Colors.black87,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-              ],
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -901,4 +924,3 @@ class _TrainSeatPickerState extends State<TrainSeatPicker> {
     );
   }
 }
-

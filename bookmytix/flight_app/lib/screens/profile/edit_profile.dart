@@ -3,6 +3,7 @@ import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class EditProfile extends StatefulWidget {
   const EditProfile({super.key});
@@ -148,8 +149,8 @@ class _EditProfileState extends State<EditProfile> {
                                   _nameCtrl.text.isNotEmpty
                                       ? _nameCtrl.text[0].toUpperCase()
                                       : '?',
-                                  style: const TextStyle(
-                                      fontSize: 38,
+                                  style: TextStyle(
+                                      fontSize: R.sp(context, 38),
                                       fontWeight: FontWeight.bold,
                                       color: TravelloTheme.primaryMain),
                                 ),
@@ -256,7 +257,7 @@ class _EditProfileState extends State<EditProfile> {
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       child: SizedBox(
                         width: double.infinity,
-                        height: 54,
+                        height: R.rh(context, 54),
                         child: FilledButton.icon(
                           onPressed: _isSaving ? null : _save,
                           style: FilledButton.styleFrom(

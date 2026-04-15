@@ -360,7 +360,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
           // ── Progress steps ─────────────────────────────────────────────────
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
             child: const Row(
               children: [
                 _Step(num: 1, label: 'Hotel', done: true),
@@ -1210,32 +1210,41 @@ class _Step extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const gold = TravelloTheme.primaryMain;
-    return Column(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: done || active ? gold : const Color(0xFFE0E0E0),
-            shape: BoxShape.circle,
+    return SizedBox(
+      width: 36,
+      child: Column(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: done || active ? gold : const Color(0xFFE0E0E0),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: done
+                  ? const Icon(Icons.check, color: Colors.white, size: 12)
+                  : Text('$num',
+                      style: TextStyle(
+                          color: active ? Colors.white : Colors.grey.shade500,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11)),
+            ),
           ),
-          child: Center(
-            child: done
-                ? const Icon(Icons.check, color: Colors.white, size: 14)
-                : Text('$num',
-                    style: TextStyle(
-                        color: active ? Colors.white : Colors.grey.shade500,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12)),
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text(label,
+          const SizedBox(height: 2),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-                fontSize: 9,
-                color: done || active ? gold : Colors.grey.shade500,
-                fontWeight: active ? FontWeight.bold : FontWeight.normal)),
-      ],
+              fontSize: 8,
+              color: done || active ? gold : Colors.grey.shade500,
+              fontWeight: active ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

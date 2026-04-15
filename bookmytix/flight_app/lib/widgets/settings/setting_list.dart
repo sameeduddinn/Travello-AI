@@ -261,7 +261,7 @@ class _SettingListState extends State<SettingList> {
                 await prefs.setBool('guest_mode', true);
                 Get.snackbar(
                   'Signed Out',
-                  'Now browsing as guest. Login anytime for full access!',
+                  'You have been signed out successfully.',
                   backgroundColor: Colors.green.shade600,
                   colorText: Colors.white,
                   snackPosition: SnackPosition.TOP,

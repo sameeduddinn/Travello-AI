@@ -14,6 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 // â”€â”€â”€ nationality list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const List<String> _kCountries = [
@@ -791,8 +792,8 @@ class _BookingPassengersState extends State<BookingPassengers> {
                     Expanded(
                       child: Text(
                         _flight.departureTime,
-                        style: const TextStyle(
-                            fontSize: 32,
+                        style: TextStyle(
+                            fontSize: R.sp(context, 32),
                             fontWeight: FontWeight.w800,
                             color: Colors.black87,
                             letterSpacing: -1.5,
@@ -802,8 +803,8 @@ class _BookingPassengersState extends State<BookingPassengers> {
                     Expanded(
                       child: Text(
                         _flight.arrivalTime,
-                        style: const TextStyle(
-                            fontSize: 32,
+                        style: TextStyle(
+                            fontSize: R.sp(context, 32),
                             fontWeight: FontWeight.w800,
                             color: Colors.black87,
                             letterSpacing: -1.5,
@@ -1169,8 +1170,8 @@ class _BookingPassengersState extends State<BookingPassengers> {
                     Expanded(
                       child: Text(
                         _returnFlight!.departureTime,
-                        style: const TextStyle(
-                            fontSize: 32,
+                        style: TextStyle(
+                            fontSize: R.sp(context, 32),
                             fontWeight: FontWeight.w800,
                             color: Colors.black87,
                             letterSpacing: -1.5,
@@ -1180,8 +1181,8 @@ class _BookingPassengersState extends State<BookingPassengers> {
                     Expanded(
                       child: Text(
                         _returnFlight!.arrivalTime,
-                        style: const TextStyle(
-                            fontSize: 32,
+                        style: TextStyle(
+                            fontSize: R.sp(context, 32),
                             fontWeight: FontWeight.w800,
                             color: Colors.black87,
                             letterSpacing: -1.5,
@@ -1453,12 +1454,12 @@ class _BookingPassengersState extends State<BookingPassengers> {
               const SizedBox(height: 16),
             ],
 
-            const Text(
+            Text(
               'Add Passenger Details',
               style: TextStyle(
-                  fontSize: 20,
+                  fontSize: R.sp(context, 20),
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFD4AF37)),
+                  color: const Color(0xFFD4AF37)),
             ),
             const SizedBox(height: 4),
             Text(
@@ -3050,8 +3051,8 @@ class _BookingPassengersState extends State<BookingPassengers> {
                             fontSize: 11, color: Colors.grey.shade500)),
                     Text(
                       formatPKR(_calculateTotalPrice()),
-                      style: const TextStyle(
-                        fontSize: 20,
+                      style: TextStyle(
+                        fontSize: R.sp(context, 20),
                         fontWeight: FontWeight.bold,
                         color: TravelloTheme.primaryMain,
                       ),
@@ -3070,7 +3071,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
                   trailingIcon: Icons.arrow_forward_rounded,
                   onTap: _isContactPage ? _submit : _goNext,
                   disabled: _isContactPage ? !_isContactFormValid : false,
-                  height: 52,
+                  height: R.rh(context, 52),
                 ),
               ),
             ],

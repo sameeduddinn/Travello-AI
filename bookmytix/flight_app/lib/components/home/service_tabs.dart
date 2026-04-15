@@ -77,8 +77,25 @@ class _ServiceTabsState extends State<ServiceTabs>
   }
 
   Widget _buildTabContent(BuildContext context, double tabWidth) {
-    final isSmall = MediaQuery.of(context).size.width < 380;
-    final tabHeight = isSmall ? 48.0 : 56.0;
+    final isCompact = tabWidth < 110;
+    final isVeryCompact = tabWidth < 96;
+    final tabHeight = isVeryCompact
+        ? 44.0
+        : isCompact
+            ? 48.0
+            : 56.0;
+    final iconSize = isVeryCompact
+        ? 18.0
+        : isCompact
+            ? 20.0
+            : 22.0;
+    final labelSize = isVeryCompact
+        ? 11.0
+        : isCompact
+            ? 12.0
+            : 13.0;
+    final labelGap = isVeryCompact ? 2.0 : 4.0;
+
     return SizedBox(
       height: tabHeight,
       child: Container(
@@ -184,25 +201,32 @@ class _ServiceTabsState extends State<ServiceTabs>
                                     : isHovered
                                         ? Colors.white.withValues(alpha: 0.9)
                                         : Colors.white.withValues(alpha: 0.65),
-                                size: 22,
+                                size: iconSize,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              service['label'],
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : isHovered
-                                        ? Colors.white.withValues(alpha: 0.95)
-                                        : Colors.white.withValues(alpha: 0.75),
-                                fontSize: 13,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : isHovered
-                                        ? FontWeight.w600
-                                        : FontWeight.w500,
-                                letterSpacing: 0.3,
+                            SizedBox(height: labelGap),
+                            SizedBox(
+                              width: tabWidth - 14,
+                              child: Text(
+                                service['label'],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : isHovered
+                                          ? Colors.white.withValues(alpha: 0.95)
+                                          : Colors.white
+                                              .withValues(alpha: 0.75),
+                                  fontSize: labelSize,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : isHovered
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                  letterSpacing: 0.2,
+                                ),
                               ),
                             ),
                           ],

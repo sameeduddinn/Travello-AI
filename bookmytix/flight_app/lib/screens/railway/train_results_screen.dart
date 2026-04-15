@@ -7,6 +7,7 @@ import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 // Train result model
 class TrainResult {
@@ -950,7 +951,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                       const SizedBox(height: 32),
                       SizedBox(
                         width: double.infinity,
-                        height: 52,
+                        height: R.rh(context, 52),
                         child: ElevatedButton(
                           onPressed: () {
                             setState(() {
@@ -1278,10 +1279,10 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Modify Search',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: R.sp(context, 20),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1533,7 +1534,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                       // Search Button
                       SizedBox(
                         width: double.infinity,
-                        height: 52,
+                        height: R.rh(context, 52),
                         child: ElevatedButton(
                           onPressed: () {
                             if (selectedFrom == null || selectedTo == null) {
@@ -2045,9 +2046,9 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'Passengers',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: R.sp(context, 22), fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 24),
                   _buildPassengerRow(
@@ -2086,7 +2087,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: R.rh(context, 50),
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context, {
                         'adults': adults > 0 ? adults : 1,
@@ -2209,9 +2210,9 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'Train Class',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: R.sp(context, 22), fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 24),
                   _buildTrainClassOption(
@@ -2256,7 +2257,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: R.rh(context, 50),
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context, selectedClass),
                       style: ElevatedButton.styleFrom(
@@ -2388,6 +2389,12 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
       passengerText += '$_infants Infant${_infants > 1 ? "s" : ""}';
     }
 
+    final passengerSummary =
+        passengerText.isNotEmpty ? passengerText : '1 Adult';
+    final classSummary = isMobile
+        ? (_classAbbr[_selectedTrainClass] ?? _selectedTrainClass)
+        : _selectedTrainClass;
+
     return Container(
       color: const Color(0xFFD4AF37),
       padding: EdgeInsets.symmetric(
@@ -2397,36 +2404,100 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
       child: Column(
         children: [
           // Top row: Trip type tabs + passenger/class info
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  _buildTripTypeTab('Round Trip', tripType == 'Round-trip'),
-                  SizedBox(width: spacingUnit(isMobile ? 0.5 : 1)),
-                  _buildTripTypeTab('One Way', tripType == 'One-way'),
-                ],
-              ),
-              Row(
-                children: [
-                  Icon(CupertinoIcons.person,
-                      color: Colors.white, size: isMobile ? 12 : 16),
-                  SizedBox(width: spacingUnit(isMobile ? 0.25 : 0.5)),
-                  Text(
-                    passengerText.isNotEmpty ? passengerText : '1 Adult',
-                    style: TextStyle(
-                        color: Colors.white, fontSize: isMobile ? 10 : 14),
+          if (isMobile)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildTripTypeTab('Round Trip', tripType == 'Round-trip'),
+                      SizedBox(width: spacingUnit(0.5)),
+                      _buildTripTypeTab('One Way', tripType == 'One-way'),
+                    ],
                   ),
-                  SizedBox(width: spacingUnit(isMobile ? 0.5 : 2)),
-                  Text(
-                    _selectedTrainClass,
-                    style: TextStyle(
-                        color: Colors.white, fontSize: isMobile ? 10 : 14),
+                ),
+                SizedBox(height: spacingUnit(0.5)),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(CupertinoIcons.person,
+                          color: Colors.white, size: 12),
+                      SizedBox(width: spacingUnit(0.25)),
+                      Text(
+                        passengerSummary,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
+                      ),
+                      SizedBox(width: spacingUnit(0.75)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          classSummary,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    _buildTripTypeTab('Round Trip', tripType == 'Round-trip'),
+                    SizedBox(width: spacingUnit(1)),
+                    _buildTripTypeTab('One Way', tripType == 'One-way'),
+                  ],
+                ),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(CupertinoIcons.person,
+                            color: Colors.white, size: 16),
+                        SizedBox(width: spacingUnit(0.5)),
+                        Text(
+                          passengerSummary,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                        SizedBox(width: spacingUnit(2)),
+                        Text(
+                          classSummary,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
 
           SizedBox(height: spacingUnit(isMobile ? 0.75 : 1.5)),
 

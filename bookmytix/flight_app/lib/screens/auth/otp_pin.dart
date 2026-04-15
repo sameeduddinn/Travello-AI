@@ -4,6 +4,7 @@ import 'package:get/route_manager.dart';
 import 'package:flight_app/widgets/user/auth_wrap.dart';
 import 'package:flight_app/widgets/user/otp_form.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class OtpPin extends StatelessWidget {
   const OtpPin({super.key});
@@ -28,7 +29,7 @@ class OtpPin extends StatelessWidget {
           ),
           icon: const Icon(Icons.arrow_back_ios_new),
         ),
-        actionsPadding: const EdgeInsets.symmetric(horizontal: 8),
+        actionsPadding: EdgeInsets.symmetric(horizontal: R.r(context, 8)),
         actions: [
           FilledButton(
             onPressed: () {

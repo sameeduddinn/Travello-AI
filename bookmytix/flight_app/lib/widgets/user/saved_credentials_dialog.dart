@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class SavedCredentialsDialog extends StatelessWidget {
   final String emailOrPhone;
@@ -36,7 +37,7 @@ class SavedCredentialsDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(R.r(context, 24)),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
@@ -53,7 +54,7 @@ class SavedCredentialsDialog extends StatelessWidget {
           children: [
             // Icon
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(R.r(context, 16)),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -70,30 +71,30 @@ class SavedCredentialsDialog extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.account_circle,
-                size: 40,
+                size: R.r(context, 40),
                 color: Colors.white,
               ),
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: R.rh(context, 16)),
 
             // Title
             Text(
               'Welcome Back!',
               style: TravelloTheme.title.copyWith(
-                fontSize: 24,
+                fontSize: R.sp(context, 24),
                 fontWeight: FontWeight.bold,
               ),
             ),
 
-            const SizedBox(height: 8),
+            SizedBox(height: R.rh(context, 8)),
 
             // Saved account info
             Container(
-              margin: const EdgeInsets.symmetric(vertical: 16),
-              padding: const EdgeInsets.all(16),
+              margin: EdgeInsets.symmetric(vertical: R.rh(context, 16)),
+              padding: EdgeInsets.all(R.r(context, 16)),
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
@@ -117,7 +118,7 @@ class SavedCredentialsDialog extends StatelessWidget {
                           'Saved Account',
                           style: TravelloTheme.caption.copyWith(
                             color: colorScheme.onSurfaceVariant,
-                            fontSize: 11,
+                            fontSize: R.sp(context, 11),
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -142,7 +143,7 @@ class SavedCredentialsDialog extends StatelessWidget {
             // Continue button
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: R.rh(context, 50),
               child: FilledButton.icon(
                 onPressed: onUseCredentials,
                 style: ThemeButton.btnBig.merge(ThemeButton.primary),
@@ -159,7 +160,7 @@ class SavedCredentialsDialog extends StatelessWidget {
             // Use different account
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: R.rh(context, 50),
               child: OutlinedButton.icon(
                 onPressed: onDifferentAccount,
                 style: OutlinedButton.styleFrom(

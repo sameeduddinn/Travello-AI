@@ -27,14 +27,31 @@ class _SendButtonState extends State<_SendButton> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedScale(
-        scale: _hovered ? 1.12 : 1.0,
+        scale: _hovered ? 1.1 : 1.0,
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
-        child: CircleAvatar(
-          backgroundColor: widget.backgroundColor,
+        child: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFD4AF37), Color(0xFFE8C76A)],
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFD4AF37).withValues(alpha: _hovered ? 0.4 : 0.2),
+                blurRadius: _hovered ? 12 : 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: IconButton(
-            icon: Icon(Icons.send, color: widget.iconColor),
+            icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
             onPressed: widget.onPressed,
+            padding: EdgeInsets.zero,
           ),
         ),
       ),
@@ -773,140 +790,188 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: const Color(0xFFF8F6F1),
       body: Column(
         children: [
-          // ── Fixed header (130px) ──────────────────────────────────────────
+          // ── Premium header with depth ─────────────────────────────────
           Container(
-            height: 130,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFFD4AF37),
-                  Color(0xFFDAB853),
-                  Color(0xFFE8C76A),
+                  Color(0xFF1A1400),
+                  Color(0xFF3D2B00),
+                  Color(0xFF5C4200),
                 ],
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
             child: SafeArea(
               bottom: false,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Back button
-                  Container(
-                    margin: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 12,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 16, 14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Back button
+                    IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new,
-                          color: Color(0xFFD4AF37), size: 18),
+                          color: Colors.white70, size: 18),
                       onPressed: () => Navigator.of(context).maybePop(),
                     ),
-                  ),
-                  // Title area
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 20),
-                      child: SlideTransition(
-                        position: _headerSlide,
-                        child: FadeTransition(
-                          opacity: _headerFade,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.25),
-                                  borderRadius: BorderRadius.circular(14),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.auto_awesome_rounded,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
+                    // Animated AI logo
+                    SlideTransition(
+                      position: _headerSlide,
+                      child: FadeTransition(
+                        opacity: _headerFade,
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFFD4AF37),
+                                Color(0xFFE8C76A),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFD4AF37)
+                                    .withValues(alpha: 0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 3),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Text(
-                                      'AI Planner',
-                                      style: TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w800,
-                                        color: Colors.white,
-                                        letterSpacing: -0.8,
-                                        height: 1.1,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Your smart Pakistan travel guide',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        color:
-                                            Colors.white.withValues(alpha: 0.9),
-                                        letterSpacing: 0.2,
-                                        height: 1.2,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
+                            ],
+                          ),
+                          child: const Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Icon(Icons.smart_toy_rounded,
+                                  color: Colors.white, size: 22),
+                              Positioned(
+                                top: 6,
+                                right: 6,
+                                child: Icon(Icons.auto_awesome,
+                                    color: Colors.white, size: 10),
                               ),
                             ],
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    // Title
+                    Expanded(
+                      child: SlideTransition(
+                        position: _headerSlide,
+                        child: FadeTransition(
+                          opacity: _headerFade,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Row(
+                                children: [
+                                  Text(
+                                    'Travello ',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w300,
+                                      color: Colors.white70,
+                                      letterSpacing: 0.5,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                  Text(
+                                    'AI',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFFD4AF37),
+                                      letterSpacing: -0.5,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF4ADE80),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    'Online  •  Your Pakistan travel planner',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.white
+                                          .withValues(alpha: 0.55),
+                                      letterSpacing: 0.3,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
           // ── TabBar ───────────────────────────────────────────────────────
           Container(
-            color: Colors.white,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: TabBar(
               controller: _tabController,
               indicatorColor: const Color(0xFFD4AF37),
               indicatorWeight: 3,
               labelColor: const Color(0xFFD4AF37),
-              unselectedLabelColor: Colors.black45,
+              unselectedLabelColor: Colors.grey.shade400,
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                letterSpacing: 0.3,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+              ),
               tabs: const [
                 Tab(
-                    icon: Icon(Icons.chat_bubble_outline, size: 18),
+                    icon: Icon(Icons.chat_rounded, size: 20),
                     text: 'Chat'),
                 Tab(
-                    icon: Icon(CupertinoIcons.bookmark, size: 18),
+                    icon: Icon(CupertinoIcons.bookmark_fill, size: 18),
                     text: 'Saved'),
               ],
             ),
@@ -960,49 +1025,77 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
   }
 
   Widget _buildMessageBubble(ChatMessage message) {
+    final isFirst = _messages.indexOf(message) == 0 && !message.isUser;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         mainAxisAlignment:
             message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!message.isUser) ...[
-            CircleAvatar(
-              backgroundColor: TravelloTheme.primaryMainContainer,
-              child: Icon(Icons.auto_awesome,
-                  color: colorScheme(context).onPrimaryContainer, size: 18),
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFD4AF37), Color(0xFFE8C76A)],
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.auto_awesome,
+                  color: Colors.white, size: 16),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
           ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(isFirst ? 16 : 13),
               decoration: BoxDecoration(
                 color: message.isUser
-                    ? TravelloTheme.primaryMainContainer
-                    : TravelloTheme.paperLightContainerHighest,
+                    ? const Color(0xFF2D2000)
+                    : Colors.white,
                 borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(message.isUser ? 16 : 4),
-                  bottomRight: Radius.circular(message.isUser ? 4 : 16),
+                  topLeft: const Radius.circular(18),
+                  topRight: const Radius.circular(18),
+                  bottomLeft: Radius.circular(message.isUser ? 18 : 4),
+                  bottomRight: Radius.circular(message.isUser ? 4 : 18),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: message.isUser
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                        : Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Text(message.message,
                   style: TravelloTheme.paragraph.copyWith(
                     color: message.isUser
-                        ? colorScheme(context).onPrimaryContainer
-                        : colorScheme(context).onSurface,
+                        ? Colors.white
+                        : TravelloTheme.textPrimary,
+                    fontSize: isFirst ? 14.5 : 14,
+                    height: 1.5,
                   )),
             ),
           ),
           if (message.isUser) ...[
-            const SizedBox(width: 8),
-            CircleAvatar(
-              backgroundColor: colorScheme(context).tertiaryContainer,
-              child: Icon(Icons.person,
-                  color: colorScheme(context).onTertiaryContainer, size: 18),
+            const SizedBox(width: 10),
+            const CircleAvatar(
+              radius: 16,
+              backgroundColor: Color(0xFF2D2000),
+              child: Icon(Icons.person, color: Color(0xFFD4AF37), size: 16),
             ),
           ],
         ],
@@ -1012,28 +1105,44 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
 
   Widget _buildTypingIndicator() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: TravelloTheme.primaryMainContainer,
-            child: Icon(Icons.auto_awesome,
-                color: colorScheme(context).onPrimaryContainer, size: 18),
-          ),
-          const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.all(12),
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
-              color: TravelloTheme.paperLightContainerHighest,
-              borderRadius: BorderRadius.circular(16),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFD4AF37), Color(0xFFE8C76A)],
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.auto_awesome,
+                color: Colors.white, size: 16),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildDot(0),
-                const SizedBox(width: 4),
+                const SizedBox(width: 5),
                 _buildDot(1),
-                const SizedBox(width: 4),
+                const SizedBox(width: 5),
                 _buildDot(2),
               ],
             ),
@@ -1071,7 +1180,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       builder: (context, value, child) => Opacity(
         opacity: value,
         child: Transform.translate(
-          offset: Offset(0, 12 * (1 - value)),
+          offset: Offset(0, 16 * (1 - value)),
           child: child,
         ),
       ),
@@ -1080,63 +1189,112 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Try asking:',
-                style: TravelloTheme.caption.copyWith(
-                    color:
-                        colorScheme(context).onSurface.withValues(alpha: 0.6),
-                    fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.start,
-              children: suggestions.asMap().entries.map((entry) {
-                final i = entry.key;
-                final s = entry.value;
-                final isHovered = _hoveredSuggestion == i;
-                return MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  onEnter: (_) => setState(() => _hoveredSuggestion = i),
-                  onExit: (_) => setState(() => _hoveredSuggestion = -1),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: Duration(milliseconds: 400 + i * 80),
-                    curve: Curves.easeOut,
-                    builder: (context, v, child) => Opacity(
-                      opacity: v,
-                      child: Transform.translate(
-                        offset: Offset(0, 10 * (1 - v)),
-                        child: child,
-                      ),
-                    ),
-                    child: AnimatedScale(
-                      scale: isHovered ? 1.06 : 1.0,
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOut,
-                      child: ActionChip(
-                        avatar: Icon(
-                          s.icon,
-                          size: 18,
-                          color: TravelloTheme.primaryMain,
+            Row(
+              children: [
+                const Icon(Icons.tips_and_updates_outlined,
+                    size: 14, color: Color(0xFFD4AF37)),
+                const SizedBox(width: 6),
+                Text('Try asking:',
+                    style: TravelloTheme.caption.copyWith(
+                        color: TravelloTheme.textMuted,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ...suggestions.asMap().entries.map((entry) {
+              final i = entry.key;
+              final s = entry.value;
+              final isHovered = _hoveredSuggestion == i;
+              return TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 350 + i * 60),
+                curve: Curves.easeOut,
+                builder: (context, v, child) => Opacity(
+                  opacity: v,
+                  child: Transform.translate(
+                    offset: Offset(20 * (1 - v), 0),
+                    child: child,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    onEnter: (_) =>
+                        setState(() => _hoveredSuggestion = i),
+                    onExit: (_) =>
+                        setState(() => _hoveredSuggestion = -1),
+                    child: GestureDetector(
+                      onTap: () => _sendMessage(s.title),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isHovered
+                              ? const Color(0xFFFFF8E7)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isHovered
+                                ? const Color(0xFFD4AF37)
+                                : Colors.grey.shade200,
+                            width: isHovered ? 1.5 : 1,
+                          ),
+                          boxShadow: isHovered
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFFD4AF37)
+                                        .withValues(alpha: 0.12),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ]
+                              : [],
                         ),
-                        label: Text(s.title),
-                        backgroundColor: isHovered
-                            ? TravelloTheme.primaryMain.withValues(alpha: 0.12)
-                            : null,
-                        side: isHovered
-                            ? const BorderSide(
-                                color: TravelloTheme.primaryMain, width: 1.5)
-                            : null,
-                        elevation: isHovered ? 3 : 0,
-                        shadowColor:
-                            TravelloTheme.primaryMain.withValues(alpha: 0.3),
-                        onPressed: () => _sendMessage(s.title),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: isHovered
+                                    ? const Color(0xFFD4AF37)
+                                        .withValues(alpha: 0.12)
+                                    : const Color(0xFFF5F0E6),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(s.icon,
+                                  size: 16,
+                                  color: const Color(0xFFD4AF37)),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                s.title,
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: isHovered
+                                      ? const Color(0xFF2D2000)
+                                      : TravelloTheme.textPrimary,
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.arrow_forward_ios,
+                                size: 12,
+                                color: isHovered
+                                    ? const Color(0xFFD4AF37)
+                                    : Colors.grey.shade300),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                );
-              }).toList(),
-            ),
+                ),
+              );
+            }),
           ],
         ),
       ),
@@ -1145,40 +1303,55 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
 
   Widget _buildInputField() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
-        color: TravelloTheme.paperLight,
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -2))
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, -4))
         ],
       ),
       child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _messageController,
-                decoration: InputDecoration(
-                  hintText: 'Ask me about your trip...',
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24)),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        top: false,
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F6F1),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _messageController,
+                  decoration: InputDecoration(
+                    hintText: 'Ask me about your trip...',
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                  onSubmitted: _sendMessage,
+                  textInputAction: TextInputAction.send,
+                  style: const TextStyle(fontSize: 14),
                 ),
-                onSubmitted: _sendMessage,
-                textInputAction: TextInputAction.send,
               ),
-            ),
-            const SizedBox(width: 8),
-            _SendButton(
-              onPressed: () => _sendMessage(_messageController.text),
-              backgroundColor: TravelloTheme.primaryMain,
-              iconColor: colorScheme(context).onPrimary,
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: _SendButton(
+                  onPressed: () => _sendMessage(_messageController.text),
+                  backgroundColor: const Color(0xFFD4AF37),
+                  iconColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

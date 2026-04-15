@@ -1,22 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:flight_app/ui/themes/theme_system.dart';
 
 class BackIconButton extends StatelessWidget {
-  const BackIconButton({super.key, required this.onTap});
+  const BackIconButton({super.key, required this.onTap, this.isSquare = false});
 
   final Function() onTap;
+  final bool isSquare;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 16,
-      height: 16,
-      padding: const EdgeInsets.all(12),
+    final colorScheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: 28,
+      height: 28,
       child: IconButton(
-        iconSize: 16,
+        iconSize: 12,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
         onPressed: onTap,
-        style: ThemeButton.iconBtn(context),
-        icon: const Icon(Icons.arrow_back_ios_new)
+        style: IconButton.styleFrom(
+          minimumSize: const Size(28, 28),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          backgroundColor: colorScheme.surface.withValues(alpha: 0.85),
+          foregroundColor: colorScheme.onSurface,
+          shape: isSquare
+              ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(7))
+              : const CircleBorder(),
+        ),
+        icon: const Icon(Icons.arrow_back_ios_new),
       ),
     );
   }

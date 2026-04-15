@@ -6,6 +6,7 @@ import 'package:pinput/pinput.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
 import 'package:flight_app/widgets/onboarding/city_selection_sheet.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class OtpForm extends StatefulWidget {
   const OtpForm({super.key});
@@ -41,10 +42,10 @@ class _OtpFormState extends State<OtpForm> {
     final borderColor = Theme.of(context).colorScheme.outlineVariant;
 
     final defaultPinTheme = PinTheme(
-      width: 56,
-      height: 56,
-      textStyle: const TextStyle(
-        fontSize: 22,
+      width: R.r(context, 56),
+      height: R.r(context, 56),
+      textStyle: TextStyle(
+        fontSize: R.sp(context, 22),
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(19),

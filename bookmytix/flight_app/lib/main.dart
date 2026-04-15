@@ -79,7 +79,13 @@ class MainApp extends StatelessWidget {
 
         return LayoutBuilder(
           builder: (context, constraints) {
-            final baseMq = MediaQuery.of(context).copyWith(boldText: false);
+            final rawScale = MediaQuery.textScalerOf(context).scale(1.0);
+            final safeScale = rawScale.clamp(1.0, 1.05);
+
+            final baseMq = MediaQuery.of(context).copyWith(
+              boldText: false,
+              textScaler: TextScaler.linear(safeScale),
+            );
 
             if (!isDesktop) {
               return MediaQuery(data: baseMq, child: child);

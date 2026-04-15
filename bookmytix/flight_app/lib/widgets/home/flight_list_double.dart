@@ -41,17 +41,14 @@ class _FlightListDoubleState extends State<FlightListDouble> {
     });
   }
 
-  void _scrollLeft() {
+  void _scrollBy(double delta) {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final target = (_scrollController.offset + delta)
+        .clamp(position.minScrollExtent, position.maxScrollExtent)
+        .toDouble();
     _scrollController.animateTo(
-      _scrollController.offset - 250,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  void _scrollRight() {
-    _scrollController.animateTo(
-      _scrollController.offset + 250,
+      target,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
@@ -143,8 +140,8 @@ class _FlightListDoubleState extends State<FlightListDouble> {
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Padding(
-        padding: EdgeInsets.symmetric(
-            horizontal: isDesktop ? spacingUnit(8) : 16),
+        padding:
+            EdgeInsets.symmetric(horizontal: isDesktop ? spacingUnit(8) : 16),
         child: TitleAction(
             title: 'Top Destinations',
             textAction: 'Find More',
@@ -156,8 +153,7 @@ class _FlightListDoubleState extends State<FlightListDouble> {
 
       /// TAGS
       Padding(
-        padding:
-            EdgeInsets.only(left: isDesktop ? spacingUnit(8) : 16),
+        padding: EdgeInsets.only(left: isDesktop ? spacingUnit(8) : 16),
         child: SizedBox(
           height: 25,
           child: ListView.builder(
@@ -187,129 +183,141 @@ class _FlightListDoubleState extends State<FlightListDouble> {
       /// FLIGHT ITEMS - Single Row Horizontal Scroller with Arrows
       SizedBox(
         height: 145,
-        child: displayFlights.isEmpty
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Text(
-                    'No flights available for ${tags[_selected]}',
-                    style:
-                        const TextStyle(fontSize: 16, color: Color(0xFFB3B3B3)),
+        child: LayoutBuilder(builder: (context, constraints) {
+          final horizontalPadding = isDesktop ? spacingUnit(8) : 16.0;
+          final usableWidth = (constraints.maxWidth - (horizontalPadding * 2))
+              .clamp(0.0, constraints.maxWidth);
+          final cardWidth = isDesktop
+              ? 236.0
+              : (usableWidth * 0.72).clamp(198.0, 236.0).toDouble();
+          final scrollStep = cardWidth + 12;
+          final showArrowControls = constraints.maxWidth >= 640;
+
+          if (displayFlights.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Text(
+                  'No flights available for ${tags[_selected]}',
+                  style:
+                      const TextStyle(fontSize: 16, color: Color(0xFFB3B3B3)),
+                ),
+              ),
+            );
+          }
+
+          return Stack(
+            children: [
+              ListView.builder(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                itemCount:
+                    displayFlights.length > 10 ? 10 : displayFlights.length,
+                itemBuilder: (context, index) {
+                  Trip item = displayFlights[index];
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: SizedBox(
+                      width: cardWidth,
+                      child: GestureDetector(
+                        onTap: () {
+                          Get.toNamed(
+                            AppLink.flightSearchHome,
+                            arguments: {
+                              'toCode': item.to.code,
+                              'toCity': item.to.name,
+                            },
+                          );
+                        },
+                        child: FlightPortraitCard(
+                          from: item.from.name,
+                          to: item.to.name,
+                          label: item.label,
+                          date: DateFormat('dd MMM yyyy').format(item.arrival),
+                          price: item.price,
+                          plane: item.plane,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              // LEFT ARROW BUTTON
+              if (_showLeftArrow && showArrowControls)
+                Positioned(
+                  left: 8,
+                  top: 0,
+                  bottom: 0,
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: colorScheme(context)
+                            .surface
+                            .withValues(alpha: 0.95),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: () => _scrollBy(-scrollStep),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new,
+                          color: TravelloTheme.primaryMain,
+                          size: 20,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              )
-            : Stack(
-                children: [
-                  ListView.builder(
-                    controller: _scrollController,
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount:
-                        displayFlights.length > 10 ? 10 : displayFlights.length,
-                    itemBuilder: (context, index) {
-                      Trip item = displayFlights[index];
 
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: SizedBox(
-                          width: 220,
-                          child: GestureDetector(
-                            onTap: () {
-                              Get.toNamed(
-                                AppLink.flightSearchHome,
-                                arguments: {
-                                  'toCode': item.to.code,
-                                  'toCity': item.to.name,
-                                },
-                              );
-                            },
-                            child: FlightPortraitCard(
-                              from: item.from.name,
-                              to: item.to.name,
-                              label: item.label,
-                              date: DateFormat('dd MMM yyyy')
-                                  .format(item.arrival),
-                              price: item.price,
-                              plane: item.plane,
-                            ),
+              // RIGHT ARROW BUTTON
+              if (_showRightArrow && showArrowControls)
+                Positioned(
+                  right: 8,
+                  top: 0,
+                  bottom: 0,
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: colorScheme(context)
+                            .surface
+                            .withValues(alpha: 0.95),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 2),
                           ),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: () => _scrollBy(scrollStep),
+                        icon: const Icon(
+                          Icons.arrow_forward_ios,
+                          color: TravelloTheme.primaryMain,
+                          size: 20,
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
-
-                  // LEFT ARROW BUTTON
-                  if (_showLeftArrow)
-                    Positioned(
-                      left: 8,
-                      top: 0,
-                      bottom: 0,
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: colorScheme(context)
-                                .surface
-                                .withValues(alpha: 0.95),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.15),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            onPressed: _scrollLeft,
-                            icon: const Icon(
-                              Icons.arrow_back_ios_new,
-                              color: TravelloTheme.primaryMain,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  // RIGHT ARROW BUTTON
-                  if (_showRightArrow)
-                    Positioned(
-                      right: 8,
-                      top: 0,
-                      bottom: 0,
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: colorScheme(context)
-                                .surface
-                                .withValues(alpha: 0.95),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.15),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            onPressed: _scrollRight,
-                            icon: const Icon(
-                              Icons.arrow_forward_ios,
-                              color: TravelloTheme.primaryMain,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+                ),
+            ],
+          );
+        }),
       )
     ]);
   }

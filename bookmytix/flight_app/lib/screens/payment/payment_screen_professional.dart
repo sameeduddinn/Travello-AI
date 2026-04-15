@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:flight_app/screens/orders/hotel_booking_confirmation.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class PaymentScreenProfessional extends StatefulWidget {
   const PaymentScreenProfessional({super.key});
@@ -110,9 +111,11 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
 
     setState(() => _isProcessing = true);
     final nav = Navigator.of(context);
+    final ctx = context;
 
     // Simulate payment processing
     Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
       setState(() => _isProcessing = false);
 
       final ref =
@@ -150,6 +153,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
       }
 
       // Show success dialog for non-hotel bookings
+      // ignore: use_build_context_synchronously
       Get.dialog(
         AlertDialog(
           shape: RoundedRectangleBorder(
@@ -171,10 +175,11 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Booking Confirmed!',
                 style: TextStyle(
-                  fontSize: 24,
+                  // ignore: use_build_context_synchronously
+                  fontSize: R.sp(ctx, 24),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -751,7 +756,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
               foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 56),
+              minimumSize: Size(double.infinity, R.rh(context, 56)),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -804,13 +809,15 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF666666))),
+          Expanded(
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF666666))),
+          ),
+          const SizedBox(width: 8),
           Text('PKR $amount',
               style: const TextStyle(
                   fontSize: 13.5,

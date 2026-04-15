@@ -41,11 +41,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- Disable Impeller on Android: fixes Mali GPU "rendering feedback loop"
-             errors on older Oppo/Samsung/Xiaomi devices with Mali GPUs. -->
-        <meta-data
-            android:name="io.flutter.embedding.android.EnableImpeller"
-            android:value="false" />
+           <!-- Use Flutter's default renderer path (Impeller enabled) for better
+               stability on newer Flutter versions. -->
+           <meta-data
+              android:name="io.flutter.embedding.android.EnableImpeller"
+              android:value="true" />
     </application>
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

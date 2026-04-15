@@ -15,23 +15,19 @@ class HeaderExplore extends StatelessWidget {
         shadowColor: Colors.grey.withValues(alpha: 0.5),
         elevation: 3);
 
-    return Container(
-      height: 60,
-      width: double.infinity,
-      padding: const EdgeInsets.all(8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          /// ACTIONS HEADER BUTTON
-          Row(children: [
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
             SizedBox(
-              width: 32,
-              height: 32,
+              width: 38,
+              height: 38,
               child: IconButton(
-                  onPressed: () {
-                    Get.toNamed(AppLink.notification);
-                  },
+                  onPressed: () => Get.toNamed(AppLink.notification),
                   style: iconBtn,
                   icon: Obx(() {
                     final ctrl = Get.find<NotificationController>();
@@ -41,25 +37,23 @@ class HeaderExplore extends StatelessWidget {
                       textColor: Colors.black,
                       count: n,
                       isLabelVisible: n > 0,
-                      child: Icon(Icons.notifications,
-                          size: 24, color: colorScheme(context).onSurface),
+                      child: const Icon(Icons.notifications_outlined,
+                          size: 20, color: TravelloTheme.textPrimary),
                     );
                   })),
             ),
             const SizedBox(width: 8),
             SizedBox(
-              width: 32,
-              height: 32,
+              width: 38,
+              height: 38,
               child: IconButton(
-                  onPressed: () {
-                    Get.toNamed(AppLink.faq);
-                  },
+                  onPressed: () => Get.toNamed(AppLink.faq),
                   style: iconBtn,
-                  icon: Icon(Icons.help,
-                      size: 24, color: colorScheme(context).onSurface)),
-            )
-          ])
-        ],
+                  icon: const Icon(Icons.help_outline,
+                      size: 20, color: TravelloTheme.textPrimary)),
+            ),
+          ],
+        ),
       ),
     );
   }

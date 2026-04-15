@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flight_app/constants/app_constants.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class Welcome extends StatefulWidget {
   const Welcome({super.key});
@@ -24,7 +25,7 @@ class _WelcomeState extends State<Welcome> {
           height: screenHeight,
           decoration: const BoxDecoration(color: TravelloTheme.primaryMain),
           child: Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(R.r(context, 24)),
             decoration: BoxDecoration(
                 color: TravelloTheme.paperLight.withValues(alpha: 0.1),
                 image: DecorationImage(
@@ -40,7 +41,7 @@ class _WelcomeState extends State<Welcome> {
                       /// TEXT
                       Text('Welcome to ${branding.name}',
                           style: TextStyle(
-                              fontSize: isSmallPhone ? 32 : 42,
+                              fontSize: R.sp(context, isSmallPhone ? 32 : 42),
                               color: Colors.white,
                               fontWeight: FontWeight.bold)),
                       const VSpaceShort(),
@@ -53,7 +54,7 @@ class _WelcomeState extends State<Welcome> {
                       /// BUTTONS
                       SizedBox(
                         width: double.infinity,
-                        height: isSmallPhone ? 50 : 56,
+                        height: R.rh(context, isSmallPhone ? 50 : 56),
                         child: FilledButton(
                             onPressed: () {
                               // Direct navigation to register page
@@ -67,32 +68,33 @@ class _WelcomeState extends State<Welcome> {
                                 shadowColor: Colors.black26,
                               ),
                             ),
-                            child: const Text('SIGN UP',
+                            child: Text('SIGN UP',
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                    fontSize: R.sp(context, 16),
                                     letterSpacing: 1))),
                       ),
                       Padding(
                           padding:
-                              const EdgeInsets.symmetric(vertical: 24),
+                              EdgeInsets.symmetric(vertical: R.rh(context, 24)),
                           child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 const Expanded(child: LineList()),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: R.r(context, 8.0)),
                                   child: Text('Already have account?',
                                       style: TextStyle(
-                                          fontSize: isSmallPhone ? 14 : 16,
+                                          fontSize: R.sp(
+                                              context, isSmallPhone ? 14 : 16),
                                           color: Colors.white)),
                                 ),
                                 const Expanded(child: LineList()),
                               ])),
                       SizedBox(
                         width: double.infinity,
-                        height: isSmallPhone ? 50 : 56,
+                        height: R.rh(context, isSmallPhone ? 50 : 56),
                         child: OutlinedButton(
                             onPressed: () {
                               // Direct navigation to login page
@@ -107,10 +109,10 @@ class _WelcomeState extends State<Welcome> {
                                 elevation: 2,
                               ),
                             ),
-                            child: const Text('LOGIN',
+                            child: Text('LOGIN',
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                    fontSize: R.sp(context, 16),
                                     letterSpacing: 1))),
                       ),
                     ]),

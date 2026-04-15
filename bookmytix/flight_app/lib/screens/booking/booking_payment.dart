@@ -11,6 +11,7 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
 import 'dart:math' as math;
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class BookingPayment extends StatefulWidget {
   const BookingPayment({super.key});
@@ -677,8 +678,8 @@ class _BookingPaymentState extends State<BookingPayment>
                 children: [
                   Text(
                     flight.departureTime,
-                    style: const TextStyle(
-                      fontSize: 22,
+                    style: TextStyle(
+                      fontSize: R.sp(context, 22),
                       fontWeight: FontWeight.w800,
                       color: Colors.black87,
                       height: 1.2,
@@ -775,8 +776,8 @@ class _BookingPaymentState extends State<BookingPayment>
                 children: [
                   Text(
                     flight.arrivalTime,
-                    style: const TextStyle(
-                      fontSize: 22,
+                    style: TextStyle(
+                      fontSize: R.sp(context, 22),
                       fontWeight: FontWeight.w800,
                       color: Colors.black87,
                       height: 1.2,
@@ -2462,15 +2463,21 @@ class _BookingPaymentState extends State<BookingPayment>
                       ),
                     ),
                   ),
-                  Text(
-                    _formatPKR(_grandTotal),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E88E5),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        _formatPKR(_grandTotal),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E88E5),
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Icon(
                     _isPriceBreakdownExpanded
                         ? Icons.keyboard_arrow_up
@@ -2502,22 +2509,29 @@ class _BookingPaymentState extends State<BookingPayment>
                     _buildPriceRow('Discount', -_discount, isDiscount: true),
                   Divider(height: 16, color: Colors.grey.shade300),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Grand Total',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black87,
+                      const Expanded(
+                        child: Text(
+                          'Grand Total',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
-                      Text(
-                        _formatPKR(_grandTotal),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: TravelloTheme.primaryMain,
+                      const SizedBox(width: 8),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _formatPKR(_grandTotal),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: TravelloTheme.primaryMain,
+                          ),
                         ),
                       ),
                     ],
@@ -2536,21 +2550,29 @@ class _BookingPaymentState extends State<BookingPayment>
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.6),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFFB3B3B3),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFFB3B3B3),
+              ),
             ),
           ),
-          Text(
-            _formatPKR(amount.abs()),
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: isDiscount ? Colors.green.shade700 : Colors.black,
+          const SizedBox(width: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              _formatPKR(amount.abs()),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDiscount ? Colors.green.shade700 : Colors.black,
+              ),
             ),
           ),
         ],
@@ -2575,8 +2597,10 @@ class _BookingPaymentState extends State<BookingPayment>
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          Wrap(
+            alignment: WrapAlignment.spaceAround,
+            spacing: 20,
+            runSpacing: 12,
             children: [
               _buildSecurityBadge(
                   Icons.verified_user, 'SSL Secured', Colors.green),
@@ -2592,11 +2616,16 @@ class _BookingPaymentState extends State<BookingPayment>
             children: [
               Icon(Icons.lock, size: 14, color: Color(0xFFB3B3B3)),
               SizedBox(width: 5.6),
-              Text(
-                'Your payment information is encrypted and secure',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFFB3B3B3),
+              Expanded(
+                child: Text(
+                  'Your payment information is encrypted and secure',
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFFB3B3B3),
+                  ),
                 ),
               ),
             ],
@@ -2604,6 +2633,9 @@ class _BookingPaymentState extends State<BookingPayment>
           const SizedBox(height: 8),
           const Text(
             '24/7 Customer Support: +92-300-1234567',
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -2674,7 +2706,7 @@ class _BookingPaymentState extends State<BookingPayment>
                     Text(
                       _formatPKR(_grandTotal),
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: R.sp(context, 22),
                         fontWeight: FontWeight.w800,
                         color: Theme.of(context).colorScheme.primary,
                       ),
@@ -2690,7 +2722,7 @@ class _BookingPaymentState extends State<BookingPayment>
                     loading: _isProcessing,
                     disabled: !_isPaymentDetailsValid,
                     onTap: _processPayment,
-                    height: 52,
+                    height: R.rh(context, 52),
                     color: const Color(0xFFD4AF37),
                   ),
                 ),

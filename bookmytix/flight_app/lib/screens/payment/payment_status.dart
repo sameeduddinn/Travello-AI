@@ -18,6 +18,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  🎯 PROFESSIONAL PAYMENT SUCCESS PAGE
@@ -2171,11 +2172,11 @@ class _PaymentStatusState extends State<PaymentStatus>
               ),
               const SizedBox(height: 16),
 
-              const Text(
+              Text(
                 'Payment Success',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 24,
+                  fontSize: R.sp(context, 24),
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
                 ),
@@ -2202,7 +2203,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                   _formatPKR(_bookingData['total']),
                   style: TextStyle(
                     color: _statusColor('success'),
-                    fontSize: 32,
+                    fontSize: R.sp(context, 32),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -2414,22 +2415,31 @@ class _PaymentStatusState extends State<PaymentStatus>
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade700,
-              fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+                fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
+              ),
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-              color: valueColor ?? Colors.black87,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+                color: valueColor ?? Colors.black87,
+              ),
             ),
           ),
         ],
@@ -2590,8 +2600,8 @@ class _PaymentStatusState extends State<PaymentStatus>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(fromCode,
-                          style: const TextStyle(
-                              fontSize: 34,
+                          style: TextStyle(
+                              fontSize: R.sp(context, 34),
                               fontWeight: FontWeight.w900,
                               color: railwayGreen,
                               letterSpacing: -0.5)),
@@ -2655,8 +2665,8 @@ class _PaymentStatusState extends State<PaymentStatus>
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(toCode,
-                          style: const TextStyle(
-                              fontSize: 34,
+                          style: TextStyle(
+                              fontSize: R.sp(context, 34),
                               fontWeight: FontWeight.w900,
                               color: railwayGreen,
                               letterSpacing: -0.5)),
@@ -2861,13 +2871,16 @@ class _PaymentStatusState extends State<PaymentStatus>
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                          '${returnTd['trainNumber']}/${returnTd['trainName']}',
-                                          style: const TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w800,
-                                              color: railwayGreen),
-                                          overflow: TextOverflow.ellipsis),
+                                      Flexible(
+                                        child: Text(
+                                            '${returnTd['trainNumber']}/${returnTd['trainName']}',
+                                            style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w800,
+                                                color: railwayGreen),
+                                            overflow: TextOverflow.ellipsis),
+                                      ),
+                                      const SizedBox(width: 8),
                                       Text(returnTd['date'] as String? ?? '--',
                                           style: TextStyle(
                                               fontSize: 10,
@@ -3163,34 +3176,49 @@ class _PaymentStatusState extends State<PaymentStatus>
                     color: Colors.white, size: 16),
               ),
               const SizedBox(width: 10),
-              const Text('E-Ticket & Boarding Pass',
+              const Expanded(
+                child: Text(
+                  'E-Ticket & Boarding Pass',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
-                      fontSize: 15)),
-              const Spacer(),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: emerald.withValues(alpha: 0.22),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: emerald.withValues(alpha: 0.55)),
+                      fontSize: 15),
                 ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Container(
-                      width: 5,
-                      height: 5,
-                      decoration: const BoxDecoration(
-                          color: emerald, shape: BoxShape.circle)),
-                  const SizedBox(width: 5),
-                  const Text('CONFIRMED',
-                      style: TextStyle(
-                          color: emerald,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8)),
-                ]),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: emerald.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(20),
+                        border:
+                            Border.all(color: emerald.withValues(alpha: 0.55)),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Container(
+                            width: 5,
+                            height: 5,
+                            decoration: const BoxDecoration(
+                                color: emerald, shape: BoxShape.circle)),
+                        const SizedBox(width: 5),
+                        const Text('CONFIRMED',
+                            style: TextStyle(
+                                color: emerald,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.8)),
+                      ]),
+                    ),
+                  ),
+                ),
               ),
             ]),
           ),
@@ -3211,8 +3239,8 @@ class _PaymentStatusState extends State<PaymentStatus>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(fromCode,
-                              style: const TextStyle(
-                                  fontSize: 26,
+                              style: TextStyle(
+                                  fontSize: R.sp(context, 26),
                                   fontWeight: FontWeight.w900,
                                   color: navy,
                                   letterSpacing: 2)),
@@ -3278,8 +3306,8 @@ class _PaymentStatusState extends State<PaymentStatus>
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(toCode,
-                              style: const TextStyle(
-                                  fontSize: 26,
+                              style: TextStyle(
+                                  fontSize: R.sp(context, 26),
                                   fontWeight: FontWeight.w900,
                                   color: navy,
                                   letterSpacing: 2)),
@@ -3347,9 +3375,15 @@ class _PaymentStatusState extends State<PaymentStatus>
                         ),
                         const SizedBox(height: 8),
                         Row(children: [
-                          _miniChip(Icons.calendar_today_rounded, date, navy),
+                          Flexible(
+                            child: _miniChip(
+                                Icons.calendar_today_rounded, date, navy),
+                          ),
                           const SizedBox(width: 8),
-                          _miniChip(Icons.flight_takeoff_rounded, fltNum, blue),
+                          Flexible(
+                            child: _miniChip(
+                                Icons.flight_takeoff_rounded, fltNum, blue),
+                          ),
                         ]),
                       ]),
                 ),
@@ -3612,21 +3646,30 @@ class _PaymentStatusState extends State<PaymentStatus>
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.6),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade600,
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade600,
+              ),
             ),
           ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
           ),
         ],
@@ -3979,22 +4022,31 @@ class _PaymentStatusState extends State<PaymentStatus>
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
             child: Row(
               children: [
-                const Text(
-                  'ENHANCE YOUR JOURNEY',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF94A3B8),
-                    letterSpacing: 1.1,
+                const Expanded(
+                  child: Text(
+                    'ENHANCE YOUR JOURNEY',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF94A3B8),
+                      letterSpacing: 1.1,
+                    ),
                   ),
                 ),
-                const Spacer(),
-                Text(
-                  'Powered by Travello',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.blueGrey.shade300,
-                    fontWeight: FontWeight.w500,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    'Powered by Travello',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.blueGrey.shade300,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
@@ -4172,8 +4224,8 @@ class _PaymentStatusState extends State<PaymentStatus>
                     Expanded(
                       child: Text(
                         invoiceTitle,
-                        style: const TextStyle(
-                          fontSize: 22,
+                        style: TextStyle(
+                          fontSize: R.sp(context, 22),
                           fontWeight: FontWeight.w800,
                           color: Colors.black87,
                           letterSpacing: -0.5,
@@ -4288,7 +4340,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                   Text(
                     'Travello AI',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: R.sp(context, 22),
                       fontWeight: FontWeight.w900,
                       color: isRailway
                           ? const Color(0xFF2E7D32)
@@ -4840,12 +4892,24 @@ class _PaymentStatusState extends State<PaymentStatus>
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 10)),
-          Text(
-            '${_bookingData['currency']}${amount.toStringAsFixed(2)}',
-            style: const TextStyle(fontSize: 10),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 10),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              '${_bookingData['currency']}${amount.toStringAsFixed(2)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+              style: const TextStyle(fontSize: 10),
+            ),
           ),
         ],
       ),
@@ -6522,12 +6586,16 @@ class _ExtraCardTileState extends State<_ExtraCardTile> {
                     children: [
                       Row(
                         children: [
-                          Text(ex.title,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF0F172A),
-                              )),
+                          Expanded(
+                            child: Text(ex.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0F172A),
+                                )),
+                          ),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -6558,23 +6626,28 @@ class _ExtraCardTileState extends State<_ExtraCardTile> {
                     ],
                   ),
                 ),
-                AnimatedSlide(
-                  offset: _hovered ? const Offset(0.15, 0) : Offset.zero,
-                  duration: const Duration(milliseconds: 160),
-                  curve: Curves.easeOut,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(ex.action,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: ex.iconColor,
-                            fontWeight: FontWeight.w600,
-                          )),
-                      const SizedBox(height: 2),
-                      Icon(Icons.arrow_forward_rounded,
-                          size: 14, color: ex.iconColor),
-                    ],
+                const SizedBox(width: 8),
+                Flexible(
+                  child: AnimatedSlide(
+                    offset: _hovered ? const Offset(0.15, 0) : Offset.zero,
+                    duration: const Duration(milliseconds: 160),
+                    curve: Curves.easeOut,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(ex.action,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: ex.iconColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1),
+                        const SizedBox(height: 2),
+                        Icon(Icons.arrow_forward_rounded,
+                            size: 14, color: ex.iconColor),
+                      ],
+                    ),
                   ),
                 ),
               ],

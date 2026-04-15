@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/utils/image_viewer.dart';
 import 'package:flight_app/widgets/decorations/rounded_deco_main.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
@@ -18,10 +17,12 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
     required this.minExtent,
     this.userName = 'User',
     this.userAvatar = '',
+    this.onPickAvatar,
   });
 
   final String userName;
   final String userAvatar;
+  final VoidCallback? onPickAvatar;
 
   @override
   final double maxExtent;
@@ -82,8 +83,22 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                     children: [
                       CircleAvatar(
                         radius: 15,
-                        backgroundImage: NetworkImage(
-                            userAvatar.isEmpty ? userDummy.avatar : userAvatar),
+                        backgroundColor: TravelloTheme.primaryMain,
+                        backgroundImage: userAvatar.isNotEmpty
+                            ? NetworkImage(userAvatar)
+                            : null,
+                        child: userAvatar.isEmpty
+                            ? Text(
+                                userName.isNotEmpty
+                                    ? userName[0].toUpperCase()
+                                    : '?',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 8),
                       Flexible(
@@ -122,34 +137,43 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                             child: Stack(
                               alignment: Alignment.bottomRight,
                               children: [
-                                Hero(
-                                  tag: userAvatar.isEmpty
-                                      ? userDummy.avatar
-                                      : userAvatar,
+                                GestureDetector(
+                                  onTap: userAvatar.isNotEmpty
+                                      ? () => Get.to(() =>
+                                          ImageViewer(img: userAvatar))
+                                      : onPickAvatar,
+                                  child: CircleAvatar(
+                                    radius: 50,
+                                    backgroundColor: TravelloTheme.primaryMain,
+                                    backgroundImage: userAvatar.isNotEmpty
+                                        ? NetworkImage(userAvatar)
+                                        : null,
+                                    child: userAvatar.isEmpty
+                                        ? Text(
+                                            userName.isNotEmpty
+                                                ? userName[0].toUpperCase()
+                                                : '?',
+                                            style: const TextStyle(
+                                              fontSize: 38,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                ),
+                                Positioned(
                                   child: GestureDetector(
-                                    onTap: () {
-                                      Get.to(() => ImageViewer(
-                                          img: userAvatar.isEmpty
-                                              ? userDummy.avatar
-                                              : userAvatar));
-                                    },
-                                    child: CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: NetworkImage(
-                                          userAvatar.isEmpty
-                                              ? userDummy.avatar
-                                              : userAvatar),
+                                    onTap: onPickAvatar,
+                                    child: const CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: TravelloTheme.secondaryMain,
+                                      child: Icon(Icons.camera_alt,
+                                          size: 16,
+                                          color: TravelloTheme.secondaryDark),
                                     ),
                                   ),
                                 ),
-                                const Positioned(
-                                    child: CircleAvatar(
-                                  radius: 13,
-                                  backgroundColor: TravelloTheme.secondaryMain,
-                                  child: Icon(Icons.verified,
-                                      size: 20,
-                                      color: TravelloTheme.secondaryDark),
-                                ))
                               ],
                             )),
                       ),

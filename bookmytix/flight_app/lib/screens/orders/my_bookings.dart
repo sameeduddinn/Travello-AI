@@ -3,6 +3,7 @@ import 'package:flight_app/utils/booking_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 const _gold = Color(0xFFD4AF37);
 const _goldLight = Color(0xFFFEF9EC);
@@ -226,7 +227,7 @@ class _MyBookingsState extends State<MyBookings>
                           Text('My Bookings',
                               style: TravelloTheme.title.copyWith(
                                   color: Colors.white,
-                                  fontSize: 26,
+                                  fontSize: R.sp(context, 26),
                                   fontWeight: FontWeight.w800)),
                           SizedBox(height: spacingUnit(0.4)),
                           Text(

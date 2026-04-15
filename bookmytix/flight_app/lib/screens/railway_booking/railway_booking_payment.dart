@@ -10,6 +10,7 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
 import 'dart:math' as math;
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class RailwayBookingPayment extends StatefulWidget {
   const RailwayBookingPayment({super.key});
@@ -705,8 +706,8 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                 children: [
                   Text(
                     train.departureTime,
-                    style: const TextStyle(
-                      fontSize: 22,
+                    style: TextStyle(
+                      fontSize: R.sp(context, 22),
                       fontWeight: FontWeight.w800,
                       color: Colors.black87,
                       height: 1.2,
@@ -794,8 +795,8 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                 children: [
                   Text(
                     train.arrivalTime,
-                    style: const TextStyle(
-                      fontSize: 22,
+                    style: TextStyle(
+                      fontSize: R.sp(context, 22),
                       fontWeight: FontWeight.w800,
                       color: Colors.black87,
                       height: 1.2,
@@ -2563,10 +2564,10 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                     const SizedBox(height: 4),
                     Text(
                       _formatPKR(_grandTotal),
-                      style: const TextStyle(
-                        fontSize: 22,
+                      style: TextStyle(
+                        fontSize: R.sp(context, 22),
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFFD4AF37),
+                        color: const Color(0xFFD4AF37),
                       ),
                     ),
                   ],
@@ -2580,7 +2581,7 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                     loading: _isProcessing,
                     disabled: !_isPaymentDetailsValid,
                     onTap: _processPayment,
-                    height: 52,
+                    height: R.rh(context, 52),
                     color: const Color(0xFFD4AF37),
                   ),
                 ),

@@ -2,6 +2,7 @@
 import 'package:get/get.dart';
 import 'package:flight_app/widgets/range_date_picker.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class HotelSearchScreen extends StatefulWidget {
   const HotelSearchScreen({super.key});
@@ -309,7 +310,7 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: TravelloTheme.primaryMain,
               foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 52),
+              minimumSize: Size(double.infinity, R.rh(context, 52)),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               elevation: 2,
@@ -408,10 +409,10 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
                                             CrossAxisAlignment.start,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Text(
+                                          Text(
                                             'Hotel Booking',
                                             style: TextStyle(
-                                              fontSize: 28,
+                                              fontSize: R.sp(context, 28),
                                               fontWeight: FontWeight.w800,
                                               color: Colors.white,
                                               letterSpacing: -0.8,

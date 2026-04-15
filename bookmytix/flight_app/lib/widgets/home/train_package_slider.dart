@@ -10,6 +10,7 @@ import 'package:flight_app/widgets/title/title_action.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 /// Featured train packages slider - DYNAMIC based on user's city
 class TrainPackageSlider extends StatefulWidget {
@@ -76,17 +77,14 @@ class _TrainPackageSliderState extends State<TrainPackageSlider> {
     super.dispose();
   }
 
-  void _scrollLeft() {
+  void _scrollBy(double delta) {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final target = (_scrollController.offset + delta)
+        .clamp(position.minScrollExtent, position.maxScrollExtent)
+        .toDouble();
     _scrollController.animateTo(
-      _scrollController.offset - 320,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  void _scrollRight() {
-    _scrollController.animateTo(
-      _scrollController.offset + 320,
+      target,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
@@ -110,9 +108,9 @@ class _TrainPackageSliderState extends State<TrainPackageSlider> {
     // Show message if no packages from user's city
     if (packageList.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(R.r(context, 16)),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(R.r(context, 24)),
           decoration: BoxDecoration(
             color: TravelloTheme.paperLightContainerHighest,
             borderRadius: BorderRadius.circular(12),
@@ -121,7 +119,7 @@ class _TrainPackageSliderState extends State<TrainPackageSlider> {
             children: [
               Icon(
                 Icons.train_outlined,
-                size: 48,
+                size: R.r(context, 48),
                 color: TravelloTheme.primaryMain.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 8),
@@ -136,7 +134,7 @@ class _TrainPackageSliderState extends State<TrainPackageSlider> {
               Text(
                 'Check flight options or search for other routes',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: R.sp(context, 12),
                   color: colorScheme(context).onSurface.withValues(alpha: 0.5),
                 ),
                 textAlign: TextAlign.center,
@@ -147,149 +145,162 @@ class _TrainPackageSliderState extends State<TrainPackageSlider> {
       );
     }
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth > 1200;
+    return LayoutBuilder(builder: (context, constraints) {
+      final viewportWidth = constraints.maxWidth;
+      final isDesktop = viewportWidth > 1200;
+      final horizontalPadding = isDesktop ? spacingUnit(8) : R.r(context, 16);
+      final usableWidth =
+          (viewportWidth - (horizontalPadding * 2)).clamp(0.0, viewportWidth);
+      final cardWidth = isDesktop
+          ? 320.0
+          : (usableWidth * 0.86).clamp(280.0, 320.0).toDouble();
+      const cardHeight = 220.0;
+      final scrollStep = cardWidth + 16;
+      final showArrows = viewportWidth >= 950;
 
-    const double cardWidth = 300;
-    const double cardHeight = 220;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            child: TitleAction(
+              title: 'Featured Packages',
+              textAction: 'See All',
+              onTap: () {
+                Get.toNamed(AppLink.trainPackageAll);
+              },
+            ),
+          ),
+          SizedBox(height: R.rh(context, 16)),
+          SizedBox(
+            width: double.infinity,
+            height: cardHeight,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    shrinkWrap: true,
+                    physics: const ClampingScrollPhysics(),
+                    scrollDirection: Axis.horizontal,
+                    padding:
+                        EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    itemCount: packageList.length,
+                    itemBuilder: (context, index) {
+                      final item = packageList[index];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: isDesktop ? spacingUnit(8) : 16,
-          ),
-          child: TitleAction(
-            title: 'Featured Packages',
-            textAction: 'See All',
-            onTap: () {
-              Get.toNamed(AppLink.trainPackageAll);
-            },
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          height: cardHeight,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  shrinkWrap: true,
-                  physics: const ClampingScrollPhysics(),
-                  scrollDirection: Axis.horizontal,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? spacingUnit(8) : 16,
+                      return _TrainCardHover(
+                        packageId: item.id,
+                        onTap: () {
+                          Get.toNamed(
+                            AppLink.trainDetailPackage,
+                            arguments: {
+                              'package': item,
+                              'departDate':
+                                  DateTime.now().add(Duration(days: 7 + index)),
+                            },
+                          );
+                        },
+                        child: SizedBox(
+                          width: cardWidth,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 16),
+                            child: TrainPackageCard(
+                              image: item.imageUrl,
+                              label: _getDiscountLabel(item),
+                              trainName: item.name,
+                              trainNumber: item.trainNumber,
+                              from: _getShortStationName(item.fromStation),
+                              to: _getShortStationName(item.toStation),
+                              date: _getDateString(item, index),
+                              duration: item.duration,
+                              tags: [
+                                ...item.amenities
+                                    .where((a) =>
+                                        !a.toLowerCase().contains('meal'))
+                                    .take(1),
+                                _getDiscountTag(item),
+                              ],
+                              price: item.price,
+                              trainClass: item.trainClass,
+                              roundTrip: item.roundTrip,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                  itemCount: packageList.length,
-                  itemBuilder: (context, index) {
-                    final item = packageList[index];
-
-                    return _TrainCardHover(
-                      packageId: item.id,
-                      onTap: () {
-                        Get.toNamed(
-                          AppLink.trainDetailPackage,
-                          arguments: {
-                            'package': item,
-                            'departDate':
-                                DateTime.now().add(Duration(days: 7 + index)),
-                          },
-                        );
-                      },
-                      child: SizedBox(
-                        width: cardWidth,
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 16),
-                          child: TrainPackageCard(
-                            image: item.imageUrl,
-                            label: _getDiscountLabel(item),
-                            trainName: item.name,
-                            trainNumber: item.trainNumber,
-                            from: _getShortStationName(item.fromStation),
-                            to: _getShortStationName(item.toStation),
-                            date: _getDateString(item, index),
-                            duration: item.duration,
-                            tags: [
-                              ...item.amenities
-                                  .where(
-                                      (a) => !a.toLowerCase().contains('meal'))
-                                  .take(1),
-                              _getDiscountTag(item),
-                            ],
-                            price: item.price,
-                            trainClass: item.trainClass,
-                            roundTrip: item.roundTrip,
+                ),
+                if (showArrows) ...[
+                  Positioned(
+                    left: 12,
+                    top: 0,
+                    bottom: 0,
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color:
+                              TravelloTheme.paperLight.withValues(alpha: 0.95),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          onPressed: () => _scrollBy(-scrollStep),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new,
+                            color: TravelloTheme.primaryMain,
+                            size: 20,
                           ),
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-              if (isDesktop) ...[
-                Positioned(
-                  left: 16,
-                  top: 80,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color:
-                          TravelloTheme.paperLight.withValues(alpha: 0.95),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
-                    child: IconButton(
-                      onPressed: _scrollLeft,
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new,
-                        color: TravelloTheme.primaryMain,
-                        size: 20,
+                  ),
+                  Positioned(
+                    right: 12,
+                    top: 0,
+                    bottom: 0,
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color:
+                              TravelloTheme.paperLight.withValues(alpha: 0.95),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          onPressed: () => _scrollBy(scrollStep),
+                          icon: const Icon(
+                            Icons.arrow_forward_ios,
+                            color: TravelloTheme.primaryMain,
+                            size: 20,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Positioned(
-                  right: 16,
-                  top: 80,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color:
-                          TravelloTheme.paperLight.withValues(alpha: 0.95),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      onPressed: _scrollRight,
-                      icon: const Icon(
-                        Icons.arrow_forward_ios,
-                        color: TravelloTheme.primaryMain,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 
   String _getDateString(TrainPackage pkg, int index) {

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
 //  PROFESSIONAL CHECKOUT SCREEN - Matches Bookme/Expedia Design
@@ -572,11 +573,15 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Row(
                   children: [
-                    Text(
-                      '${_fromAirport.location}(${_fromAirport.code}) - ${_toAirport.location}(${_toAirport.code})',
-                      style: TravelloTheme.cardHeading,
+                    Flexible(
+                      child: Text(
+                        '${_fromAirport.location}(${_fromAirport.code}) - ${_toAirport.location}(${_toAirport.code})',
+                        style: TravelloTheme.cardHeading,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 8),
                     const Icon(Icons.schedule_rounded,
                         size: 15, color: Color(0xFF666666)),
                     const SizedBox(width: 5),
@@ -607,8 +612,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                             children: [
                               Text(
                                 _flight.departureTime,
-                                style: const TextStyle(
-                                    fontSize: 34,
+                                style: TextStyle(
+                                    fontSize: R.sp(context, 34),
                                     fontWeight: FontWeight.w900,
                                     color: Colors.black87,
                                     letterSpacing: -1.8,
@@ -631,8 +636,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                             children: [
                               Text(
                                 _flight.arrivalTime,
-                                style: const TextStyle(
-                                    fontSize: 34,
+                                style: TextStyle(
+                                    fontSize: R.sp(context, 34),
                                     fontWeight: FontWeight.w900,
                                     color: Colors.black87,
                                     letterSpacing: -1.8,
@@ -672,8 +677,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           ),
                           child: Text(
                             _fromAirport.code,
-                            style: const TextStyle(
-                                fontSize: 21,
+                            style: TextStyle(
+                                fontSize: R.sp(context, 21),
                                 fontWeight: FontWeight.w900,
                                 color: primary,
                                 letterSpacing: 1.6),
@@ -743,8 +748,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           ),
                           child: Text(
                             _toAirport.code,
-                            style: const TextStyle(
-                                fontSize: 21,
+                            style: TextStyle(
+                                fontSize: R.sp(context, 21),
                                 fontWeight: FontWeight.w900,
                                 color: primary,
                                 letterSpacing: 1.6),
@@ -802,8 +807,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                   children: [
                     // Airline icon
                     Container(
-                      width: 42,
-                      height: 42,
+                      width: R.r(context, 42),
+                      height: R.r(context, 42),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5F5F5), // Light card
                         borderRadius: BorderRadius.circular(11),
@@ -954,8 +959,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                             children: [
                               Text(
                                 _returnFlight!.departureTime,
-                                style: const TextStyle(
-                                    fontSize: 34,
+                                style: TextStyle(
+                                    fontSize: R.sp(context, 34),
                                     fontWeight: FontWeight.w900,
                                     color: Colors.black87,
                                     letterSpacing: -1.8,
@@ -978,8 +983,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                             children: [
                               Text(
                                 _returnFlight!.arrivalTime,
-                                style: const TextStyle(
-                                    fontSize: 34,
+                                style: TextStyle(
+                                    fontSize: R.sp(context, 34),
                                     fontWeight: FontWeight.w900,
                                     color: Colors.black87,
                                     letterSpacing: -1.8,
@@ -1019,8 +1024,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           ),
                           child: Text(
                             _toAirport.code,
-                            style: const TextStyle(
-                                fontSize: 21,
+                            style: TextStyle(
+                                fontSize: R.sp(context, 21),
                                 fontWeight: FontWeight.w900,
                                 color: primary,
                                 letterSpacing: 1.6),
@@ -1090,8 +1095,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                           ),
                           child: Text(
                             _fromAirport.code,
-                            style: const TextStyle(
-                                fontSize: 21,
+                            style: TextStyle(
+                                fontSize: R.sp(context, 21),
                                 fontWeight: FontWeight.w900,
                                 color: primary,
                                 letterSpacing: 1.6),
@@ -1149,8 +1154,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                   children: [
                     // Airline icon
                     Container(
-                      width: 42,
-                      height: 42,
+                      width: R.r(context, 42),
+                      height: R.r(context, 42),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5F5F5), // Light card
                         borderRadius: BorderRadius.circular(11),
@@ -2058,45 +2063,56 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                       const BorderRadius.vertical(bottom: Radius.circular(14)),
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Total Amount',
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF666666), // Gray text
-                              fontWeight: FontWeight.w500),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Incl. FED, airport & service fees',
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.grey.shade400),
-                        ),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Total Amount',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF666666), // Gray text
+                                fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Incl. FED, airport & service fees',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.grey.shade400),
+                          ),
+                        ],
+                      ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         if (_discount > 0)
-                          Text(
-                            _formatPrice(_subtotal),
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade400,
-                              decoration: TextDecoration.lineThrough,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _formatPrice(_subtotal),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade400,
+                                decoration: TextDecoration.lineThrough,
+                              ),
                             ),
                           ),
-                        Text(
-                          _formatPrice(_grandTotal),
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: primary,
-                            letterSpacing: -0.5,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            _formatPrice(_grandTotal),
+                            style: TextStyle(
+                              fontSize: R.sp(context, 26),
+                              fontWeight: FontWeight.bold,
+                              color: primary,
+                              letterSpacing: -0.5,
+                            ),
                           ),
                         ),
                       ],
@@ -2137,23 +2153,38 @@ class _BookingCheckoutState extends State<BookingCheckout> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500)),
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
               if (subtitle.isNotEmpty)
-                Text(subtitle,
-                    style: const TextStyle(
-                        fontSize: 11, color: Color(0xFF666666))),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      const TextStyle(fontSize: 11, color: Color(0xFF666666)),
+                ),
             ],
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          pricePrefix ?? price,
-          style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: priceColor ?? Colors.black87),
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              pricePrefix ?? price,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: priceColor ?? Colors.black87),
+            ),
+          ),
         ),
       ],
     );
@@ -2367,12 +2398,14 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                             color: Colors.red.shade600,
                           ),
                           const SizedBox(width: 5.6),
-                          Text(
-                            'Please accept Terms & Conditions to continue',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.red.shade600,
-                              fontWeight: FontWeight.w500,
+                          Flexible(
+                            child: Text(
+                              'Please accept Terms & Conditions to continue',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.red.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
@@ -2470,11 +2503,11 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 ),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Refund Policy',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: R.sp(context, 22),
                           fontWeight: FontWeight.w800,
                           color: Colors.black87,
                           letterSpacing: -0.5,
@@ -2561,11 +2594,11 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 ),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Cancellation Policy',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: R.sp(context, 22),
                           fontWeight: FontWeight.w800,
                           color: Colors.black87,
                           letterSpacing: -0.5,
@@ -2652,11 +2685,11 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 ),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Fare Rules',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: R.sp(context, 22),
                           fontWeight: FontWeight.w800,
                           color: Colors.black87,
                           letterSpacing: -0.5,
@@ -2743,11 +2776,11 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 ),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Privacy Policy',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: R.sp(context, 22),
                           fontWeight: FontWeight.w800,
                           color: Colors.black87,
                           letterSpacing: -0.5,
@@ -2984,8 +3017,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
           label: 'CHECKOUT',
           trailingIcon: Icons.arrow_forward_rounded,
           onTap: _proceedToCheckout,
-          disabled: !_agreeToTerms,
-          height: 52,
+          height: R.rh(context, 52),
         ),
       ),
     );

@@ -11,6 +11,7 @@ import 'package:flight_app/widgets/user/saved_credentials_dialog.dart';
 import 'package:flight_app/widgets/onboarding/city_selection_sheet.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -252,18 +253,19 @@ class _LoginFormState extends State<LoginForm> {
               children: [
                 // Beautiful illustration container
                 SizedBox(
-                  height: MediaQuery.of(context).size.height < 640 ? 130 : 180,
+                  height: R.rh(context,
+                      MediaQuery.of(context).size.height < 640 ? 130 : 180),
                   width: double.infinity,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
                       // Large decorative circle - back
                       Positioned(
-                        top: 20,
-                        right: 60,
+                        top: R.r(context, 20),
+                        right: R.r(context, 60),
                         child: Container(
-                          width: 120,
-                          height: 120,
+                          width: R.r(context, 120),
+                          height: R.r(context, 120),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -277,23 +279,23 @@ class _LoginFormState extends State<LoginForm> {
                       ),
                       // Airplane flying illustration
                       Positioned(
-                        top: 30,
-                        right: 80,
+                        top: R.r(context, 30),
+                        right: R.r(context, 80),
                         child: Transform.rotate(
                           angle: -0.3,
                           child: Icon(
                             Icons.flight,
-                            size: 50,
+                            size: R.r(context, 50),
                             color: Colors.orange.shade400,
                           ),
                         ),
                       ),
                       // Travel destination marker
                       Positioned(
-                        top: 35,
-                        left: 70,
+                        top: R.r(context, 35),
+                        left: R.r(context, 70),
                         child: Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(R.r(context, 12)),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -310,19 +312,19 @@ class _LoginFormState extends State<LoginForm> {
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.location_on,
                             color: Colors.white,
-                            size: 28,
+                            size: R.r(context, 28),
                           ),
                         ),
                       ),
                       // Main passport/ticket illustration
                       Positioned(
-                        bottom: 20,
+                        bottom: R.r(context, 20),
                         child: Container(
-                          width: 100,
-                          height: 120,
+                          width: R.r(context, 100),
+                          height: R.r(context, 120),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
@@ -345,14 +347,14 @@ class _LoginFormState extends State<LoginForm> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.verified_user_rounded,
                                 color: Colors.white,
-                                size: 40,
+                                size: R.r(context, 40),
                               ),
                               const SizedBox(height: 8),
                               Container(
-                                width: 60,
+                                width: R.r(context, 60),
                                 height: 4,
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.6),
@@ -361,7 +363,7 @@ class _LoginFormState extends State<LoginForm> {
                               ),
                               const SizedBox(height: 4),
                               Container(
-                                width: 40,
+                                width: R.r(context, 40),
                                 height: 4,
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.4),
@@ -374,10 +376,10 @@ class _LoginFormState extends State<LoginForm> {
                       ),
                       // Luggage illustration
                       Positioned(
-                        bottom: 35,
-                        right: 90,
+                        bottom: R.r(context, 35),
+                        right: R.r(context, 90),
                         child: Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: EdgeInsets.all(R.r(context, 10)),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -394,19 +396,19 @@ class _LoginFormState extends State<LoginForm> {
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.luggage,
                             color: Colors.white,
-                            size: 24,
+                            size: R.r(context, 24),
                           ),
                         ),
                       ),
                       // Globe/world illustration
                       Positioned(
-                        bottom: 30,
-                        left: 75,
+                        bottom: R.r(context, 30),
+                        left: R.r(context, 75),
                         child: Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: EdgeInsets.all(R.r(context, 8)),
                           decoration: BoxDecoration(
                             gradient: RadialGradient(
                               colors: [
@@ -423,131 +425,73 @@ class _LoginFormState extends State<LoginForm> {
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.public,
                             color: Colors.white,
-                            size: 20,
+                            size: R.r(context, 20),
                           ),
                         ),
                       ),
                       // Sparkle effects
                       Positioned(
-                        top: 50,
-                        left: 50,
+                        top: R.r(context, 50),
+                        left: R.r(context, 50),
                         child: Icon(
                           Icons.auto_awesome,
-                          size: 16,
+                          size: R.r(context, 16),
                           color: Colors.amber.shade300,
                         ),
                       ),
                       Positioned(
-                        top: 80,
-                        right: 50,
+                        top: R.r(context, 80),
+                        right: R.r(context, 50),
                         child: Icon(
                           Icons.auto_awesome,
-                          size: 12,
+                          size: R.r(context, 12),
                           color: Colors.pink.shade200,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: R.rh(context, 16)),
                 // Brand name
                 Text(
                   branding.name,
                   style: TravelloTheme.headline.copyWith(
                     color: TravelloTheme.primaryMain,
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: R.sp(context, 14),
                     letterSpacing: 2,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: R.rh(context, 8)),
                 // Main heading
                 Text(
                   'Welcome Back!',
                   style: TravelloTheme.title.copyWith(
-                    fontSize: 34,
+                    fontSize: R.sp(context, 34),
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
                     height: 1.2,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: R.rh(context, 8)),
                 // Subtitle
                 Text(
                   'Login to continue your journey',
                   style: TravelloTheme.headline.copyWith(
                     color: colorScheme.onSurfaceVariant,
-                    fontSize: 15,
+                    fontSize: R.sp(context, 15),
                   ),
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
-
-          /// DEMO CREDENTIALS HINT
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.primaryContainer.withValues(alpha: 0.5),
-                  colorScheme.primaryContainer.withValues(alpha: 0.2),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: colorScheme.primary.withValues(alpha: 0.2),
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.lightbulb_outline_rounded,
-                    size: 24,
-                    color: colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Try Demo Account',
-                        style: TravelloTheme.subtitle.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Username: John Doe | Password: 0123456789',
-                        style: TravelloTheme.caption.copyWith(
-                          color: colorScheme.onSurface.withValues(alpha: 0.7),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
+          SizedBox(height: R.rh(context, 24)),
 
           /// INPUT FIELD
           FormBuilderField(
@@ -658,105 +602,88 @@ class _LoginFormState extends State<LoginForm> {
           const VSpace(),
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: R.rh(context, 50),
             child: FilledButton(
-                onPressed: _isLoading
-                    ? null
-                    : () async {
-                        final formState = _loginKey.currentState;
-                        if (formState == null) return;
+              onPressed: _isLoading
+                  ? null
+                  : () async {
+                      final formState = _loginKey.currentState;
+                      if (formState == null) return;
 
-                        if (formState.saveAndValidate()) {
-                          setState(() => _isLoading = true);
+                      if (formState.saveAndValidate()) {
+                        setState(() => _isLoading = true);
 
-                          final formData = formState.value;
+                        final formData = formState.value;
 
-                          /// 🔹 SANITIZE INPUTS
-                          final rawInput = (formData['emailOrPhone'] ?? '')
-                              .toString()
-                              .trim()
-                              .replaceAll(RegExp(r'\s+'), '');
+                        /// 🔹 SANITIZE INPUTS
+                        final rawInput = (formData['emailOrPhone'] ?? '')
+                            .toString()
+                            .trim()
+                            .replaceAll(RegExp(r'\s+'), '');
 
-                          final emailOrPhone = rawInput.toLowerCase();
-                          final String password =
-                              (formData['password'] ?? '').toString().trim();
+                        final emailOrPhone = rawInput.toLowerCase();
+                        final String password =
+                            (formData['password'] ?? '').toString().trim();
 
-                          try {
-                            /// 🔹 LOGIN API
-                            final user = await AuthService.loginUser(
-                              emailOrPhone: emailOrPhone,
-                              password: password,
-                            );
+                        try {
+                          /// 🔹 LOGIN API
+                          final user = await AuthService.loginUser(
+                            emailOrPhone: emailOrPhone,
+                            password: password,
+                          );
+
+                          if (!context.mounted) return;
+
+                          if (user != null) {
+                            /// 🔹 REMEMBER ME
+                            if (_rememberMe) {
+                              await AuthService.saveRememberMe(
+                                  emailOrPhone, password);
+                            } else {
+                              await AuthService.clearRememberMe();
+                            }
 
                             if (!context.mounted) return;
 
-                            setState(() => _isLoading = false);
-
-                            if (user != null) {
-                              /// 🔹 REMEMBER ME
-                              if (_rememberMe) {
-                                await AuthService.saveRememberMe(
-                                    emailOrPhone, password);
-                              } else {
-                                await AuthService.clearRememberMe();
-                              }
-
-                              if (!context.mounted) return;
-
-                              Get.snackbar(
-                                'Login Successful',
-                                'Welcome back, ${user['name']}!',
-                                backgroundColor: Colors.green.shade600,
-                                colorText: Colors.white,
-                                snackPosition: SnackPosition.TOP,
-                                duration: const Duration(seconds: 2),
-                                icon: const Icon(Icons.check_circle,
-                                    color: Colors.white),
-                                borderRadius: 10,
-                                margin: const EdgeInsets.all(10),
-                              );
-
-                              final hasCity = await LocationPreferenceService
-                                  .hasOriginCity();
-
-                              if (!context.mounted) return;
-
-                              if (!hasCity) {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  isDismissible: false,
-                                  enableDrag: false,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (context) => CitySelectionSheet(
-                                    onComplete: () {
-                                      Get.offAllNamed(AppLink.home);
-                                    },
-                                  ),
-                                );
-                              } else {
-                                Get.offAllNamed(AppLink.home);
-                              }
-                            } else {
-                              Get.snackbar(
-                                'Login Failed',
-                                'Invalid credentials.',
-                                backgroundColor: Colors.red.shade600,
-                                colorText: Colors.white,
-                                snackPosition: SnackPosition.TOP,
-                                icon: const Icon(Icons.error_outline,
-                                    color: Colors.white),
-                                borderRadius: 10,
-                                margin: const EdgeInsets.all(10),
-                                duration: const Duration(seconds: 3),
-                              );
-                            }
-                          } catch (e) {
-                            setState(() => _isLoading = false);
-
                             Get.snackbar(
-                              'Error',
-                              'Something went wrong. Try again.',
+                              'Login Successful',
+                              'Welcome back, ${user['name']}!',
+                              backgroundColor: Colors.green.shade600,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.TOP,
+                              duration: const Duration(seconds: 2),
+                              icon: const Icon(Icons.check_circle,
+                                  color: Colors.white),
+                              borderRadius: 10,
+                              margin: const EdgeInsets.all(10),
+                            );
+
+                            final hasCity =
+                                await LocationPreferenceService.hasOriginCity();
+
+                            if (!context.mounted) return;
+
+                            if (!hasCity) {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                isDismissible: false,
+                                enableDrag: false,
+                                backgroundColor: Colors.transparent,
+                                builder: (context) => CitySelectionSheet(
+                                  onComplete: () {
+                                    Get.offAllNamed(AppLink.home);
+                                  },
+                                ),
+                              );
+                            } else {
+                              Get.offAllNamed(AppLink.home);
+                            }
+                          } else {
+                            setState(() => _isLoading = false);
+                            Get.snackbar(
+                              'Login Failed',
+                              'Invalid credentials.',
                               backgroundColor: Colors.red.shade600,
                               colorText: Colors.white,
                               snackPosition: SnackPosition.TOP,
@@ -767,35 +694,56 @@ class _LoginFormState extends State<LoginForm> {
                               duration: const Duration(seconds: 3),
                             );
                           }
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          setState(() => _isLoading = false);
+
+                          Get.snackbar(
+                            'Error',
+                            'Something went wrong. Try again.',
+                            backgroundColor: Colors.red.shade600,
+                            colorText: Colors.white,
+                            snackPosition: SnackPosition.TOP,
+                            icon: const Icon(Icons.error_outline,
+                                color: Colors.white),
+                            borderRadius: 10,
+                            margin: const EdgeInsets.all(10),
+                            duration: const Duration(seconds: 3),
+                          );
                         }
-                      },
-                style: ThemeButton.btnBig.merge(FilledButton.styleFrom(
-                  backgroundColor: TravelloTheme.primaryMain,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                  shadowColor: Colors.black26,
-                )),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2.5, color: Colors.white))
-                    : Text('CONTINUE',
-                        style: TravelloTheme.subtitle.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
-                        ))),
+                      }
+                    },
+              style: ThemeButton.btnBig.merge(FilledButton.styleFrom(
+                backgroundColor: TravelloTheme.primaryMain,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+                shadowColor: Colors.black26,
+              )),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5, color: Colors.white))
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('CONTINUE',
+                          style: TravelloTheme.subtitle.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: R.sp(context, 15),
+                            letterSpacing: 1.0,
+                          ))),
+            ),
           ),
           const VSpace(),
 
           /// DIVIDER WITH "OR" - PROFESSIONAL STYLE
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: EdgeInsets.symmetric(vertical: R.rh(context, 16)),
             child: Row(
               children: [
                 Expanded(
@@ -812,10 +760,10 @@ class _LoginFormState extends State<LoginForm> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: EdgeInsets.symmetric(horizontal: R.r(context, 24)),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: R.r(context, 16),
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
@@ -833,7 +781,7 @@ class _LoginFormState extends State<LoginForm> {
                         color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 1.2,
-                        fontSize: 11,
+                        fontSize: R.sp(context, 11),
                       ),
                     ),
                   ),
@@ -858,7 +806,7 @@ class _LoginFormState extends State<LoginForm> {
           /// GOOGLE LOGIN - PREMIUM STYLE
           Container(
             width: double.infinity,
-            height: 56,
+            height: R.rh(context, 56),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               gradient: LinearGradient(
@@ -887,13 +835,13 @@ class _LoginFormState extends State<LoginForm> {
                 onTap: _handleGoogleSignIn,
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: R.r(context, 16)),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        width: 32,
-                        height: 32,
+                        width: R.r(context, 32),
+                        height: R.r(context, 32),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
@@ -909,7 +857,7 @@ class _LoginFormState extends State<LoginForm> {
                           child: googleMark,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: R.r(context, 12)),
                       Text(
                         'Continue with Google',
                         style: TravelloTheme.subtitle.copyWith(
@@ -923,12 +871,12 @@ class _LoginFormState extends State<LoginForm> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: R.rh(context, 12)),
 
           /// APPLE LOGIN - PREMIUM STYLE
           Container(
             width: double.infinity,
-            height: 56,
+            height: R.rh(context, 56),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               gradient: LinearGradient(
@@ -969,13 +917,13 @@ class _LoginFormState extends State<LoginForm> {
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: R.r(context, 16)),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        width: 32,
-                        height: 32,
+                        width: R.r(context, 32),
+                        height: R.r(context, 32),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
@@ -991,7 +939,7 @@ class _LoginFormState extends State<LoginForm> {
                         ),
                         child: Center(child: appleMark),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: R.r(context, 12)),
                       Text(
                         'Continue with Apple',
                         style: TravelloTheme.subtitle.copyWith(
@@ -1016,12 +964,13 @@ class _LoginFormState extends State<LoginForm> {
               child: Text.rich(
                 TextSpan(
                   text: 'Don\'t have an account? ',
-                  style: TravelloTheme.caption.copyWith(fontSize: 15),
+                  style: TravelloTheme.caption
+                      .copyWith(fontSize: R.sp(context, 15)),
                   children: [
                     TextSpan(
                       text: 'Sign Up Now',
                       style: TravelloTheme.caption.copyWith(
-                        fontSize: 15,
+                        fontSize: R.sp(context, 15),
                         color: colorScheme.primary,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.underline,

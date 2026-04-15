@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 const _cityImages = {
   'karachi':
@@ -97,6 +98,8 @@ class _CitySearchResultsState extends State<CitySearchResults>
             expandedHeight: 200,
             pinned: true,
             surfaceTintColor: Colors.transparent,
+            backgroundColor: TravelloTheme.primaryMain,
+            foregroundColor: Colors.white,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new,
                   color: Colors.white, size: 20),
@@ -361,10 +364,10 @@ class _FlightCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(_fmt(trip.depart),
-                          style: const TextStyle(
-                              fontSize: 22,
+                          style: TextStyle(
+                              fontSize: R.sp(context, 22),
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF111827))),
+                              color: const Color(0xFF111827))),
                       const SizedBox(height: 2),
                       Text(trip.from.code,
                           style: const TextStyle(
@@ -404,10 +407,10 @@ class _FlightCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(_fmt(trip.arrival),
-                          style: const TextStyle(
-                              fontSize: 22,
+                          style: TextStyle(
+                              fontSize: R.sp(context, 22),
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF111827))),
+                              color: const Color(0xFF111827))),
                       const SizedBox(height: 2),
                       Text(trip.to.code,
                           style: const TextStyle(

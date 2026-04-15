@@ -4,6 +4,7 @@ import 'package:get/route_manager.dart';
 import 'dart:async';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/auth_service.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class VerificationCodeInput extends StatefulWidget {
   final String email;
@@ -188,9 +189,9 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 12,
+          padding: EdgeInsets.symmetric(
+            horizontal: R.r(context, 20),
+            vertical: R.rh(context, 12),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -199,8 +200,8 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
 
               // Illustration
               Container(
-                width: 80,
-                height: 80,
+                width: R.r(context, 80),
+                height: R.r(context, 80),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -215,19 +216,19 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                 child: Center(
                   child: Icon(
                     Icons.email_outlined,
-                    size: 40,
+                    size: R.r(context, 40),
                     color: colorScheme.primary,
                   ),
                 ),
               ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: R.rh(context, 16)),
 
               // Title
               Text(
                 'Verify Your Email',
                 style: TravelloTheme.title.copyWith(
-                  fontSize: 24,
+                  fontSize: R.sp(context, 24),
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
@@ -240,7 +241,7 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                 'We sent a verification code to',
                 style: TravelloTheme.paragraph.copyWith(
                   color: colorScheme.onSurfaceVariant,
-                  fontSize: 14,
+                  fontSize: R.sp(context, 14),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -250,12 +251,12 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                 style: TravelloTheme.subtitle.copyWith(
                   color: colorScheme.primary,
                   fontWeight: FontWeight.w600,
-                  fontSize: 15,
+                  fontSize: R.sp(context, 15),
                 ),
                 textAlign: TextAlign.center,
               ),
 
-              const SizedBox(height: 20),
+              SizedBox(height: R.rh(context, 20)),
 
               // Code Input Boxes
               LayoutBuilder(
@@ -295,7 +296,7 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                 },
               ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: R.rh(context, 16)),
 
               // Timer and Resend
               _secondsRemaining > 0
@@ -304,7 +305,7 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                       children: [
                         Icon(
                           Icons.schedule,
-                          size: 16,
+                          size: R.r(context, 16),
                           color: colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 6),
@@ -312,14 +313,14 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                           'Resend code in $_secondsRemaining seconds',
                           style: TravelloTheme.caption.copyWith(
                             color: colorScheme.onSurfaceVariant,
-                            fontSize: 13,
+                            fontSize: R.sp(context, 13),
                           ),
                         ),
                       ],
                     )
                   : TextButton.icon(
                       onPressed: _isResending ? null : _resendCode,
-                      icon: const Icon(Icons.refresh, size: 18),
+                      icon: Icon(Icons.refresh, size: R.r(context, 18)),
                       label: _isResending
                           ? const SizedBox(
                               width: 16,
@@ -328,21 +329,21 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text(
+                          : Text(
                               'Resend Code',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                                fontSize: R.sp(context, 14),
                               ),
                             ),
                     ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: R.rh(context, 16)),
 
               // Verify Button
               SizedBox(
                 width: double.infinity,
-                height: 48,
+                height: R.rh(context, 48),
                 child: FilledButton(
                   onPressed: _isVerifying ? null : _verifyCode,
                   style: ThemeButton.btnBig.merge(ThemeButton.primary),
@@ -362,11 +363,11 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: R.rh(context, 12)),
 
               // OTP helper
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(R.r(context, 12)),
                 decoration: BoxDecoration(
                   color: colorScheme.primaryContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(10),
@@ -379,7 +380,7 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                     Icon(
                       Icons.lightbulb_outline,
                       color: colorScheme.primary,
-                      size: 18,
+                      size: R.r(context, 18),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -387,7 +388,7 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                         'Enter the 6-digit code sent to your email.',
                         style: TravelloTheme.caption.copyWith(
                           color: colorScheme.onSurface,
-                          fontSize: 13,
+                          fontSize: R.sp(context, 13),
                         ),
                       ),
                     ),
@@ -487,7 +488,7 @@ class _CodeInputBoxState extends State<_CodeInputBox> {
             maxLength: 1,
             showCursor: false,
             style: TravelloTheme.title.copyWith(
-              fontSize: 24,
+              fontSize: R.sp(context, 24),
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
             ),

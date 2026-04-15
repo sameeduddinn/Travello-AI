@@ -12,15 +12,11 @@ class QuickAccessFeatures extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
-    final isDesktop = w > 1200;
-    final isTablet = w >= 600;
-
-    final hPad = isDesktop
+    final hPad = w >= 1200
         ? spacingUnit(8)
-        : isTablet
+        : w >= 720
             ? 32.0
             : 16.0;
-    final gap = spacingUnit(isTablet ? 2.5 : 1.5);
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: hPad),
@@ -42,38 +38,42 @@ class QuickAccessFeatures extends StatelessWidget {
                 onTap: () => Get.toNamed(AppLink.weather),
               ),
               _FeatureCard(
+                iconWidget: const _AiSparkleIcon(),
+                title: 'AI Assistant',
+                subtitle: 'Smart Travel Help',
+                onTap: () => Get.toNamed(AppLink.aiAssistant),
+              ),
+              _FeatureCard(
                 icon: Icons.local_hospital_outlined,
                 title: 'Healthcare',
                 subtitle: 'Emergency Help',
                 onTap: () => Get.toNamed(AppLink.healthcare),
               ),
-              _FeatureCard(
-                icon: Icons.psychology_outlined,
-                title: 'AI Assistant',
-                subtitle: 'Smart Travel Help',
-                onTap: () => Get.toNamed(AppLink.aiAssistant),
-              ),
             ];
 
-            if (constraints.maxWidth < 360) {
-              return Column(
-                children: cards
-                    .map((c) => Padding(
-                        padding: EdgeInsets.only(bottom: gap), child: c))
-                    .toList(),
-              );
-            }
+            final availableWidth = constraints.maxWidth;
 
-            return IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (int i = 0; i < cards.length; i++) ...[
-                    if (i > 0) SizedBox(width: gap),
-                    Expanded(child: cards[i]),
-                  ]
-                ],
-              ),
+            final gap = availableWidth >= 600 ? 16.0 : 12.0;
+            const crossAxisCount = 3;
+            final cardWidth =
+                (availableWidth - gap * (crossAxisCount - 1)) / crossAxisCount;
+            final cardHeight = cardWidth >= 180
+                ? 176.0
+                : cardWidth >= 145
+                    ? 152.0
+                    : 118.0;
+
+            return Wrap(
+              spacing: gap,
+              runSpacing: gap,
+              alignment: WrapAlignment.center,
+              children: cards
+                  .map((card) => SizedBox(
+                        width: cardWidth,
+                        height: cardHeight,
+                        child: card,
+                      ))
+                  .toList(),
             );
           }),
         ],
@@ -83,17 +83,19 @@ class QuickAccessFeatures extends StatelessWidget {
 }
 
 class _FeatureCard extends StatefulWidget {
-  final IconData icon;
+  final IconData? icon;
+  final Widget? iconWidget;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
 
   const _FeatureCard({
-    required this.icon,
+    this.icon,
+    this.iconWidget,
     required this.title,
     required this.subtitle,
     required this.onTap,
-  });
+  }) : assert(icon != null || iconWidget != null);
 
   @override
   State<_FeatureCard> createState() => _FeatureCardState();
@@ -105,101 +107,145 @@ class _FeatureCardState extends State<_FeatureCard> {
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    final isSmall = w < 400;
-    final isTablet = w >= 600;
-
-    final iconSize = isSmall
-        ? 24.0
-        : isTablet
-            ? 32.0
-            : 26.0;
-    final titleSize = isSmall
-        ? 12.0
-        : isTablet
-            ? 15.0
-            : 13.0;
-    final subSize = isSmall
-        ? 9.0
-        : isTablet
-            ? 11.0
-            : 10.0;
-    final pad = isSmall
-        ? 14.0
-        : isTablet
-            ? 20.0
-            : 16.0;
-
     final active = _hovered || _pressed;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) {
-          setState(() => _pressed = false);
-          widget.onTap();
-        },
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedScale(
-          scale: _pressed
-              ? 0.97
-              : active
-                  ? 1.03
-                  : 1.0,
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: EdgeInsets.all(pad),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: active
-                    ? [_kGold, _kGoldDeep]
-                    : [const Color(0xFFE8C547), _kGoldDeep],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: _kGold.withValues(alpha: active ? 0.40 : 0.20),
-                  blurRadius: active ? 16 : 8,
-                  offset: const Offset(0, 4),
+    return LayoutBuilder(builder: (context, constraints) {
+      final cardWidth = constraints.maxWidth;
+      final isCompact = cardWidth < 150;
+      final isMedium = cardWidth < 190;
+
+      final iconSize = isCompact
+          ? 20.0
+          : isMedium
+              ? 24.0
+              : 30.0;
+      final titleSize = isCompact
+          ? 11.0
+          : isMedium
+              ? 12.5
+              : 14.5;
+      final subSize = isCompact
+          ? 8.5
+          : isMedium
+              ? 9.5
+              : 10.5;
+      final pad = isCompact
+          ? 10.0
+          : isMedium
+              ? 13.0
+              : 16.0;
+      final iconPad = isCompact ? 6.0 : 8.0;
+
+      return MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) {
+            setState(() => _pressed = false);
+            widget.onTap();
+          },
+          onTapCancel: () => setState(() => _pressed = false),
+          child: AnimatedScale(
+            scale: _pressed
+                ? 0.97
+                : active
+                    ? 1.03
+                    : 1.0,
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: EdgeInsets.all(pad),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: active
+                      ? [_kGold, _kGoldDeep]
+                      : [const Color(0xFFE8C547), _kGoldDeep],
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.20),
-                    borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: _kGold.withValues(alpha: active ? 0.40 : 0.20),
+                    blurRadius: active ? 16 : 8,
+                    offset: const Offset(0, 4),
                   ),
-                  child: Icon(widget.icon, color: Colors.white, size: iconSize),
-                ),
-                const SizedBox(height: 9.6),
-                Text(widget.title,
-                    style: TextStyle(
-                      fontSize: titleSize,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    )),
-                const SizedBox(height: 2),
-                Text(widget.subtitle,
-                    style: TextStyle(
-                      fontSize: subSize,
-                      color: Colors.white.withValues(alpha: 0.80),
-                    )),
-              ],
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(iconPad),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.20),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: widget.iconWidget ??
+                        Icon(widget.icon, color: Colors.white, size: iconSize),
+                  ),
+                  SizedBox(height: isCompact ? 6 : 9.6),
+                  Text(widget.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: titleSize,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      )),
+                  const SizedBox(height: 2),
+                  Text(widget.subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: subSize,
+                        color: Colors.white.withValues(alpha: 0.80),
+                      )),
+                ],
+              ),
             ),
           ),
         ),
+      );
+    });
+  }
+}
+
+/// A custom composite AI icon — chat bubble with sparkle accents
+class _AiSparkleIcon extends StatelessWidget {
+  const _AiSparkleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 30,
+      height: 30,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Main bot face
+          const Center(
+            child: Icon(Icons.smart_toy_outlined, color: Colors.white, size: 24),
+          ),
+          // Top-right sparkle
+          Positioned(
+            top: -4,
+            right: -4,
+            child: Icon(Icons.auto_awesome,
+                color: Colors.yellow.shade200, size: 12),
+          ),
+          // Bottom-left mini sparkle
+          Positioned(
+            bottom: -2,
+            left: -3,
+            child: Icon(Icons.auto_awesome,
+                color: Colors.yellow.shade100, size: 8),
+          ),
+        ],
       ),
     );
   }

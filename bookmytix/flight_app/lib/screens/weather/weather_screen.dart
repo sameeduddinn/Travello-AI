@@ -2,6 +2,7 @@ import 'package:flight_app/models/weather.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class WeatherScreen extends StatefulWidget {
   const WeatherScreen({super.key});
@@ -154,10 +155,10 @@ class _WeatherScreenState extends State<WeatherScreen>
                                             CrossAxisAlignment.start,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Text(
+                                          Text(
                                             'Weather Updates',
                                             style: TextStyle(
-                                              fontSize: 28,
+                                              fontSize: R.sp(context, 28),
                                               fontWeight: FontWeight.w800,
                                               color: Colors.white,
                                               letterSpacing: -0.8,

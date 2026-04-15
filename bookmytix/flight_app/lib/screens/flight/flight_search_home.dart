@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/widgets/range_date_picker.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class FlightSearchHome extends StatefulWidget {
   const FlightSearchHome({super.key});
@@ -482,10 +483,10 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                             CrossAxisAlignment.start,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Text(
+                                          Text(
                                             'Flight Booking',
                                             style: TextStyle(
-                                              fontSize: 28,
+                                              fontSize: R.sp(context, 28),
                                               fontWeight: FontWeight.w800,
                                               color: Colors.white,
                                               letterSpacing: -0.8,
@@ -498,7 +499,7 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                           Text(
                                             'Discover flights effortlessly',
                                             style: TextStyle(
-                                              fontSize: 13,
+                                              fontSize: R.sp(context, 13),
                                               fontWeight: FontWeight.w500,
                                               color: Colors.white
                                                   .withValues(alpha: 0.9),
@@ -1103,7 +1104,7 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
 
       // Sticky bottom button
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(R.r(context, 16)),
         decoration: BoxDecoration(
           color: TravelloTheme.paperLight,
           boxShadow: [
@@ -1126,14 +1127,14 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
               ),
               elevation: 0,
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(CupertinoIcons.search),
-                SizedBox(width: 8),
+                const Icon(CupertinoIcons.search),
+                const SizedBox(width: 8),
                 Text(
                   'Search Flights',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: R.sp(context, 18), fontWeight: FontWeight.bold),
                 ),
               ],
             ),

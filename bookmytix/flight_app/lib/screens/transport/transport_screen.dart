@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/models/transport.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class TransportScreen extends StatefulWidget {
   const TransportScreen({super.key});
@@ -56,24 +57,24 @@ class _TransportScreenState extends State<TransportScreen> {
                 ],
               ),
             ),
-            child: const Column(
+            child: Column(
               children: [
-                Icon(
+                const Icon(
                   Icons.directions_car,
                   size: 48,
                   color: Colors.white,
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   'Book Your Ride',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: R.sp(context, 24),
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
+                const SizedBox(height: 4),
+                const Text(
                   'Safe and reliable transport across Pakistan',
                   style: TextStyle(
                     fontSize: 14,

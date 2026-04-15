@@ -10,6 +10,7 @@ import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/utils/format_utils.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/widgets/app_input/ds_input_field.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class TrainPassengerForm extends StatefulWidget {
   const TrainPassengerForm({super.key});
@@ -166,7 +167,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
           'Saved',
           'Passenger details saved!',
           snackPosition: SnackPosition.TOP,
-          backgroundColor: const Color(0xFFD4AF37),
+          backgroundColor: Colors.green,
           colorText: Colors.white,
           duration: const Duration(seconds: 2),
         );
@@ -1312,8 +1313,8 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                     Expanded(
                       child: Text(
                         t.departureTime,
-                        style: const TextStyle(
-                            fontSize: 32,
+                        style: TextStyle(
+                            fontSize: R.sp(context, 32),
                             fontWeight: FontWeight.w800,
                             color: Colors.black87,
                             letterSpacing: -1.5,
@@ -1323,8 +1324,8 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                     Expanded(
                       child: Text(
                         t.arrivalTime,
-                        style: const TextStyle(
-                            fontSize: 32,
+                        style: TextStyle(
+                            fontSize: R.sp(context, 32),
                             fontWeight: FontWeight.w800,
                             color: Colors.black87,
                             letterSpacing: -1.5,
@@ -1784,7 +1785,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                   label: isContact ? 'CONFIRM' : 'NEXT',
                   trailingIcon: Icons.arrow_forward_rounded,
                   onTap: isContact ? _submit : _goNext,
-                  height: 52,
+                  height: R.rh(context, 52),
                   color: const Color(0xFFD4AF37),
                   textColor: Colors.white,
                 ),

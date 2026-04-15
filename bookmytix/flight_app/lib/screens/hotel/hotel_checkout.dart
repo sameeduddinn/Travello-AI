@@ -5,6 +5,7 @@ import 'package:flight_app/models/hotel.dart';
 import 'package:flight_app/models/room_type.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 /// Hotel Checkout — Step 4 in hotel booking flow.
 /// Review page shown between Guest Details and Payment.
@@ -126,7 +127,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
           // ── Progress Bar ────────────────────────────────────────────────
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
             child: const Row(
               children: [
                 _HStep(num: 1, label: 'Hotel', done: true),
@@ -206,7 +207,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
                       'Confirm Payment • PKR ${fmt.format(_totalWithTax.round())}',
                   onTap: _proceedToPayment,
                   disabled: !_agreeToTerms,
-                  height: 56,
+                  height: R.rh(context, 56),
                 ),
               ),
             ),
@@ -535,28 +536,63 @@ class _HotelCheckoutState extends State<HotelCheckout> {
           decoration: BoxDecoration(
               color: primary.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(12)),
-          child:
-              Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-            _statItem(Icons.nights_stay, '$_nights Nights', primary),
-            _vDiv(primary),
-            _statItem(Icons.meeting_room, '$_rooms Rooms', primary),
-            _vDiv(primary),
-            _statItem(Icons.people, '$_guests Guests', primary),
-          ]),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompact = constraints.maxWidth < 340;
+              if (isCompact) {
+                return Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12,
+                  runSpacing: 10,
+                  children: [
+                    _statItem(Icons.nights_stay, '$_nights Nights', primary,
+                        compact: true),
+                    _statItem(Icons.meeting_room, '$_rooms Rooms', primary,
+                        compact: true),
+                    _statItem(Icons.people, '$_guests Guests', primary,
+                        compact: true),
+                  ],
+                );
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _statItem(Icons.nights_stay, '$_nights Nights', primary),
+                  _vDiv(primary),
+                  _statItem(Icons.meeting_room, '$_rooms Rooms', primary),
+                  _vDiv(primary),
+                  _statItem(Icons.people, '$_guests Guests', primary),
+                ],
+              );
+            },
+          ),
         ),
       ]),
     );
   }
 
-  Widget _statItem(IconData icon, String label, Color primary) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: primary),
-          const SizedBox(height: 4),
-          Text(label,
-              style:
-                  const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-        ],
+  Widget _statItem(IconData icon, String label, Color primary,
+          {bool compact = false}) =>
+      SizedBox(
+        width: compact ? 108 : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: primary),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: compact ? 10 : 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       );
 
   Widget _vDiv(Color primary) =>
@@ -1024,8 +1060,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
               child: Row(children: [
                 Expanded(
                   child: Text(title,
-                      style: const TextStyle(
-                          fontSize: 22,
+                      style: TextStyle(
+                          fontSize: R.sp(context, 22),
                           fontWeight: FontWeight.w800,
                           color: Colors.black87,
                           letterSpacing: -0.5)),
@@ -1128,31 +1164,40 @@ class _HStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const gold = TravelloTheme.primaryMain;
-    return Column(children: [
-      Container(
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          color: done || active ? gold : const Color(0xFFE0E0E0),
-          shape: BoxShape.circle,
+    return SizedBox(
+      width: 36,
+      child: Column(children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: done || active ? gold : const Color(0xFFE0E0E0),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: done
+                ? const Icon(Icons.check, color: Colors.white, size: 12)
+                : Text('$num',
+                    style: TextStyle(
+                        color: active ? Colors.white : Colors.grey.shade500,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11)),
+          ),
         ),
-        child: Center(
-          child: done
-              ? const Icon(Icons.check, color: Colors.white, size: 14)
-              : Text('$num',
-                  style: TextStyle(
-                      color: active ? Colors.white : Colors.grey.shade500,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12)),
-        ),
-      ),
-      const SizedBox(height: 3),
-      Text(label,
+        const SizedBox(height: 2),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
-              fontSize: 9,
-              color: done || active ? gold : Colors.grey.shade500,
-              fontWeight: active ? FontWeight.bold : FontWeight.normal)),
-    ]);
+            fontSize: 8,
+            color: done || active ? gold : Colors.grey.shade500,
+            fontWeight: active ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ]),
+    );
   }
 }
 

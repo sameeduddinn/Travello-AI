@@ -8,6 +8,7 @@ import 'package:flight_app/widgets/flight/info_header.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class RailwayBookingPassengers extends StatelessWidget {
   const RailwayBookingPassengers({super.key});
@@ -58,7 +59,7 @@ class RailwayBookingPassengers extends StatelessWidget {
               top: 8,
               bottom: 32),
           child: Container(
-            height: 50,
+            height: R.rh(context, 50),
             width: double.infinity,
             constraints: BoxConstraints(maxWidth: ThemeSize.sm),
             child: FilledButton(

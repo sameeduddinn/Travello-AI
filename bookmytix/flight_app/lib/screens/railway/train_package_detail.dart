@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 const _gold = Color(0xFFD4AF37);
 const _goldDark = Color(0xFFB8935C);
@@ -293,10 +294,10 @@ class _TrainPackageDetailState extends State<TrainPackageDetail> {
       Icon(icon, size: 18, color: _gold),
       SizedBox(height: spacingUnit(0.3)),
       Text(value,
-          style: const TextStyle(
-              fontSize: 20,
+          style: TextStyle(
+              fontSize: R.sp(context, 20),
               fontWeight: FontWeight.w800,
-              color: Color(0xFF111827))),
+              color: const Color(0xFF111827))),
       Text(label,
           style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
     ]);

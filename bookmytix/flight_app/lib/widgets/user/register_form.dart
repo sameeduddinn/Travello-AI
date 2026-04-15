@@ -10,6 +10,7 @@ import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
 import 'package:flight_app/widgets/onboarding/city_selection_sheet.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
@@ -215,18 +216,19 @@ class _RegisterFormState extends State<RegisterForm> {
               children: [
                 // Beautiful illustration container
                 SizedBox(
-                  height: MediaQuery.of(context).size.height < 640 ? 130 : 180,
+                  height: R.rh(context,
+                      MediaQuery.of(context).size.height < 640 ? 130 : 180),
                   width: double.infinity,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
                       // Large sun/destination circle
                       Positioned(
-                        top: 15,
-                        left: 50,
+                        top: R.r(context, 15),
+                        left: R.r(context, 50),
                         child: Container(
-                          width: 110,
-                          height: 110,
+                          width: R.r(context, 110),
+                          height: R.r(context, 110),
                           decoration: BoxDecoration(
                             gradient: RadialGradient(
                               colors: [
@@ -240,10 +242,10 @@ class _RegisterFormState extends State<RegisterForm> {
                       ),
                       // Camera for memories
                       Positioned(
-                        top: 40,
-                        left: 70,
+                        top: R.r(context, 40),
+                        left: R.r(context, 70),
                         child: Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(R.r(context, 12)),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -260,19 +262,19 @@ class _RegisterFormState extends State<RegisterForm> {
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.camera_alt,
                             color: Colors.white,
-                            size: 26,
+                            size: R.r(context, 26),
                           ),
                         ),
                       ),
                       // Main ticket/boarding pass illustration
                       Positioned(
-                        bottom: 25,
+                        bottom: R.r(context, 25),
                         child: Container(
-                          width: 110,
-                          height: 130,
+                          width: R.r(context, 110),
+                          height: R.r(context, 130),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
@@ -295,18 +297,18 @@ class _RegisterFormState extends State<RegisterForm> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.airplane_ticket,
                                 color: Colors.white,
-                                size: 45,
+                                size: R.r(context, 45),
                               ),
                               const SizedBox(height: 12),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Container(
-                                    width: 8,
-                                    height: 8,
+                                    width: R.r(context, 8),
+                                    height: R.r(context, 8),
                                     decoration: BoxDecoration(
                                       color:
                                           Colors.white.withValues(alpha: 0.7),
@@ -315,8 +317,8 @@ class _RegisterFormState extends State<RegisterForm> {
                                   ),
                                   const SizedBox(width: 4),
                                   Container(
-                                    width: 8,
-                                    height: 8,
+                                    width: R.r(context, 8),
+                                    height: R.r(context, 8),
                                     decoration: BoxDecoration(
                                       color:
                                           Colors.white.withValues(alpha: 0.7),
@@ -325,8 +327,8 @@ class _RegisterFormState extends State<RegisterForm> {
                                   ),
                                   const SizedBox(width: 4),
                                   Container(
-                                    width: 8,
-                                    height: 8,
+                                    width: R.r(context, 8),
+                                    height: R.r(context, 8),
                                     decoration: BoxDecoration(
                                       color:
                                           Colors.white.withValues(alpha: 0.7),
@@ -341,10 +343,10 @@ class _RegisterFormState extends State<RegisterForm> {
                       ),
                       // Map/navigation illustration
                       Positioned(
-                        top: 25,
-                        right: 65,
+                        top: R.r(context, 25),
+                        right: R.r(context, 65),
                         child: Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: EdgeInsets.all(R.r(context, 10)),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -361,19 +363,19 @@ class _RegisterFormState extends State<RegisterForm> {
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.map,
                             color: Colors.white,
-                            size: 24,
+                            size: R.r(context, 24),
                           ),
                         ),
                       ),
                       // Palm tree / vacation
                       Positioned(
-                        bottom: 40,
-                        right: 75,
+                        bottom: R.r(context, 40),
+                        right: R.r(context, 75),
                         child: Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: EdgeInsets.all(R.r(context, 8)),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -390,19 +392,19 @@ class _RegisterFormState extends State<RegisterForm> {
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.park,
                             color: Colors.white,
-                            size: 18,
+                            size: R.r(context, 18),
                           ),
                         ),
                       ),
                       // Backpack illustration
                       Positioned(
-                        bottom: 35,
-                        left: 60,
+                        bottom: R.r(context, 35),
+                        left: R.r(context, 60),
                         child: Container(
-                          padding: const EdgeInsets.all(9),
+                          padding: EdgeInsets.all(R.r(context, 9)),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -419,83 +421,83 @@ class _RegisterFormState extends State<RegisterForm> {
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.backpack,
                             color: Colors.white,
-                            size: 22,
+                            size: R.r(context, 22),
                           ),
                         ),
                       ),
                       // Star/favorite destination
                       Positioned(
-                        top: 60,
-                        right: 45,
+                        top: R.r(context, 60),
+                        right: R.r(context, 45),
                         child: Icon(
                           Icons.star,
-                          size: 24,
+                          size: R.r(context, 24),
                           color: Colors.amber.shade400,
                         ),
                       ),
                       // Sparkle effects
                       Positioned(
-                        top: 45,
-                        left: 45,
+                        top: R.r(context, 45),
+                        left: R.r(context, 45),
                         child: Icon(
                           Icons.auto_awesome,
-                          size: 14,
+                          size: R.r(context, 14),
                           color: Colors.orange.shade300,
                         ),
                       ),
                       Positioned(
-                        bottom: 70,
-                        right: 55,
+                        bottom: R.r(context, 70),
+                        right: R.r(context, 55),
                         child: Icon(
                           Icons.auto_awesome,
-                          size: 12,
+                          size: R.r(context, 12),
                           color: Colors.pink.shade300,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: R.rh(context, 16)),
                 // Brand name
                 Text(
                   branding.name,
                   style: TravelloTheme.headline.copyWith(
                     color: TravelloTheme.primaryMain,
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: R.sp(context, 14),
                     letterSpacing: 2,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: R.rh(context, 8)),
                 // Main heading
                 Text(
                   'Sign Up',
                   style: TravelloTheme.title.copyWith(
-                    fontSize: 34,
+                    fontSize: R.sp(context, 34),
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
                     height: 1.2,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: R.rh(context, 8)),
                 // Subtitle
                 Text(
                   'Join us and start your journey today',
                   style: TravelloTheme.headline.copyWith(
                     color: colorScheme.onSurfaceVariant,
-                    fontSize: 15,
+                    fontSize: R.sp(context, 15),
                   ),
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: R.rh(context, 24)),
 
           /// INPUT FIELD
           FormBuilderField(
@@ -617,7 +619,7 @@ class _RegisterFormState extends State<RegisterForm> {
                       style: TextStyle(
                         color: _strengthColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                        fontSize: R.sp(context, 12),
                       ),
                     ),
                   ],
@@ -626,7 +628,7 @@ class _RegisterFormState extends State<RegisterForm> {
                 Text(
                   'Use 8+ characters with mix of letters, numbers & symbols',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: R.sp(context, 11),
                     color: Colors.grey.shade600,
                     fontStyle: FontStyle.italic,
                   ),
@@ -685,7 +687,7 @@ class _RegisterFormState extends State<RegisterForm> {
           const VSpace(),
           SizedBox(
             width: double.infinity,
-            height: 54,
+            height: R.rh(context, 54),
             child: FilledButton(
                 onPressed: _isLoading
                     ? null
@@ -824,7 +826,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
           /// DIVIDER WITH "OR" - PROFESSIONAL STYLE
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: EdgeInsets.symmetric(vertical: R.rh(context, 16)),
             child: Row(
               children: [
                 Expanded(
@@ -841,10 +843,10 @@ class _RegisterFormState extends State<RegisterForm> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: EdgeInsets.symmetric(horizontal: R.r(context, 24)),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: R.r(context, 16),
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
@@ -862,7 +864,7 @@ class _RegisterFormState extends State<RegisterForm> {
                         color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 1.2,
-                        fontSize: 11,
+                        fontSize: R.sp(context, 11),
                       ),
                     ),
                   ),
@@ -887,7 +889,7 @@ class _RegisterFormState extends State<RegisterForm> {
           /// GOOGLE SIGNUP - PREMIUM STYLE
           Container(
             width: double.infinity,
-            height: 56,
+            height: R.rh(context, 56),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               gradient: LinearGradient(
@@ -916,13 +918,13 @@ class _RegisterFormState extends State<RegisterForm> {
                 onTap: _handleGoogleSignUp,
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: R.r(context, 16)),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        width: 32,
-                        height: 32,
+                        width: R.r(context, 32),
+                        height: R.r(context, 32),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
@@ -938,7 +940,7 @@ class _RegisterFormState extends State<RegisterForm> {
                           child: googleMark,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: R.r(context, 12)),
                       Text(
                         'Sign up with Google',
                         style: TravelloTheme.subtitle.copyWith(
@@ -952,12 +954,12 @@ class _RegisterFormState extends State<RegisterForm> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: R.rh(context, 12)),
 
           /// APPLE SIGNUP - PREMIUM STYLE
           Container(
             width: double.infinity,
-            height: 56,
+            height: R.rh(context, 56),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -997,13 +999,13 @@ class _RegisterFormState extends State<RegisterForm> {
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: R.r(context, 16)),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        width: 32,
-                        height: 32,
+                        width: R.r(context, 32),
+                        height: R.r(context, 32),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
@@ -1019,7 +1021,7 @@ class _RegisterFormState extends State<RegisterForm> {
                         ),
                         child: Center(child: appleMark),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: R.r(context, 12)),
                       Text(
                         'Sign up with Apple',
                         style: TravelloTheme.subtitle.copyWith(
@@ -1044,11 +1046,13 @@ class _RegisterFormState extends State<RegisterForm> {
               child: Text.rich(
                 TextSpan(
                   text: 'Already have an account? ',
-                  style: TravelloTheme.caption,
+                  style: TravelloTheme.caption
+                      .copyWith(fontSize: R.sp(context, 15)),
                   children: [
                     TextSpan(
                       text: 'Login Here',
                       style: TravelloTheme.caption.copyWith(
+                        fontSize: R.sp(context, 15),
                         color: colorScheme.primary,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.underline,

@@ -483,34 +483,40 @@ class AuthService {
   }
 
   static Future<bool> updateUserProfile({
-    required String name,
-    required String phone,
-    required String email,
+    String? name,
+    String? phone,
+    String? email,
+    String? avatarUrl,
   }) async {
     try {
       _setAuthError(null);
       final currentUser = _supabase.auth.currentUser;
       if (currentUser == null) return false;
 
-      final trimmedName = name.trim();
-      final trimmedPhone = phone.trim();
-      final trimmedEmail = email.trim().toLowerCase();
+      final trimmedName = name?.trim();
+      final trimmedPhone = phone?.trim();
+      final trimmedEmail = email?.trim().toLowerCase();
 
-      if (trimmedEmail.isNotEmpty &&
+      if (trimmedEmail != null &&
+          trimmedEmail.isNotEmpty &&
           trimmedEmail != (currentUser.email ?? '')) {
         await _supabase.auth.updateUser(UserAttributes(email: trimmedEmail));
       }
 
-      await _supabase.auth.updateUser(
-        UserAttributes(
-          data: {
-            'full_name': trimmedName,
-            'phone': trimmedPhone,
-          },
-        ),
-      );
+      final metaData = <String, dynamic>{};
+      if (trimmedName != null) metaData['full_name'] = trimmedName;
+      if (trimmedPhone != null) metaData['phone'] = trimmedPhone;
+      if (avatarUrl != null) metaData['avatar_url'] = avatarUrl;
 
-      await _upsertOwnProfile(name: trimmedName, phone: trimmedPhone);
+      if (metaData.isNotEmpty) {
+        await _supabase.auth.updateUser(UserAttributes(data: metaData));
+      }
+
+      await _upsertOwnProfile(
+        name: trimmedName,
+        phone: trimmedPhone,
+        avatarUrl: avatarUrl,
+      );
       return true;
     } on AuthException catch (e) {
       _setAuthError(e.message);

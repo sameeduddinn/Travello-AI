@@ -6,6 +6,7 @@ import 'package:flight_app/models/room_type.dart';
 import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class HotelDetailScreen extends StatefulWidget {
   const HotelDetailScreen({super.key});
@@ -1172,7 +1173,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
           children: [
             // ── Image carousel (compact) ────────────────────────────────
             SizedBox(
-              height: 200,
+              height: R.rh(context, 200),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -1786,8 +1787,8 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
               children: [
                 Column(mainAxisSize: MainAxisSize.min, children: [
                   Text(hotel.rating.toString(),
-                      style: const TextStyle(
-                          fontSize: 32,
+                      style: TextStyle(
+                          fontSize: R.sp(context, 32),
                           fontWeight: FontWeight.bold,
                           color: TravelloTheme.primaryMain)),
                   Text('/ 5',

@@ -16,21 +16,6 @@ class BottomNavMenu extends StatelessWidget {
     final bool hasTooltipScaffold =
         context.findAncestorWidgetOfExactType<OverlayTooltipScaffold>() != null;
 
-    final Widget myBookingButton = Container(
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: TravelloTheme.paperLight,
-      ),
-      child: MenuItem(
-        title: 'My Booking',
-        icon: CupertinoIcons.tickets_fill,
-        isActive: currentRoute == AppLink.myTicket,
-        onTap: () {
-          Get.toNamed(AppLink.myTicket);
-        },
-      ),
-    );
-
     return BottomAppBar(
         elevation: 20,
         shadowColor: Colors.black,
@@ -38,6 +23,35 @@ class BottomNavMenu extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         padding: const EdgeInsets.all(0),
         child: LayoutBuilder(builder: (context, constraints) {
+          final itemWidth = (constraints.maxWidth / 5).clamp(44.0, 96.0);
+          final isCompact = itemWidth < 74;
+          final isVeryCompact = itemWidth < 62;
+
+          final bookingLabel = isVeryCompact
+              ? 'Book'
+              : isCompact
+                  ? 'Booking'
+                  : 'My Booking';
+          final aiLabel = itemWidth < 76 ? 'AI' : 'AI Assistant';
+
+          final Widget myBookingButton = Container(
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: TravelloTheme.paperLight,
+            ),
+            child: MenuItem(
+              title: bookingLabel,
+              icon: CupertinoIcons.tickets_fill,
+              compact: isCompact,
+              veryCompact: isVeryCompact,
+              itemWidth: itemWidth,
+              isActive: currentRoute == AppLink.myTicket,
+              onTap: () {
+                Get.toNamed(AppLink.myTicket);
+              },
+            ),
+          );
+
           return Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -45,6 +59,9 @@ class BottomNavMenu extends StatelessWidget {
                 MenuItem(
                     title: 'Home',
                     icon: Icons.home,
+                    compact: isCompact,
+                    veryCompact: isVeryCompact,
+                    itemWidth: itemWidth,
                     isActive: currentRoute == AppLink.home,
                     onTap: () {
                       Get.toNamed(AppLink.home);
@@ -52,13 +69,24 @@ class BottomNavMenu extends StatelessWidget {
                 MenuItem(
                     title: 'Explore',
                     icon: CupertinoIcons.location_fill,
+                    compact: isCompact,
+                    veryCompact: isVeryCompact,
+                    itemWidth: itemWidth,
                     isActive: currentRoute == AppLink.explore,
                     onTap: () {
                       Get.toNamed(AppLink.explore);
                     }),
                 MenuItem(
-                    title: 'AI Assistant',
-                    icon: Icons.psychology_outlined,
+                    title: aiLabel,
+                    icon: Icons.smart_toy_outlined,
+                    iconWidget: _buildAiNavIcon(
+                      isActive: currentRoute == AppLink.aiAssistant,
+                      size: isVeryCompact ? 19 : isCompact ? 21 : 24,
+                      context: context,
+                    ),
+                    compact: isCompact,
+                    veryCompact: isVeryCompact,
+                    itemWidth: itemWidth,
                     isActive: currentRoute == AppLink.aiAssistant,
                     onTap: () {
                       Get.toNamed(AppLink.aiAssistant);
@@ -83,6 +111,9 @@ class BottomNavMenu extends StatelessWidget {
                 MenuItem(
                     title: 'Profile',
                     icon: CupertinoIcons.person_fill,
+                    compact: isCompact,
+                    veryCompact: isVeryCompact,
+                    itemWidth: itemWidth,
                     isActive: currentRoute == AppLink.profile,
                     onTap: () => Get.toNamed(AppLink.profile)),
               ]);
@@ -90,17 +121,52 @@ class BottomNavMenu extends StatelessWidget {
   }
 }
 
+Widget _buildAiNavIcon({
+  required bool isActive,
+  required double size,
+  required BuildContext context,
+}) {
+  final color = isActive
+      ? TravelloTheme.primaryMain
+      : Theme.of(context).colorScheme.onSurface;
+  return SizedBox(
+    width: size + 8,
+    height: size,
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Center(child: Icon(Icons.smart_toy_outlined, size: size, color: color)),
+        Positioned(
+          top: -3,
+          right: -1,
+          child: Icon(Icons.auto_awesome,
+              size: size * 0.4,
+              color: isActive ? TravelloTheme.primaryMain : Colors.grey),
+        ),
+      ],
+    ),
+  );
+}
+
 class MenuItem extends StatelessWidget {
   const MenuItem({
     super.key,
     required this.icon,
+    this.iconWidget,
     required this.title,
+    this.compact = false,
+    this.veryCompact = false,
+    this.itemWidth = 64,
     this.isActive = false,
     required this.onTap,
   });
 
   final IconData icon;
+  final Widget? iconWidget;
   final String title;
+  final bool compact;
+  final bool veryCompact;
+  final double itemWidth;
   final bool isActive;
   final void Function() onTap;
 
@@ -111,20 +177,35 @@ class MenuItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(30),
         onTap: () => {onTap()},
         child: SizedBox(
-          width: (MediaQuery.of(context).size.width / 5).clamp(48.0, 80.0),
+          width: itemWidth,
           height: 50,
           child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Icon(icon,
-                    color: isActive
-                        ? TravelloTheme.primaryMain
-                        : Theme.of(context).colorScheme.onSurface),
+                iconWidget ??
+                    Icon(icon,
+                        size: veryCompact
+                            ? 19
+                            : compact
+                                ? 21
+                                : 24,
+                        color: isActive
+                            ? TravelloTheme.primaryMain
+                            : Theme.of(context).colorScheme.onSurface),
                 Text(title,
+                    textAlign: TextAlign.center,
+                    softWrap: false,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TravelloTheme.caption),
+                    style: TravelloTheme.caption.copyWith(
+                      fontSize: veryCompact
+                          ? 8.5
+                          : compact
+                              ? 10
+                              : 12,
+                      height: 1.1,
+                    )),
                 isActive
                     ? Container(
                         width: 6,

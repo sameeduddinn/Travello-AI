@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:flight_app/widgets/app_input/app_textfield.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class ResetForm extends StatefulWidget {
   const ResetForm({super.key});
@@ -311,7 +312,7 @@ class _ResetFormState extends State<ResetForm> {
           const VSpace(),
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: R.rh(context, 50),
             child: FilledButton(
               onPressed: _isLoading ? null : _handleEmailSubmit,
               style: ThemeButton.btnBig.merge(ThemeButton.primary),
@@ -349,8 +350,8 @@ class _ResetFormState extends State<ResetForm> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: List.generate(6, (index) {
             return SizedBox(
-              width: 50,
-              height: 60,
+              width: R.r(context, 50),
+              height: R.rh(context, 60),
               child: TextField(
                 controller: _codeControllers[index],
                 focusNode: _codeFocusNodes[index],
@@ -419,7 +420,7 @@ class _ResetFormState extends State<ResetForm> {
         const VSpace(),
         SizedBox(
           width: double.infinity,
-          height: 50,
+          height: R.rh(context, 50),
           child: OutlinedButton(
             onPressed: () {
               setState(() {
@@ -506,7 +507,7 @@ class _ResetFormState extends State<ResetForm> {
           const VSpace(),
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: R.rh(context, 50),
             child: FilledButton(
               onPressed: _isLoading ? null : _handlePasswordReset,
               style: ThemeButton.btnBig.merge(ThemeButton.primary),

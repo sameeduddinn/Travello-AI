@@ -10,6 +10,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  🎫 PROFESSIONAL BOOKING DETAIL PAGE
@@ -815,8 +816,8 @@ class _BookingDetailState extends State<BookingDetail> {
                 children: [
                   Text(
                     details['departure'] ?? 'N/A',
-                    style: const TextStyle(
-                      fontSize: 36,
+                    style: TextStyle(
+                      fontSize: R.sp(context, 36),
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
@@ -859,8 +860,8 @@ class _BookingDetailState extends State<BookingDetail> {
                     children: [
                       Text(
                         details['arrival'] ?? 'N/A',
-                        style: const TextStyle(
-                          fontSize: 36,
+                        style: TextStyle(
+                          fontSize: R.sp(context, 36),
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
                         ),
@@ -1111,8 +1112,8 @@ class _BookingDetailState extends State<BookingDetail> {
                 children: [
                   Text(
                     details['departure'] ?? 'N/A',
-                    style: const TextStyle(
-                      fontSize: 36,
+                    style: TextStyle(
+                      fontSize: R.sp(context, 36),
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
@@ -1151,8 +1152,8 @@ class _BookingDetailState extends State<BookingDetail> {
                   const SizedBox(height: 4),
                   Text(
                     details['arrival'] ?? 'N/A',
-                    style: const TextStyle(
-                      fontSize: 36,
+                    style: TextStyle(
+                      fontSize: R.sp(context, 36),
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
@@ -2780,7 +2781,7 @@ class _BookingDetailState extends State<BookingDetail> {
                         // Confirm button
                         SizedBox(
                           width: double.infinity,
-                          height: 50,
+                          height: R.rh(context, 50),
                           child: ElevatedButton(
                             onPressed: () async {
                               final messenger = ScaffoldMessenger.of(context);

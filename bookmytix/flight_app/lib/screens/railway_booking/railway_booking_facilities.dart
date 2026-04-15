@@ -1,10 +1,12 @@
 import 'package:flight_app/app/app_link.dart';
+import 'package:flight_app/models/train.dart' as legacy_train;
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/screens/railway/train_results_screen.dart';
 import 'package:flight_app/widgets/railway/train_seat_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Screen
@@ -44,6 +46,8 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
   bool _transferAdded = false;
   String _transferVehicleType = 'Sedan';
   final TextEditingController _transferPickupCtrl = TextEditingController();
+  final ScrollController _contentScrollController =
+      ScrollController(keepScrollOffset: false);
 
   // Arrival transfer (destination station — both one-way and round trip)
   bool _arrivalTransferAdded = false;
@@ -96,14 +100,32 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
 
     // Round trip detection
     _isRoundTrip = _rawArgs['isRoundTrip'] as bool? ?? false;
-    _outboundTrain = _rawArgs['outboundTrain'] as TrainResult?;
-    _returnTrain = _rawArgs['returnTrain'] as TrainResult?;
-    _selectedClass = _rawArgs['selectedClass'] as String? ?? 'Economy';
+    _outboundTrain = _toTrainResult(_rawArgs['outboundTrain']);
+    _returnTrain = _toTrainResult(_rawArgs['returnTrain']);
+    _selectedClass =
+        _normalizeSelectedClass(_rawArgs['selectedClass'] as String?);
     _outboundClass = _rawArgs['outboundClass'] as String?;
     _returnClass = _rawArgs['returnClass'] as String?;
 
-    // Use outbound train for round trip, or single train
-    _train = (_isRoundTrip ? _outboundTrain : _rawArgs['train']) as TrainResult;
+    // Use outbound train for round trip when available, otherwise resolve from train arg.
+    _train = _resolvePrimaryTrain();
+    if (!_train.classPrices.containsKey(_selectedClass)) {
+      _selectedClass = _train.availableClasses.isNotEmpty
+          ? _train.availableClasses.first
+          : _train.classPrices.keys.first;
+    }
+
+    _outboundClass = _normalizeSelectedClass(_outboundClass);
+    _returnClass = _normalizeSelectedClass(_returnClass);
+
+    if (_outboundClass != null &&
+        !_train.classPrices.containsKey(_outboundClass)) {
+      _outboundClass = _selectedClass;
+    }
+    if (_returnClass != null && !_train.classPrices.containsKey(_returnClass)) {
+      _returnClass = _selectedClass;
+    }
+
     final raw = (_rawArgs['passengers'] as List<dynamic>?) ?? [];
     _passengers = raw.map((p) => Map<String, dynamic>.from(p as Map)).toList();
     if (_passengers.isEmpty) {
@@ -136,6 +158,143 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
 
     // Restore seat total if present
     _seatTotal = (_rawArgs['seatTotal'] as double?) ?? 0.0;
+
+    _resetContentScroll();
+  }
+
+  void _resetContentScroll([int attempt = 0]) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_contentScrollController.hasClients) {
+        final min = _contentScrollController.position.minScrollExtent;
+        if (_contentScrollController.offset != min) {
+          _contentScrollController.jumpTo(min);
+        }
+      } else if (attempt < 5) {
+        _resetContentScroll(attempt + 1);
+      }
+    });
+  }
+
+  TrainResult _resolvePrimaryTrain() {
+    final dynamic primary = _isRoundTrip ? _outboundTrain : _rawArgs['train'];
+    return _toTrainResult(primary) ??
+        _toTrainResult(_rawArgs['train']) ??
+        _outboundTrain ??
+        _returnTrain ??
+        _fallbackTrainResult();
+  }
+
+  TrainResult? _toTrainResult(dynamic rawTrain) {
+    if (rawTrain is TrainResult) return rawTrain;
+
+    if (rawTrain is legacy_train.Train) {
+      return _legacyTrainToResult(rawTrain);
+    }
+
+    if (rawTrain is Map) {
+      final map = Map<String, dynamic>.from(rawTrain);
+
+      if (map.containsKey('trainName') && map.containsKey('classPrices')) {
+        final classPricesRaw =
+            Map<String, dynamic>.from(map['classPrices'] as Map? ?? {});
+        final classSeatsRaw =
+            Map<String, dynamic>.from(map['classSeats'] as Map? ?? {});
+        final classPrices = classPricesRaw
+            .map((k, v) => MapEntry(k, (v as num?)?.toDouble() ?? 0.0));
+        final classSeats =
+            classSeatsRaw.map((k, v) => MapEntry(k, (v as num?)?.toInt()));
+        final availableClasses = (map['availableClasses'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            classPrices.keys.toList();
+
+        if (classPrices.isEmpty) {
+          classPrices['Economy (Seat)'] = 0.0;
+        }
+        if (classSeats.isEmpty) {
+          classSeats['Economy (Seat)'] = 0;
+        }
+
+        return TrainResult(
+          id: map['id']?.toString() ?? 'TRN-MAP',
+          trainName: map['trainName']?.toString() ?? 'Pakistan Railways',
+          trainNumber: map['trainNumber']?.toString() ?? '--',
+          departureTime: map['departureTime']?.toString() ?? '--',
+          arrivalTime: map['arrivalTime']?.toString() ?? '--',
+          arrivesNextDay: map['arrivesNextDay'] == true,
+          duration: map['duration']?.toString() ?? '--',
+          classSeats: classSeats,
+          classPrices: classPrices,
+          availableClasses: availableClasses,
+          isRefundable: map['isRefundable'] != false,
+        );
+      }
+
+      if (map.containsKey('name') && map.containsKey('trainNumber')) {
+        return _legacyTrainToResult(legacy_train.Train.fromJson(map));
+      }
+    }
+
+    return null;
+  }
+
+  TrainResult _legacyTrainToResult(legacy_train.Train train) {
+    final mappedClass = _normalizeSelectedClass(train.trainClass);
+
+    return TrainResult(
+      id: train.id,
+      trainName: train.name,
+      trainNumber: train.trainNumber,
+      departureTime: train.departureTime,
+      arrivalTime: train.arrivalTime,
+      duration: train.duration,
+      classSeats: {
+        mappedClass: train.availableSeats,
+      },
+      classPrices: {
+        mappedClass: train.price,
+      },
+      availableClasses: [mappedClass],
+      isRefundable: true,
+    );
+  }
+
+  TrainResult _fallbackTrainResult() {
+    return TrainResult(
+      id: 'TRN-FALLBACK',
+      trainName: 'Pakistan Railways',
+      trainNumber: '--',
+      departureTime: '--',
+      arrivalTime: '--',
+      duration: '--',
+      classSeats: const {'Economy (Seat)': 0},
+      classPrices: const {'Economy (Seat)': 0},
+      availableClasses: const ['Economy (Seat)'],
+      isRefundable: true,
+    );
+  }
+
+  String _normalizeSelectedClass(String? rawClass) {
+    final value = (rawClass ?? '').trim();
+    if (value.isEmpty) return 'Economy (Seat)';
+
+    switch (value) {
+      case 'ECS':
+      case 'Economy':
+      case 'Economy (Seat)':
+        return 'Economy (Seat)';
+      case 'EC':
+      case 'AC Standard':
+      case 'AC Sleeper':
+      case 'AC Lower / Standard (Berth)':
+        return 'AC Lower / Standard (Berth)';
+      case 'ACLZ':
+      case 'AC Business':
+        return 'AC Business';
+      default:
+        return value;
+    }
   }
 
   @override
@@ -144,6 +303,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
     _arrivalTransferPickupCtrl.dispose();
     _returnTransferPickupCtrl.dispose();
     _finalArrivalTransferPickupCtrl.dispose();
+    _contentScrollController.dispose();
     super.dispose();
   }
 
@@ -385,6 +545,7 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
           Container(height: 1, color: const Color(0xFFE0E0E0)), // Light divider
           Expanded(
             child: ListView(
+              controller: _contentScrollController,
               padding: const EdgeInsets.all(16),
               children: [
                 // ── Departure Section ──
@@ -638,9 +799,13 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                   Icon(Icons.info_outline_rounded,
                       size: 14, color: Color(0xFF999999)),
                   SizedBox(width: 6),
-                  Text(
-                    'AC vehicle — driver assigned 2 hrs before departure',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF888888)),
+                  Expanded(
+                    child: Text(
+                      'AC vehicle — driver assigned 2 hrs before departure',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: Color(0xFF888888)),
+                    ),
                   ),
                 ],
               ),
@@ -1006,6 +1171,9 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
         : _selectedClass.contains('AC')
             ? Colors.orange
             : Colors.blue;
+    final classLabel = MediaQuery.of(context).size.width < 380
+        ? _compactClassLabel(_selectedClass)
+        : _selectedClass;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1048,19 +1216,32 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: classColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: classColor.withValues(alpha: 0.3)),
-            ),
-            child: Text(
-              _selectedClass,
-              style: TextStyle(
-                color: classColor,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: classColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border:
+                        Border.all(color: classColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    classLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: classColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -1078,6 +1259,9 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
         : returnClass.contains('AC')
             ? Colors.orange
             : Colors.blue;
+    final returnClassLabel = MediaQuery.of(context).size.width < 380
+        ? _compactClassLabel(returnClass)
+        : returnClass;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1121,25 +1305,48 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: classColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: classColor.withValues(alpha: 0.3)),
-            ),
-            child: Text(
-              returnClass,
-              style: TextStyle(
-                color: classColor,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: classColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border:
+                        Border.all(color: classColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    returnClassLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: classColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _compactClassLabel(String className) {
+    const classMap = {
+      'Economy (Seat)': 'ECS',
+      'Economy (Berth)': 'EC',
+      'AC Lower / Standard (Berth)': 'ACSB',
+      'AC Business': 'ACLZ',
+    };
+    return classMap[className] ?? className;
   }
 
   // ─────────────────────────────────────────────
@@ -1296,10 +1503,12 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                         const SizedBox(height: 2),
                         Text(
                           _formatPKR(grandTotal),
-                          style: const TextStyle(
-                            fontSize: 22,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: R.sp(context, 22),
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFFD4AF37),
+                            color: const Color(0xFFD4AF37),
                             letterSpacing: -0.5,
                           ),
                         ),
@@ -1315,13 +1524,14 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  DSButton(
-                    label: 'CONTINUE',
-                    trailingIcon: Icons.arrow_forward_rounded,
-                    onTap: _onContinue,
-                    disabled: !_areAllJourneysComplete(),
-                    width: 158,
-                    height: 56,
+                  Expanded(
+                    child: DSButton(
+                      label: 'CONTINUE',
+                      trailingIcon: Icons.arrow_forward_rounded,
+                      onTap: _onContinue,
+                      disabled: !_areAllJourneysComplete(),
+                      height: R.rh(context, 56),
+                    ),
                   ),
                 ],
               ),
@@ -1357,22 +1567,34 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
             children: [
               Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style:
                     const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),
               Text(
                 sublabel,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
               ),
             ],
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: valueColor,
+        const SizedBox(width: 8),
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: valueColor,
+              ),
+            ),
           ),
         ),
       ],

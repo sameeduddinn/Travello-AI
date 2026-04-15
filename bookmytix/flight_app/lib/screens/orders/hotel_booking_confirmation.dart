@@ -12,6 +12,7 @@ import 'package:flight_app/utils/column_row_utils.dart';
 import 'package:flight_app/services/notification_service.dart';
 import 'package:flight_app/utils/booking_service.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class HotelBookingConfirmation extends StatefulWidget {
   const HotelBookingConfirmation({super.key});
@@ -344,10 +345,10 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Payment Success',
+              Text('Payment Success',
                   style: TextStyle(
                       color: Colors.white,
-                      fontSize: 24,
+                      fontSize: R.sp(context, 24),
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5)),
               const SizedBox(height: 8),
@@ -365,9 +366,9 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                   ],
                 ),
                 child: Text(_fmt(total),
-                    style: const TextStyle(
-                        color: Color(0xFF10B981),
-                        fontSize: 32,
+                    style: TextStyle(
+                        color: const Color(0xFF10B981),
+                        fontSize: R.sp(context, 32),
                         fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 8),
@@ -985,6 +986,8 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Text(value,
                 textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -992,6 +995,8 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
             const SizedBox(height: 2),
             Text(label,
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                     fontSize: 9, color: Colors.white70, letterSpacing: 0.4)),
           ]),
@@ -1035,11 +1040,11 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                         decoration: BoxDecoration(
                             color: gold,
                             borderRadius: BorderRadius.circular(8)),
-                        child: const Center(
+                        child: Center(
                             child: Text('H',
                                 style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 22,
+                                    fontSize: R.sp(context, 22),
                                     fontWeight: FontWeight.bold))),
                       ),
                       const SizedBox(width: 10),
@@ -1357,19 +1362,47 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
                             decoration: BoxDecoration(
                                 color: gold,
                                 borderRadius: BorderRadius.circular(6)),
-                            child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceAround,
-                                children: [
-                                  statCol('NIGHTS', '$nights'),
-                                  goldDiv(),
-                                  statCol('ROOM TYPE', roomTypeName,
-                                      golden: true),
-                                  goldDiv(),
-                                  statCol('ROOMS', '$rooms'),
-                                  goldDiv(),
-                                  statCol('GUESTS', '$guests'),
-                                ]),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                if (constraints.maxWidth < 420) {
+                                  return Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          statCol('NIGHTS', '$nights'),
+                                          const SizedBox(width: 12),
+                                          statCol('ROOM TYPE', roomTypeName,
+                                              golden: true),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        children: [
+                                          statCol('ROOMS', '$rooms'),
+                                          const SizedBox(width: 12),
+                                          statCol('GUESTS', '$guests'),
+                                        ],
+                                      ),
+                                    ],
+                                  );
+                                }
+
+                                return Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    statCol('NIGHTS', '$nights'),
+                                    goldDiv(),
+                                    statCol('ROOM TYPE', roomTypeName,
+                                        golden: true),
+                                    goldDiv(),
+                                    statCol('ROOMS', '$rooms'),
+                                    goldDiv(),
+                                    statCol('GUESTS', '$guests'),
+                                  ],
+                                );
+                              },
+                            ),
                           ),
                           const SizedBox(height: 12),
 
@@ -2847,12 +2880,16 @@ class _HotelExtraCardTileState extends State<_HotelExtraCardTile> {
                     children: [
                       Row(
                         children: [
-                          Text(ex.title,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF0F172A),
-                              )),
+                          Expanded(
+                            child: Text(ex.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0F172A),
+                                )),
+                          ),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -2883,23 +2920,28 @@ class _HotelExtraCardTileState extends State<_HotelExtraCardTile> {
                     ],
                   ),
                 ),
-                AnimatedSlide(
-                  offset: _hovered ? const Offset(0.15, 0) : Offset.zero,
-                  duration: const Duration(milliseconds: 160),
-                  curve: Curves.easeOut,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(ex.action,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: ex.iconColor,
-                            fontWeight: FontWeight.w600,
-                          )),
-                      const SizedBox(height: 2),
-                      Icon(Icons.arrow_forward_rounded,
-                          size: 14, color: ex.iconColor),
-                    ],
+                const SizedBox(width: 8),
+                Flexible(
+                  child: AnimatedSlide(
+                    offset: _hovered ? const Offset(0.15, 0) : Offset.zero,
+                    duration: const Duration(milliseconds: 160),
+                    curve: Curves.easeOut,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(ex.action,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: ex.iconColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1),
+                        const SizedBox(height: 2),
+                        Icon(Icons.arrow_forward_rounded,
+                            size: 14, color: ex.iconColor),
+                      ],
+                    ),
                   ),
                 ),
               ],

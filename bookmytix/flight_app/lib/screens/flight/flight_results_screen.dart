@@ -1,4 +1,5 @@
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -543,7 +544,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                       // ── Apply Button ────────────────────────────────────────
                       SizedBox(
                         width: double.infinity,
-                        height: 52,
+                        height: R.rh(context, 52),
                         child: ElevatedButton(
                           onPressed: () {
                             // Commit temp values to parent state & run filter
@@ -563,10 +564,10 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Apply Filters',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: R.sp(context, 16),
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.4,
                             ),
@@ -602,7 +603,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                       ? '${fromAirport?.code ?? 'DEP'} → ${toAirport?.code ?? 'ARR'}'
                       : '${toAirport?.code ?? 'ARR'} → ${fromAirport?.code ?? 'DEP'}'
                   : '${fromAirport?.code ?? 'DEP'} → ${toAirport?.code ?? 'ARR'}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: R.sp(context, 18), fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis,
             ),
             Text(
@@ -1208,10 +1209,10 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Modify Search',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: R.sp(context, 20),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1491,7 +1492,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                       // Update Button
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
+                        height: R.rh(context, 50),
                         child: ElevatedButton(
                           onPressed: () {
                             // Validate
@@ -1572,15 +1573,15 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.search, size: 20),
-                              SizedBox(width: 8),
+                              Icon(Icons.search, size: R.r(context, 20)),
+                              const SizedBox(width: 8),
                               Text(
                                 'Update Search',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: R.sp(context, 16),
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
                                 ),
@@ -1928,20 +1929,20 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               child: Container(
-                constraints: const BoxConstraints(maxWidth: 400),
-                padding: const EdgeInsets.all(24),
+                constraints: BoxConstraints(maxWidth: R.r(context, 400)),
+                padding: EdgeInsets.all(R.r(context, 24)),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // Header
-                    const Text(
+                    Text(
                       'Passengers',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: R.sp(context, 22),
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
+                        color: const Color(0xFF1A1A1A),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -2001,7 +2002,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                     // Done button
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: R.rh(context, 50),
                       child: ElevatedButton(
                         onPressed: () {
                           int total = adults + children + infants;
@@ -2020,10 +2021,10 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
+                        child: Text(
                           'Done',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: R.sp(context, 16),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -2054,8 +2055,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 16,
+              style: TextStyle(
+                fontSize: R.sp(context, 16),
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
@@ -2063,9 +2064,9 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
             const SizedBox(height: 2.0),
             Text(
               subtitle,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF666666),
+              style: TextStyle(
+                fontSize: R.sp(context, 13),
+                color: const Color(0xFF666666),
               ),
             ),
           ],
@@ -2077,8 +2078,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
               onTap: onDecrement,
               borderRadius: BorderRadius.circular(50),
               child: Container(
-                width: 36,
-                height: 36,
+                width: R.r(context, 36),
+                height: R.r(context, 36),
                 decoration: BoxDecoration(
                   color: onDecrement != null
                       ? const Color(0xFFD4AF37)
@@ -2087,7 +2088,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                 ),
                 child: Icon(
                   Icons.remove,
-                  size: 20,
+                  size: R.r(context, 20),
                   color:
                       onDecrement != null ? Colors.black : Colors.grey.shade500,
                 ),
@@ -2096,14 +2097,14 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
             const SizedBox(width: 16),
             // Count
             Container(
-              width: 40,
+              width: R.r(context, 40),
               alignment: Alignment.center,
               child: Text(
                 '$count',
-                style: const TextStyle(
-                  fontSize: 20,
+                style: TextStyle(
+                  fontSize: R.sp(context, 20),
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
+                  color: const Color(0xFF1A1A1A),
                 ),
               ),
             ),
@@ -2113,8 +2114,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
               onTap: onIncrement,
               borderRadius: BorderRadius.circular(50),
               child: Container(
-                width: 36,
-                height: 36,
+                width: R.r(context, 36),
+                height: R.r(context, 36),
                 decoration: BoxDecoration(
                   color: onIncrement != null
                       ? const Color(0xFFD4AF37)
@@ -2123,7 +2124,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                 ),
                 child: Icon(
                   Icons.add,
-                  size: 20,
+                  size: R.r(context, 20),
                   color:
                       onIncrement != null ? Colors.black : Colors.grey.shade500,
                 ),
@@ -2151,20 +2152,20 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               child: Container(
-                constraints: const BoxConstraints(maxWidth: 450),
-                padding: const EdgeInsets.all(24),
+                constraints: BoxConstraints(maxWidth: R.r(context, 450)),
+                padding: EdgeInsets.all(R.r(context, 24)),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // Header
-                    const Text(
+                    Text(
                       'Cabin Class',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: R.sp(context, 22),
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
+                        color: const Color(0xFF1A1A1A),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -2220,7 +2221,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                     // Done button
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: R.rh(context, 50),
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(context, selectedClass);
@@ -2233,10 +2234,10 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
+                        child: Text(
                           'Done',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: R.sp(context, 16),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -2279,22 +2280,22 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           children: [
             Icon(
               icon,
-              size: 28,
+              size: R.r(context, 28),
               color: iconColor,
             ),
             const SizedBox(width: 16),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 16,
+              style: TextStyle(
+                fontSize: R.sp(context, 16),
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),
             ),
             const Spacer(),
             Container(
-              width: 24,
-              height: 24,
+              width: R.r(context, 24),
+              height: R.r(context, 24),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -2587,8 +2588,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         children: [
                           // Airline logo
                           Container(
-                            width: 50,
-                            height: 50,
+                            width: R.r(context, 50),
+                            height: R.r(context, 50),
                             decoration: BoxDecoration(
                               color: TravelloTheme.primaryMainContainer,
                               borderRadius: BorderRadius.circular(12),

@@ -20,6 +20,7 @@ import 'package:flight_app/widgets/flight/flight_summary_wide.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class FlightDetailPackage extends StatefulWidget {
   const FlightDetailPackage({super.key});
@@ -385,9 +386,9 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
       bottomNavigationBar: BottomAppBar(
         elevation: 20,
         shadowColor: Colors.black,
-        height: 80,
+        height: R.rh(context, 80),
         color: TravelloTheme.paperLight,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: R.r(context, 16), vertical: 8),
         child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -413,10 +414,10 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
                           fontWeight: FontWeight.bold)),
                 ],
               ),
-              const SizedBox(width: 24),
+              SizedBox(width: R.r(context, 24)),
               Expanded(
                 child: SizedBox(
-                  height: 50,
+                  height: R.rh(context, 50),
                   child: FilledButton(
                       onPressed: _onBookNow,
                       style: FilledButton.styleFrom(

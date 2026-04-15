@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
 //  PROFESSIONAL TRAIN CHECKOUT SCREEN - Green Theme
@@ -583,8 +584,8 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                             children: [
                               Text(
                                 _train.departureTime,
-                                style: const TextStyle(
-                                    fontSize: 34,
+                                style: TextStyle(
+                                    fontSize: R.sp(context, 34),
                                     fontWeight: FontWeight.w900,
                                     color: Colors.black87,
                                     letterSpacing: -1.8,
@@ -607,8 +608,8 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                             children: [
                               Text(
                                 _train.arrivalTime,
-                                style: const TextStyle(
-                                    fontSize: 34,
+                                style: TextStyle(
+                                    fontSize: R.sp(context, 34),
                                     fontWeight: FontWeight.w900,
                                     color: Colors.black87,
                                     letterSpacing: -1.8,
@@ -940,8 +941,8 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                             children: [
                               Text(
                                 _returnTrain!.departureTime,
-                                style: const TextStyle(
-                                    fontSize: 34,
+                                style: TextStyle(
+                                    fontSize: R.sp(context, 34),
                                     fontWeight: FontWeight.w900,
                                     color: Colors.black87,
                                     letterSpacing: -1.8,
@@ -964,8 +965,8 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                             children: [
                               Text(
                                 _returnTrain!.arrivalTime,
-                                style: const TextStyle(
-                                    fontSize: 34,
+                                style: TextStyle(
+                                    fontSize: R.sp(context, 34),
                                     fontWeight: FontWeight.w900,
                                     color: Colors.black87,
                                     letterSpacing: -1.8,
@@ -1744,33 +1745,41 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                       const BorderRadius.vertical(bottom: Radius.circular(14)),
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Total Amount',
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF666666), // Gray text
-                              fontWeight: FontWeight.w500),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'All taxes & fees included',
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.grey.shade400),
-                        ),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Total Amount',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF666666), // Gray text
+                                fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'All taxes & fees included',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.grey.shade400),
+                          ),
+                        ],
+                      ),
                     ),
-                    const Spacer(),
-                    Text(
-                      _formatPrice(_grandTotal),
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: greenTheme,
-                        letterSpacing: -0.5,
+                    const SizedBox(width: 12),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        _formatPrice(_grandTotal),
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: greenTheme,
+                          letterSpacing: -0.5,
+                        ),
                       ),
                     ),
                   ],
@@ -1809,23 +1818,38 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500)),
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
               if (subtitle.isNotEmpty)
-                Text(subtitle,
-                    style: const TextStyle(
-                        fontSize: 11, color: Color(0xFF666666))),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      const TextStyle(fontSize: 11, color: Color(0xFF666666)),
+                ),
             ],
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          pricePrefix ?? price,
-          style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: priceColor ?? Colors.black87),
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              pricePrefix ?? price,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: priceColor ?? Colors.black87),
+            ),
+          ),
         ),
       ],
     );
@@ -2721,7 +2745,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
           label: 'CHECKOUT',
           trailingIcon: Icons.arrow_forward_rounded,
           onTap: _proceedToCheckout,
-          height: 52,
+          height: R.rh(context, 52),
           color: const Color(0xFFD4AF37),
         ),
       ),

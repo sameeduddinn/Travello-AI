@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:flight_app/models/hotel.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/responsive_helper.dart';
 
 class HotelResultsScreen extends StatefulWidget {
   const HotelResultsScreen({super.key});
@@ -779,11 +780,11 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
                       const BorderRadius.vertical(top: Radius.circular(16)),
                   child: Image.network(
                     hotel.images.first,
-                    height: 180,
+                    height: R.rh(context, 180),
                     width: double.infinity,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
-                        height: 180,
+                        height: R.rh(context, 180),
                         color: Colors.grey.shade200,
                         child: const Icon(Icons.hotel,
                             size: 64, color: Colors.grey)),

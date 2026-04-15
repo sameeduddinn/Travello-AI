@@ -51,7 +51,7 @@ class _PromoSliderState extends State<PromoSlider> {
                 Image.network(
                   item,
                   fit: BoxFit.cover,
-                  width: 1000,
+                  width: double.infinity,
                   loadingBuilder: (BuildContext context, Widget child,
                       ImageChunkEvent? loadingProgress) {
                     if (loadingProgress == null) return child;
@@ -96,7 +96,7 @@ class _PromoSliderState extends State<PromoSlider> {
                   autoPlayInterval: const Duration(seconds: 10),
                   initialPage: 0,
                   autoPlayCurve: Curves.fastOutSlowIn,
-                  enlargeCenterPage: true,
+                  enlargeCenterPage: false,
                   aspectRatio: 2.0,
                   pauseAutoPlayOnTouch: true,
                   height: _getSliderHeight(context),

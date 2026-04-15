@@ -41,6 +41,8 @@ class _SearchFlightState extends State<SearchFlight> {
             leadingWidth: 60,
             toolbarHeight: 60,
             centerTitle: true,
+            backgroundColor: TravelloTheme.primaryMain,
+            foregroundColor: Colors.white,
             leading: IconButton(
               icon: const Icon(
                 Icons.arrow_back_ios_new,
@@ -50,7 +52,9 @@ class _SearchFlightState extends State<SearchFlight> {
                 Get.back();
               },
             ),
-            title: const Text('Search Flights', style: TravelloTheme.subtitle),
+            title: const Text('Search Flights',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w600)),
             flexibleSpace: FlexibleSpaceBar(
               background: Image.asset(
                 ImgApi.searchBanner,
