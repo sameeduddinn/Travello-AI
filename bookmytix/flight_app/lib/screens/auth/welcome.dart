@@ -20,104 +20,135 @@ class _WelcomeState extends State<Welcome> {
     final screenHeight = MediaQuery.of(context).size.height;
     final isSmallPhone = screenWidth < 380 || screenHeight < 640;
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Container(
-          height: screenHeight,
-          decoration: const BoxDecoration(color: TravelloTheme.primaryMain),
-          child: Container(
-            padding: EdgeInsets.all(R.r(context, 24)),
-            decoration: BoxDecoration(
-                color: TravelloTheme.paperLight.withValues(alpha: 0.1),
-                image: DecorationImage(
-                    image: AssetImage(ImgApi.welcomeBg), fit: BoxFit.cover)),
-            child: Align(
-              alignment: Alignment.center,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: ThemeSize.sm),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      /// TEXT
-                      Text('Welcome to ${branding.name}',
-                          style: TextStyle(
-                              fontSize: R.sp(context, isSmallPhone ? 32 : 42),
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
-                      const VSpaceShort(),
-                      Text(branding.title,
-                          style: TravelloTheme.title2.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.normal)),
-                      const VSpaceBig(),
+      body: Container(
+        decoration: const BoxDecoration(color: TravelloTheme.primaryMain),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Container(
+                    padding: EdgeInsets.all(R.r(context, 24)),
+                    decoration: BoxDecoration(
+                        color: TravelloTheme.paperLight.withValues(alpha: 0.1),
+                        image: DecorationImage(
+                            image: AssetImage(ImgApi.welcomeBg),
+                            fit: BoxFit.cover)),
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: ThemeSize.sm),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              /// TEXT
+                              Text(
+                                'Welcome to ${branding.name}',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize:
+                                        R.sp(context, isSmallPhone ? 32 : 42),
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.1),
+                              ),
+                              const VSpaceShort(),
+                              Text(branding.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TravelloTheme.title2.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.normal)),
+                              const VSpaceBig(),
 
-                      /// BUTTONS
-                      SizedBox(
-                        width: double.infinity,
-                        height: R.rh(context, isSmallPhone ? 50 : 56),
-                        child: FilledButton(
-                            onPressed: () {
-                              // Direct navigation to register page
-                              Get.toNamed('/register');
-                            },
-                            style: ThemeButton.btnBig.merge(
-                              FilledButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: TravelloTheme.primaryMain,
-                                elevation: 2,
-                                shadowColor: Colors.black26,
+                              /// BUTTONS
+                              SizedBox(
+                                width: double.infinity,
+                                height: R.rh(context, isSmallPhone ? 50 : 56),
+                                child: FilledButton(
+                                    onPressed: () {
+                                      // Direct navigation to register page
+                                      Get.toNamed('/register');
+                                    },
+                                    style: ThemeButton.btnBig.merge(
+                                      FilledButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor:
+                                            TravelloTheme.primaryMain,
+                                        elevation: 2,
+                                        shadowColor: Colors.black26,
+                                      ),
+                                    ),
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text('SIGN UP',
+                                          maxLines: 1,
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: R.sp(context, 16),
+                                              letterSpacing: 1)),
+                                    )),
                               ),
-                            ),
-                            child: Text('SIGN UP',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: R.sp(context, 16),
-                                    letterSpacing: 1))),
-                      ),
-                      Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: R.rh(context, 24)),
-                          child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                const Expanded(child: LineList()),
-                                Padding(
+                              Padding(
                                   padding: EdgeInsets.symmetric(
-                                      horizontal: R.r(context, 8.0)),
-                                  child: Text('Already have account?',
-                                      style: TextStyle(
-                                          fontSize: R.sp(
-                                              context, isSmallPhone ? 14 : 16),
-                                          color: Colors.white)),
-                                ),
-                                const Expanded(child: LineList()),
-                              ])),
-                      SizedBox(
-                        width: double.infinity,
-                        height: R.rh(context, isSmallPhone ? 50 : 56),
-                        child: OutlinedButton(
-                            onPressed: () {
-                              // Direct navigation to login page
-                              Get.toNamed('/login');
-                            },
-                            style: ThemeButton.btnBig.merge(
-                              OutlinedButton.styleFrom(
-                                foregroundColor: TravelloTheme.primaryMain,
-                                backgroundColor: Colors.white,
-                                side: const BorderSide(
-                                    color: Colors.white, width: 2),
-                                elevation: 2,
+                                      vertical: R.rh(context, 24)),
+                                  child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        const Expanded(child: LineList()),
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: R.r(context, 8.0)),
+                                          child: Text(
+                                              'Already have an account?',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                  fontSize: R.sp(context,
+                                                      isSmallPhone ? 14 : 16),
+                                                  color: Colors.white)),
+                                        ),
+                                        const Expanded(child: LineList()),
+                                      ])),
+                              SizedBox(
+                                width: double.infinity,
+                                height: R.rh(context, isSmallPhone ? 50 : 56),
+                                child: OutlinedButton(
+                                    onPressed: () {
+                                      // Direct navigation to login page
+                                      Get.toNamed('/login');
+                                    },
+                                    style: ThemeButton.btnBig.merge(
+                                      OutlinedButton.styleFrom(
+                                        foregroundColor:
+                                            TravelloTheme.primaryMain,
+                                        backgroundColor: Colors.white,
+                                        side: const BorderSide(
+                                            color: Colors.white, width: 2),
+                                        elevation: 2,
+                                      ),
+                                    ),
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text('LOGIN',
+                                          maxLines: 1,
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: R.sp(context, 16),
+                                              letterSpacing: 1)),
+                                    )),
                               ),
-                            ),
-                            child: Text('LOGIN',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: R.sp(context, 16),
-                                    letterSpacing: 1))),
+                            ]),
                       ),
-                    ]),
-              ),
-            ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

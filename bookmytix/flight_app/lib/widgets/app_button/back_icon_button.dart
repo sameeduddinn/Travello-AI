@@ -9,21 +9,24 @@ class BackIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final double buttonSize = isSquare ? 36 : 34;
+
     return SizedBox(
-      width: 28,
-      height: 28,
+      width: buttonSize,
+      height: buttonSize,
       child: IconButton(
-        iconSize: 12,
+        iconSize: 18,
         padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
+        constraints:
+            BoxConstraints.tightFor(width: buttonSize, height: buttonSize),
         onPressed: onTap,
         style: IconButton.styleFrom(
-          minimumSize: const Size(28, 28),
+          minimumSize: Size(buttonSize, buttonSize),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          backgroundColor: colorScheme.surface.withValues(alpha: 0.85),
+          backgroundColor: colorScheme.surface.withValues(alpha: 0.92),
           foregroundColor: colorScheme.onSurface,
           shape: isSquare
-              ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(7))
+              ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
               : const CircleBorder(),
         ),
         icon: const Icon(Icons.arrow_back_ios_new),

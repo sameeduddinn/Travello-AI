@@ -256,22 +256,26 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: Container(
-        decoration: BoxDecoration(
-          color: TravelloTheme.paperLight,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.88,
+          decoration: BoxDecoration(
+            color: TravelloTheme.paperLight,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               // Handle bar for visual indication
               Container(
@@ -284,225 +288,264 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                 ),
               ),
 
-              // Header with icon
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      TravelloTheme.primaryMainContainer,
-                      TravelloTheme.secondaryMainContainer,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.location_on_rounded,
-                      size: 48,
-                      color: TravelloTheme.primaryMain,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Which city are you in?',
-                      style: TravelloTheme.title2.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme(context).onSurface,
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header with icon
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              TravelloTheme.primaryMainContainer,
+                              TravelloTheme.secondaryMainContainer,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.location_on_rounded,
+                              size: 48,
+                              color: TravelloTheme.primaryMain,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Which city are you in?',
+                              style: TravelloTheme.title2.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme(context).onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'We\'ll show you relevant destinations and accurate travel times from your location',
+                              style: TravelloTheme.caption.copyWith(
+                                color: colorScheme(context)
+                                    .onSurface
+                                    .withValues(alpha: 0.7),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'We\'ll show you relevant destinations and accurate travel times from your location',
-                      style: TravelloTheme.caption.copyWith(
-                        color: colorScheme(context)
-                            .onSurface
-                            .withValues(alpha: 0.7),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
 
-              const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-              // Search bar (Pakistani app standard - Bookme.pk style)
-              Container(
-                decoration: BoxDecoration(
-                  color: TravelloTheme.paperLightContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: colorScheme(context).outline.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Search city or code...',
-                    hintStyle: TravelloTheme.caption.copyWith(
-                      color:
-                          colorScheme(context).onSurface.withValues(alpha: 0.5),
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: TravelloTheme.primaryMain,
-                    ),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.clear,
+                      // Search bar (Pakistani app standard - Bookme.pk style)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: TravelloTheme.paperLightContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: colorScheme(context)
+                                .outline
+                                .withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Search city or code...',
+                            hintStyle: TravelloTheme.caption.copyWith(
                               color: colorScheme(context)
                                   .onSurface
                                   .withValues(alpha: 0.5),
                             ),
-                            onPressed: () {
-                              setState(() {
-                                _searchController.clear();
-                                _searchQuery = '';
-                              });
-                            },
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Results count
-              if (_searchQuery.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    '${_filteredCities.length} cities found',
-                    style: TravelloTheme.caption.copyWith(
-                      color: TravelloTheme.primaryMain,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-
-              // City selection grid (scrollable)
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.5,
-                ),
-                child: SingleChildScrollView(
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 2.2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: _filteredCities.length,
-                    itemBuilder: (context, index) {
-                      final city = _filteredCities[index];
-                      final isSelected = _selectedCity == city['name'];
-
-                      return InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedCity = city['name'] as String;
-                            _selectedCode = city['code'] as String;
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          decoration: BoxDecoration(
-                            gradient: isSelected
-                                ? LinearGradient(
-                                    colors: [
-                                      TravelloTheme.primaryMain,
-                                      colorScheme(context)
-                                          .primary
-                                          .withValues(alpha: 0.8),
-                                    ],
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: TravelloTheme.primaryMain,
+                            ),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: Icon(
+                                      Icons.clear,
+                                      color: colorScheme(context)
+                                          .onSurface
+                                          .withValues(alpha: 0.5),
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchController.clear();
+                                        _searchQuery = '';
+                                      });
+                                    },
                                   )
                                 : null,
-                            color: isSelected
-                                ? null
-                                : TravelloTheme.paperLightContainerHighest,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected
-                                  ? TravelloTheme.primaryMain
-                                  : colorScheme(context)
-                                      .outline
-                                      .withValues(alpha: 0.2),
-                              width: isSelected ? 2 : 1,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
                             ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: colorScheme(context)
-                                          .primary
-                                          .withValues(alpha: 0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                city['icon'] as IconData,
-                                size: 24,
-                                color: isSelected
-                                    ? Colors.white
-                                    : TravelloTheme.primaryMain,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                city['name'] as String,
-                                style: TravelloTheme.caption.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : colorScheme(context).onSurface,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              Text(
-                                city['code'] as String,
-                                style: TravelloTheme.caption.copyWith(
-                                  fontSize: 10,
-                                  color: isSelected
-                                      ? Colors.white.withValues(alpha: 0.8)
-                                      : colorScheme(context)
-                                          .onSurface
-                                          .withValues(alpha: 0.6),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
                           ),
                         ),
-                      );
-                    },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Results count
+                      if (_searchQuery.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            '${_filteredCities.length} cities found',
+                            style: TravelloTheme.caption.copyWith(
+                              color: TravelloTheme.primaryMain,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+
+                      // City selection grid (content scrolls while actions stay fixed)
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 2.2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
+                        itemCount: _filteredCities.length,
+                        itemBuilder: (context, index) {
+                          final city = _filteredCities[index];
+                          final isSelected = _selectedCity == city['name'];
+
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedCity = city['name'] as String;
+                                _selectedCode = city['code'] as String;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              decoration: BoxDecoration(
+                                gradient: isSelected
+                                    ? LinearGradient(
+                                        colors: [
+                                          TravelloTheme.primaryMain,
+                                          colorScheme(context)
+                                              .primary
+                                              .withValues(alpha: 0.8),
+                                        ],
+                                      )
+                                    : null,
+                                color: isSelected
+                                    ? null
+                                    : TravelloTheme.paperLightContainerHighest,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? TravelloTheme.primaryMain
+                                      : colorScheme(context)
+                                          .outline
+                                          .withValues(alpha: 0.2),
+                                  width: isSelected ? 2 : 1,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: colorScheme(context)
+                                              .primary
+                                              .withValues(alpha: 0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    city['icon'] as IconData,
+                                    size: 24,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : TravelloTheme.primaryMain,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    city['name'] as String,
+                                    style: TravelloTheme.caption.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : colorScheme(context).onSurface,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  Text(
+                                    city['code'] as String,
+                                    style: TravelloTheme.caption.copyWith(
+                                      fontSize: 10,
+                                      color: isSelected
+                                          ? Colors.white.withValues(alpha: 0.8)
+                                          : colorScheme(context)
+                                              .onSurface
+                                              .withValues(alpha: 0.6),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Info text stays with list content
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: TravelloTheme.paperLightContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: colorScheme(context)
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'You can change this anytime from Settings',
+                                style: TravelloTheme.caption.copyWith(
+                                  fontSize: 11,
+                                  color: colorScheme(context)
+                                      .onSurface
+                                      .withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
 
               // Continue button
               SizedBox(
@@ -583,39 +626,6 @@ class _CitySelectionSheetState extends State<CitySelectionSheet>
                         colorScheme(context).onSurface.withValues(alpha: 0.6),
                     decoration: TextDecoration.underline,
                   ),
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Info text
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: TravelloTheme.paperLightContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color:
-                          colorScheme(context).onSurface.withValues(alpha: 0.6),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'You can change this anytime from Settings',
-                        style: TravelloTheme.caption.copyWith(
-                          fontSize: 11,
-                          color: colorScheme(context)
-                              .onSurface
-                              .withValues(alpha: 0.6),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ],

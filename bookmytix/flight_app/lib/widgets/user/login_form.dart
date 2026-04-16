@@ -221,24 +221,6 @@ class _LoginFormState extends State<LoginForm> {
           )
         : fallbackGoogleMark;
 
-    const Widget fallbackAppleMark = FaIcon(
-      FontAwesomeIcons.apple,
-      size: 20,
-      color: Colors.black,
-    );
-
-    final Widget appleMark = appleBrandIconUrl.isNotEmpty
-        ? Image.network(
-            appleBrandIconUrl,
-            width: 20,
-            height: 20,
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => fallbackAppleMark,
-            loadingBuilder: (context, child, progress) =>
-                progress == null ? child : fallbackAppleMark,
-          )
-        : fallbackAppleMark;
-
     return FormBuilder(
       key: _loginKey,
       child: ListView(
@@ -681,9 +663,11 @@ class _LoginFormState extends State<LoginForm> {
                             }
                           } else {
                             setState(() => _isLoading = false);
+                            final errorMessage = AuthService.lastAuthError ??
+                                'Invalid credentials. If you used Google before, continue with Google.';
                             Get.snackbar(
                               'Login Failed',
-                              'Invalid credentials.',
+                              errorMessage,
                               backgroundColor: Colors.red.shade600,
                               colorText: Colors.white,
                               snackPosition: SnackPosition.TOP,
@@ -731,6 +715,7 @@ class _LoginFormState extends State<LoginForm> {
                   : FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text('CONTINUE',
+                          maxLines: 1,
                           style: TravelloTheme.subtitle.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -872,87 +857,6 @@ class _LoginFormState extends State<LoginForm> {
             ),
           ),
           SizedBox(height: R.rh(context, 12)),
-
-          /// APPLE LOGIN - PREMIUM STYLE
-          Container(
-            width: double.infinity,
-            height: R.rh(context, 56),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFFF5F5F7),
-                  const Color(0xFFE8E8ED).withValues(alpha: 0.6),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(
-                color: Colors.black.withValues(alpha: 0.15),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  Get.snackbar(
-                    'Coming Soon',
-                    'Apple Sign In will be available soon!',
-                    backgroundColor: Colors.grey.shade100,
-                    colorText: Colors.black87,
-                    snackPosition: SnackPosition.TOP,
-                    duration: const Duration(seconds: 2),
-                    icon: const Icon(Icons.info_outline, color: Colors.white),
-                    borderRadius: 10,
-                    margin: const EdgeInsets.all(10),
-                  );
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: R.r(context, 16)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: R.r(context, 32),
-                        height: R.r(context, 32),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border:
-                              Border.all(color: Colors.grey.shade300, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withValues(alpha: 0.2),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Center(child: appleMark),
-                      ),
-                      SizedBox(width: R.r(context, 12)),
-                      Text(
-                        'Continue with Apple',
-                        style: TravelloTheme.subtitle.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
           const VSpaceBig(),
 
           /// SIGN UP LINK

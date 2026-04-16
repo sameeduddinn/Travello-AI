@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
 import 'package:flight_app/app/app_link.dart';
@@ -45,7 +46,7 @@ class FlightDetailProfessional extends StatelessWidget {
               padding: EdgeInsets.all(R.r(context, 16)),
               decoration: BoxDecoration(
                 color: TravelloTheme.paperLight,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.r),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -73,7 +74,7 @@ class FlightDetailProfessional extends StatelessWidget {
                                     ? [Colors.blue, Colors.blueAccent]
                                     : [Colors.orange, Colors.orangeAccent],
                           ),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(20.r),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -87,7 +88,7 @@ class FlightDetailProfessional extends StatelessWidget {
                               size: R.r(context, 14),
                               color: Colors.white,
                             ),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4.w),
                             Text(
                               flight.badge,
                               style: TextStyle(
@@ -112,7 +113,7 @@ class FlightDetailProfessional extends StatelessWidget {
                         height: R.r(context, 60),
                         decoration: BoxDecoration(
                           color: TravelloTheme.primaryMainContainer,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                         child: Center(
                           child: Text(
@@ -174,19 +175,19 @@ class FlightDetailProfessional extends StatelessWidget {
                               CupertinoIcons.airplane,
                               color: TravelloTheme.primaryMain,
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4.h),
                             Text(
                               flight.duration,
                               style: TravelloTheme.caption,
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4.h),
                             Container(
-                              height: 2,
+                              height: 2.h,
                               color: TravelloTheme.primaryMain,
                               margin: EdgeInsets.symmetric(
                                   horizontal: R.r(context, 16)),
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4.h),
                             Text(
                               flight.stops == 0
                                   ? 'Non-stop'
@@ -230,7 +231,7 @@ class FlightDetailProfessional extends StatelessWidget {
                 padding: EdgeInsets.all(R.r(context, 16)),
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                   border: Border.all(
                     color: Colors.orange.withValues(alpha: 0.3),
                   ),
@@ -245,7 +246,7 @@ class FlightDetailProfessional extends StatelessWidget {
                           color: Colors.orange,
                           size: R.r(context, 20),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8.w),
                         const Text(
                           'Layover Information',
                           style: TextStyle(
@@ -255,10 +256,10 @@ class FlightDetailProfessional extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     ...flight.stopCities.asMap().entries.map((entry) {
                       return Padding(
-                        padding: const EdgeInsets.only(top: 4),
+                        padding: EdgeInsets.only(top: 4.h),
                         child: Text(
                           '• Stop ${entry.key + 1}: ${entry.value} (2h 30m layover)',
                           style: TravelloTheme.caption,
@@ -328,7 +329,7 @@ class FlightDetailProfessional extends StatelessWidget {
                   'Taxes & Fees',
                   'PKR ${(flight.price * 0.15).toStringAsFixed(0)}',
                 ),
-                const Divider(height: 16),
+                Divider(height: 16.h),
                 _buildInfoRow(
                   'Total',
                   'PKR ${flight.price.toStringAsFixed(0)}',
@@ -378,7 +379,7 @@ class FlightDetailProfessional extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   ElevatedButton(
                     onPressed: () {
                       Get.toNamed(
@@ -400,7 +401,7 @@ class FlightDetailProfessional extends StatelessWidget {
                         vertical: R.rh(context, 16),
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
                     child: Text(
@@ -431,7 +432,7 @@ class FlightDetailProfessional extends StatelessWidget {
       padding: EdgeInsets.all(R.r(context, 16)),
       decoration: BoxDecoration(
         color: TravelloTheme.paperLight,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -450,7 +451,7 @@ class FlightDetailProfessional extends StatelessWidget {
                 color: TravelloTheme.primaryMain,
                 size: R.r(context, 20),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               Text(
                 title,
                 style: TravelloTheme.subtitle
@@ -468,7 +469,7 @@ class FlightDetailProfessional extends StatelessWidget {
   Widget _buildInfoRow(String label, String value,
       {bool isTotal = false, BuildContext? ctx}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: 4.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

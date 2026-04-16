@@ -16,6 +16,7 @@ import 'package:flight_app/widgets/flight/flight_summary.dart';
 import 'package:flight_app/widgets/flight/flight_summary_wide.dart';
 import 'package:flight_app/widgets/flight/package_options.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -87,7 +88,7 @@ class _FlightDetailState extends State<FlightDetail> {
             Container(
               alignment: Alignment.bottomCenter,
               width: double.infinity,
-              height: 100,
+              height: 100.h,
               color: TravelloTheme.primaryMainContainer,
             ),
 
@@ -135,9 +136,9 @@ class _FlightDetailState extends State<FlightDetail> {
                 },
               ),
               const VSpace(),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: AlertInfo(
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: const AlertInfo(
                     type: AlertType.warning,
                     text:
                         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis congue euismod elit'),
@@ -152,7 +153,8 @@ class _FlightDetailState extends State<FlightDetail> {
         shadowColor: Colors.black,
         height: R.rh(context, 80),
         color: TravelloTheme.paperLight,
-        padding: EdgeInsets.symmetric(horizontal: R.r(context, 16), vertical: 8),
+        padding:
+            EdgeInsets.symmetric(horizontal: R.r(context, 16), vertical: 8),
         child: SafeArea(
           top: false,
           child: Row(

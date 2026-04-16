@@ -18,6 +18,7 @@ import 'package:flight_app/widgets/flight/flight_routes_horizontal.dart';
 import 'package:flight_app/widgets/flight/flight_summary.dart';
 import 'package:flight_app/widgets/flight/flight_summary_wide.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -288,18 +289,18 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
         }),
         actions: [
           SizedBox(
-            width: 32,
-            height: 32,
+            width: 32.w,
+            height: 32.h,
             child: IconButton(
                 onPressed: () {
                   Get.toNamed(AppLink.faq);
                 },
                 style: IconButton.styleFrom(),
-                icon: const Icon(Icons.help_outline_rounded,
-                    color: TravelloTheme.textSecondary, size: 18)),
+                icon: Icon(Icons.help_outline_rounded,
+                    color: TravelloTheme.textSecondary, size: 18.sp)),
           ),
-          const SizedBox(
-            width: 16,
+          SizedBox(
+            width: 16.w,
           )
         ],
       ),
@@ -309,7 +310,7 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
           Container(
             alignment: Alignment.bottomCenter,
             width: double.infinity,
-            height: 150,
+            height: 150.h,
             decoration: BoxDecoration(
               image: DecorationImage(
                 image: NetworkImage(pkg?.img ?? ImgApi.photo[53]),
@@ -331,7 +332,7 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
 
           /// CONTENTS
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const SizedBox(height: 50),
+            SizedBox(height: 50.h),
             wideScreen
                 ? FlightSummaryWide(
                     from: fromCity,
@@ -379,7 +380,7 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
                           DateFormat('EEE, d MMM yyyy').format(_returnDate),
                     ),
             ],
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
           ])
         ]),
       ),
@@ -388,7 +389,8 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
         shadowColor: Colors.black,
         height: R.rh(context, 80),
         color: TravelloTheme.paperLight,
-        padding: EdgeInsets.symmetric(horizontal: R.r(context, 16), vertical: 8),
+        padding:
+            EdgeInsets.symmetric(horizontal: R.r(context, 16), vertical: 8),
         child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,

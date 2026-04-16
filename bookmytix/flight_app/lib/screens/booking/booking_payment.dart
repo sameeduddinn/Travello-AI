@@ -9,6 +9,7 @@ import 'package:flight_app/screens/flight/flight_results_screen.dart';
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
+import 'package:flight_app/services/transactional_service.dart';
 import 'dart:math' as math;
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -67,6 +68,7 @@ class _BookingPaymentState extends State<BookingPayment>
   // OTP state tracking (Easypaisa / JazzCash)
   String _otpValue = '';
   bool _isOtpVerified = false;
+  String? _otpRequestId;
 
   // Scroll controllers — one per modal sheet to prevent shared-controller crash
   final ScrollController _refundScrollController = ScrollController();
@@ -168,6 +170,112 @@ class _BookingPaymentState extends State<BookingPayment>
       backgroundColor: Colors.orange.shade100,
       colorText: Colors.orange.shade900,
       duration: const Duration(seconds: 2),
+    );
+  }
+
+  Future<void> _requestWalletOtp({
+    required String paymentMethod,
+    required String phoneNumber,
+  }) async {
+    if (!_isValidPkWalletPhone(phoneNumber)) {
+      _showPkPhoneValidationError();
+      return;
+    }
+
+    final result = await TransactionalService.sendPaymentOtp(
+      bookingType: 'flight',
+      paymentMethod: paymentMethod,
+      email: _contactEmail,
+      phoneNumber: phoneNumber,
+    );
+
+    if (!mounted) return;
+
+    if (!result.success || result.requestId == null) {
+      final message = TransactionalService.lastError ??
+          'Unable to send OTP right now. Please try again.';
+      Get.snackbar(
+        'OTP Failed',
+        message,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
+    setState(() {
+      _otpRequestId = result.requestId;
+      _otpValue = '';
+      _isOtpVerified = false;
+      if (paymentMethod == 'easypaisa') {
+        _showEasypaisaOTP = true;
+      } else {
+        _showJazzcashOTP = true;
+      }
+    });
+
+    _startOTPTimer();
+
+    Get.snackbar(
+      result.isFallback ? 'Demo OTP Mode' : 'OTP Sent',
+      result.message,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor:
+          result.isFallback ? Colors.blue.shade100 : Colors.green.shade100,
+      colorText:
+          result.isFallback ? Colors.blue.shade900 : Colors.green.shade900,
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  Future<void> _verifyWalletOtp({
+    required String paymentMethod,
+    required String phoneNumber,
+  }) async {
+    if (_otpValue.length != 6) return;
+    if (_otpRequestId == null || _otpRequestId!.isEmpty) {
+      Get.snackbar(
+        'OTP Required',
+        'Please request a new OTP code first.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.orange.shade100,
+        colorText: Colors.orange.shade900,
+      );
+      return;
+    }
+
+    final verified = await TransactionalService.verifyPaymentOtp(
+      requestId: _otpRequestId!,
+      code: _otpValue,
+      email: _contactEmail,
+      phoneNumber: phoneNumber,
+    );
+
+    if (!mounted) return;
+
+    if (verified) {
+      setState(() => _isOtpVerified = true);
+      Get.snackbar(
+        'OTP Verified',
+        '$paymentMethod OTP verified successfully.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.green.shade100,
+        colorText: Colors.green.shade900,
+      );
+      return;
+    }
+
+    final message =
+        TransactionalService.lastError ?? 'Invalid or expired OTP code.';
+    Get.snackbar(
+      'Verification Failed',
+      message,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.red.shade100,
+      colorText: Colors.red.shade900,
+      duration: const Duration(seconds: 3),
     );
   }
 
@@ -1719,18 +1827,11 @@ class _BookingPaymentState extends State<BookingPayment>
                   const SizedBox(height: 20),
                   DSButton(
                     label: 'Get Code',
-                    onTap: () {
-                      if (_isValidPkWalletPhone(
-                          _easypaisaPhoneController.text)) {
-                        setState(() {
-                          _showEasypaisaOTP = true;
-                          _otpValue = '';
-                          _isOtpVerified = false;
-                        });
-                        _startOTPTimer();
-                      } else {
-                        _showPkPhoneValidationError();
-                      }
+                    onTap: () async {
+                      await _requestWalletOtp(
+                        paymentMethod: 'easypaisa',
+                        phoneNumber: _easypaisaPhoneController.text,
+                      );
                     },
                     height: 50,
                   ),
@@ -1745,6 +1846,7 @@ class _BookingPaymentState extends State<BookingPayment>
                 _showEasypaisaOTP = false;
                 _isOtpVerified = false;
                 _otpValue = '';
+                _otpRequestId = null;
               }),
             ),
         ],
@@ -1894,18 +1996,11 @@ class _BookingPaymentState extends State<BookingPayment>
                   const SizedBox(height: 20),
                   DSButton(
                     label: 'Get Code',
-                    onTap: () {
-                      if (_isValidPkWalletPhone(
-                          _jazzcashPhoneController.text)) {
-                        setState(() {
-                          _showJazzcashOTP = true;
-                          _otpValue = '';
-                          _isOtpVerified = false;
-                        });
-                        _startOTPTimer();
-                      } else {
-                        _showPkPhoneValidationError();
-                      }
+                    onTap: () async {
+                      await _requestWalletOtp(
+                        paymentMethod: 'jazzcash',
+                        phoneNumber: _jazzcashPhoneController.text,
+                      );
                     },
                     height: 50,
                   ),
@@ -1920,6 +2015,7 @@ class _BookingPaymentState extends State<BookingPayment>
                 _showJazzcashOTP = false;
                 _isOtpVerified = false;
                 _otpValue = '';
+                _otpRequestId = null;
               }),
             ),
         ],
@@ -2039,7 +2135,10 @@ class _BookingPaymentState extends State<BookingPayment>
             DSButton(
               label: 'Verify OTP',
               onTap: _otpValue.length == 6
-                  ? () => setState(() => _isOtpVerified = true)
+                  ? () => _verifyWalletOtp(
+                        paymentMethod: paymentMethod,
+                        phoneNumber: phoneNumber,
+                      )
                   : null,
               disabled: _otpValue.length < 6,
               height: 50,
@@ -2456,6 +2555,8 @@ class _BookingPaymentState extends State<BookingPayment>
                   const Expanded(
                     child: Text(
                       'Price Breakdown',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -2554,7 +2655,7 @@ class _BookingPaymentState extends State<BookingPayment>
           Expanded(
             child: Text(
               label,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 13,

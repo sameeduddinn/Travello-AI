@@ -1,6 +1,7 @@
 class AppLink {
   /// AUTH
   static const intro = '/intro';
+  static const launchSplash = '/launch-splash';
   static const welcome = '/welcome';
   static const login = '/login';
   static const register = '/register';

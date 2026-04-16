@@ -40,12 +40,16 @@ class _OtpFormState extends State<OtpForm> {
     final focusedBorderColor = Theme.of(context).colorScheme.primary;
     final fillColor = Theme.of(context).colorScheme.surface;
     final borderColor = Theme.of(context).colorScheme.outlineVariant;
+    final bool isCompact = MediaQuery.of(context).size.width <= 370;
+
+    final double pinBoxSize = R.r(context, isCompact ? 50 : 56);
+    final double pinFontSize = R.sp(context, isCompact ? 20 : 22);
 
     final defaultPinTheme = PinTheme(
-      width: R.r(context, 56),
-      height: R.r(context, 56),
+      width: pinBoxSize,
+      height: pinBoxSize,
       textStyle: TextStyle(
-        fontSize: R.sp(context, 22),
+        fontSize: pinFontSize,
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(19),
@@ -62,8 +66,11 @@ class _OtpFormState extends State<OtpForm> {
           const Text('Check Your Phone', style: TravelloTheme.title2),
           const SizedBox(height: 8),
           Text('We\'ve sent the code to your phone',
-              style: TravelloTheme.headline
-                  .copyWith(color: colorScheme(context).onSurfaceVariant)),
+              style: TravelloTheme.paragraph.copyWith(
+                color: colorScheme(context).onSurfaceVariant,
+                fontSize: R.sp(context, 14),
+              ),
+              textAlign: TextAlign.center),
           const VSpace(),
 
           /// FORM
@@ -78,7 +85,8 @@ class _OtpFormState extends State<OtpForm> {
                     controller: pinController,
                     focusNode: focusNode,
                     defaultPinTheme: defaultPinTheme,
-                    separatorBuilder: (index) => const SizedBox(width: 8),
+                    separatorBuilder: (index) =>
+                        SizedBox(width: isCompact ? 6 : 8),
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       return value == '1234' ? null : 'Pin is incorrect';
@@ -153,7 +161,15 @@ class _OtpFormState extends State<OtpForm> {
                         }
                       }
                     },
-                    child: const Text('VERIFY'),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'VERIFY',
+                        maxLines: 1,
+                        style: TravelloTheme.subtitle
+                            .copyWith(fontSize: R.sp(context, 15)),
+                      ),
+                    ),
                   ),
                 ),
                 const VSpaceShort(),
@@ -162,23 +178,35 @@ class _OtpFormState extends State<OtpForm> {
                   child: OutlinedButton(
                     style: ThemeButton.btnBig,
                     onPressed: null,
-                    child: const Text('SEND AGAIN'),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'SEND AGAIN',
+                        maxLines: 1,
+                        style: TravelloTheme.subtitle
+                            .copyWith(fontSize: R.sp(context, 15)),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
-                RichText(
-                    text: TextSpan(
-                        text: 'Please wait ',
-                        style: TravelloTheme.paragraph
-                            .copyWith(color: colorScheme(context).onSurface),
-                        children: const [
+                Text.rich(
+                  TextSpan(
+                    text: 'Please wait ',
+                    style: TravelloTheme.paragraph.copyWith(
+                      color: colorScheme(context).onSurface,
+                      fontSize: R.sp(context, 13),
+                    ),
+                    children: const [
                       TextSpan(
-                          text: '1:30',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      TextSpan(
-                        text: ' to send again',
-                      )
-                    ]))
+                        text: '1:30',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(text: ' to send again'),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                )
               ],
             ),
           ),

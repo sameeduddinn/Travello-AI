@@ -89,34 +89,8 @@ class AuthOptions extends StatelessWidget {
                                       ])),
                             ),
                             const VSpace(),
-                            SizedBox(
-                              width: _getButtonWidth(context),
-                              height: 50,
-                              child: OutlinedButton(
-                                  onPressed: () {},
-                                  style: OutlinedButton.styleFrom(
-                                      foregroundColor:
-                                          colorScheme(context).onSurface,
-                                      side: BorderSide(
-                                          color:
-                                              colorScheme(context).onSurface)),
-                                  child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        FaIcon(FontAwesomeIcons.apple,
-                                            color:
-                                                colorScheme(context).onSurface),
-                                        const SizedBox(width: 8),
-                                        const Text(
-                                          'Continue with Apple',
-                                          style: TravelloTheme.subtitle,
-                                        )
-                                      ])),
-                            ),
-                             const Padding(
-                                padding:
-                                    EdgeInsets.symmetric(vertical: 16),
+                            const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16),
                                 child: Row(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,

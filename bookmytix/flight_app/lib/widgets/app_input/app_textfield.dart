@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 
 class AppTextField extends StatefulWidget {
@@ -20,6 +21,8 @@ class AppTextField extends StatefulWidget {
     this.validator,
     this.focusCallback,
     this.blurCallback,
+    this.keyboardType,
+    this.inputFormatters,
   });
 
   final String label;
@@ -38,6 +41,8 @@ class AppTextField extends StatefulWidget {
   final String? Function(String?)? validator;
   final Function()? focusCallback;
   final Function()? blurCallback;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -93,6 +98,8 @@ class _AppTextFieldState extends State<AppTextField> {
           readOnly: widget.readOnly,
           maxLines: widget.maxLines,
           obscureText: widget.maxLines == 1 ? widget.obscureText : false,
+          keyboardType: widget.keyboardType,
+          inputFormatters: widget.inputFormatters,
           onTap: widget.onTap,
           onChanged: (String value) => widget.onChanged(value),
           validator: widget.validator,

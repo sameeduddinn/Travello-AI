@@ -3,6 +3,7 @@ import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flight_app/utils/column_row_utils.dart';
 import 'package:flight_app/utils/booking_service.dart';
 import 'package:flight_app/services/notification_service.dart';
+import 'package:flight_app/services/transactional_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/route_manager.dart';
@@ -395,6 +396,29 @@ class _PaymentStatusState extends State<PaymentStatus>
 
     // 💾 Save booking to local storage for "My Bookings" page
     await BookingService.saveBooking(_bookingData);
+
+    // ☁️ Sync booking/payment to Supabase and trigger transactional email.
+    // These calls are non-blocking for UX; local success screen still proceeds.
+    final bookingId =
+        (_bookingData['bookingId'] ?? _bookingData['pnr'] ?? '').toString();
+    final resolvedBookingId = bookingId.isNotEmpty
+        ? bookingId
+        : 'BK${DateTime.now().millisecondsSinceEpoch}';
+
+    await TransactionalService.saveBookingToSupabase(_bookingData);
+    await TransactionalService.savePaymentAttemptToSupabase(
+      bookingId: resolvedBookingId,
+      paymentMethod: (_bookingData['paymentMethod'] ?? 'unknown').toString(),
+      amount: (_bookingData['total'] as num?)?.toDouble() ?? 0,
+      status: 'success',
+      metadata: {
+        'transactionId': _bookingData['transactionId'],
+        'bookingType': _bookingData['bookingType'],
+      },
+    );
+    await TransactionalService.sendBookingConfirmationEmail(
+      bookingData: _bookingData,
+    );
 
     // 🔔 Push notification for this booking
     _pushBookingNotification(bookingType, args);
@@ -6597,27 +6621,36 @@ class _ExtraCardTileState extends State<_ExtraCardTile> {
                                 )),
                           ),
                           const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: ex.tagColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                  color: ex.tagColor.withValues(alpha: 0.25)),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: ex.tagColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                      color:
+                                          ex.tagColor.withValues(alpha: 0.25)),
+                                ),
+                                child: Text(ex.tag,
+                                    style: TextStyle(
+                                      fontSize: 8,
+                                      color: ex.tagColor,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5,
+                                    )),
+                              ),
                             ),
-                            child: Text(ex.tag,
-                                style: TextStyle(
-                                  fontSize: 8,
-                                  color: ex.tagColor,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                )),
                           ),
                         ],
                       ),
                       const SizedBox(height: 3),
                       Text(ex.subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 11,
                             color: Color(0xFF64748B),
@@ -6628,25 +6661,28 @@ class _ExtraCardTileState extends State<_ExtraCardTile> {
                 ),
                 const SizedBox(width: 8),
                 Flexible(
-                  child: AnimatedSlide(
-                    offset: _hovered ? const Offset(0.15, 0) : Offset.zero,
-                    duration: const Duration(milliseconds: 160),
-                    curve: Curves.easeOut,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(ex.action,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: ex.iconColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1),
-                        const SizedBox(height: 2),
-                        Icon(Icons.arrow_forward_rounded,
-                            size: 14, color: ex.iconColor),
-                      ],
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 94),
+                    child: AnimatedSlide(
+                      offset: _hovered ? const Offset(0.15, 0) : Offset.zero,
+                      duration: const Duration(milliseconds: 160),
+                      curve: Curves.easeOut,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(ex.action,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: ex.iconColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1),
+                          const SizedBox(height: 2),
+                          Icon(Icons.arrow_forward_rounded,
+                              size: 14, color: ex.iconColor),
+                        ],
+                      ),
                     ),
                   ),
                 ),

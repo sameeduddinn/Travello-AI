@@ -580,13 +580,17 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                           ),
                           const SizedBox(width: 8),
                           Flexible(
-                            child: Text(
-                              '$_freeSeatsCount × ₨0',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.end,
-                              style: TravelloTheme.caption.copyWith(
-                                color: colorScheme(context).onSurfaceVariant,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                '$_freeSeatsCount × ₨0',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end,
+                                style: TravelloTheme.caption.copyWith(
+                                  color: colorScheme(context).onSurfaceVariant,
+                                ),
                               ),
                             ),
                           ),
@@ -611,13 +615,17 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                           ),
                           const SizedBox(width: 8),
                           Flexible(
-                            child: Text(
-                              '$_frontRowSeatsCount × ₨${_frontRowPrice.toStringAsFixed(0)}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.end,
-                              style: TravelloTheme.caption.copyWith(
-                                color: colorScheme(context).onSurfaceVariant,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                '$_frontRowSeatsCount × ₨${_frontRowPrice.toStringAsFixed(0)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end,
+                                style: TravelloTheme.caption.copyWith(
+                                  color: colorScheme(context).onSurfaceVariant,
+                                ),
                               ),
                             ),
                           ),
@@ -642,13 +650,17 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                           ),
                           const SizedBox(width: 8),
                           Flexible(
-                            child: Text(
-                              '$_exitRowSeatsCount × ₨${_exitRowPrice.toStringAsFixed(0)}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.end,
-                              style: TravelloTheme.caption.copyWith(
-                                color: colorScheme(context).onSurfaceVariant,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                '$_exitRowSeatsCount × ₨${_exitRowPrice.toStringAsFixed(0)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end,
+                                style: TravelloTheme.caption.copyWith(
+                                  color: colorScheme(context).onSurfaceVariant,
+                                ),
                               ),
                             ),
                           ),
@@ -672,16 +684,20 @@ class _FlightSeatPickerState extends State<FlightSeatPicker> {
                     ),
                     const SizedBox(width: 8),
                     Flexible(
-                      child: Text(
-                        'PKR ${_totalCost.toStringAsFixed(0)}',
-                        textAlign: TextAlign.end,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TravelloTheme.subtitle.copyWith(
-                          color: _totalCost > 0
-                              ? TravelloTheme.primaryMain
-                              : Colors.green,
-                          fontWeight: FontWeight.bold,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          'PKR ${_totalCost.toStringAsFixed(0)}',
+                          textAlign: TextAlign.end,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TravelloTheme.subtitle.copyWith(
+                            color: _totalCost > 0
+                                ? TravelloTheme.primaryMain
+                                : Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),

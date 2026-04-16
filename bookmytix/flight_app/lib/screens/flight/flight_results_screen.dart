@@ -1,6 +1,7 @@
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/constants/image_api.dart';
@@ -316,8 +317,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
       builder: (context) {
         return StatefulBuilder(
@@ -329,7 +330,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
               expand: false,
               builder: (context, scrollController) {
                 return Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(24.r),
                   child: ListView(
                     controller: scrollController,
                     children: [
@@ -338,10 +339,10 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         child: Container(
                           width: 40,
                           height: 4,
-                          margin: const EdgeInsets.only(bottom: 16),
+                          margin: EdgeInsets.only(bottom: 16.h),
                           decoration: BoxDecoration(
                             color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(2),
+                            borderRadius: BorderRadius.circular(2.r),
                           ),
                         ),
                       ),
@@ -368,7 +369,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         ],
                       ),
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24.h),
 
                       // ── Price Range ─────────────────────────────────────────
                       Row(
@@ -385,12 +386,12 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                               color: colorScheme(context)
                                   .primary
                                   .withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(8.r),
                             ),
                             child: Text(
                               '${formatPKR(tempPrice.start)} – ${formatPKR(tempPrice.end)}',
-                              style: const TextStyle(
-                                fontSize: 12,
+                              style: TextStyle(
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
                                 color: TravelloTheme.primaryMain,
                               ),
@@ -398,7 +399,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8.h),
                       RangeSlider(
                         values: tempPrice,
                         min: minPrice,
@@ -417,7 +418,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         },
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20.h),
 
                       // ── Departure Time ──────────────────────────────────────
                       Row(
@@ -434,14 +435,14 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                               color: colorScheme(context)
                                   .primary
                                   .withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(8.r),
                             ),
                             child: Text(
                               '${tempTime.start.round().toString().padLeft(2, '0')}:00'
                               ' – '
                               '${tempTime.end.round() == 24 ? '24:00' : '${tempTime.end.round().toString().padLeft(2, '0')}:00'}',
-                              style: const TextStyle(
-                                fontSize: 12,
+                              style: TextStyle(
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
                                 color: TravelloTheme.primaryMain,
                               ),
@@ -449,7 +450,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8.h),
                       RangeSlider(
                         values: tempTime,
                         min: 0,
@@ -470,7 +471,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         },
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20.h),
 
                       // ── Refundable Toggle ───────────────────────────────────
                       GestureDetector(
@@ -488,7 +489,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                     .primary
                                     .withValues(alpha: 0.06)
                                 : TravelloTheme.paperLightContainerHighest,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                             border: Border.all(
                               color: tempRefundable
                                   ? colorScheme(context)
@@ -507,9 +508,9 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                     color: tempRefundable
                                         ? TravelloTheme.primaryMain
                                         : Colors.grey.shade400,
-                                    size: 20,
+                                    size: 20.sp,
                                   ),
-                                  const SizedBox(width: 12),
+                                  SizedBox(width: 12.w),
                                   Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -519,7 +520,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                       Text(
                                         'Show only cancellable tickets',
                                         style: TextStyle(
-                                          fontSize: 11,
+                                          fontSize: 11.sp,
                                           color: Colors.grey.shade500,
                                         ),
                                       ),
@@ -539,7 +540,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32.h),
 
                       // ── Apply Button ────────────────────────────────────────
                       SizedBox(
@@ -561,7 +562,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(14.r),
                             ),
                           ),
                           child: Text(
@@ -603,13 +604,13 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                       ? '${fromAirport?.code ?? 'DEP'} → ${toAirport?.code ?? 'ARR'}'
                       : '${toAirport?.code ?? 'ARR'} → ${fromAirport?.code ?? 'DEP'}'
                   : '${fromAirport?.code ?? 'DEP'} → ${toAirport?.code ?? 'ARR'}',
-              style: TextStyle(fontSize: R.sp(context, 18), fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: R.sp(context, 18), fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis,
             ),
             Text(
               '${_filteredFlights.length} flights found',
-              style:
-                  const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+              style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.normal),
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -653,12 +654,12 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                 children: [
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
                       decoration: BoxDecoration(
                         color: _currentJourneyIndex == 0
                             ? TravelloTheme.primaryMain
                             : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(
                           color: _selectedOutboundFlight != null
                               ? TravelloTheme.primaryMain
@@ -675,10 +676,10 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                               color: _currentJourneyIndex == 0
                                   ? Colors.white
                                   : TravelloTheme.primaryMain,
-                              size: 18,
+                              size: 18.sp,
                             ),
                           if (_selectedOutboundFlight != null)
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4.w),
                           Text(
                             'Outbound',
                             style: TextStyle(
@@ -686,27 +687,27 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                   ? Colors.white
                                   : Colors.black87,
                               fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                              fontSize: 13.sp,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12.w),
                   Icon(
                     CupertinoIcons.arrow_right,
                     color: Colors.grey[600],
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12.w),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
                       decoration: BoxDecoration(
                         color: _currentJourneyIndex == 1
                             ? TravelloTheme.primaryMain
                             : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(
                           color: _currentJourneyIndex == 1
                               ? TravelloTheme.primaryMain
@@ -721,7 +722,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                               ? Colors.white
                               : Colors.grey[600],
                           fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                          fontSize: 13.sp,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -753,26 +754,26 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                             children: [
                               Text('Sort by:',
                                   style: TravelloTheme.caption
-                                      .copyWith(fontSize: 11)),
+                                      .copyWith(fontSize: 11.sp)),
                               Text(
                                 DateFormat('d MMM, E').format(_selectedDate),
                                 style: TravelloTheme.subtitle2.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: TravelloTheme.primaryMain,
-                                  fontSize: 12,
+                                  fontSize: 12.sp,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4.h),
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
                                 _buildSortChip('Recommended'),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8.w),
                                 _buildSortChip('Cheapest'),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8.w),
                                 _buildSortChip('Fastest'),
                               ],
                             ),
@@ -782,22 +783,22 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                     : Row(
                         children: [
                           const Text('Sort by:', style: TravelloTheme.caption),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8.w),
                           Expanded(
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: Row(
                                 children: [
                                   _buildSortChip('Recommended'),
-                                  const SizedBox(width: 8),
+                                  SizedBox(width: 8.w),
                                   _buildSortChip('Cheapest'),
-                                  const SizedBox(width: 8),
+                                  SizedBox(width: 8.w),
                                   _buildSortChip('Fastest'),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8.w),
                           Flexible(
                             child: Text(
                               DateFormat('d MMM, E').format(_selectedDate),
@@ -826,7 +827,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                     primaryAction: () => Get.back(),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16.r),
                     itemCount: _filteredFlights.length,
                     itemBuilder: (context, index) {
                       final flight = _filteredFlights[index];
@@ -894,7 +895,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                   children: [
                     Icon(CupertinoIcons.person,
                         color: Colors.white, size: isMobile ? 14 : 16),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4.w),
                     Flexible(
                       child: Text(
                         passengerText.isNotEmpty ? passengerText : '1 Adult',
@@ -930,7 +931,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: TravelloTheme.primaryMain.withValues(alpha: 0.8),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(6.r),
                         border: Border.all(
                           color: Colors.white.withValues(alpha: 0.3),
                         ),
@@ -938,30 +939,30 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.flight_takeoff,
-                              color: Colors.white70, size: 12),
+                          Icon(Icons.flight_takeoff,
+                              color: Colors.white70, size: 12.sp),
                           SizedBox(width: spacingUnit(0.25)),
                           Text(
                             fromAirport?.code ?? 'FROM',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 11,
+                              fontSize: 11.sp,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 2),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 2.w),
                             child: Icon(Icons.swap_horiz,
-                                color: Colors.white70, size: 14),
+                                color: Colors.white70, size: 14.sp),
                           ),
-                          const Icon(Icons.flight_land,
-                              color: Colors.white70, size: 12),
+                          Icon(Icons.flight_land,
+                              color: Colors.white70, size: 12.sp),
                           SizedBox(width: spacingUnit(0.25)),
                           Text(
                             toAirport?.code ?? 'TO',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 11,
+                              fontSize: 11.sp,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -979,7 +980,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           color: colorScheme(context)
                               .primary
                               .withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8.r),
                           border: Border.all(
                             color: Colors.white.withValues(alpha: 0.3),
                           ),
@@ -987,34 +988,34 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.flight_takeoff,
-                                color: Colors.white70, size: 16),
-                            const SizedBox(width: 4),
+                            Icon(Icons.flight_takeoff,
+                                color: Colors.white70, size: 16.sp),
+                            SizedBox(width: 4.w),
                             Flexible(
                               child: Text(
                                 fromAirport?.code ?? 'FROM',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 14,
+                                  fontSize: 14.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 4),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4.w),
                               child: Icon(Icons.swap_horiz,
-                                  color: Colors.white70, size: 18),
+                                  color: Colors.white70, size: 18.sp),
                             ),
-                            const Icon(Icons.flight_land,
-                                color: Colors.white70, size: 16),
-                            const SizedBox(width: 4),
+                            Icon(Icons.flight_land,
+                                color: Colors.white70, size: 16.sp),
+                            SizedBox(width: 4.w),
                             Flexible(
                               child: Text(
                                 toAirport?.code ?? 'TO',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 14,
+                                  fontSize: 14.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -1098,7 +1099,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
 
           // Different Airlines toggle (if round trip)
           if (tripType == 'Round-trip') ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Row(
               children: [
                 Container(
@@ -1106,7 +1107,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                   height: 20,
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10.r),
                   ),
                   child: Row(
                     children: [
@@ -1121,16 +1122,16 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Flexible(
+                SizedBox(width: 8.w),
+                Flexible(
                   child: Text(
                     'Different Airlines for Round Trip',
-                    style: TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(color: Colors.white, fontSize: 12.sp),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 4),
-                const Icon(Icons.info_outline, color: Colors.white70, size: 14),
+                SizedBox(width: 4.w),
+                Icon(Icons.info_outline, color: Colors.white70, size: 14.sp),
               ],
             ),
           ],
@@ -1147,7 +1148,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
       ),
       decoration: BoxDecoration(
         color: isSelected ? Colors.white : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
       ),
       child: Text(
         label,
@@ -1186,26 +1187,26 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
       builder: (context, setFormState) {
         return Container(
           height: MediaQuery.of(context).size.height * 0.9,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
           ),
           child: Column(
             children: [
               // Handle bar
               Container(
-                margin: const EdgeInsets.symmetric(vertical: 12),
+                margin: EdgeInsets.symmetric(vertical: 12.h),
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
 
               // Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1229,16 +1230,16 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
               // Scrollable content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16.r),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Trip Type Toggle
                       Container(
-                        padding: const EdgeInsets.all(4),
+                        padding: EdgeInsets.all(4.r),
                         decoration: BoxDecoration(
                           color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                           border: Border.all(
                             color: Colors.grey.shade300,
                           ),
@@ -1261,7 +1262,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                     color: tripType == 'One-way'
                                         ? TravelloTheme.primaryMain
                                         : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(10.r),
                                   ),
                                   child: Text(
                                     'One-way',
@@ -1293,7 +1294,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                     color: tripType == 'Round-trip'
                                         ? TravelloTheme.primaryMain
                                         : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(10.r),
                                   ),
                                   child: Text(
                                     'Round-trip',
@@ -1312,7 +1313,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
 
                       // FROM Dropdown
                       _buildInlineAirportDropdown(
@@ -1326,7 +1327,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         },
                       ),
 
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
 
                       // Swap Button
                       Center(
@@ -1338,9 +1339,9 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                               selectedTo = temp;
                             });
                           },
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(30.r),
                           child: Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: EdgeInsets.all(8.r),
                             decoration: BoxDecoration(
                               color: TravelloTheme.primaryMain,
                               shape: BoxShape.circle,
@@ -1354,16 +1355,16 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                 ),
                               ],
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.swap_vert,
                               color: Colors.white,
-                              size: 20,
+                              size: 20.sp,
                             ),
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
 
                       // TO Dropdown
                       _buildInlineAirportDropdown(
@@ -1377,7 +1378,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         },
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
 
                       // Dates
                       Row(
@@ -1418,7 +1419,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                             ),
                           ),
                           if (tripType == 'Round-trip') ...[
-                            const SizedBox(width: 12),
+                            SizedBox(width: 12.w),
                             Expanded(
                               child: _buildInlineDatePicker(
                                 label: 'RETURN',
@@ -1457,7 +1458,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         ],
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
 
                       // Passengers
                       _buildInlinePassengerSelector(
@@ -1473,7 +1474,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         },
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
 
                       // Cabin Class
                       _buildInlineClassSelector(
@@ -1487,7 +1488,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         },
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20.h),
 
                       // Update Button
                       SizedBox(
@@ -1570,14 +1571,14 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                             foregroundColor: Colors.white,
                             elevation: 3,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.r),
                             ),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.search, size: R.r(context, 20)),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8.w),
                               Text(
                                 'Update Search',
                                 style: TextStyle(
@@ -1618,25 +1619,25 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           onChanged(result);
         }
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(color: Colors.grey.shade300),
         ),
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12.r),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(icon, size: 16, color: TravelloTheme.primaryMain),
+                Icon(icon, size: 16.sp, color: TravelloTheme.primaryMain),
                 SizedBox(width: spacingUnit(0.75)),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.bold,
                     color: Colors.grey.shade600,
                     letterSpacing: 1.0,
@@ -1653,15 +1654,15 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                       ? '${selectedAirport.code} - ${selectedAirport.location}'
                       : 'Select Airport',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 15.sp,
                     fontWeight: FontWeight.w600,
                     color: selectedAirport != null
                         ? Colors.black87
                         : Colors.grey.shade500,
                   ),
                 ),
-                const Icon(Icons.keyboard_arrow_down,
-                    color: TravelloTheme.primaryMain, size: 20),
+                Icon(Icons.keyboard_arrow_down,
+                    color: TravelloTheme.primaryMain, size: 20.sp),
               ],
             ),
           ],
@@ -1677,12 +1678,12 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12.r),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(color: Colors.grey.shade300),
         ),
         child: Column(
@@ -1690,13 +1691,13 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           children: [
             Row(
               children: [
-                const Icon(CupertinoIcons.calendar,
-                    size: 14, color: TravelloTheme.primaryMain),
+                Icon(CupertinoIcons.calendar,
+                    size: 14.sp, color: TravelloTheme.primaryMain),
                 SizedBox(width: spacingUnit(0.75)),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.bold,
                     color: Colors.grey.shade600,
                     letterSpacing: 1.0,
@@ -1707,11 +1708,11 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
             SizedBox(height: spacingUnit(0.75)),
             Text(
               DateFormat('d MMM yyyy').format(date),
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold),
             ),
             Text(
               DateFormat('EEEE').format(date),
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              style: TextStyle(fontSize: 11.sp, color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -1751,12 +1752,12 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           onChanged(result);
         }
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12.r),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(color: Colors.grey.shade300),
         ),
         child: Row(
@@ -1764,13 +1765,13 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           children: [
             Row(
               children: [
-                const Icon(CupertinoIcons.person_2_fill,
-                    size: 16, color: TravelloTheme.primaryMain),
+                Icon(CupertinoIcons.person_2_fill,
+                    size: 16.sp, color: TravelloTheme.primaryMain),
                 SizedBox(width: spacingUnit(0.75)),
                 Text(
                   'PASSENGERS',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.bold,
                     color: Colors.grey.shade600,
                     letterSpacing: 1.0,
@@ -1782,8 +1783,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
               children: [
                 Text(
                   passengerText.isNotEmpty ? passengerText : '1 Adult',
-                  style: const TextStyle(
-                    fontSize: 15,
+                  style: TextStyle(
+                    fontSize: 15.sp,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -1810,12 +1811,12 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           onChanged(result);
         }
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12.r),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(color: Colors.grey.shade300),
         ),
         child: Row(
@@ -1823,13 +1824,13 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.airline_seat_recline_extra,
-                    size: 16, color: TravelloTheme.primaryMain),
+                Icon(Icons.airline_seat_recline_extra,
+                    size: 16.sp, color: TravelloTheme.primaryMain),
                 SizedBox(width: spacingUnit(0.75)),
                 Text(
                   'CABIN CLASS',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.bold,
                     color: Colors.grey.shade600,
                     letterSpacing: 1.0,
@@ -1841,8 +1842,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
               children: [
                 Text(
                   selectedClass,
-                  style: const TextStyle(
-                    fontSize: 15,
+                  style: TextStyle(
+                    fontSize: 15.sp,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -1884,7 +1885,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                     : isHovered
                         ? TravelloTheme.primaryMain.withValues(alpha: 0.1)
                         : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20.r),
                 border: Border.all(
                   color: selected
                       ? TravelloTheme.primaryMain
@@ -1901,7 +1902,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                       ? colorScheme(context).onPrimary
                       : colorScheme(context).onSurface,
                   fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                  fontSize: 13,
+                  fontSize: 13.sp,
                 ),
               ),
             ),
@@ -1927,7 +1928,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
             return Dialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
+                  borderRadius: BorderRadius.circular(16.r)),
               child: Container(
                 constraints: BoxConstraints(maxWidth: R.r(context, 400)),
                 padding: EdgeInsets.all(R.r(context, 24)),
@@ -1945,7 +1946,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         color: const Color(0xFF1A1A1A),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
 
                     // Adult
                     _buildPassengerRow(
@@ -1965,7 +1966,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                               : null,
                     ),
 
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
 
                     // Child
                     _buildPassengerRow(
@@ -1981,7 +1982,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                               : null,
                     ),
 
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
 
                     // Infant (cannot exceed adults; total must stay ≤ 9)
                     _buildPassengerRow(
@@ -1997,7 +1998,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                               : null,
                     ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
 
                     // Done button
                     SizedBox(
@@ -2017,7 +2018,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           backgroundColor: const Color(0xFFD4AF37),
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                           elevation: 0,
                         ),
@@ -2061,7 +2062,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 2.0),
+            SizedBox(height: 2.0.h),
             Text(
               subtitle,
               style: TextStyle(
@@ -2076,7 +2077,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
             // Minus button
             InkWell(
               onTap: onDecrement,
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: BorderRadius.circular(50.r),
               child: Container(
                 width: R.r(context, 36),
                 height: R.r(context, 36),
@@ -2094,7 +2095,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16.w),
             // Count
             Container(
               width: R.r(context, 40),
@@ -2108,11 +2109,11 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16.w),
             // Plus button
             InkWell(
               onTap: onIncrement,
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: BorderRadius.circular(50.r),
               child: Container(
                 width: R.r(context, 36),
                 height: R.r(context, 36),
@@ -2150,7 +2151,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
             return Dialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
+                  borderRadius: BorderRadius.circular(16.r)),
               child: Container(
                 constraints: BoxConstraints(maxWidth: R.r(context, 450)),
                 padding: EdgeInsets.all(R.r(context, 24)),
@@ -2168,7 +2169,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         color: const Color(0xFF1A1A1A),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
 
                     // Economy
                     _buildClassOption(
@@ -2180,7 +2181,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           setModalState(() => selectedClass = 'Economy'),
                     ),
 
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
 
                     // Premium Economy
                     _buildClassOption(
@@ -2192,7 +2193,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           () => selectedClass = 'Premium Economy'),
                     ),
 
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
 
                     // Business
                     _buildClassOption(
@@ -2204,7 +2205,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           setModalState(() => selectedClass = 'Business'),
                     ),
 
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
 
                     // First Class
                     _buildClassOption(
@@ -2216,7 +2217,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           setModalState(() => selectedClass = 'First Class'),
                     ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
 
                     // Done button
                     SizedBox(
@@ -2230,7 +2231,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           backgroundColor: const Color(0xFFD4AF37),
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                           elevation: 0,
                         ),
@@ -2262,7 +2263,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -2270,7 +2271,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
         ),
         decoration: BoxDecoration(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
             color: isSelected ? const Color(0xFFD4AF37) : Colors.grey.shade400,
             width: isSelected ? 2 : 1,
@@ -2283,7 +2284,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
               size: R.r(context, 28),
               color: iconColor,
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16.w),
             Text(
               label,
               style: TextStyle(
@@ -2349,29 +2350,29 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
 
             return Container(
               height: MediaQuery.of(context).size.height * 0.9,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+                  topLeft: Radius.circular(20.r),
+                  topRight: Radius.circular(20.r),
                 ),
               ),
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16.r),
               child: Column(
                 children: [
                   // Handle bar
                   Container(
                     width: 40,
                     height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
+                    margin: EdgeInsets.only(bottom: 16.h),
                     decoration: BoxDecoration(
                       color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(2.r),
                     ),
                   ),
 
                   const Text('Select Airport', style: TravelloTheme.title2),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
 
                   // Search field
                   TextField(
@@ -2386,8 +2387,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                       prefixIcon: const Icon(CupertinoIcons.search),
                       suffixIcon: searchController.text.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(
-                                  CupertinoIcons.clear_circled_solid),
+                              icon: const Icon(CupertinoIcons.clear_circled_solid),
                               onPressed: () {
                                 setModalState(() {
                                   searchController.clear();
@@ -2397,23 +2397,23 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                             )
                           : null,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                         borderSide: BorderSide(
                             color: Colors.grey.withValues(alpha: 0.3)),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                         borderSide: BorderSide(
                             color: Colors.grey.withValues(alpha: 0.3)),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                         borderSide: const BorderSide(color: Color(0xFFD4AF37)),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
 
                   // Airport list
                   Expanded(
@@ -2424,11 +2424,11 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
 
                         return ListTile(
                           leading: Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: EdgeInsets.all(8.r),
                             decoration: BoxDecoration(
                               color: const Color(0xFFD4AF37)
                                   .withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(8.r),
                             ),
                             child: const Icon(
                               CupertinoIcons.airplane,
@@ -2443,8 +2443,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           ),
                           subtitle: Text(
                             airport.name,
-                            style: const TextStyle(
-                              fontSize: 12,
+                            style: TextStyle(
+                              fontSize: 12.sp,
                             ),
                           ),
                           trailing: Text(
@@ -2487,10 +2487,10 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
             transform:
                 Matrix4.translationValues(0.0, isHovered ? -4.0 : 0.0, 0.0),
             child: Card(
-              margin: const EdgeInsets.only(bottom: 16),
+              margin: EdgeInsets.only(bottom: 16.h),
               elevation: isHovered ? 8 : 2,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.r),
               ),
               child: InkWell(
                 onTap: () {
@@ -2528,9 +2528,9 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                     );
                   }
                 },
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.r),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16.r),
                   child: Column(
                     children: [
                       // Badge
@@ -2553,7 +2553,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                               Colors.orangeAccent
                                             ],
                                 ),
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(20.r),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -2564,15 +2564,15 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                         : flight.badge == 'Fastest'
                                             ? CupertinoIcons.bolt_fill
                                             : CupertinoIcons.star_fill,
-                                    size: 14,
+                                    size: 14.sp,
                                     color: Colors.white,
                                   ),
-                                  const SizedBox(width: 4),
+                                  SizedBox(width: 4.w),
                                   Text(
                                     flight.badge,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 12,
+                                      fontSize: 12.sp,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -2582,7 +2582,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           ],
                         ),
 
-                      if (flight.badge.isNotEmpty) const SizedBox(height: 12),
+                      if (flight.badge.isNotEmpty) SizedBox(height: 12.h),
 
                       Row(
                         children: [
@@ -2592,7 +2592,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                             height: R.r(context, 50),
                             decoration: BoxDecoration(
                               color: TravelloTheme.primaryMainContainer,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Center(
                               child: (flight.airlineLogo.isNotEmpty &&
@@ -2600,29 +2600,28 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                           .toLowerCase()
                                           .startsWith('http'))
                                   ? ClipRRect(
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(10.r),
                                       child: Image.network(
                                         flight.airlineLogo,
                                         width: 34,
                                         height: 34,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) =>
-                                            const Icon(
+                                        errorBuilder: (_, __, ___) => Icon(
                                           Icons.flight_takeoff,
-                                          size: 24,
+                                          size: 24.sp,
                                           color: TravelloTheme.primaryMain,
                                         ),
                                       ),
                                     )
-                                  : const Icon(
+                                  : Icon(
                                       Icons.flight_takeoff,
-                                      size: 24,
+                                      size: 24.sp,
                                       color: TravelloTheme.primaryMain,
                                     ),
                             ),
                           ),
 
-                          const SizedBox(width: 16),
+                          SizedBox(width: 16.w),
 
                           // Flight info
                           Expanded(
@@ -2657,7 +2656,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                             flight.duration,
                                             style: TravelloTheme.caption,
                                           ),
-                                          const SizedBox(height: 4),
+                                          SizedBox(height: 4.h),
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
@@ -2716,7 +2715,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 4),
+                                          SizedBox(height: 4.h),
                                           Text(
                                             flight.stops == 0
                                                 ? 'Non-stop'
@@ -2745,7 +2744,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                   ],
                                 ),
 
-                                const SizedBox(height: 8),
+                                SizedBox(height: 8.h),
 
                                 // Airline name and flight info
                                 Row(
@@ -2761,8 +2760,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                     ),
                                     Text(
                                       flight.cabinClass,
-                                      style: const TextStyle(
-                                        fontSize: 11,
+                                      style: TextStyle(
+                                        fontSize: 11.sp,
                                         color: TravelloTheme.primaryMain,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -2775,12 +2774,12 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                         ],
                       ),
 
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
 
                       Divider(
                           height: 1, color: Colors.grey.withValues(alpha: 0.2)),
 
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
 
                       // Price and select button
                       Row(
@@ -2800,7 +2799,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                     ? 'Refundable'
                                     : 'Non-refundable',
                                 style: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 11.sp,
                                   color: flight.isRefundable
                                       ? Colors.green
                                       : Colors.grey,
@@ -2863,7 +2862,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                 vertical: 12,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(12.r),
                               ),
                             ),
                             child: const Text(

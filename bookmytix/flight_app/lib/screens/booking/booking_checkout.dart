@@ -1522,12 +1522,16 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                 Icon(Icons.flight_takeoff,
                     size: 16, color: Colors.blue.shade800),
                 const SizedBox(width: 8),
-                Text(
-                  route,
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.blue.shade800,
-                      fontWeight: FontWeight.w600),
+                Expanded(
+                  child: Text(
+                    route,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.blue.shade800,
+                        fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ),
@@ -1554,6 +1558,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                   Expanded(
                     child: Text(
                       '${p['firstName']} ${p['lastName']}${p['salutation'] != null && p['salutation'].toString().isNotEmpty ? ' (${p['salutation']})' : ''}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -1561,31 +1567,36 @@ class _BookingCheckoutState extends State<BookingCheckout> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Seat: ',
-                        style:
-                            TextStyle(fontSize: 12, color: Color(0xFF666666)),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.green.shade300),
+                  Flexible(
+                    child: Wrap(
+                      alignment: WrapAlignment.end,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        const Text(
+                          'Seat:',
+                          style:
+                              TextStyle(fontSize: 12, color: Color(0xFF666666)),
                         ),
-                        child: Text(
-                          seat,
-                          style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.green.shade800),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.green.shade300),
+                          ),
+                          child: Text(
+                            seat,
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.green.shade800),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -2136,57 +2147,87 @@ class _BookingCheckoutState extends State<BookingCheckout> {
     String? pricePrefix,
   }) {
     const primary = TravelloTheme.primaryMain;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: primary.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Icon(icon, size: 18, color: primary),
+        Text(
+          title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
+        if (subtitle.isNotEmpty)
+          Text(
+            subtitle,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
+          ),
+      ],
+    );
+
+    final priceWidget = FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerRight,
+      child: Text(
+        pricePrefix ?? price,
+        textAlign: TextAlign.end,
+        style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: priceColor ?? Colors.black87),
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 340;
+
+        if (isCompact) {
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style:
-                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: primary.withValues(alpha: 0.07),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Icon(icon, size: 18, color: primary),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: details),
+                ],
               ),
-              if (subtitle.isNotEmpty)
-                Text(
-                  subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      const TextStyle(fontSize: 11, color: Color(0xFF666666)),
-                ),
+              const SizedBox(height: 8),
+              Align(alignment: Alignment.centerRight, child: priceWidget),
             ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerRight,
-            child: Text(
-              pricePrefix ?? price,
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: priceColor ?? Colors.black87),
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: primary.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(icon, size: 18, color: primary),
             ),
-          ),
-        ),
-      ],
+            const SizedBox(width: 12),
+            Expanded(child: details),
+            const SizedBox(width: 8),
+            Flexible(child: priceWidget),
+          ],
+        );
+      },
     );
   }
 

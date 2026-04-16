@@ -10,6 +10,7 @@ import 'package:flight_app/screens/auth/email_verification.dart';
 import 'package:flight_app/screens/explore/explore_main.dart';
 import 'package:flight_app/screens/healthcare/healthcare_screen.dart';
 import 'package:flight_app/screens/intro/intro_screen.dart';
+import 'package:flight_app/screens/intro/launch_splash_screen.dart';
 import 'package:flight_app/screens/intro/start_screen.dart';
 import 'package:flight_app/screens/messages/notification.dart';
 import 'package:flight_app/screens/mode_selector/travel_mode_selection.dart';
@@ -43,6 +44,13 @@ import 'package:flight_app/app/app_link.dart';
 const int pageTransitionDuration = 200;
 
 final List<GetPage> appRoutes = [
+  /// BRANDED APP LAUNCH SPLASH
+  GetPage(
+      name: AppLink.launchSplash,
+      page: () => const LaunchSplashScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 180)),
+
   /// START - INTRO & AUTH FLOW
   GetPage(
       name: AppLink.home,

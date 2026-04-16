@@ -22,6 +22,12 @@ class AuthService {
   /// Translates raw Supabase / network error messages into user-friendly text.
   static String _friendlyAuthError(String raw) {
     final msg = raw.toLowerCase();
+    if (msg.contains('invalid login credentials') ||
+        msg.contains('invalid credentials') ||
+        msg.contains('email not confirmed') ||
+        msg.contains('invalid_grant')) {
+      return 'Invalid email or password. If you signed up with Google, continue with Google or use Forgot Password once to set a password.';
+    }
     if (msg.contains('already registered') ||
         msg.contains('already exists') ||
         msg.contains('email address is already')) {
@@ -153,9 +159,7 @@ class AuthService {
       // duplicate email — it silently returns a user whose identities list is
       // empty.  Detect this case and surface a clear error.
       final user = response.user;
-      if (user != null &&
-          user.identities != null &&
-          user.identities!.isEmpty) {
+      if (user != null && user.identities != null && user.identities!.isEmpty) {
         _setAuthError(
           'This email is already registered. Please sign in instead.',
         );
@@ -172,8 +176,7 @@ class AuthService {
           msg.contains('network') ||
           msg.contains('connection') ||
           msg.contains('timeout')) {
-        _setAuthError(
-            'Network error. Please check your internet connection.');
+        _setAuthError('Network error. Please check your internet connection.');
       } else {
         _setAuthError('Something went wrong. Please try again.');
       }
@@ -214,7 +217,7 @@ class AuthService {
 
       return appUser;
     } on AuthException catch (e) {
-      _setAuthError(e.message);
+      _setAuthError(_friendlyAuthError(e.message));
       return null;
     } catch (e) {
       _setAuthError(e.toString());

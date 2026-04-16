@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/components/home/service_tabs.dart';
 import 'package:flight_app/components/home/hero_section.dart';
@@ -147,8 +148,8 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                   GestureDetector(
                     onTap: () => Get.toNamed(AppLink.profile),
                     child: Container(
-                      width: 44,
-                      height: 44,
+                      width: 44.w,
+                      height: 44.h,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white.withValues(alpha: 0.15),
@@ -162,20 +163,20 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                             ? ClipOval(
                                 child: Image.network(
                                   _userAvatar,
-                                  width: 40,
-                                  height: 40,
+                                  width: 40.w,
+                                  height: 40.h,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => Icon(
                                     CupertinoIcons.person_fill,
                                     color: Colors.white.withValues(alpha: 0.9),
-                                    size: 22,
+                                    size: 22.sp,
                                   ),
                                 ),
                               )
                             : Icon(
                                 CupertinoIcons.person_fill,
                                 color: Colors.white.withValues(alpha: 0.9),
-                                size: 22,
+                                size: 22.sp,
                               ),
                       ),
                     ),
@@ -206,7 +207,7 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2.h),
                           Text(
                             _userName,
                             style: TextStyle(
@@ -239,10 +240,10 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                           AppLink.notification,
                           arguments: {'tab': 0},
                         ),
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius: BorderRadius.circular(22.r),
                         child: Container(
-                          width: 44,
-                          height: 44,
+                          width: 44.w,
+                          height: 44.h,
                           alignment: Alignment.center,
                           child: Stack(
                             clipBehavior: Clip.none,
@@ -250,7 +251,7 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                               Icon(
                                 CupertinoIcons.bell,
                                 color: Colors.white.withValues(alpha: 0.95),
-                                size: 24,
+                                size: 24.sp,
                               ),
                               if (unreadCount > 0)
                                 Positioned(
@@ -260,13 +261,13 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                                     constraints: const BoxConstraints(
                                       minWidth: 16,
                                     ),
-                                    height: 16,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 5,
+                                    height: 16.h,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 5.w,
                                     ),
                                     decoration: BoxDecoration(
                                       color: Colors.red.shade600,
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(8.r),
                                       border: Border.all(
                                         color: TravelloTheme.primaryMain,
                                         width: 1.5,
@@ -275,9 +276,9 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                                     alignment: Alignment.center,
                                     child: Text(
                                       unreadCount > 99 ? '99+' : '$unreadCount',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 10,
+                                        fontSize: 10.sp,
                                         fontWeight: FontWeight.bold,
                                         height: 1.2,
                                       ),
@@ -303,15 +304,15 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                         AppLink.notification,
                         arguments: {'tab': 1},
                       ),
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(22.r),
                       child: Container(
-                        width: 44,
-                        height: 44,
+                        width: 44.w,
+                        height: 44.h,
                         alignment: Alignment.center,
                         child: Icon(
                           CupertinoIcons.chat_bubble_text,
                           color: Colors.white.withValues(alpha: 0.95),
-                          size: 24,
+                          size: 24.sp,
                         ),
                       ),
                     ),
@@ -359,24 +360,24 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             // ⚡ FEATURES SECTION
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
             const QuickAccessFeatures(),
 
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
 
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             // � DYNAMIC SECTIONS - Changes based on selected service
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             _buildDynamicContent(),
 
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
 
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             // 🇵🇰 DISCOVER PAKISTAN CAROUSEL (static — same on all tabs)
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             const PremiumCarousel(),
 
-            const SizedBox(height: 80), // Bottom nav clearance
+            SizedBox(height: 80.h), // Bottom nav clearance
           ],
         ),
       ),
@@ -408,11 +409,11 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
           destinations: flightDestinations,
           travelMode: 'flight',
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32.h),
 
         // Featured Flight Packages
         const PackageListSlider(),
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
       ],
     );
   }
@@ -426,11 +427,11 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
           destinations: trainDestinations,
           travelMode: 'train',
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32.h),
 
         // Featured Train Journeys
         const TrainPackageSlider(),
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
       ],
     );
   }
@@ -444,11 +445,11 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
           destinations: hotelDestinations,
           travelMode: 'hotel',
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32.h),
 
         // Featured Hotel Packages with deal cards below heading
         _buildHotelPackagesSection(),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
 
         // SECTION 2 – TOP HOTELS OF PAKISTAN
         Container(
@@ -458,7 +459,7 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
           ),
           child: const _TopHotelsOfPakistanSection(),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
 
         // SECTION 3 – EXPLORE PAKISTAN DESTINATIONS
         Container(
@@ -471,7 +472,7 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                 Get.toNamed(AppLink.hotelSearch, arguments: {'city': city}),
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
       ],
     );
   }
@@ -492,7 +493,7 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
             textAction: 'See All',
             onTap: () => Get.toNamed(AppLink.hotelPackageAll),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4.h),
           Text(
             'Curated stays in Pakistan\'s most beautiful locations',
             style: TextStyle(
@@ -500,7 +501,7 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
               color: colorScheme(context).onSurface.withValues(alpha: 0.6),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           // Deal cards below the heading
           Builder(builder: (context) {
             final now = DateTime.now();
@@ -573,7 +574,7 @@ class _HotelWeekendDealsSectionState extends State<_HotelWeekendDealsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Stack(
           alignment: Alignment.center,
           children: [
@@ -582,9 +583,9 @@ class _HotelWeekendDealsSectionState extends State<_HotelWeekendDealsSection> {
               child: ListView.separated(
                 controller: _scroll,
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 0.w, vertical: 4.h),
                 itemCount: hotels.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, __) => SizedBox(width: 12.w),
                 itemBuilder: (context, i) {
                   final h = hotels[i];
                   final discountPct = (i % 3 == 0)
@@ -672,8 +673,8 @@ class _ScrollArrowState extends State<_ScrollArrow> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          width: 36,
-          height: 36,
+          width: 36.w,
+          height: 36.h,
           decoration: BoxDecoration(
             color: _hovered
                 ? const Color(0xFFD4AF37)
@@ -689,7 +690,7 @@ class _ScrollArrowState extends State<_ScrollArrow> {
           ),
           child: Icon(
             widget.icon,
-            size: 22,
+            size: 22.sp,
             color: _hovered ? Colors.white : const Color(0xFF1A1A1A),
           ),
         ),
@@ -766,16 +767,16 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
       if (added) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Row(children: [
-              Icon(Icons.favorite, color: Colors.red, size: 16),
-              SizedBox(width: 8),
-              Text('Added to Saved',
+            content: Row(children: [
+              Icon(Icons.favorite, color: Colors.red, size: 16.sp),
+              SizedBox(width: 8.w),
+              const Text('Added to Saved',
                   style: TextStyle(fontWeight: FontWeight.w600)),
             ]),
             duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r)),
             backgroundColor: const Color(0xFF1A1A1A),
           ),
         );
@@ -825,7 +826,7 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
           width: MediaQuery.of(context).size.width * 0.55,
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(14.r),
             border: Border.all(
               color: _hovered
                   ? const Color(0xFFD4AF37)
@@ -845,7 +846,7 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(14.r),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -854,7 +855,7 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                 Stack(
                   children: [
                     SizedBox(
-                      height: 145,
+                      height: 145.h,
                       width: double.infinity,
                       child: h.images.isNotEmpty
                           ? Image.network(
@@ -862,14 +863,14 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
                                 color: Colors.grey.shade200,
-                                child: const Icon(Icons.hotel,
-                                    size: 40, color: Colors.grey),
+                                child: Icon(Icons.hotel,
+                                    size: 40.sp, color: Colors.grey),
                               ),
                             )
                           : Container(
                               color: Colors.grey.shade200,
-                              child: const Icon(Icons.hotel,
-                                  size: 40, color: Colors.grey),
+                              child: Icon(Icons.hotel,
+                                  size: 40.sp, color: Colors.grey),
                             ),
                     ),
                     // Discount badge
@@ -881,13 +882,13 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                             horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
                           color: const Color(0xFFD4AF37),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(6.r),
                         ),
                         child: Text(
                           '-${widget.discountPct}%',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
-                            fontSize: 11,
+                            fontSize: 11.sp,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -900,7 +901,7 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                       child: GestureDetector(
                         onTap: _toggleWishlist,
                         child: Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: EdgeInsets.all(6.r),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.92),
                             shape: BoxShape.circle,
@@ -916,7 +917,7 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                               _wishlisted
                                   ? Icons.favorite
                                   : Icons.favorite_border,
-                              size: 16,
+                              size: 16.sp,
                               color: _wishlisted
                                   ? Colors.red
                                   : Colors.grey.shade600,
@@ -931,7 +932,7 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                 // ── Info ────────────────────────────────────────────
                 Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -941,106 +942,106 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                         children: [
                           ...List.generate(
                             _starsForCategory(h.category),
-                            (_) => const Icon(Icons.star,
-                                size: 11, color: Color(0xFFD4AF37)),
+                            (_) => Icon(Icons.star,
+                                size: 11.sp, color: const Color(0xFFD4AF37)),
                           ),
-                          const SizedBox(width: 5),
+                          SizedBox(width: 5.w),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 2),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 5.w, vertical: 2.h),
                             decoration: BoxDecoration(
                               color: const Color(0xFFD4AF37)
                                   .withValues(alpha: 0.13),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(4.r),
                               border: Border.all(
                                   color: const Color(0xFFD4AF37)
                                       .withValues(alpha: 0.35)),
                             ),
                             child: Text(
                               h.category,
-                              style: const TextStyle(
-                                  color: Color(0xFFD4AF37),
-                                  fontSize: 9,
+                              style: TextStyle(
+                                  color: const Color(0xFFD4AF37),
+                                  fontSize: 9.sp,
                                   fontWeight: FontWeight.w700),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 5),
+                      SizedBox(height: 5.h),
                       // Hotel name
                       Text(
                         h.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 13.sp,
                           fontWeight: FontWeight.w700,
                           height: 1.3,
                           color:
                               isDark ? Colors.white : const Color(0xFF1A1A1A),
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      SizedBox(height: 3.h),
                       // Location + distance from centre
                       Row(
                         children: [
                           Icon(Icons.location_on,
-                              size: 11, color: Colors.grey.shade500),
-                          const SizedBox(width: 2),
+                              size: 11.sp, color: Colors.grey.shade500),
+                          SizedBox(width: 2.w),
                           Expanded(
                             child: Text(
                               '${h.city} · ${h.distanceFromCenter.toStringAsFixed(1)} km from centre',
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                  fontSize: 10, color: Colors.grey.shade500),
+                                  fontSize: 10.sp, color: Colors.grey.shade500),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6.h),
                       // Review score
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 3),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 6.w, vertical: 3.h),
                             decoration: BoxDecoration(
                               color: _ratingColor,
-                              borderRadius: BorderRadius.circular(5),
+                              borderRadius: BorderRadius.circular(5.r),
                             ),
                             child: Text(
                               h.rating.toStringAsFixed(1),
-                              style: const TextStyle(
+                              style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 11,
+                                  fontSize: 11.sp,
                                   fontWeight: FontWeight.bold),
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: 6.w),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(_ratingLabel,
                                     style: TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 11.sp,
                                         fontWeight: FontWeight.w600,
                                         color: isDark
                                             ? Colors.white
                                             : const Color(0xFF1A1A1A))),
                                 Text('${fmt.format(h.totalReviews)} reviews',
                                     style: TextStyle(
-                                        fontSize: 10,
+                                        fontSize: 10.sp,
                                         color: Colors.grey.shade500)),
                               ],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 7),
+                      SizedBox(height: 7.h),
                       // Amenity badges — fixed height keeps all cards equal
                       SizedBox(
-                        height: 22,
+                        height: 22.h,
                         child: Row(
                           children: [
                             if (h.isRefundable) ...[
@@ -1048,7 +1049,7 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                                   label: 'Free Cancellation',
                                   bgColor: TravelloTheme.primaryMain,
                                   textColor: Colors.black),
-                              if (h.hasBreakfast) const SizedBox(width: 4),
+                              if (h.hasBreakfast) SizedBox(width: 4.w),
                             ],
                             if (h.hasBreakfast)
                               const _AmenityBadge(
@@ -1068,8 +1069,8 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                       // Per night label
                       Text('Per night',
                           style: TextStyle(
-                              fontSize: 10, color: Colors.grey.shade500)),
-                      const SizedBox(height: 2),
+                              fontSize: 10.sp, color: Colors.grey.shade500)),
+                      SizedBox(height: 2.h),
                       // Prices
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -1077,20 +1078,20 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                         children: [
                           Text(
                             'PKR ${fmt.format(h.pricePerNight.round())}',
-                            style: const TextStyle(
-                              fontSize: 11,
+                            style: TextStyle(
+                              fontSize: 11.sp,
                               color: Colors.red,
                               decoration: TextDecoration.lineThrough,
                               decorationColor: Colors.red,
                             ),
                           ),
-                          const SizedBox(width: 5),
+                          SizedBox(width: 5.w),
                           Flexible(
                             child: Text(
                               'PKR ${fmt.format((h.pricePerNight * (1 - widget.discountPct / 100)).round())}',
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
+                              style: TextStyle(
+                                fontSize: 13.sp,
                                 fontWeight: FontWeight.bold,
                                 color: TravelloTheme.primaryMain,
                               ),
@@ -1098,13 +1099,13 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 1),
+                      SizedBox(height: 1.h),
                       Text(
                         'PKR ${fmt.format(widget.finalPrice.round())} total · ${widget.nights} nights · ${widget.guests} ${widget.guests == 1 ? 'guest' : 'guests'}',
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                         style: TextStyle(
-                            fontSize: 10, color: Colors.grey.shade500),
+                            fontSize: 10.sp, color: Colors.grey.shade500),
                       ),
                     ],
                   ),
@@ -1283,22 +1284,22 @@ class _TopHotelsOfPakistanSection extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         Text(
           'Handpicked luxury & premium stays across Pakistan',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 14.sp,
             color: colorScheme(context).onSurface.withValues(alpha: 0.6),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         SizedBox(
           height: max(295.0, MediaQuery.of(context).size.height * 0.35),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.only(bottom: 4),
+            padding: EdgeInsets.only(bottom: 4.h),
             itemCount: _topPakHotels.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 14),
+            separatorBuilder: (_, __) => SizedBox(width: 14.w),
             itemBuilder: (context, i) {
               final h = _topPakHotels[i];
               return GestureDetector(
@@ -1328,7 +1329,7 @@ class _TopHotelCard extends StatelessWidget {
         width: MediaQuery.of(context).size.width * 0.55,
         decoration: BoxDecoration(
           color: TravelloTheme.paperLight,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.10),
@@ -1349,29 +1350,29 @@ class _TopHotelCard extends StatelessWidget {
           children: [
             // Image
             ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16.r),
+                topRight: Radius.circular(16.r),
               ),
               child: Stack(
                 children: [
                   Image.network(
                     hotel.imageUrl,
                     width: MediaQuery.of(context).size.width * 0.55,
-                    height: 140,
+                    height: 140.h,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
                       width: MediaQuery.of(context).size.width * 0.55,
-                      height: 140,
+                      height: 140.h,
                       color: hotel.accentColor.withValues(alpha: 0.2),
-                      child:
-                          Icon(Icons.hotel, color: hotel.accentColor, size: 40),
+                      child: Icon(Icons.hotel,
+                          color: hotel.accentColor, size: 40.sp),
                     ),
                     loadingBuilder: (_, child, progress) {
                       if (progress == null) return child;
                       return Container(
                         width: MediaQuery.of(context).size.width * 0.55,
-                        height: 140,
+                        height: 140.h,
                         color: Colors.grey.shade100,
                         child: const Center(
                           child: CircularProgressIndicator(strokeWidth: 2),
@@ -1388,7 +1389,7 @@ class _TopHotelCard extends StatelessWidget {
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: TravelloTheme.primaryMain,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(20.r),
                         boxShadow: [
                           BoxShadow(
                             color: TravelloTheme.primaryDark
@@ -1400,10 +1401,10 @@ class _TopHotelCard extends StatelessWidget {
                       ),
                       child: Text(
                         hotel.category,
-                        style: const TextStyle(
-                          fontSize: 10,
+                        style: TextStyle(
+                          fontSize: 10.sp,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF3B2A00),
+                          color: const Color(0xFF3B2A00),
                           letterSpacing: 0.4,
                         ),
                       ),
@@ -1418,7 +1419,7 @@ class _TopHotelCard extends StatelessWidget {
                           horizontal: 7, vertical: 4),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1A1400).withValues(alpha: 0.80),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8.r),
                         border: Border.all(
                           color:
                               TravelloTheme.primaryMain.withValues(alpha: 0.5),
@@ -1428,13 +1429,13 @@ class _TopHotelCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.star_rounded,
-                              color: TravelloTheme.primaryMain, size: 13),
-                          const SizedBox(width: 3),
+                          Icon(Icons.star_rounded,
+                              color: TravelloTheme.primaryMain, size: 13.sp),
+                          SizedBox(width: 3.w),
                           Text(
                             hotel.rating.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 11,
+                            style: TextStyle(
+                              fontSize: 11.sp,
                               fontWeight: FontWeight.w700,
                               color: TravelloTheme.primaryLight,
                             ),
@@ -1448,43 +1449,43 @@ class _TopHotelCard extends StatelessWidget {
             ),
             // Content
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              padding: EdgeInsets.fromLTRB(12.w, 10.h, 12.w, 12.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     hotel.name,
-                    style: const TextStyle(
-                      fontSize: 13,
+                    style: TextStyle(
+                      fontSize: 13.sp,
                       fontWeight: FontWeight.w700,
                       height: 1.2,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Row(
                     children: [
                       Icon(Icons.location_on_rounded,
-                          size: 12,
+                          size: 12.sp,
                           color: colorScheme(context)
                               .onSurface
                               .withValues(alpha: 0.5)),
-                      const SizedBox(width: 2),
+                      SizedBox(width: 2.w),
                       Text(
                         hotel.city,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 11.sp,
                           color: colorScheme(context)
                               .onSurface
                               .withValues(alpha: 0.55),
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6.w),
                       Text(
                         '(${hotel.reviewCount >= 1000 ? '${(hotel.reviewCount / 1000).toStringAsFixed(1)}k' : hotel.reviewCount} reviews)',
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 10.sp,
                           color: colorScheme(context)
                               .onSurface
                               .withValues(alpha: 0.4),
@@ -1492,7 +1493,7 @@ class _TopHotelCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8.h),
                   Wrap(
                     spacing: 4,
                     runSpacing: 4,
@@ -1504,7 +1505,7 @@ class _TopHotelCard extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: TravelloTheme.primaryMain
                                     .withValues(alpha: 0.10),
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(6.r),
                                 border: Border.all(
                                   color: TravelloTheme.primaryDark
                                       .withValues(alpha: 0.35),
@@ -1513,8 +1514,8 @@ class _TopHotelCard extends StatelessWidget {
                               ),
                               child: Text(
                                 a,
-                                style: const TextStyle(
-                                  fontSize: 9,
+                                style: TextStyle(
+                                  fontSize: 9.sp,
                                   fontWeight: FontWeight.w600,
                                   color: TravelloTheme.primaryDark,
                                 ),
@@ -1522,14 +1523,14 @@ class _TopHotelCard extends StatelessWidget {
                             ))
                         .toList(),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10.h),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
                         'PKR ${hotel.pricePerNight >= 1000 ? '${(hotel.pricePerNight / 1000).toStringAsFixed(0)}k' : hotel.pricePerNight}',
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w800,
                           color: TravelloTheme.primaryDark,
                         ),
@@ -1537,7 +1538,7 @@ class _TopHotelCard extends StatelessWidget {
                       Text(
                         '/night',
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 10.sp,
                           color: colorScheme(context)
                               .onSurface
                               .withValues(alpha: 0.45),
@@ -1671,13 +1672,13 @@ class _HotelExplorePakistanSectionState
             Text('Explore Pakistan',
                 style:
                     TravelloTheme.title2.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
+            SizedBox(height: 4.h),
             Text('Find your perfect stay across Pakistan\'s finest cities',
                 style: TravelloTheme.caption
                     .copyWith(color: Colors.grey.shade600)),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         Stack(
           alignment: Alignment.center,
           children: [
@@ -1686,10 +1687,9 @@ class _HotelExplorePakistanSectionState
               child: ListView.separated(
                 controller: _scroll,
                 scrollDirection: Axis.horizontal,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
+                padding: EdgeInsets.symmetric(horizontal: 0.w, vertical: 10.h),
                 itemCount: _destinations.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, __) => SizedBox(width: 12.w),
                 itemBuilder: (context, i) {
                   final d = _destinations[i];
                   return GestureDetector(
@@ -1701,7 +1701,7 @@ class _HotelExplorePakistanSectionState
                         children: [
                           Container(
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.r),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.22),
@@ -1718,16 +1718,16 @@ class _HotelExplorePakistanSectionState
                               ],
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.r),
                               child: Image.network(
                                 d['image'] as String,
                                 width: MediaQuery.of(context).size.width * 0.55,
-                                height: 178,
+                                height: 178.h,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => Container(
                                   width:
                                       MediaQuery.of(context).size.width * 0.55,
-                                  height: 178,
+                                  height: 178.h,
                                   color: Colors.grey.shade200,
                                   child: const Icon(Icons.location_city,
                                       color: Colors.grey),
@@ -1735,14 +1735,16 @@ class _HotelExplorePakistanSectionState
                               ),
                             ),
                           ),
-                          const SizedBox(height: 5),
+                          SizedBox(height: 5.h),
                           Text(d['city'] as String,
-                              style: const TextStyle(
-                                  fontSize: 13, fontWeight: FontWeight.w700)),
+                              style: TextStyle(
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w700)),
                           Text(
                               '${fmt.format(d['properties'] as int)} properties',
                               style: TextStyle(
-                                  fontSize: 11, color: Colors.grey.shade600)),
+                                  fontSize: 11.sp,
+                                  color: Colors.grey.shade600)),
                         ],
                       ),
                     ),
@@ -1785,15 +1787,15 @@ class _AmenityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+        padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(4.r),
         ),
         child: Text(
           label,
           style: TextStyle(
-              color: textColor, fontSize: 9, fontWeight: FontWeight.w700),
+              color: textColor, fontSize: 9.sp, fontWeight: FontWeight.w700),
         ),
       );
 }

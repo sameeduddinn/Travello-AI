@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/widgets/user/verification_code_input.dart';
 import 'package:get/route_manager.dart';
@@ -27,8 +28,8 @@ class EmailVerification extends StatelessWidget {
               snackPosition: SnackPosition.TOP,
               duration: const Duration(seconds: 3),
               icon: const Icon(Icons.verified, color: Colors.white),
-              borderRadius: 10,
-              margin: const EdgeInsets.all(10),
+              borderRadius: 10.r,
+              margin: EdgeInsets.all(10.r),
             );
           });
         });

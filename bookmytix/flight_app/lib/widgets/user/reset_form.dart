@@ -115,7 +115,8 @@ class _ResetFormState extends State<ResetForm> {
 
     Get.snackbar(
       'Send Failed',
-      'Unable to send verification code. Check your email and try again.',
+      AuthService.lastAuthError ??
+          'Unable to send verification code. Check your email and try again.',
       backgroundColor: Colors.red.shade600,
       colorText: Colors.white,
       snackPosition: SnackPosition.TOP,
@@ -227,7 +228,8 @@ class _ResetFormState extends State<ResetForm> {
       } else {
         Get.snackbar(
           'Reset Failed',
-          'Failed to reset password. Please try again.',
+          AuthService.lastAuthError ??
+              'Failed to reset password. Please try again.',
           backgroundColor: Colors.red.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.TOP,
@@ -293,8 +295,10 @@ class _ResetFormState extends State<ResetForm> {
           const SizedBox(height: 8),
           Text(
             'Enter your email address and we\'ll send you a verification code',
-            style: TravelloTheme.headline
-                .copyWith(color: colorScheme.onSurfaceVariant),
+            style: TravelloTheme.paragraph.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: R.sp(context, 14),
+            ),
           ),
           const VSpace(),
           AppTextField(
@@ -325,7 +329,15 @@ class _ResetFormState extends State<ResetForm> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('SEND CODE', style: TravelloTheme.subtitle),
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'SEND CODE',
+                        style: TravelloTheme.subtitle.copyWith(
+                          fontSize: R.sp(context, 15),
+                        ),
+                      ),
+                    ),
             ),
           ),
           const VSpaceBig(),
@@ -342,50 +354,77 @@ class _ResetFormState extends State<ResetForm> {
         const SizedBox(height: 8),
         Text(
           'Enter the 6-digit code sent to\n${_emailController.text}',
-          style: TravelloTheme.headline
-              .copyWith(color: colorScheme.onSurfaceVariant),
+          style: TravelloTheme.paragraph.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontSize: R.sp(context, 14),
+          ),
+          textAlign: TextAlign.center,
         ),
         const VSpace(),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(6, (index) {
-            return SizedBox(
-              width: R.r(context, 50),
-              height: R.rh(context, 60),
-              child: TextField(
-                controller: _codeControllers[index],
-                focusNode: _codeFocusNodes[index],
-                textAlign: TextAlign.center,
-                keyboardType: TextInputType.number,
-                maxLength: 1,
-                style: TravelloTheme.title2,
-                decoration: InputDecoration(
-                  counterText: '',
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: colorScheme.primary,
-                      width: 2,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final bool isCompact = MediaQuery.of(context).size.width <= 370;
+            final double gap = isCompact ? 4 : 6;
+            final double totalGap = gap * 5;
+            final double boxWidth = ((constraints.maxWidth - totalGap) / 6)
+                .clamp(42.0, 54.0)
+                .toDouble();
+            final double boxHeight =
+                (boxWidth * 1.12).clamp(48.0, 62.0).toDouble();
+            final double codeFontSize =
+                (boxWidth * 0.46).clamp(16.0, 23.0).toDouble();
+
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(6, (index) {
+                return Padding(
+                  padding: EdgeInsets.symmetric(horizontal: gap / 2),
+                  child: SizedBox(
+                    width: boxWidth,
+                    height: boxHeight,
+                    child: TextField(
+                      controller: _codeControllers[index],
+                      focusNode: _codeFocusNodes[index],
+                      textAlign: TextAlign.center,
+                      keyboardType: TextInputType.number,
+                      maxLength: 1,
+                      style: TravelloTheme.title2.copyWith(
+                        fontSize: codeFontSize,
+                      ),
+                      decoration: InputDecoration(
+                        counterText: '',
+                        filled: true,
+                        fillColor: colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            (boxWidth * 0.24).clamp(10.0, 14.0).toDouble(),
+                          ),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            (boxWidth * 0.24).clamp(10.0, 14.0).toDouble(),
+                          ),
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      onChanged: (value) {
+                        if (value.isEmpty && index > 0) {
+                          _codeFocusNodes[index - 1].requestFocus();
+                        }
+                      },
                     ),
                   ),
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                onChanged: (value) {
-                  if (value.isEmpty && index > 0) {
-                    _codeFocusNodes[index - 1].requestFocus();
-                  }
-                },
-              ),
+                );
+              }),
             );
-          }),
+          },
         ),
         const VSpace(),
         Center(
@@ -394,8 +433,10 @@ class _ResetFormState extends State<ResetForm> {
               if (!_canResend)
                 Text(
                   'Resend code in $_remainingSeconds seconds',
-                  style: TravelloTheme.caption
-                      .copyWith(color: colorScheme.onSurfaceVariant),
+                  style: TravelloTheme.caption.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: R.sp(context, 12),
+                  ),
                 ),
               if (_canResend)
                 TextButton(
@@ -411,6 +452,7 @@ class _ResetFormState extends State<ResetForm> {
                     style: TravelloTheme.subtitle.copyWith(
                       color: colorScheme.primary,
                       fontWeight: FontWeight.bold,
+                      fontSize: R.sp(context, 14),
                     ),
                   ),
                 ),
@@ -432,7 +474,15 @@ class _ResetFormState extends State<ResetForm> {
               });
             },
             style: ThemeButton.btnBig,
-            child: const Text('CHANGE EMAIL', style: TravelloTheme.subtitle),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'CHANGE EMAIL',
+                style: TravelloTheme.subtitle.copyWith(
+                  fontSize: R.sp(context, 15),
+                ),
+              ),
+            ),
           ),
         ),
         const VSpaceBig(),
@@ -450,8 +500,10 @@ class _ResetFormState extends State<ResetForm> {
           const SizedBox(height: 8),
           Text(
             'Your new password must be different from previously used passwords',
-            style: TravelloTheme.headline
-                .copyWith(color: colorScheme.onSurfaceVariant),
+            style: TravelloTheme.paragraph.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: R.sp(context, 14),
+            ),
           ),
           const VSpace(),
           AppTextField(
@@ -520,7 +572,15 @@ class _ResetFormState extends State<ResetForm> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('RESET PASSWORD', style: TravelloTheme.subtitle),
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'RESET PASSWORD',
+                        style: TravelloTheme.subtitle.copyWith(
+                          fontSize: R.sp(context, 15),
+                        ),
+                      ),
+                    ),
             ),
           ),
           const VSpaceBig(),

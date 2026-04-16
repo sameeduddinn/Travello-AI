@@ -34,6 +34,8 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     final showItem = shrinkOffset < 50;
+    final safeTop = MediaQuery.of(context).padding.top;
+    final compactTop = safeTop + 8;
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraint) {
         double maxWidth = constraint.maxWidth;
@@ -43,8 +45,8 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
           child: Stack(fit: StackFit.expand, children: [
             /// BACKGROUND
             Container(
-              decoration:
-                  const BoxDecoration(color: TravelloTheme.primaryMainContainer),
+              decoration: const BoxDecoration(
+                  color: TravelloTheme.primaryMainContainer),
               child: SvgPicture.asset(
                 ImgApi.profileBanner,
                 fit: BoxFit.cover,
@@ -72,7 +74,7 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
 
             /// TOP BAR
             Positioned(
-              top: 8,
+              top: compactTop,
               left: 16,
               right: 80, // keeps username clear of action buttons on the right
               child: AnimatedOpacity(
@@ -113,7 +115,7 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
               ),
             ),
             Positioned(
-              top: 8,
+              top: compactTop,
               right: 8,
               child: Row(children: homeActionGroup(context, false)),
             ),
@@ -139,8 +141,8 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                               children: [
                                 GestureDetector(
                                   onTap: userAvatar.isNotEmpty
-                                      ? () => Get.to(() =>
-                                          ImageViewer(img: userAvatar))
+                                      ? () => Get.to(
+                                          () => ImageViewer(img: userAvatar))
                                       : onPickAvatar,
                                   child: CircleAvatar(
                                     radius: 50,
@@ -167,7 +169,8 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                                     onTap: onPickAvatar,
                                     child: const CircleAvatar(
                                       radius: 16,
-                                      backgroundColor: TravelloTheme.secondaryMain,
+                                      backgroundColor:
+                                          TravelloTheme.secondaryMain,
                                       child: Icon(Icons.camera_alt,
                                           size: 16,
                                           color: TravelloTheme.secondaryDark),
@@ -203,8 +206,7 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                           decoration: const BoxDecoration(
                             boxShadow: [
                               BoxShadow(
-                                color:
-                                    TravelloTheme.paperLightContainerLowest,
+                                color: TravelloTheme.paperLightContainerLowest,
                                 blurRadius: 0.0,
                                 spreadRadius: 0.0,
                                 offset: Offset(0, 2),

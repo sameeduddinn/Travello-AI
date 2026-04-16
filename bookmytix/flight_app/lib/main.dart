@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/constants/app_constants.dart';
+import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/app/app_routes.dart';
 import 'package:flight_app/controllers/notification_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/config/supabase_config.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
@@ -58,57 +60,72 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      title: branding.name,
-      debugShowCheckedModeBanner: false,
-      navigatorKey: Get.key,
-      themeMode: ThemeMode.light, // Light-only
-      theme: luxuryLightTheme,
-      // Also set darkTheme to the same light theme to prevent any accidental
-      // dark-mode switches from changing the visuals.
-      darkTheme: luxuryLightTheme,
-      initialRoute: '/',
-      getPages: appRoutes,
+    final bool isDesktopPlatform = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.windows ||
+            defaultTargetPlatform == TargetPlatform.macOS ||
+            defaultTargetPlatform == TargetPlatform.linux);
+
+    return ScreenUtilInit(
+      designSize: const Size(393, 852),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      enableScaleWH: () => !isDesktopPlatform,
+      enableScaleText: () => !isDesktopPlatform,
       builder: (context, child) {
-        if (child == null) return const SizedBox.shrink();
+        return GetMaterialApp(
+          title: branding.name,
+          debugShowCheckedModeBanner: false,
+          navigatorKey: Get.key,
+          themeMode: ThemeMode.light, // Light-only
+          theme: luxuryLightTheme,
+          // Also set darkTheme to the same light theme to prevent any accidental
+          // dark-mode switches from changing the visuals.
+          darkTheme: luxuryLightTheme,
+          initialRoute: AppLink.launchSplash,
+          getPages: appRoutes,
+          builder: (context, child) {
+            if (child == null) return const SizedBox.shrink();
 
-        final bool isDesktop = !kIsWeb &&
-            (defaultTargetPlatform == TargetPlatform.windows ||
-                defaultTargetPlatform == TargetPlatform.macOS ||
-                defaultTargetPlatform == TargetPlatform.linux);
+            final bool isDesktop = !kIsWeb &&
+                (defaultTargetPlatform == TargetPlatform.windows ||
+                    defaultTargetPlatform == TargetPlatform.macOS ||
+                    defaultTargetPlatform == TargetPlatform.linux);
 
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final rawScale = MediaQuery.textScalerOf(context).scale(1.0);
-            final safeScale = rawScale.clamp(1.0, 1.05);
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final rawScale = MediaQuery.textScalerOf(context).scale(1.0);
+                final safeScale = rawScale.clamp(1.0, 1.05);
 
-            final baseMq = MediaQuery.of(context).copyWith(
-              boldText: false,
-              textScaler: TextScaler.linear(safeScale),
-            );
+                final baseMq = MediaQuery.of(context).copyWith(
+                  boldText: false,
+                  textScaler: TextScaler.linear(safeScale),
+                );
 
-            if (!isDesktop) {
-              return MediaQuery(data: baseMq, child: child);
-            }
+                if (!isDesktop) {
+                  return MediaQuery(data: baseMq, child: child);
+                }
 
-            const desktopMaxWidth = 393.0;
-            final constrainedWidth = constraints.maxWidth > desktopMaxWidth
-                ? desktopMaxWidth
-                : constraints.maxWidth;
+                const desktopMaxWidth = 393.0;
+                final constrainedWidth = constraints.maxWidth > desktopMaxWidth
+                    ? desktopMaxWidth
+                    : constraints.maxWidth;
 
-            final desktopMq = baseMq.copyWith(
-              size: Size(constrainedWidth, baseMq.size.height),
-            );
+                final desktopMq = baseMq.copyWith(
+                  size: Size(constrainedWidth, baseMq.size.height),
+                );
 
-            return ColoredBox(
-              color: Theme.of(context).colorScheme.surface,
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: desktopMaxWidth),
-                  child: MediaQuery(data: desktopMq, child: child),
-                ),
-              ),
+                return ColoredBox(
+                  color: Theme.of(context).colorScheme.surface,
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints:
+                          const BoxConstraints(maxWidth: desktopMaxWidth),
+                      child: MediaQuery(data: desktopMq, child: child),
+                    ),
+                  ),
+                );
+              },
             );
           },
         );
