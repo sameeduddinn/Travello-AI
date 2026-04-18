@@ -136,7 +136,7 @@ FROM public.bookings b
 LEFT JOIN public.passengers p
        ON p.booking_id = b.id
 LEFT JOIN public.payment_attempts pa
-       ON pa.booking_id = b.id::text
+       ON pa.booking_id = b.id
       AND pa.status = 'completed'
 GROUP BY
     b.id,

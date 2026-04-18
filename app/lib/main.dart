@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/config/supabase_config.dart';
+import 'package:flight_app/widgets/no_internet_banner.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -69,13 +70,14 @@ class MainApp extends StatelessWidget {
         (defaultTargetPlatform == TargetPlatform.windows ||
             defaultTargetPlatform == TargetPlatform.macOS ||
             defaultTargetPlatform == TargetPlatform.linux);
+    final bool disableScreenUtilScaling = isDesktopPlatform || kIsWeb;
 
     return ScreenUtilInit(
       designSize: const Size(393, 852),
       minTextAdapt: true,
       splitScreenMode: true,
-      enableScaleWH: () => !isDesktopPlatform,
-      enableScaleText: () => !isDesktopPlatform,
+      enableScaleWH: () => !disableScreenUtilScaling,
+      enableScaleText: () => !disableScreenUtilScaling,
       builder: (context, child) {
         return GetMaterialApp(
           title: branding.name,
@@ -90,6 +92,7 @@ class MainApp extends StatelessWidget {
           getPages: appRoutes,
           builder: (context, child) {
             if (child == null) return const SizedBox.shrink();
+            final Widget safeChild = NoInternetBanner(child: child);
 
             final bool isDesktop = !kIsWeb &&
                 (defaultTargetPlatform == TargetPlatform.windows ||
@@ -106,8 +109,34 @@ class MainApp extends StatelessWidget {
                   textScaler: TextScaler.linear(safeScale),
                 );
 
+                // Web: center-constrain to a phone width so the mobile-first UI
+                // doesn't stretch across a 1920 px screen.
+                if (kIsWeb) {
+                  const webMaxWidth = 480.0;
+                  final constrainedWidth = constraints.maxWidth > webMaxWidth
+                      ? webMaxWidth
+                      : constraints.maxWidth;
+                  final webMq = baseMq.copyWith(
+                    size: Size(constrainedWidth, baseMq.size.height),
+                  );
+                  return ColoredBox(
+                    color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints:
+                            const BoxConstraints(maxWidth: webMaxWidth),
+                        child: ColoredBox(
+                          color: Theme.of(context).colorScheme.surface,
+                          child: MediaQuery(data: webMq, child: safeChild),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
                 if (!isDesktop) {
-                  return MediaQuery(data: baseMq, child: child);
+                  return MediaQuery(data: baseMq, child: safeChild);
                 }
 
                 const desktopMaxWidth = 393.0;
@@ -126,7 +155,7 @@ class MainApp extends StatelessWidget {
                     child: ConstrainedBox(
                       constraints:
                           const BoxConstraints(maxWidth: desktopMaxWidth),
-                      child: MediaQuery(data: desktopMq, child: child),
+                      child: MediaQuery(data: desktopMq, child: safeChild),
                     ),
                   ),
                 );

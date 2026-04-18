@@ -291,11 +291,13 @@ def _build_offer(
     seat_classes: list[SeatClass] = []
     for code in train["classes"]:
         price = _calculate_price(train, origin_code, dest_code, code, passengers)
-        _seed = hash(f"{train['id']}-{origin_code}-{dest_code}-{travel_date.strftime('%Y%m%d')}") % (2**32)
+        _seed = int(hashlib.md5(
+            f"{train['id']}-{origin_code}-{dest_code}-{code}-{travel_date.strftime('%Y%m%d')}".encode()
+        ).hexdigest(), 16) % (2**32)
         seats_available = random.Random(_seed).randint(0, 80)
         seat_classes.append(
             SeatClass(
-                class_name=_CLASS_NAMES.get(code, code),
+                class_name=_CLASS_NAMES.get(code) or code,
                 class_code=code,
                 price_pkr=price,
                 seats_available=seats_available,
@@ -385,8 +387,8 @@ def search_trains(
     offers.sort(key=lambda o: o.departure_at)
 
     return TrainSearchResponse(
-        origin=origin,
-        destination=destination,
+        origin=origin_info["city"],
+        destination=dest_info["city"],
         date=travel_date,
         count=len(offers),
         trains=offers,
@@ -395,17 +397,17 @@ def search_trains(
 
 def get_train_offer(train_offer_id: str, passengers: int = 1) -> TrainOffer | None:
     """
-    Reconstruct a train offer from its ID (format: TR-XXX-ORI-DST).
+    Reconstruct a train offer from its ID (format: TR-001-KHI-LHE).
     Used when the Flutter app needs to re-fetch a single offer detail.
     """
-    # train_offer_id format: "TR-001-KHI-LHE"
+    # train_offer_id format: "TR-001-KHI-LHE" → ["TR", "001", "KHI", "LHE"]
     parts = train_offer_id.split("-")
-    if len(parts) < 5:
+    if len(parts) < 4:
         return None
 
-    train_id = f"{parts[0]}-{parts[1]}-{parts[2]}"  # e.g. TR-001
-    origin_code = parts[3]
-    dest_code = parts[4]
+    train_id = f"{parts[0]}-{parts[1]}"  # "TR-001"
+    origin_code = parts[2]               # "KHI"
+    dest_code = parts[3]                 # "LHE"
 
     train = next((t for t in _TRAINS if t["id"] == train_id), None)
     if not train:

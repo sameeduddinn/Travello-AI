@@ -31,6 +31,8 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 from core.auth import CurrentUser
+from core.config import settings
+from core.email import send_email
 from core.supabase_client import supabase_admin
 from services.email_service import send_booking_confirmation
 
@@ -75,3 +77,54 @@ async def send_booking_confirmation_endpoint(
         )
 
     return await send_booking_confirmation(booking_uuid=payload.booking_id)
+
+
+# ---------------------------------------------------------------------------
+# GET /email/test
+# ---------------------------------------------------------------------------
+
+@router.get("/test")
+async def test_email_config(user: CurrentUser):
+    """
+    Test email configuration — sends a test email to the authenticated user.
+    Useful for verifying the Resend API key is working before demo.
+    """
+    user_email = getattr(user, "email", "") or ""
+
+    if not user_email:
+        return {
+            "email_configured": bool(settings.RESEND_API_KEY),
+            "error": "No email found for current user",
+            "resend_key_set": bool(settings.RESEND_API_KEY),
+        }
+
+    result = await send_email(
+        to=user_email,
+        subject="Travello AI — Email Test",
+        html="""
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family:Arial,sans-serif;padding:20px">
+          <h2 style="color:#1a73e8">Email is working!</h2>
+          <p>Your Travello AI email system is configured correctly.</p>
+          <p>Booking confirmation emails will be delivered to this address after payment.</p>
+          <p style="color:#888;font-size:12px;margin-top:24px">
+            Travello AI &mdash; Pakistan&apos;s Smart Travel App
+          </p>
+        </body>
+        </html>
+        """,
+    )
+
+    status_value = (
+        "sent"
+        if result.get("id") not in ("skipped", "failed", "disabled", None)
+        else result.get("reason", "unknown")
+    )
+    return {
+        "email_configured": bool(settings.RESEND_API_KEY),
+        "sent_to": user_email,
+        "result": result,
+        "from_address": settings.EMAIL_FROM,
+        "status": status_value,
+    }

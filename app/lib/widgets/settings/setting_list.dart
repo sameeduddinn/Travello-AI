@@ -21,6 +21,7 @@ class SettingList extends StatefulWidget {
 class _SettingListState extends State<SettingList> {
   bool _isGuestMode = false;
   String _currentCityName = 'Karachi';
+  String _currency = 'PKR';
 
   @override
   void initState() {
@@ -32,11 +33,82 @@ class _SettingListState extends State<SettingList> {
     final isGuest = await AuthService.isGuestMode();
     final isLoggedIn = await AuthService.isLoggedIn();
     final cityData = await LocationPreferenceService.getOriginCity();
+    final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
         _isGuestMode = isGuest || !isLoggedIn;
         _currentCityName = cityData['cityName']!;
+        _currency = prefs.getString('currency') ?? 'PKR';
       });
+    }
+  }
+
+  Future<void> _selectCurrency() async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Select Currency'),
+        children: ['PKR', 'USD', 'SAR'].map((c) {
+          return SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, c),
+            child: Text(c,
+                style: TextStyle(
+                    fontWeight: c == _currency
+                        ? FontWeight.bold
+                        : FontWeight.normal)),
+          );
+        }).toList(),
+      ),
+    );
+    if (result != null && result != _currency) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('currency', result);
+      setState(() => _currency = result);
+    }
+  }
+
+  Future<void> _confirmSignOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sign Out?'),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final isGuest = prefs.getBool('guest_mode') ?? false;
+
+    if (isGuest) {
+      await prefs.remove('guest_mode');
+      Get.snackbar('Goodbye!', 'Login to access all features!',
+          backgroundColor: Colors.blue.shade600,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 2));
+      Get.offAllNamed(AppLink.welcome);
+    } else {
+      await AuthService.logout();
+      await prefs.setBool('guest_mode', true);
+      Get.snackbar('Signed Out', 'You have been signed out successfully.',
+          backgroundColor: Colors.green.shade600,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 3),
+          icon: const Icon(Icons.check_circle, color: Colors.white));
+      Get.offAllNamed(AppLink.home);
     }
   }
 
@@ -189,6 +261,20 @@ class _SettingListState extends State<SettingList> {
               ),
               const LineList(),
               ListTile(
+                leading: const Icon(Icons.attach_money_rounded,
+                    color: Color(0xFF059669)),
+                title: const Text('Currency',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  _currency,
+                  style: const TextStyle(
+                      color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 12),
+                onTap: _selectCurrency,
+              ),
+              const LineList(),
+              ListTile(
                 leading: const Icon(Icons.notifications_rounded),
                 title: const Text('Notifications',
                     style: TextStyle(fontWeight: FontWeight.w600)),
@@ -240,45 +326,13 @@ class _SettingListState extends State<SettingList> {
         // ── Logout ─────────────────────────────────────────────────────
         SizedBox(
           height: 50,
-          child: FilledButton(
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              final isGuest = prefs.getBool('guest_mode') ?? false;
-
-              if (isGuest) {
-                await prefs.remove('guest_mode');
-                Get.snackbar(
-                  'Goodbye!',
-                  'Login to access all features!',
-                  backgroundColor: Colors.blue.shade600,
-                  colorText: Colors.white,
-                  snackPosition: SnackPosition.TOP,
-                  duration: const Duration(seconds: 2),
-                );
-                Get.offAllNamed(AppLink.welcome);
-              } else {
-                await AuthService.logout();
-                await prefs.setBool('guest_mode', true);
-                Get.snackbar(
-                  'Signed Out',
-                  'You have been signed out successfully.',
-                  backgroundColor: Colors.green.shade600,
-                  colorText: Colors.white,
-                  snackPosition: SnackPosition.TOP,
-                  duration: const Duration(seconds: 3),
-                  icon: const Icon(Icons.check_circle, color: Colors.white),
-                );
-                Get.offAllNamed(AppLink.home);
-              }
-            },
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Sign Out'),
-                SizedBox(width: 6),
-                Icon(Icons.exit_to_app, size: 18),
-              ],
+          child: OutlinedButton.icon(
+            onPressed: _confirmSignOut,
+            icon: const Icon(Icons.exit_to_app, size: 18),
+            label: const Text('Sign Out'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red),
             ),
           ),
         ),

@@ -47,6 +47,22 @@ async def lifespan(app: FastAPI):
 
     # Initialise asyncpg pool (no-op if DATABASE_URL not set)
     await init_db_pool()
+
+    # Configuration checks
+    if not settings.SUPABASE_URL:
+        logger.error("❌ SUPABASE_URL not set — app will NOT work!")
+    else:
+        logger.info("✅ Supabase configured")
+
+    if not settings.RESEND_API_KEY:
+        logger.warning(
+            "⚠️  RESEND_API_KEY not set — "
+            "booking confirmation emails will be SKIPPED. "
+            "Payments still work. Set RESEND_API_KEY in .env to enable emails."
+        )
+    else:
+        logger.info("✅ Resend email configured — from: %s", settings.EMAIL_FROM)
+
     logger.info("Startup complete. Ready to accept requests.")
 
     yield  # <--- app is running here

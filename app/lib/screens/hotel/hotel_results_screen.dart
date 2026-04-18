@@ -4,6 +4,7 @@ import 'package:flight_app/models/hotel.dart';
 import 'package:flight_app/services/api_client.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
 
 class HotelResultsScreen extends StatefulWidget {
@@ -799,19 +800,41 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
                   )
                 : filteredHotels.isEmpty
                     ? Center(
-                        child: Column(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.hotel_outlined,
-                                  size: 64, color: Colors.grey.shade400),
+                                  size: 72, color: Colors.grey.shade400),
                               const SizedBox(height: 16),
-                              Text('No hotels found',
+                              Text('No hotels found in $city',
                                   style: TravelloTheme.subtitle
-                                      .copyWith(color: Colors.grey.shade600)),
+                                      .copyWith(color: Colors.grey.shade700),
+                                  textAlign: TextAlign.center),
                               const SizedBox(height: 8),
-                              const Text('Try adjusting your filters',
-                                  style: TravelloTheme.caption),
-                            ]),
+                              Text(
+                                'Try a different city or dates',
+                                style: TravelloTheme.caption
+                                    .copyWith(color: Colors.grey.shade500),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 24),
+                              OutlinedButton.icon(
+                                onPressed: () => Navigator.pop(context),
+                                icon: const Icon(Icons.search),
+                                label: const Text('Search Again'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: TravelloTheme.primaryMain,
+                                  side: const BorderSide(
+                                      color: TravelloTheme.primaryMain),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24, vertical: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(16),
@@ -877,16 +900,24 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(16)),
                   child: hotel.images.isNotEmpty
-                      ? Image.network(
-                          hotel.images.first,
+                      ? CachedNetworkImage(
+                          imageUrl: hotel.images.first,
                           height: R.rh(context, 180),
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                              height: R.rh(context, 180),
-                              color: Colors.grey.shade200,
-                              child: const Icon(Icons.hotel,
-                                  size: 64, color: Colors.grey)),
+                          placeholder: (_, __) => Container(
+                            height: R.rh(context, 180),
+                            color: Colors.grey.shade200,
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                          errorWidget: (_, __, ___) => Container(
+                            height: R.rh(context, 180),
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.image_not_supported,
+                                size: 48, color: Colors.grey),
+                          ),
                         )
                       : Container(
                           height: R.rh(context, 180),

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -866,12 +867,19 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
                       height: 145.h,
                       width: double.infinity,
                       child: h.images.isNotEmpty
-                          ? Image.network(
-                              h.images.first,
+                          ? CachedNetworkImage(
+                              imageUrl: h.images.first,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
+                              placeholder: (_, __) => Container(
                                 color: Colors.grey.shade200,
-                                child: Icon(Icons.hotel,
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2),
+                                ),
+                              ),
+                              errorWidget: (_, __, ___) => Container(
+                                color: Colors.grey.shade200,
+                                child: Icon(Icons.image_not_supported,
                                     size: 40.sp, color: Colors.grey),
                               ),
                             )

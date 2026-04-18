@@ -49,8 +49,8 @@ router = APIRouter(prefix="/saved-searches", tags=["Saved Searches"])
 
 
 class SaveSearchRequest(BaseModel):
-    search_type: str          # 'flight', 'train', 'hotel'
-    query:       dict[str, Any]  # free-form query params
+    search_type:   str          # 'flight', 'train', 'hotel'
+    search_params: dict[str, Any]  # free-form query params
 
 
 # ---------------------------------------------------------------------------
@@ -64,7 +64,7 @@ async def save_search(payload: SaveSearchRequest, user: CurrentUser) -> dict[str
         "id": str(uuid.uuid4()),
         "user_id": user.id,
         "search_type": payload.search_type,
-        "query": payload.query,
+        "search_params": payload.search_params,
     }
     try:
         supabase_admin.table("saved_searches").insert(row).execute()

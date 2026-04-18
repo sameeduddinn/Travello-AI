@@ -1,4 +1,5 @@
 import 'package:flight_app/app/app_link.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flight_app/utils/booking_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,6 +29,8 @@ class BookingDetail extends StatefulWidget {
 class _BookingDetailState extends State<BookingDetail> {
   Map<String, dynamic> _booking = {};
   bool _downloadingPdf = false;
+  bool _cancellingBooking = false;
+  bool _reviewSubmitted = false;
 
   @override
   void initState() {
@@ -101,6 +104,189 @@ class _BookingDetailState extends State<BookingDetail> {
         ),
       ),
       bottomNavigationBar: _buildBottomBar(),
+    );
+  }
+
+  // ── Cancel booking with confirmation dialog ──────────────────────────────
+
+  Future<void> _showCancelDialog() async {
+    final bookingRef = _booking['pnr'] ?? _booking['bookingId'] ?? '';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel Booking?'),
+        content: Text(
+          'This action cannot be undone. Your booking'
+          '${bookingRef.isNotEmpty ? ' $bookingRef' : ''} will be cancelled.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep Booking'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final bookingUuid = _booking['backendBookingId']?.toString() ??
+        _booking['id']?.toString() ?? '';
+    if (bookingUuid.isEmpty) {
+      Get.snackbar('Error', 'Booking ID not found.',
+          backgroundColor: Colors.red, colorText: Colors.white,
+          snackPosition: SnackPosition.TOP);
+      return;
+    }
+
+    setState(() => _cancellingBooking = true);
+    try {
+      await ApiClient.cancelBooking(bookingUuid);
+      setState(() => _booking = {..._booking, 'status': 'cancelled'});
+      if (mounted) {
+        Get.snackbar('Booking Cancelled', 'Your booking has been cancelled.',
+            backgroundColor: Colors.orange.shade700,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP);
+        Get.back();
+      }
+    } catch (e) {
+      if (mounted) {
+        Get.snackbar('Error', 'Could not cancel booking. Please try again.',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP);
+      }
+    } finally {
+      if (mounted) setState(() => _cancellingBooking = false);
+    }
+  }
+
+  // ── Leave a review bottom sheet ──────────────────────────────────────────
+
+  void _showReviewSheet() {
+    int selectedRating = 0;
+    final commentController = TextEditingController();
+    bool submitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheet) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                left: 24,
+                right: 24,
+                top: 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Leave a Review',
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (i) {
+                      final star = i + 1;
+                      return GestureDetector(
+                        onTap: () => setSheet(() => selectedRating = star),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Icon(
+                            star <= selectedRating
+                                ? Icons.star
+                                : Icons.star_border,
+                            size: 40,
+                            color: const Color(0xFFD4AF37),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: commentController,
+                    maxLength: 300,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Share your experience (optional)',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: (submitting || selectedRating == 0)
+                          ? null
+                          : () async {
+                              setSheet(() => submitting = true);
+                              try {
+                                final bookingUuid =
+                                    _booking['backendBookingId']?.toString() ??
+                                        _booking['id']?.toString() ?? '';
+                                final navigator = Navigator.of(sheetCtx);
+                                await ApiClient.submitReview(
+                                  bookingId: bookingUuid,
+                                  rating: selectedRating,
+                                  comment: commentController.text.trim(),
+                                );
+                                if (mounted) {
+                                  navigator.pop();
+                                  setState(() => _reviewSubmitted = true);
+                                  Get.snackbar(
+                                    'Thank you!',
+                                    'Your review has been submitted.',
+                                    backgroundColor: Colors.green.shade600,
+                                    colorText: Colors.white,
+                                    snackPosition: SnackPosition.TOP,
+                                  );
+                                }
+                              } catch (_) {
+                                if (mounted) {
+                                  Get.snackbar(
+                                    'Error',
+                                    'Could not submit review. Please try again.',
+                                    backgroundColor: Colors.red,
+                                    colorText: Colors.white,
+                                    snackPosition: SnackPosition.TOP,
+                                  );
+                                }
+                                setSheet(() => submitting = false);
+                              }
+                            },
+                      child: submitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Text('Submit Review'),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -2094,35 +2280,83 @@ class _BookingDetailState extends State<BookingDetail> {
       buttonAction = _downloadETicket;
     }
 
+    final status = (_booking['status'] ?? '').toString().toLowerCase();
+    final canCancel = status != 'cancelled' && status != 'canceled';
+    final canReview = status == 'paid' || status == 'confirmed';
+
     return BottomAppBar(
       elevation: 8,
-      height: 80,
       color: Colors.white,
-      padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: double.infinity,
-        child: FilledButton(
-          onPressed: _downloadingPdf ? null : buttonAction,
-          style: ThemeButton.btnBig.merge(
-            FilledButton.styleFrom(
-              backgroundColor: primaryBtnColor,
-              foregroundColor: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _downloadingPdf ? null : buttonAction,
+              style: ThemeButton.btnBig.merge(
+                FilledButton.styleFrom(
+                  backgroundColor: primaryBtnColor,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+              child: _downloadingPdf
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(downloadBtnText, textAlign: TextAlign.center),
             ),
           ),
-          child: _downloadingPdf
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              if (canReview)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _reviewSubmitted ? null : _showReviewSheet,
+                    icon: Icon(
+                      _reviewSubmitted ? Icons.check_circle : Icons.star_outline,
+                      size: 16,
+                    ),
+                    label: Text(
+                      _reviewSubmitted ? 'Review Submitted' : 'Leave a Review',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFD4AF37),
+                      side: const BorderSide(color: Color(0xFFD4AF37)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
                   ),
-                )
-              : Text(
-                  downloadBtnText,
-                  textAlign: TextAlign.center,
                 ),
-        ),
+              if (canReview && canCancel) const SizedBox(width: 8),
+              if (canCancel)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _cancellingBooking ? null : _showCancelDialog,
+                    icon: _cancellingBooking
+                        ? const SizedBox(
+                            height: 14,
+                            width: 14,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.red))
+                        : const Icon(Icons.cancel_outlined, size: 16),
+                    label: const Text('Cancel',
+                        style: TextStyle(fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

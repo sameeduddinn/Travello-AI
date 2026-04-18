@@ -13,8 +13,6 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from fastapi import HTTPException
-
 from core.email import send_email
 from core.supabase_client import supabase_admin
 
@@ -25,8 +23,9 @@ logger = logging.getLogger(__name__)
 # Fetch booking + passengers for email rendering
 # ---------------------------------------------------------------------------
 
-async def _fetch_booking_data(booking_uuid: str) -> dict[str, Any]:
-    """Load a booking row with its passengers from Supabase (admin client)."""
+async def _fetch_booking_data(booking_uuid: str) -> dict[str, Any] | None:
+    """Load a booking row with its passengers from Supabase (admin client).
+    Returns None on error instead of raising."""
     try:
         booking_res = (
             supabase_admin.table("bookings")
@@ -36,20 +35,27 @@ async def _fetch_booking_data(booking_uuid: str) -> dict[str, Any]:
             .execute()
         )
     except Exception as exc:
-        raise HTTPException(status_code=404, detail=f"Booking not found: {exc}")
+        logger.error("_fetch_booking_data error for %s: %s", booking_uuid, exc)
+        return None
 
     if not booking_res.data:
-        raise HTTPException(status_code=404, detail="Booking not found.")
+        logger.error("Booking %s not found for email", booking_uuid)
+        return None
 
     booking = booking_res.data
 
-    passengers_res = (
-        supabase_admin.table("passengers")
-        .select("*")
-        .eq("booking_id", booking_uuid)
-        .execute()
-    )
-    booking["passengers"] = passengers_res.data or []
+    try:
+        passengers_res = (
+            supabase_admin.table("passengers")
+            .select("*")
+            .eq("booking_id", booking_uuid)
+            .execute()
+        )
+        booking["passengers"] = passengers_res.data or []
+    except Exception as exc:
+        logger.warning("Could not fetch passengers for %s: %s", booking_uuid, exc)
+        booking["passengers"] = []
+
     return booking
 
 
@@ -348,18 +354,21 @@ async def send_booking_confirmation(booking_uuid: str) -> dict:
     """
     Fetch booking from DB and send the appropriate HTML confirmation email.
     Called by POST /email/booking-confirmation and after payment verification.
+    Always returns a dict — never raises.
     """
     booking = await _fetch_booking_data(booking_uuid)
+
+    if booking is None:
+        logger.error("send_booking_confirmation: booking %s not found", booking_uuid)
+        return {"sent": False, "reason": "booking_not_found"}
 
     booking_type = booking.get("booking_type", "flight")
     contact_email = booking.get("contact_email")
     booking_ref = booking.get("booking_id", booking_uuid)
 
     if not contact_email:
-        raise HTTPException(
-            status_code=400,
-            detail="Booking has no contact email address.",
-        )
+        logger.error("Booking %s has no contact email", booking_uuid)
+        return {"sent": False, "reason": "no_contact_email"}
 
     # Choose template
     if booking_type == "flight":
@@ -375,19 +384,17 @@ async def send_booking_confirmation(booking_uuid: str) -> dict:
         html = _flight_email_html(booking)  # fallback
         subject = f"Booking Confirmed — {booking_ref}"
 
-    try:
-        result = await send_email(
-            to=contact_email,
-            subject=subject,
-            html=html,
-        )
-    except RuntimeError as exc:
-        logger.error("send_booking_confirmation failed: %s", exc)
-        raise HTTPException(status_code=502, detail=f"Email delivery failed: {exc}")
+    result = await send_email(
+        to=contact_email,
+        subject=subject,
+        html=html,
+    )
 
+    sent = result.get("id") not in ("disabled", "failed", "skipped", None)
     return {
-        "sent": True,
+        "sent": sent,
         "to": contact_email,
         "subject": subject,
         "resend_id": result.get("id"),
+        "reason": result.get("reason"),
     }

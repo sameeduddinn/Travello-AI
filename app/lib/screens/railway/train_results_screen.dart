@@ -1218,20 +1218,44 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                     child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
                 : _trains.isEmpty
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              CupertinoIcons.train_style_one,
-                              size: 80,
-                              color: Colors.grey.withValues(alpha: 0.5),
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'No trains found',
-                              style: TravelloTheme.title2,
-                            ),
-                          ],
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                CupertinoIcons.train_style_one,
+                                size: 80,
+                                color: Colors.grey.withValues(alpha: 0.5),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'No trains found for this route',
+                                style: TravelloTheme.title2,
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Try different cities or check bus alternatives',
+                                style: TravelloTheme.caption.copyWith(
+                                    color: Colors.grey.shade500),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 24),
+                              OutlinedButton.icon(
+                                onPressed: () => Navigator.pop(context),
+                                icon: const Icon(Icons.search),
+                                label: const Text('Search Again'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: TravelloTheme.primaryMain,
+                                  side: const BorderSide(
+                                      color: TravelloTheme.primaryMain),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24, vertical: 12),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       )
                     : ListView.builder(

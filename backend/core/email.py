@@ -68,20 +68,32 @@ async def send_email(
         "Content-Type": "application/json",
     }
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        response = await client.post(RESEND_API_URL, json=payload, headers=headers)
+    if not recipients or not recipients[0]:
+        logger.warning("Email skipped — no recipient address")
+        return {"id": "skipped", "reason": "no_recipient"}
 
-    if response.status_code not in (200, 201):
-        logger.error(
-            "Resend API error %s: %s", response.status_code, response.text
-        )
-        raise RuntimeError(
-            f"Email delivery failed (HTTP {response.status_code}): {response.text}"
-        )
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(RESEND_API_URL, json=payload, headers=headers)
 
-    data = response.json()
-    logger.info("Email sent via Resend — message id: %s", data.get("id"))
-    return data
+        if response.status_code in (200, 201):
+            data = response.json()
+            logger.info("Email sent via Resend — message id: %s", data.get("id"))
+            return data
+        else:
+            logger.error(
+                "Resend API %s: %s", response.status_code, response.text[:200]
+            )
+            return {
+                "id": "failed",
+                "reason": f"api_error_{response.status_code}",
+            }
+    except httpx.TimeoutException:
+        logger.error("Resend timeout for %s", recipients)
+        return {"id": "failed", "reason": "timeout"}
+    except Exception as exc:
+        logger.error("Resend error: %s", exc)
+        return {"id": "failed", "reason": str(exc)}
 
 
 async def send_otp_email(

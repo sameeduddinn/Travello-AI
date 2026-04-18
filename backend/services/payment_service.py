@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import logging
 import random
+import secrets
 import string
 import uuid
 from datetime import datetime, timedelta
@@ -35,6 +36,7 @@ from typing import Any
 
 from fastapi import HTTPException, status
 from passlib.context import CryptContext
+from postgrest.types import CountMethod
 
 from core.config import settings
 from core.email import send_otp_email
@@ -56,7 +58,7 @@ WALLET_METHODS = {"jazzcash", "easypaisa"}
 
 def _generate_otp(length: int = 6) -> str:
     """Generate a cryptographically random 6-digit numeric OTP."""
-    return "".join(random.choices(string.digits, k=length))
+    return "".join(secrets.choice(string.digits) for _ in range(length))
 
 
 def _generate_transaction_id(method: str) -> str:
@@ -183,7 +185,7 @@ async def initiate_payment(
         try:
             rate_result = (
                 supabase_admin.table("payment_otps")
-                .select("id", count="exact")
+                .select("id", count=CountMethod.exact)
                 .eq("user_id", user_id)
                 .gte("created_at", cutoff)
                 .execute()
@@ -270,17 +272,10 @@ async def initiate_payment(
             metadata={"simulated": True},
         )
 
-        # Mark booking as paid immediately
+        # Step 1: Mark booking paid FIRST — must always succeed
         await mark_booking_paid(booking_uuid, transaction_id)
 
-        # Send booking confirmation email (non-fatal if it fails)
-        try:
-            from services.email_service import send_booking_confirmation
-            await send_booking_confirmation(booking_uuid)
-        except Exception as exc:
-            logger.warning("Card payment confirmation email failed (non-fatal): %s", exc)
-
-        # Create success notification
+        # Step 2: Create notification — isolated
         await _create_notification(
             user_id=user_id,
             title="Payment Successful",
@@ -288,6 +283,17 @@ async def initiate_payment(
             notif_type="payment_success",
             data={"booking_id": booking_uuid, "transaction_id": transaction_id},
         )
+
+        # Step 3: Send confirmation email — completely isolated
+        try:
+            from services.email_service import send_booking_confirmation
+            await send_booking_confirmation(booking_uuid)
+            logger.info("Confirmation email sent for booking %s", booking_uuid)
+        except Exception as email_exc:
+            logger.warning(
+                "Confirmation email failed (non-fatal) for %s: %s",
+                booking_uuid, email_exc,
+            )
 
         return PaymentInitiateResponse(
             request_id=attempt_id,
@@ -384,34 +390,56 @@ async def verify_otp(
         .single()
         .execute()
     )
+    if not attempt_result.data:
+        raise HTTPException(status_code=404, detail="Payment attempt not found.")
     booking_uuid = attempt_result.data["booking_id"]
 
     # Mark booking as paid
     await mark_booking_paid(booking_uuid, transaction_id)
 
-    # Create success notification
+    # Fetch booking details for the rich notification
+    try:
+        _notif_res = (
+            supabase_admin.table("bookings")
+            .select("pnr, booking_type, total_amount, booking_id")
+            .eq("id", booking_uuid)
+            .single()
+            .execute()
+        )
+        _nd = _notif_res.data or {}
+    except Exception:
+        _nd = {}
+
+    _pnr  = _nd.get("pnr", "")
+    _btype = (_nd.get("booking_type", "") or "Travel").title()
+    _amount = _nd.get("total_amount", 0)
+    _ref   = _nd.get("booking_id", "")
+
     await _create_notification(
         user_id=user_id,
-        title="Payment Successful",
-        body=f"Your {otp_record['provider'].title()} payment was confirmed. "
-             "Your booking is now paid.",
-        notif_type="payment_success",
-        data={"booking_id": booking_uuid, "transaction_id": transaction_id},
+        title=f"{_btype} Booking Confirmed ✅",
+        body=(
+            f"Booking {_ref} confirmed. PNR: {_pnr}. "
+            f"Total: PKR {float(_amount):,.0f}"
+        ) if _pnr else f"Your {otp_record['provider'].title()} payment was confirmed. Your booking is now paid.",
+        notif_type="booking_confirmed",
+        data={"booking_id": booking_uuid, "transaction_id": transaction_id, "pnr": _pnr},
     )
 
-    # Fetch booking metadata for the response
-    booking_result = (
-        supabase_admin.table("bookings")
-        .select("booking_id, pnr")
-        .eq("id", booking_uuid)
-        .single()
-        .execute()
-    )
-    readable_booking_id = (
-        booking_result.data.get("booking_id", booking_uuid)
-        if booking_result.data else booking_uuid
-    )
-    pnr_value = booking_result.data.get("pnr") if booking_result.data else None
+    # Send confirmation email — completely isolated, must never affect payment response
+    try:
+        from services.email_service import send_booking_confirmation
+        await send_booking_confirmation(booking_uuid)
+        logger.info("Confirmation email sent for booking %s", booking_uuid)
+    except Exception as email_exc:
+        logger.warning(
+            "Confirmation email failed (non-fatal) for %s: %s",
+            booking_uuid, email_exc,
+        )
+
+    # Use booking metadata already fetched for the notification
+    readable_booking_id = _nd.get("booking_id") or booking_uuid
+    pnr_value = _nd.get("pnr")
 
     return OTPVerifyResponse(
         success=True,

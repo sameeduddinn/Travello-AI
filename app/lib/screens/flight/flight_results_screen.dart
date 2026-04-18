@@ -891,6 +891,25 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
             },
           ),
 
+          // Cache freshness chip
+          if (!_isLoading && _filteredFlights.isNotEmpty)
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              alignment: Alignment.centerRight,
+              child: Chip(
+                avatar: Icon(Icons.info_outline,
+                    size: 14, color: Colors.grey.shade600),
+                label: Text(
+                  'Results valid for 30 minutes',
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                ),
+                backgroundColor: Colors.grey.shade100,
+                padding: EdgeInsets.zero,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+
           // Flight list
           Expanded(
             child: _isLoading

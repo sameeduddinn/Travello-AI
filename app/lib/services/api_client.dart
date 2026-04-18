@@ -23,7 +23,7 @@ const String _backendFromDartDefine =
     String.fromEnvironment('BACKEND_BASE_URL', defaultValue: '');
 const String _defaultAndroidBackendUrl = 'http://10.0.2.2:8000';
 const String _defaultDesktopBackendUrl = 'http://127.0.0.1:8000';
-// const String _defaultWebBackendUrl = 'https://travello-backend.onrender.com';
+const String _defaultWebBackendUrl = 'https://travello-backend.onrender.com';
 
 class ApiClient {
   static String get resolvedBaseUrl => _baseUrl;
@@ -37,7 +37,7 @@ class ApiClient {
   static String get _baseUrl {
     final configured = _backendFromDartDefine.trim();
     if (configured.isNotEmpty) return configured;
-    // if (kIsWeb) return _defaultWebBackendUrl;
+    if (kIsWeb) return _defaultWebBackendUrl;
     if (defaultTargetPlatform == TargetPlatform.android) {
       return _defaultAndroidBackendUrl;
     }
@@ -350,6 +350,83 @@ class ApiClient {
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
+  /// Submit a review for a completed booking.
+  static Future<Map<String, dynamic>> submitReview({
+    required String bookingId,
+    required int rating,
+    String? comment,
+  }) async {
+    final res = await http
+        .post(
+          Uri.parse('$_baseUrl/reviews'),
+          headers: _headers,
+          body: jsonEncode({
+            'booking_id': bookingId,
+            'rating': rating,
+            if (comment != null && comment.isNotEmpty) 'comment': comment,
+          }),
+        )
+        .timeout(const Duration(seconds: 15));
+    _throwIfError(res, 'Submit review');
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
+  /// Save a search to the backend.
+  static Future<void> saveSearch({
+    required String searchType,
+    required Map<String, dynamic> searchParams,
+  }) async {
+    if (_token == null) return;
+    try {
+      await http
+          .post(
+            Uri.parse('$_baseUrl/saved-searches/'),
+            headers: _headers,
+            body: jsonEncode({
+              'search_type': searchType,
+              'search_params': searchParams,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {
+      // Non-fatal — local history still works
+    }
+  }
+
+  /// Get saved searches from backend.
+  static Future<List<Map<String, dynamic>>> getSavedSearches() async {
+    if (_token == null) return [];
+    try {
+      final res = await http
+          .get(
+            Uri.parse('$_baseUrl/saved-searches/'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode < 200 || res.statusCode >= 300) return [];
+      final data = jsonDecode(res.body);
+      if (data is List) {
+        return data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Delete a saved search by ID.
+  static Future<void> deleteSavedSearch(String id) async {
+    if (_token == null) return;
+    try {
+      await http
+          .delete(
+            Uri.parse('$_baseUrl/saved-searches/$id'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {}
+  }
+
   /// Cancel a booking. Returns updated booking map.
   static Future<Map<String, dynamic>> cancelBooking(String bookingId) async {
     final res = await http
@@ -407,7 +484,7 @@ class ApiClient {
       final res = await http.get(
         Uri.parse('$_baseUrl/healthcare/nearby')
             .replace(queryParameters: params),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
       ).timeout(const Duration(seconds: 10));
       _logDebug('Healthcare nearby response: HTTP ${res.statusCode}');
       if (res.statusCode < 200 || res.statusCode >= 300) return [];
@@ -433,7 +510,7 @@ class ApiClient {
     try {
       final res = await http.get(
         Uri.parse('$_baseUrl/healthcare/emergency-numbers'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
       ).timeout(const Duration(seconds: 8));
       if (res.statusCode < 200 || res.statusCode >= 300) return null;
       return jsonDecode(res.body) as Map<String, dynamic>;

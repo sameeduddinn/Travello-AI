@@ -18,6 +18,7 @@ from datetime import date, datetime
 from typing import Any
 
 from fastapi import HTTPException, status
+from postgrest.types import CountMethod
 
 from core.supabase_client import supabase_admin
 from models.booking import BookingOut, PassengerCreate, PassengerOut, TicketOut
@@ -160,7 +161,7 @@ async def list_bookings(
 
     query = (
         supabase_admin.table("bookings")
-        .select("*", count="exact")
+        .select("*", count=CountMethod.exact)
         .eq("user_id", user_id)
         .order("created_at", desc=True)
         .range(offset, offset + per_page - 1)
