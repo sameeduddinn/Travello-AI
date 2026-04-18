@@ -284,7 +284,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
         contactEmail: _contactEmail,
         contactPhone: _contactPhone.isNotEmpty ? _contactPhone : null,
       );
-      _backendBookingId = booking['booking_id']?.toString();
+      _backendBookingId = booking['id']?.toString();       // UUID — required by /passengers and /payments
       _backendPnr = booking['pnr']?.toString();
 
       if (_backendBookingId != null && _passengers.isNotEmpty) {
