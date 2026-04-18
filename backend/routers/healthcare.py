@@ -2,7 +2,7 @@
 # FILE: routers/healthcare.py
 # PREFIX: /healthcare
 # PURPOSE: Healthcare guidance — nearby hospitals, pharmacies, emergency numbers.
-#          Uses curated mock data and OpenStreetMap links (no Google API).
+#          Uses OpenStreetMap Overpass live lookup first, then curated mock fallback.
 # =============================================================================
 #
 # FLUTTER INTEGRATION (Flutter 3.28.3 / Dart 3.10.1)
@@ -46,10 +46,13 @@ import logging
 import math
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, HTTPException, Query, status
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/healthcare", tags=["Healthcare"])
+
+_OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
 
 # ---------------------------------------------------------------------------
@@ -390,6 +393,128 @@ def _mock_nearby(
     return results[:10]
 
 
+def _parse_overpass_item(
+    element: dict[str, Any],
+    origin_lat: float,
+    origin_lng: float,
+    fallback_type: str,
+) -> dict[str, Any] | None:
+    tags = element.get("tags") or {}
+    name = tags.get("name") or tags.get("name:en") or tags.get("brand")
+    if not name:
+        return None
+
+    item_lat = element.get("lat") or (element.get("center") or {}).get("lat")
+    item_lng = element.get("lon") or (element.get("center") or {}).get("lon")
+    if item_lat is None or item_lng is None:
+        return None
+
+    addr_parts = [
+        tags.get("addr:housenumber", ""),
+        tags.get("addr:street", ""),
+        tags.get("addr:suburb", ""),
+        tags.get("addr:city", ""),
+    ]
+    address = ", ".join(part for part in addr_parts if part).strip() or "Address unavailable"
+
+    phone = tags.get("phone") or tags.get("contact:phone")
+    opening_hours = tags.get("opening_hours", "")
+    is_open = True if "24/7" in opening_hours else None
+
+    distance_km = round(_haversine_km(origin_lat, origin_lng, item_lat, item_lng), 2)
+
+    poi_type = (
+        tags.get("amenity")
+        or tags.get("healthcare")
+        or tags.get("tourism")
+        or fallback_type
+    )
+
+    return {
+        "place_id": f"osm-{element.get('type', 'node')}-{element.get('id', '0')}",
+        "name": name,
+        "address": address,
+        "distance_km": distance_km,
+        "phone": phone,
+        "is_open": is_open,
+        "lat": item_lat,
+        "lng": item_lng,
+        "maps_url": _maps_url(item_lat, item_lng),
+        "rating": None,
+        "type": str(poi_type).replace("_", " ").title(),
+    }
+
+
+async def _fetch_overpass_nearby(
+    lat: float,
+    lng: float,
+    radius_km: float,
+    place_type: str,
+) -> list[dict[str, Any]]:
+    """Fetch nearby healthcare places from OpenStreetMap Overpass."""
+    radius_m = max(int(radius_km * 1000), 500)
+
+    if place_type == "pharmacy":
+        tag_patterns = [
+            '"amenity"="pharmacy"',
+            '"healthcare"="pharmacy"',
+        ]
+    else:
+        tag_patterns = [
+            '"amenity"~"hospital|clinic"',
+            '"healthcare"~"hospital|clinic"',
+        ]
+
+    statements: list[str] = []
+    for tag_pattern in tag_patterns:
+        statements.extend(
+            [
+                f"node[{tag_pattern}](around:{radius_m},{lat},{lng});",
+                f"way[{tag_pattern}](around:{radius_m},{lat},{lng});",
+                f"relation[{tag_pattern}](around:{radius_m},{lat},{lng});",
+            ]
+        )
+
+    query = "[out:json][timeout:20];(" + "".join(statements) + ");out center;"
+
+    try:
+        async with httpx.AsyncClient(timeout=22.0) as client:
+            response = await client.post(_OVERPASS_URL, data={"data": query})
+
+        if response.status_code != 200:
+            logger.warning(
+                "Overpass %s query failed with status %s",
+                place_type,
+                response.status_code,
+            )
+            return []
+
+        elements = response.json().get("elements", [])
+        parsed: list[dict[str, Any]] = []
+        seen: set[tuple[str, float, float]] = set()
+
+        for element in elements:
+            item = _parse_overpass_item(element, lat, lng, place_type)
+            if not item:
+                continue
+
+            dedupe_key = (
+                item["name"].strip().lower(),
+                round(float(item["lat"]), 4),
+                round(float(item["lng"]), 4),
+            )
+            if dedupe_key in seen:
+                continue
+            seen.add(dedupe_key)
+            parsed.append(item)
+
+        parsed.sort(key=lambda x: x["distance_km"])
+        return parsed[:10]
+    except Exception as exc:
+        logger.warning("Overpass %s lookup failed: %s", place_type, exc)
+        return []
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -404,10 +529,21 @@ async def get_nearby_hospitals(
 ) -> list[dict[str, Any]]:
     """
     Find hospitals near coordinates or by city name.
-    Returns curated Pakistani hospital data with OpenStreetMap links.
+    Returns OpenStreetMap results first; falls back to curated Pakistani data.
     """
     resolved_lat, resolved_lng = _resolve_coordinates(lat, lng, lon, city)
-    return _mock_nearby(resolved_lat, resolved_lng, max(radius, 0.5), _MOCK_HOSPITALS)
+    safe_radius = max(radius, 0.5)
+
+    live_results = await _fetch_overpass_nearby(
+        resolved_lat,
+        resolved_lng,
+        safe_radius,
+        place_type="hospital",
+    )
+    if live_results:
+        return live_results
+
+    return _mock_nearby(resolved_lat, resolved_lng, safe_radius, _MOCK_HOSPITALS)
 
 
 @router.get("/pharmacies")
@@ -420,10 +556,21 @@ async def get_nearby_pharmacies(
 ) -> list[dict[str, Any]]:
     """
     Find pharmacies near coordinates or by city name.
-    Returns curated Pakistani pharmacy data with OpenStreetMap links.
+    Returns OpenStreetMap results first; falls back to curated Pakistani data.
     """
     resolved_lat, resolved_lng = _resolve_coordinates(lat, lng, lon, city)
-    return _mock_nearby(resolved_lat, resolved_lng, max(radius, 0.5), _MOCK_PHARMACIES)
+    safe_radius = max(radius, 0.5)
+
+    live_results = await _fetch_overpass_nearby(
+        resolved_lat,
+        resolved_lng,
+        safe_radius,
+        place_type="pharmacy",
+    )
+    if live_results:
+        return live_results
+
+    return _mock_nearby(resolved_lat, resolved_lng, safe_radius, _MOCK_PHARMACIES)
 
 
 @router.get("/emergency-numbers")

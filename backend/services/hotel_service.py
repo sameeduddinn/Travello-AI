@@ -23,7 +23,13 @@ from models.hotel import HotelOffer, HotelSearchResponse, RoomOffer
 
 logger = logging.getLogger(__name__)
 
-RAPIDAPI_BASE = "https://tripadvisor-com1.p.rapidapi.com"
+RAPIDAPI_BASE = (
+    settings.RAPIDAPI_HOST.strip().rstrip("/")
+    if settings.RAPIDAPI_HOST.startswith("http")
+    else f"https://{settings.RAPIDAPI_HOST.strip()}"
+)
+NOMINATIM_BASE = "https://nominatim.openstreetmap.org"
+_TARGET_RESULT_COUNT = 20
 
 # ---------------------------------------------------------------------------
 # City name normalisation — handles typos, aliases, IATA codes
@@ -61,6 +67,98 @@ def _get_headers() -> dict:
     }
 
 
+def _rapidapi_is_configured() -> bool:
+    """Return True when RapidAPI credentials look usable (not placeholders)."""
+    key = (settings.RAPIDAPI_KEY or "").strip()
+    if not key:
+        return False
+    lowered = key.lower()
+    return "your-rapidapi-key" not in lowered and not key.startswith("REPLACE_WITH")
+
+
+def _normalise_hotel_text(value: str) -> str:
+    return " ".join((value or "").strip().lower().split())
+
+
+def _hotel_merge_key(hotel: HotelOffer) -> tuple[str, str, float | None, float | None]:
+    name_key = _normalise_hotel_text(hotel.name)
+    city_key = _normalise_hotel_text(hotel.city)
+    lat = round(float(hotel.latitude), 3) if hotel.latitude is not None else None
+    lon = round(float(hotel.longitude), 3) if hotel.longitude is not None else None
+    return (name_key, city_key, lat, lon)
+
+
+def _enrich_hotel(primary: HotelOffer, fallback: HotelOffer) -> None:
+    """Fill missing fields in primary from fallback without replacing core identity."""
+    if not primary.address and fallback.address:
+        primary.address = fallback.address
+    if primary.latitude is None and fallback.latitude is not None:
+        primary.latitude = fallback.latitude
+    if primary.longitude is None and fallback.longitude is not None:
+        primary.longitude = fallback.longitude
+    if not primary.images and fallback.images:
+        primary.images = fallback.images
+    if (not primary.amenities) and fallback.amenities:
+        primary.amenities = fallback.amenities
+    if (not primary.review_score) and fallback.review_score:
+        primary.review_score = fallback.review_score
+    if (not primary.review_count) and fallback.review_count:
+        primary.review_count = fallback.review_count
+
+
+def _merge_hotel_lists(
+    base: list[HotelOffer],
+    incoming: list[HotelOffer],
+    *,
+    limit: int,
+) -> list[HotelOffer]:
+    """Merge hotels by source priority order with de-duplication and enrichment."""
+    merged = list(base)
+    key_to_index: dict[tuple[str, str, float | None, float | None], int] = {
+        _hotel_merge_key(h): idx for idx, h in enumerate(merged)
+    }
+
+    for hotel in incoming:
+        key = _hotel_merge_key(hotel)
+        existing_idx = key_to_index.get(key)
+        if existing_idx is not None:
+            _enrich_hotel(merged[existing_idx], hotel)
+            continue
+
+        merged.append(hotel)
+        key_to_index[key] = len(merged) - 1
+        if len(merged) >= limit:
+            break
+
+    return merged
+
+
+async def _rapidapi_get_json(
+    endpoint_candidates: list[str],
+    params: dict[str, Any],
+    *,
+    timeout: float,
+) -> dict[str, Any] | None:
+    """Try multiple endpoint paths and return the first successful JSON payload."""
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        for endpoint in endpoint_candidates:
+            url = f"{RAPIDAPI_BASE}{endpoint}"
+            try:
+                response = await client.get(url, params=params, headers=_get_headers())
+                if response.status_code == 200:
+                    return response.json()
+                logger.warning(
+                    "RapidAPI request failed for %s: %s %s",
+                    endpoint,
+                    response.status_code,
+                    response.text[:140],
+                )
+            except Exception as exc:
+                logger.warning("RapidAPI request error for %s: %s", endpoint, exc)
+
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Step 1: resolve city → TripAdvisor geoId
 # ---------------------------------------------------------------------------
@@ -68,19 +166,18 @@ def _get_headers() -> dict:
 async def _get_geo_id(city: str) -> str | None:
     """Search TripAdvisor for a city and return its geoId."""
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.get(
-                f"{RAPIDAPI_BASE}/location/search",
-                params={"searchQuery": city, "language": "en_US"},
-                headers=_get_headers(),
-            )
-        if response.status_code != 200:
-            logger.error("TripAdvisor location search failed: %s %s",
-                         response.status_code, response.text[:200])
+        data = await _rapidapi_get_json(
+            ["/location/search", "/locations/search"],
+            {"searchQuery": city, "language": "en_US"},
+            timeout=15.0,
+        )
+        if not data:
             return None
 
-        data = response.json()
         results = data.get("data", [])
+        if not results and isinstance(data.get("results"), list):
+            results = data.get("results", [])
+
         for item in results:
             location_id = item.get("locationId") or item.get("location_id")
             if location_id:
@@ -104,36 +201,178 @@ async def _search_hotels_tripadvisor(
 ) -> list[dict]:
     """Call TripAdvisor hotels/list endpoint."""
     try:
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.get(
-                f"{RAPIDAPI_BASE}/hotels/list",
-                params={
-                    "geoId": geo_id,
-                    "checkIn": check_in.strftime("%Y-%m-%d"),
-                    "checkOut": check_out.strftime("%Y-%m-%d"),
-                    "rooms": rooms,
-                    "adults": guests,
-                    "language": "en_US",
-                    "currencyCode": "USD",
-                },
-                headers=_get_headers(),
-            )
-        if response.status_code != 200:
-            logger.error("TripAdvisor hotel list failed: %s %s",
-                         response.status_code, response.text[:200])
+        data = await _rapidapi_get_json(
+            ["/hotels/list", "/hotels/search"],
+            {
+                "geoId": geo_id,
+                "checkIn": check_in.strftime("%Y-%m-%d"),
+                "checkOut": check_out.strftime("%Y-%m-%d"),
+                "rooms": rooms,
+                "adults": guests,
+                "language": "en_US",
+                "currencyCode": "USD",
+            },
+            timeout=20.0,
+        )
+        if not data:
             return []
 
-        data = response.json()
         # TripAdvisor API can return results in different structures
         hotels = (
             data.get("data", {}).get("data", []) or
             data.get("data", []) or
+            data.get("results", []) or
             []
         )
         return hotels if isinstance(hotels, list) else []
     except Exception as exc:
         logger.error("TripAdvisor hotel list error: %s", exc)
         return []
+
+
+async def _fetch_nominatim_hotels(canonical_city: str, *, limit: int = 20) -> list[HotelOffer]:
+    """Search hotels/guest houses via Nominatim as a secondary live data source."""
+    queries = [
+        f"hotel in {canonical_city}, Pakistan",
+        f"guest house in {canonical_city}, Pakistan",
+    ]
+
+    headers = {
+        "User-Agent": "travello-ai-backend/1.0 (hotel-search)",
+        "Accept-Language": "en",
+    }
+
+    raw_items: list[dict[str, Any]] = []
+    try:
+        async with httpx.AsyncClient(timeout=20.0, headers=headers) as client:
+            for query in queries:
+                response = await client.get(
+                    f"{NOMINATIM_BASE}/search",
+                    params={
+                        "q": query,
+                        "format": "jsonv2",
+                        "addressdetails": 1,
+                        "countrycodes": "pk",
+                        "dedupe": 1,
+                        "limit": limit,
+                    },
+                )
+                if response.status_code != 200:
+                    logger.warning(
+                        "Nominatim query failed for '%s': %s %s",
+                        query,
+                        response.status_code,
+                        response.text[:140],
+                    )
+                    continue
+
+                data = response.json()
+                if isinstance(data, list):
+                    raw_items.extend(data)
+    except Exception as exc:
+        logger.warning("Nominatim fetch failed for %s: %s", canonical_city, exc)
+        return []
+
+    allowed_types = {
+        "hotel", "guest_house", "hostel", "motel", "resort", "apartment", "chalet",
+    }
+    hotel_keywords = (
+        "hotel", "guest house", "guesthouse", "hostel", "motel", "resort", "inn", "lodge",
+    )
+
+    seen: set[tuple[str, float | None, float | None]] = set()
+    seen_ids: set[str] = set()
+    offers: list[HotelOffer] = []
+
+    for item in raw_items:
+        osm_id = str(item.get("osm_id") or item.get("place_id") or "").strip()
+        if not osm_id or osm_id in seen_ids:
+            continue
+
+        type_value = _normalise_hotel_text(str(item.get("type") or "")).replace(" ", "_")
+        class_value = _normalise_hotel_text(str(item.get("class") or ""))
+        searchable_text = _normalise_hotel_text(
+            f"{item.get('name', '')} {item.get('display_name', '')}"
+        )
+        has_hotel_keyword = any(keyword in searchable_text for keyword in hotel_keywords)
+
+        if type_value not in allowed_types and not has_hotel_keyword:
+            continue
+        if class_value not in {"tourism", "amenity", "building", "place", ""}:
+            continue
+
+        raw_name = (item.get("name") or "").strip()
+        display_title = (item.get("display_name") or "").split(",")[0].strip()
+
+        # If OSM has no explicit name, only accept display titles that clearly
+        # look like accommodations (prevents paths/roads from slipping in).
+        if not raw_name:
+            normalised_title = _normalise_hotel_text(display_title)
+            if not any(keyword in normalised_title for keyword in hotel_keywords):
+                continue
+
+        name = raw_name or display_title or None
+        if not name:
+            continue
+
+        lat_raw = item.get("lat")
+        lon_raw = item.get("lon")
+        try:
+            lat = float(lat_raw) if lat_raw is not None else None
+            lon = float(lon_raw) if lon_raw is not None else None
+        except (TypeError, ValueError):
+            lat, lon = None, None
+
+        dedupe_key = (
+            _normalise_hotel_text(name),
+            round(lat, 3) if lat is not None else None,
+            round(lon, 3) if lon is not None else None,
+        )
+        if dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        seen_ids.add(osm_id)
+
+        star_rating = random.choice([2.0, 2.5, 3.0, 3.5, 4.0])
+        base_price_usd = random.uniform(18, 90)
+        price_pkr = round(base_price_usd * settings.USD_TO_PKR_RATE, 2)
+
+        address = item.get("display_name") or canonical_city
+        amenities = ["WiFi", "Hot Water", "Room Service"]
+        rooms_list = [
+            RoomOffer(
+                room_id=f"NOM-{osm_id}-STD",
+                room_type="Standard Room",
+                bed_type="Double",
+                price_per_night_pkr=price_pkr,
+                max_guests=2,
+                is_refundable=True,
+                amenities=amenities,
+            )
+        ]
+
+        offers.append(
+            HotelOffer(
+                hotel_id=f"NOM-{osm_id}",
+                name=name,
+                star_rating=star_rating,
+                address=address,
+                city=canonical_city,
+                latitude=lat,
+                longitude=lon,
+                images=[],
+                amenities=amenities,
+                rooms=rooms_list,
+                review_score=round(random.uniform(6.0, 8.8), 1),
+                review_count=random.randint(5, 200),
+            )
+        )
+
+        if len(offers) >= limit:
+            break
+
+    logger.info("Nominatim returned %d hotels for %s", len(offers), canonical_city)
+    return offers
 
 
 # ---------------------------------------------------------------------------
@@ -263,23 +502,74 @@ async def search_hotels(
     """
     Search hotels for a given city and date range.
 
-    Priority:
-      1. Curated mock catalogue (instant, rich data — covers all major PK cities).
-      2. OpenStreetMap Overpass API (free, real OSM data — supplements or replaces
-         mock for cities not in the catalogue, including remote northern areas).
+        Merge strategy:
+            1. RapidAPI (TripAdvisor) as primary source.
+            2. Nominatim supplements missing/insufficient results.
+            3. OSM Overpass supplements remaining gaps.
+            4. Curated mock catalogue fills final gaps.
     """
     nights = max((check_out - check_in).days, 1)
     canonical = CITY_ALIASES.get(city.strip().lower(), city.strip())
 
-    # Always start with curated mock data (fast, no quota)
-    hotels = _mock_hotels(city, check_in, check_out, guests, rooms)
+    hotels: list[HotelOffer] = []
+    rapid_count = 0
+    nominatim_count = 0
+    osm_count = 0
+    mock_count = 0
 
-    # If mock has nothing, query Overpass for real OSM hotel data
-    if not hotels:
-        logger.info("No mock hotels for '%s' — querying Overpass OSM.", canonical)
-        hotels = await _fetch_overpass_hotels(canonical)
+    # 1) RapidAPI primary
+    if _rapidapi_is_configured():
+        geo_id = await _get_geo_id(canonical)
+        if geo_id:
+            rapid_results = await _search_hotels_tripadvisor(
+                geo_id=geo_id,
+                check_in=check_in,
+                check_out=check_out,
+                guests=guests,
+                rooms=rooms,
+            )
 
-    logger.info("Hotel search: %d hotels returned for %s", len(hotels), city)
+            parsed_hotels: list[HotelOffer] = []
+            for prop in rapid_results:
+                try:
+                    parsed_hotels.append(_parse_hotel(prop, check_in, check_out, canonical))
+                except Exception as exc:
+                    logger.debug("Skipping malformed RapidAPI hotel payload: %s", exc)
+
+            rapid_count = len(parsed_hotels)
+            hotels = _merge_hotel_lists(hotels, parsed_hotels, limit=_TARGET_RESULT_COUNT)
+
+        logger.info("RapidAPI returned %d hotels for %s", rapid_count, canonical)
+    else:
+        logger.info("RAPIDAPI_KEY not configured or placeholder detected; skipping RapidAPI.")
+
+    # 2) Nominatim supplements results if RapidAPI is empty/partial.
+    if len(hotels) < _TARGET_RESULT_COUNT:
+        nominatim_hotels = await _fetch_nominatim_hotels(canonical, limit=_TARGET_RESULT_COUNT)
+        nominatim_count = len(nominatim_hotels)
+        hotels = _merge_hotel_lists(hotels, nominatim_hotels, limit=_TARGET_RESULT_COUNT)
+
+    # 3) OSM supplements remaining gaps.
+    if len(hotels) < _TARGET_RESULT_COUNT:
+        osm_hotels = await _fetch_overpass_hotels(canonical)
+        osm_count = len(osm_hotels)
+        hotels = _merge_hotel_lists(hotels, osm_hotels, limit=_TARGET_RESULT_COUNT)
+
+    # 4) Mock fills any remaining gap.
+    if len(hotels) < _TARGET_RESULT_COUNT:
+        mock_hotels = _mock_hotels(city, check_in, check_out, guests, rooms)
+        mock_count = len(mock_hotels)
+        hotels = _merge_hotel_lists(hotels, mock_hotels, limit=_TARGET_RESULT_COUNT)
+
+    logger.info(
+        "Hotel search merged for %s: rapid=%d, nominatim=%d, osm=%d, mock=%d, final=%d",
+        city,
+        rapid_count,
+        nominatim_count,
+        osm_count,
+        mock_count,
+        len(hotels),
+    )
     return HotelSearchResponse(
         city=city, check_in=check_in, check_out=check_out,
         nights=nights, count=len(hotels), hotels=hotels,

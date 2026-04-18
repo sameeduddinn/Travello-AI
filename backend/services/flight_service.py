@@ -20,6 +20,7 @@ from core.config import settings
 from models.flight import FlightItinerary, FlightOffer, FlightSegment
 
 logger = logging.getLogger(__name__)
+_TARGET_FLIGHT_RESULT_COUNT = 20
 
 # ---------------------------------------------------------------------------
 # Pakistan IATA codes
@@ -250,6 +251,61 @@ def _seeded_int(seed: int, lo: int, hi: int) -> int:
     return random.Random(seed).randint(lo, hi)
 
 
+def _aviationstack_is_configured() -> bool:
+    key = (settings.AVIATIONSTACK_KEY or "").strip()
+    if not key:
+        return False
+    lowered = key.lower()
+    return "your_aviationstack_key" not in lowered and not key.startswith("REPLACE_WITH")
+
+
+def _flight_offer_key(offer: FlightOffer) -> tuple[str, str, str, str, str]:
+    """Build a stable merge key from the first segment of the first itinerary."""
+    if not offer.itineraries or not offer.itineraries[0].segments:
+        return (offer.offer_id, "", "", "", "")
+
+    seg = offer.itineraries[0].segments[0]
+    dep_time = seg.departure_time.isoformat()
+    return (
+        seg.carrier_code,
+        seg.flight_number,
+        seg.departure_airport,
+        seg.arrival_airport,
+        dep_time,
+    )
+
+
+def _merge_flight_offers(
+    base: list[FlightOffer],
+    incoming: list[FlightOffer],
+    *,
+    limit: int,
+) -> list[FlightOffer]:
+    """Merge offers without duplicates while preserving source priority order."""
+    merged = list(base)
+    seen = {_flight_offer_key(offer) for offer in merged}
+
+    for offer in incoming:
+        key = _flight_offer_key(offer)
+        if key in seen:
+            continue
+        merged.append(offer)
+        seen.add(key)
+        if len(merged) >= limit:
+            break
+
+    return merged
+
+
+def _sort_flight_offers(offers: list[FlightOffer]) -> list[FlightOffer]:
+    def _first_departure(offer: FlightOffer) -> datetime:
+        if offer.itineraries and offer.itineraries[0].segments:
+            return offer.itineraries[0].segments[0].departure_time
+        return datetime.min
+
+    return sorted(offers, key=lambda o: (_first_departure(o), o.total_price_pkr))
+
+
 # ---------------------------------------------------------------------------
 # Domestic offer generation
 # ---------------------------------------------------------------------------
@@ -336,7 +392,7 @@ async def _fetch_aviationstack(
     origin: str, destination: str, date_str: str
 ) -> list[FlightOffer]:
     """Call AviationStack /v1/flights for real schedule data."""
-    if not settings.AVIATIONSTACK_KEY:
+    if not _aviationstack_is_configured():
         return []
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -407,6 +463,65 @@ async def _fetch_aviationstack(
         return []
 
 
+def _generate_domestic_generic_mock(
+    origin: str,
+    destination: str,
+    travel_date: date,
+    adults: int,
+) -> list[FlightOffer]:
+    """Generate domestic backup offers for unseeded Pakistan routes."""
+    date_str = travel_date.strftime("%Y%m%d")
+    carriers = [
+        {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
+        {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
+        {"code": "ER", "name": "AirSial", "aircraft": "Airbus A320"},
+    ]
+    departure_slots = ["07:00", "11:00", "15:00", "19:00"]
+
+    offers: list[FlightOffer] = []
+    for idx, carrier in enumerate(carriers):
+        dep_time = departure_slots[idx % len(departure_slots)]
+        seed = hash(f"DOM-{origin}-{destination}-{date_str}-{carrier['code']}-{dep_time}") % (2**31)
+        rng = random.Random(seed)
+        duration_min = rng.randint(50, 140)
+        base_price = rng.randint(6000, 22000)
+        seats = rng.randint(6, 55)
+        flight_number = f"{carrier['code']}{rng.randint(100, 999)}"
+
+        h, m = map(int, dep_time.split(":"))
+        dep_dt = datetime(travel_date.year, travel_date.month, travel_date.day, h, m)
+        arr_dt = dep_dt + timedelta(minutes=duration_min)
+
+        segment = FlightSegment(
+            carrier_code=carrier["code"],
+            flight_number=flight_number,
+            departure_airport=origin,
+            arrival_airport=destination,
+            departure_time=dep_dt,
+            arrival_time=arr_dt,
+            duration=_duration_str(duration_min),
+            cabin_class="ECONOMY",
+            aircraft_code=carrier["aircraft"],
+        )
+
+        offers.append(
+            FlightOffer(
+                offer_id=f"DOM-{origin}-{destination}-{carrier['code']}-{dep_time.replace(':', '')}-{date_str}",
+                itineraries=[FlightItinerary(
+                    duration=_duration_str(duration_min),
+                    segments=[segment],
+                )],
+                total_price_pkr=float(base_price * adults),
+                total_price_usd=round(base_price * adults / settings.USD_TO_PKR_RATE, 2),
+                seats_available=seats,
+                is_refundable=False,
+                baggage_allowance="20kg",
+            )
+        )
+
+    return offers
+
+
 # ---------------------------------------------------------------------------
 # International mock fallback
 # ---------------------------------------------------------------------------
@@ -431,7 +546,13 @@ def _generate_international_mock(
 
     templates = [t for t in _INTL_TEMPLATES if t["dest"] == destination]
     if not templates:
-        templates = _INTL_TEMPLATES[:4]
+        templates = _INTL_TEMPLATES[:]
+
+    # Keep variety even when only one template matches the destination.
+    selector_seed = hash(f"INTL-TEMPLATES-{origin}-{destination}-{date_str}") % (2**31)
+    selector_rng = random.Random(selector_seed)
+    while len(templates) < 4:
+        templates.append(_INTL_TEMPLATES[selector_rng.randrange(len(_INTL_TEMPLATES))])
 
     offers: list[FlightOffer] = []
     dep_hours = [6, 9, 13, 20]
@@ -488,17 +609,64 @@ async def search_flights(
 ) -> list[FlightOffer]:
     """
     Search for available flights.
-    - Both airports in PAKISTAN_IATA_CODES → seeded domestic mock (no API calls).
-    - Otherwise → AviationStack API (if key set) or 4 generated international offers.
+    Merge strategy for robust coverage:
+    - Domestic routes: seeded domestic mock -> AviationStack supplement -> domestic generic backup.
+    - International routes: AviationStack primary -> international mock supplement.
+    This ensures partial responses from one source are completed by the others.
     """
     origin = origin.upper()
     destination = destination.upper()
 
-    if origin in PAKISTAN_IATA_CODES and destination in PAKISTAN_IATA_CODES:
-        return _generate_domestic_offers(origin, destination, date, adults)
+    offers: list[FlightOffer] = []
+    aviationstack_count = 0
+
+    is_domestic = origin in PAKISTAN_IATA_CODES and destination in PAKISTAN_IATA_CODES
+
+    if is_domestic:
+        domestic_seeded = _generate_domestic_offers(origin, destination, date, adults)
+        offers = _merge_flight_offers(offers, domestic_seeded, limit=_TARGET_FLIGHT_RESULT_COUNT)
+
+        if len(offers) < _TARGET_FLIGHT_RESULT_COUNT:
+            aviationstack_offers = await _fetch_aviationstack(origin, destination, str(date))
+            aviationstack_count = len(aviationstack_offers)
+            offers = _merge_flight_offers(offers, aviationstack_offers, limit=_TARGET_FLIGHT_RESULT_COUNT)
+
+        domestic_generic_count = 0
+        if len(offers) < _TARGET_FLIGHT_RESULT_COUNT:
+            domestic_generic = _generate_domestic_generic_mock(origin, destination, date, adults)
+            domestic_generic_count = len(domestic_generic)
+            offers = _merge_flight_offers(offers, domestic_generic, limit=_TARGET_FLIGHT_RESULT_COUNT)
+
+        final_offers = _sort_flight_offers(offers)
+        logger.info(
+            "Flight search merged (domestic) %s->%s: seeded=%d, aviationstack=%d, generic=%d, final=%d",
+            origin,
+            destination,
+            len(domestic_seeded),
+            aviationstack_count,
+            domestic_generic_count,
+            len(final_offers),
+        )
+        return final_offers
 
     # International path
-    offers = await _fetch_aviationstack(origin, destination, str(date))
-    if offers:
-        return offers
-    return _generate_international_mock(origin, destination, date, adults)
+    aviationstack_offers = await _fetch_aviationstack(origin, destination, str(date))
+    aviationstack_count = len(aviationstack_offers)
+    offers = _merge_flight_offers(offers, aviationstack_offers, limit=_TARGET_FLIGHT_RESULT_COUNT)
+
+    intl_mock_count = 0
+    if len(offers) < _TARGET_FLIGHT_RESULT_COUNT:
+        intl_mock = _generate_international_mock(origin, destination, date, adults)
+        intl_mock_count = len(intl_mock)
+        offers = _merge_flight_offers(offers, intl_mock, limit=_TARGET_FLIGHT_RESULT_COUNT)
+
+    final_offers = _sort_flight_offers(offers)
+    logger.info(
+        "Flight search merged (international) %s->%s: aviationstack=%d, intl_mock=%d, final=%d",
+        origin,
+        destination,
+        aviationstack_count,
+        intl_mock_count,
+        len(final_offers),
+    )
+    return final_offers
