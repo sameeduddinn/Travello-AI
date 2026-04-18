@@ -20,6 +20,30 @@ class NotificationModel {
     this.isRead = false,
   });
 
+  factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    return NotificationModel(
+      type: (json['type'] ?? 'info').toString(),
+      category: (json['category'] ?? 'ai').toString(),
+      tag: (json['tag'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      subtitle: (json['subtitle'] ?? '').toString(),
+      date: (json['date'] ?? '').toString(),
+      image: json['image']?.toString(),
+      isRead: json['isRead'] == true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'type': type,
+        'category': category,
+        'tag': tag,
+        'title': title,
+        'subtitle': subtitle,
+        'date': date,
+        'image': image,
+        'isRead': isRead,
+      };
+
   NotificationModel copyWith({bool? isRead}) => NotificationModel(
         type: type,
         category: category,

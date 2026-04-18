@@ -24,13 +24,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="flight_app">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png?v=5">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" href="favicon.png?v=5"/>
 
   <title>flight_app</title>
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=5">
   
   <style>
     html, body {
@@ -60,12 +60,15 @@
     <img
       style="
         position: fixed;
-        top: calc(50% - 64px);
-        left: calc(50% - 64px);
-        width: 128px;
-        height: 125px;
+        top: 50%;
+        left: 50%;
+        width: min(36vw, 220px);
+        height: auto;
+        max-height: 180px;
+        transform: translate(-50%, -50%);
+        object-fit: contain;
       "
-      src="icons/Icon-512.png"
+      src="icons/Icon-512.png?v=5"
       alt="loading"
     />
   </div>

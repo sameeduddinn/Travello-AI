@@ -3,10 +3,11 @@ import 'package:flight_app/constants/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
-import 'package:get/route_manager.dart';
+import 'package:get/get.dart';
 import 'package:flight_app/widgets/app_input/app_textfield.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
+import 'package:flight_app/controllers/notification_controller.dart';
 import 'package:flight_app/widgets/user/saved_credentials_dialog.dart';
 import 'package:flight_app/widgets/onboarding/city_selection_sheet.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
@@ -100,6 +101,14 @@ class _LoginFormState extends State<LoginForm> {
     });
   }
 
+  Future<void> _syncNotificationsForSignedInUser() async {
+    try {
+      await Get.find<NotificationController>().syncWithCurrentUser();
+    } catch (_) {
+      // Controller can be unavailable during very early app startup.
+    }
+  }
+
   Future<void> _handleGoogleSignIn() async {
     if (_isLoading) return;
 
@@ -153,6 +162,8 @@ class _LoginFormState extends State<LoginForm> {
       );
       return;
     }
+
+    await _syncNotificationsForSignedInUser();
 
     Get.snackbar(
       'Login Successful',
@@ -617,6 +628,8 @@ class _LoginFormState extends State<LoginForm> {
                           if (!context.mounted) return;
 
                           if (user != null) {
+                            await _syncNotificationsForSignedInUser();
+
                             /// 🔹 REMEMBER ME
                             if (_rememberMe) {
                               await AuthService.saveRememberMe(

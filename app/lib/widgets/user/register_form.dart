@@ -10,6 +10,7 @@ import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
+import 'package:flight_app/controllers/notification_controller.dart';
 import 'package:flight_app/widgets/onboarding/city_selection_sheet.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
 
@@ -90,6 +91,14 @@ class _RegisterFormState extends State<RegisterForm> {
     });
   }
 
+  Future<void> _syncNotificationsForSignedInUser() async {
+    try {
+      await Get.find<NotificationController>().syncWithCurrentUser();
+    } catch (_) {
+      // Controller can be unavailable during very early app startup.
+    }
+  }
+
   Future<void> _handleGoogleSignUp() async {
     if (_isLoading) return;
 
@@ -143,6 +152,8 @@ class _RegisterFormState extends State<RegisterForm> {
       );
       return;
     }
+
+    await _syncNotificationsForSignedInUser();
 
     Get.snackbar(
       'Welcome',
@@ -557,8 +568,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   errorText: 'Phone number is required'),
               FormBuilderValidators.match(
                 RegExp(r'^(?:03[0-9]{9}|3[0-9]{9})$'),
-                errorText:
-                    'Enter a valid phone number',
+                errorText: 'Enter a valid phone number',
               ),
             ]),
             builder: (field) => Column(

@@ -103,6 +103,12 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
+    final navButtonSize = R.r(context, isSmallScreen ? 40 : 44);
+    final navIconSize = R.sp(context, isSmallScreen ? 22 : 24);
+    final avatarImageSize = navButtonSize - R.r(context, 4);
+    final badgeHeight = R.rh(context, 16);
+    final badgeHorizontalPadding = R.r(context, 5);
+    final badgeRadius = R.r(context, 8);
 
     return Scaffold(
       backgroundColor: TravelloTheme.paperLight,
@@ -148,8 +154,8 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                   GestureDetector(
                     onTap: () => Get.toNamed(AppLink.profile),
                     child: Container(
-                      width: 44.w,
-                      height: 44.h,
+                      width: navButtonSize,
+                      height: navButtonSize,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white.withValues(alpha: 0.15),
@@ -163,20 +169,20 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                             ? ClipOval(
                                 child: Image.network(
                                   _userAvatar,
-                                  width: 40.w,
-                                  height: 40.h,
+                                  width: avatarImageSize,
+                                  height: avatarImageSize,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => Icon(
                                     CupertinoIcons.person_fill,
                                     color: Colors.white.withValues(alpha: 0.9),
-                                    size: 22.sp,
+                                    size: navIconSize,
                                   ),
                                 ),
                               )
                             : Icon(
                                 CupertinoIcons.person_fill,
                                 color: Colors.white.withValues(alpha: 0.9),
-                                size: 22.sp,
+                                size: navIconSize,
                               ),
                       ),
                     ),
@@ -207,7 +213,7 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: 2.h),
+                          SizedBox(height: R.rh(context, 2)),
                           Text(
                             _userName,
                             style: TextStyle(
@@ -240,10 +246,10 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                           AppLink.notification,
                           arguments: {'tab': 0},
                         ),
-                        borderRadius: BorderRadius.circular(22.r),
+                        borderRadius: BorderRadius.circular(navButtonSize / 2),
                         child: Container(
-                          width: 44.w,
-                          height: 44.h,
+                          width: navButtonSize,
+                          height: navButtonSize,
                           alignment: Alignment.center,
                           child: Stack(
                             clipBehavior: Clip.none,
@@ -251,23 +257,25 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                               Icon(
                                 CupertinoIcons.bell,
                                 color: Colors.white.withValues(alpha: 0.95),
-                                size: 24.sp,
+                                size: navIconSize,
                               ),
                               if (unreadCount > 0)
                                 Positioned(
                                   top: -2,
                                   right: -2,
                                   child: Container(
-                                    constraints: const BoxConstraints(
-                                      minWidth: 16,
+                                    constraints: BoxConstraints(
+                                      minWidth: R.r(context, 16),
                                     ),
-                                    height: 16.h,
+                                    height: badgeHeight,
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: 5.w,
+                                      horizontal: badgeHorizontalPadding,
                                     ),
                                     decoration: BoxDecoration(
                                       color: Colors.red.shade600,
-                                      borderRadius: BorderRadius.circular(8.r),
+                                      borderRadius: BorderRadius.circular(
+                                        badgeRadius,
+                                      ),
                                       border: Border.all(
                                         color: TravelloTheme.primaryMain,
                                         width: 1.5,
@@ -278,7 +286,7 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                                       unreadCount > 99 ? '99+' : '$unreadCount',
                                       style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 10.sp,
+                                        fontSize: R.sp(context, 10),
                                         fontWeight: FontWeight.bold,
                                         height: 1.2,
                                       ),
@@ -304,15 +312,15 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                         AppLink.notification,
                         arguments: {'tab': 1},
                       ),
-                      borderRadius: BorderRadius.circular(22.r),
+                      borderRadius: BorderRadius.circular(navButtonSize / 2),
                       child: Container(
-                        width: 44.w,
-                        height: 44.h,
+                        width: navButtonSize,
+                        height: navButtonSize,
                         alignment: Alignment.center,
                         child: Icon(
                           CupertinoIcons.chat_bubble_text,
                           color: Colors.white.withValues(alpha: 0.95),
-                          size: 24.sp,
+                          size: navIconSize,
                         ),
                       ),
                     ),

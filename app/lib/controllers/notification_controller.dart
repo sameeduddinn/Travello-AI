@@ -1,18 +1,96 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
 import 'package:flight_app/models/notification.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Global reactive notification controller.
 /// Register once via [Get.put] in main.dart (or lazily on first use).
 /// Every bell badge across the app observes [unreadCount].
 class NotificationController extends GetxController {
+  static const String _storagePrefix = 'notifications_v1_';
+
   // ── Reactive notification lists ────────────────────────────────────────────
-  final RxList<NotificationModel> today =
-      <NotificationModel>[...notifListToday].obs;
-  final RxList<NotificationModel> earlier =
-      <NotificationModel>[...notifListEarlier].obs;
+  final RxList<NotificationModel> today = <NotificationModel>[].obs;
+  final RxList<NotificationModel> earlier = <NotificationModel>[].obs;
 
   // ── Derived reactive count ─────────────────────────────────────────────────
   final RxInt unreadCount = 0.obs;
+
+  String _activeStorageKey = '';
+  bool _isHydrating = false;
+
+  Future<String> _resolveStorageKey() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != null && userId.isNotEmpty) {
+      return '$_storagePrefix$userId';
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final isGuest = prefs.getBool('guest_mode') ?? false;
+    return isGuest ? '${_storagePrefix}guest' : '${_storagePrefix}anonymous';
+  }
+
+  List<NotificationModel> _decodeList(dynamic source) {
+    if (source is! List) return const <NotificationModel>[];
+
+    return source
+        .whereType<Map>()
+        .map((item) => NotificationModel.fromJson(
+            Map<String, dynamic>.from(item)))
+        .toList();
+  }
+
+  Future<void> _persist() async {
+    if (_activeStorageKey.isEmpty || _isHydrating) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final payload = jsonEncode({
+      'today': today.map((n) => n.toJson()).toList(),
+      'earlier': earlier.map((n) => n.toJson()).toList(),
+    });
+    await prefs.setString(_activeStorageKey, payload);
+  }
+
+  /// Reload notifications for whichever auth context is currently active.
+  ///
+  /// New users with no stored notifications will start at zero unread.
+  Future<void> syncWithCurrentUser() async {
+    final key = await _resolveStorageKey();
+    _activeStorageKey = key;
+
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(key);
+
+    _isHydrating = true;
+    try {
+      if (raw == null || raw.isEmpty) {
+        today.clear();
+        earlier.clear();
+        _recalculate();
+      } else {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) {
+          today.assignAll(_decodeList(decoded['today']));
+          earlier.assignAll(_decodeList(decoded['earlier']));
+          _recalculate();
+        } else {
+          today.clear();
+          earlier.clear();
+          _recalculate();
+        }
+      }
+    } catch (_) {
+      today.clear();
+      earlier.clear();
+      _recalculate();
+    } finally {
+      _isHydrating = false;
+    }
+
+    await _persist();
+  }
 
   void _recalculate() {
     unreadCount.value = today.where((n) => !n.isRead).length +
@@ -23,8 +101,15 @@ class NotificationController extends GetxController {
   void onInit() {
     super.onInit();
     _recalculate();
-    ever(today, (_) => _recalculate());
-    ever(earlier, (_) => _recalculate());
+    ever(today, (_) {
+      _recalculate();
+      _persist();
+    });
+    ever(earlier, (_) {
+      _recalculate();
+      _persist();
+    });
+    Future.microtask(syncWithCurrentUser);
   }
 
   // ── Core Add ───────────────────────────────────────────────────────────────
