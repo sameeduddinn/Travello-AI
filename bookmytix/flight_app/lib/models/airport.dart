@@ -110,12 +110,6 @@ final List<Airport> airportList = [
     location: 'Gilgit',
   ),
   Airport(
-      id: '16',
-      photo: ImgApi.photo[126],
-      code: 'SKD',
-      name: 'Skardu Airport',
-      location: 'Skardu'),
-  Airport(
       id: '17',
       photo: ImgApi.photo[127],
       code: 'DBA',

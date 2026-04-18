@@ -1,6 +1,5 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
-import 'package:flight_app/widgets/app_button/back_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/route_manager.dart';
@@ -17,16 +16,8 @@ class Register extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           forceMaterialTransparency: true,
+          automaticallyImplyLeading: false,
           toolbarHeight: 56.h,
-          leadingWidth: 64.w,
-          leading: Padding(
-            padding: EdgeInsets.only(left: 12.w, top: 2.h, bottom: 2.h),
-            child: BackIconButton(
-                isSquare: true,
-                onTap: () {
-                  Get.back();
-                }),
-          ),
           actionsPadding: EdgeInsets.only(right: 8.w),
           actions: [
             TextButton(

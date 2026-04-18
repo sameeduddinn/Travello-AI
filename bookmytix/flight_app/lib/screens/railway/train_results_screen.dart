@@ -5,6 +5,7 @@ import 'package:flight_app/models/railway_station.dart';
 import 'package:flight_app/utils/format_utils.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -111,34 +112,54 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // DATA FETCHING
-  // When backend is ready:
-  //   1. Replace the body of _fetchTrains() with your API call
-  //   2. Map the API response to List<TrainResult> using the same model
-  //   3. Delete all _getUpTrains / _getDownTrains / _getQuettaTrains etc.
-  //   4. Everything else (UI, sorting, filtering) stays exactly the same ✅
+  // DATA FETCHING — wired to Travello AI FastAPI backend
+  // Falls back to dummy data automatically if the backend is unreachable.
   // ─────────────────────────────────────────────────────────────────────────
   Future<void> _fetchTrains() async {
     setState(() => _isLoading = true);
     try {
-      // final response = await TrainApiService.searchTrains(
-      //   from: (searchParams['fromStation'] as RailwayStation).code,
-      //   to:   (searchParams['toStation']   as RailwayStation).code,
-      //   date: _selectedDate,
-      //   trainClass: _selectedTrainClass,
-      // );
-      // _allTrains = response.map((e) => TrainResult.fromJson(e)).toList();
+      final fromStation = searchParams['fromStation'] as RailwayStation?;
+      final toStation = searchParams['toStation'] as RailwayStation?;
+      final totalPassengers = (_adults + _children).clamp(1, 6);
 
-      // ── DUMMY DATA (delete below when API is connected) ──────────────────
-      await Future.delayed(
-          const Duration(milliseconds: 600)); // simulate network
-      _loadDummyTrains();
-      // ────────────────────────────────────────────────────────────────────
-    } catch (e) {
-      if (mounted) {
-        Get.snackbar('Error', 'Failed to load trains. Please try again.',
-            backgroundColor: Colors.red[100]);
+      if (fromStation == null || toStation == null) {
+        _loadDummyTrains();
+      } else {
+        final raw = await ApiClient.searchTrains(
+          originCity: fromStation.city,
+          destinationCity: toStation.city,
+          date: _selectedDate,
+          passengers: totalPassengers,
+        );
+
+        final backendTrains = raw.asMap().entries.map((entry) {
+          final m = ApiClient.trainResultFromJson(entry.value, entry.key);
+          return TrainResult(
+            id: m['id'],
+            trainName: m['trainName'],
+            trainNumber: m['trainNumber'],
+            departureTime: m['departureTime'],
+            arrivalTime: m['arrivalTime'],
+            arrivesNextDay: m['arrivesNextDay'] ?? false,
+            duration: m['duration'],
+            classSeats: Map<String, int?>.from(m['classSeats'] ?? {}),
+            classPrices: Map<String, double>.from(m['classPrices'] ?? {}),
+            availableClasses: List<String>.from(m['availableClasses'] ?? []),
+            isRefundable: m['isRefundable'] ?? true,
+          );
+        }).toList();
+
+        if (backendTrains.isEmpty) {
+          _loadDummyTrains();
+        } else {
+          _allTrains = backendTrains;
+          if (mounted) setState(() {});
+          _applyFiltersAndSort();
+        }
       }
+    } catch (_) {
+      // Backend unreachable — use dummy data so the demo always works
+      _loadDummyTrains();
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

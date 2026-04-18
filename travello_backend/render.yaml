@@ -1,0 +1,98 @@
+# =============================================================================
+# FILE: render.yaml
+# Render.com Blueprint — deploy the Travello AI backend with one click.
+#
+# HOW TO DEPLOY:
+#   1. Push travello_backend/ to a GitHub repo
+#   2. Go to https://dashboard.render.com → New → Blueprint
+#   3. Connect your GitHub repo — Render auto-detects this file
+#   4. Fill in the environment variables marked as "sync: false"
+#      (Render keeps these secret and never exposes them in logs)
+#   5. Click "Apply" — deployment starts automatically
+#
+# After deploy, your API URL will be:
+#   https://travello-backend.onrender.com
+#
+# Update baseUrl in Flutter to point to that URL.
+# =============================================================================
+
+services:
+  - type: web
+    name: travello-backend
+    runtime: docker                  # Use our Dockerfile
+    region: oregon                   # Closest free-tier region (change to frankfurt for EU)
+    plan: free                       # Free tier: 512MB RAM, spins down after 15min inactivity
+
+    # Render free tier spins down after 15 min of inactivity.
+    # First request after sleep takes ~30s (cold start). This is fine for FYP demo.
+    # Upgrade to "starter" ($7/month) to eliminate cold starts.
+
+    healthCheckPath: /health         # Render pings this to confirm the service is up
+    numInstances: 1
+
+    # Docker build settings
+    dockerfilePath: ./Dockerfile     # relative to repo root (or this file's location)
+
+    # ── Environment variables ─────────────────────────────────────────────────
+    # Variables marked sync: false must be added manually in the Render dashboard.
+    # Variables with value: set a default (can still be overridden in dashboard).
+    envVars:
+      # App
+      - key: APP_NAME
+        value: Travello AI
+      - key: APP_VERSION
+        value: "1.0.0"
+      - key: DEBUG
+        value: "False"
+
+      # Supabase — fill these in Render dashboard (Settings → Environment)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+
+      # Amadeus
+      - key: AMADEUS_CLIENT_ID
+        sync: false
+      - key: AMADEUS_CLIENT_SECRET
+        sync: false
+      - key: AMADEUS_HOSTNAME
+        value: test
+
+      # RapidAPI
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: RAPIDAPI_HOST
+        value: hotels4.p.rapidapi.com
+
+      # Google Places API (optional — for live hospital/pharmacy search)
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false
+
+      # Resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: "Travello AI <onboarding@resend.dev>"
+
+      # Currency
+      - key: USD_TO_PKR_RATE
+        value: "278.0"
+      - key: EUR_TO_PKR_RATE
+        value: "305.0"
+
+      # OTP
+      - key: OTP_EXPIRE_MINUTES
+        value: "10"
+      - key: OTP_MAX_ATTEMPTS
+        value: "3"
+
+      # CORS — allow all for Flutter app on any device/emulator
+      - key: CORS_ORIGINS
+        value: "*"

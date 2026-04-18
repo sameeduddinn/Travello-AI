@@ -1,5 +1,6 @@
 ﻿import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/booking_service.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
@@ -40,11 +41,47 @@ class _MyBookingsState extends State<MyBookings>
 
   Future<void> _loadBookings() async {
     setState(() => _isLoading = true);
-    final bookings = await BookingService.getAllBookings();
+
+    List<Map<String, dynamic>> bookings = [];
+
+    // 1. Try backend first
+    try {
+      final data = await ApiClient.getBookings(perPage: 100);
+      final raw = data['bookings'] as List<dynamic>? ?? [];
+      if (raw.isNotEmpty) {
+        // Normalise backend booking shape to match local BookingService shape
+        bookings = raw.map((b) {
+          final m = Map<String, dynamic>.from(b as Map);
+          return {
+            'bookingId': m['booking_id'] ?? m['id'] ?? '',
+            'bookingType': m['booking_type'] ?? 'flight',
+            'status': m['status'] ?? 'confirmed',
+            'bookingDate': m['created_at'] ?? '',
+            'pnr': m['pnr'] ?? '',
+            'total': m['total_amount'] ?? 0,
+            // Keep raw backend fields accessible too
+            ...m,
+          };
+        }).toList();
+      }
+    } catch (_) {
+      // Backend unreachable or user not logged in — fall through to local
+    }
+
+    // 2. Merge with local SharedPreferences bookings (always available)
+    final local = await BookingService.getAllBookings();
+    final backendIds =
+        bookings.map((b) => b['bookingId']?.toString() ?? '').toSet();
+    for (final lb in local) {
+      final lid = lb['bookingId']?.toString() ?? '';
+      if (!backendIds.contains(lid)) bookings.add(lb);
+    }
+
     setState(() {
-      // Filter out corrupt/incomplete bookings (saved before proper serialization)
       _allBookings = bookings.where((b) {
         final type = b['bookingType'] as String? ?? 'flight';
+        // Accept bookings that came directly from backend (they have booking_id)
+        if (b.containsKey('booking_id')) return true;
         if (type == 'flight') {
           final fd = b['flightDetails'] as Map<String, dynamic>?;
           if (fd == null) return false;
@@ -56,8 +93,7 @@ class _MyBookingsState extends State<MyBookings>
           if (td == null) return false;
           return (td['from']?.toString() ?? 'N/A') != 'N/A';
         } else if (type == 'hotel') {
-          final hd = b['hotelDetails'] as Map<String, dynamic>?;
-          return hd != null;
+          return b['hotelDetails'] != null;
         }
         return true;
       }).toList();

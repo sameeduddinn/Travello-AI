@@ -1,3 +1,4 @@
+/// <reference path="../_shared/compat.d.ts" />
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { isValidEmail, normalizeEmail } from '../_shared/security.ts';
 import { sendViaResend } from '../_shared/mail.ts';

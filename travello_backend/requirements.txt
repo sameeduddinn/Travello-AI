@@ -1,0 +1,44 @@
+# =============================================================================
+# FILE: requirements.txt
+# Travello AI Backend — Python 3.11+
+# Install: pip install -r requirements.txt
+# =============================================================================
+
+# ── Web framework ────────────────────────────────────────────────────────────
+fastapi==0.115.6
+uvicorn[standard]==0.32.1          # includes websockets + uvloop for speed
+
+# ── Supabase ──────────────────────────────────────────────────────────────────
+supabase==2.10.0                   # supabase-py client (anon + service role)
+
+# ── Direct DB (asyncpg) ──────────────────────────────────────────────────────
+asyncpg==0.30.0                    # async PostgreSQL driver for raw queries
+
+# ── Auth / JWT ───────────────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0   # JWT decode (verifies Supabase tokens)
+passlib[bcrypt]==1.7.4             # bcrypt for OTP hashing
+bcrypt==4.2.1                      # explicit pin — passlib uses this
+
+# ── HTTP client ──────────────────────────────────────────────────────────────
+httpx>=0.26,<0.28                  # async HTTP — Amadeus, RapidAPI, Resend (supabase 2.x needs <0.28)
+
+# ── Environment / config ─────────────────────────────────────────────────────
+python-dotenv==1.0.1               # load .env in development
+pydantic-settings==2.7.0           # typed settings from env vars
+
+# ── Email (Resend) ───────────────────────────────────────────────────────────
+# We call Resend REST API directly via httpx (no SDK dependency needed)
+# resend==2.4.0                    # optional: uncomment if you prefer the SDK
+
+# ── Serialisation ────────────────────────────────────────────────────────────
+orjson==3.10.12                    # fast JSON — FastAPI picks it up automatically
+
+# ── Amadeus flight search ────────────────────────────────────────────────────
+# We call Amadeus REST API directly via httpx.
+# The official SDK is optional; uncomment if you prefer it:
+# amadeus==9.0.0
+
+# ── Dev / testing (not installed in production) ──────────────────────────────
+# pytest==8.3.3
+# pytest-asyncio==0.24.0
+# httpx==0.28.1                    # already above — used for TestClient too

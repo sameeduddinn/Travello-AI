@@ -1,11 +1,250 @@
-<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=5,IE=9" ><![endif]-->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Enlite_Structure-Routing</title>
-<meta charset="utf-8"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Travello AI - Flow Diagram</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0f1d2f;
+      --muted: #47607a;
+      --line: #264a63;
+      --accent: #0ea5a3;
+      --accent-soft: #b8efed;
+      --panel: #f6fbfd;
+      --panel-edge: #c9dfe8;
+      --node: #ffffff;
+      --node-edge: #9ab8c9;
+      --glow: rgba(14, 165, 163, 0.16);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 14% 18%, #d6f5f3 0, rgba(214, 245, 243, 0) 35%),
+        radial-gradient(circle at 90% 85%, #e7f2fb 0, rgba(231, 242, 251, 0) 40%),
+        linear-gradient(135deg, #eef7fb, #f7fdfa);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .frame {
+      width: min(1200px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--panel-edge);
+      border-radius: 24px;
+      box-shadow: 0 24px 60px rgba(21, 50, 71, 0.12);
+      overflow: hidden;
+    }
+
+    .top {
+      padding: 22px 26px 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Montserrat", "Trebuchet MS", sans-serif;
+      font-size: clamp(24px, 3vw, 36px);
+      line-height: 1.1;
+      letter-spacing: 0.01em;
+    }
+
+    .sub {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .diagram-wrap {
+      padding: 8px 14px 22px;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      overflow: visible;
+    }
+
+    .node {
+      fill: var(--node);
+      stroke: var(--node-edge);
+      stroke-width: 2;
+      filter: drop-shadow(0 8px 12px rgba(16, 56, 80, 0.08));
+      animation: pop-in 0.65s ease both;
+      transform-origin: center;
+    }
+
+    .main {
+      stroke: var(--accent);
+      stroke-width: 2.5;
+    }
+
+    .side {
+      stroke: var(--line);
+      stroke-width: 2;
+      stroke-dasharray: 8 6;
+    }
+
+    .flow {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pathLength: 1;
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: draw 1.05s ease forwards;
+    }
+
+    .lab,
+    .title {
+      fill: var(--ink);
+      text-anchor: middle;
+    }
+
+    .title {
+      font-family: "Montserrat", "Trebuchet MS", sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .lab {
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .chip {
+      fill: var(--accent-soft);
+      stroke: #69caca;
+      stroke-width: 1.5;
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+    .delay-6 { animation-delay: 0.6s; }
+    .delay-7 { animation-delay: 0.7s; }
+    .delay-8 { animation-delay: 0.8s; }
+    .delay-9 { animation-delay: 0.9s; }
+
+    @keyframes draw {
+      to { stroke-dashoffset: 0; }
+    }
+
+    @keyframes pop-in {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (max-width: 760px) {
+      .top { padding: 18px 18px 4px; }
+      .diagram-wrap { padding: 4px 8px 16px; }
+    }
+  </style>
 </head>
-<body><div class="mxgraph" style="max-width:100%;border:1px solid transparent;" data-mxgraph="{&quot;highlight&quot;:&quot;#0000ff&quot;,&quot;nav&quot;:true,&quot;resize&quot;:true,&quot;toolbar&quot;:&quot;zoom layers lightbox&quot;,&quot;xml&quot;:&quot;&lt;mxfile modified=\&quot;2019-05-11T17:56:21.588Z\&quot; host=\&quot;www.draw.io\&quot; agent=\&quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36\&quot; etag=\&quot;RnYigu_iNDAlct8Ro0JM\&quot; version=\&quot;10.6.7\&quot; type=\&quot;google\&quot;&gt;&lt;diagram id=\&quot;7Ay0sjP9wmfaLilq0S90\&quot; name=\&quot;Routing\&quot;&gt;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&lt;/diagram&gt;&lt;/mxfile&gt;&quot;}"></div>
-<script type="text/javascript" src="https://www.draw.io/js/viewer.min.js"></script>
+<body>
+  <main class="frame">
+    <div class="top">
+      <h1>Travello AI Flow Diagram</h1>
+      <p class="sub">Direct and agent-assisted booking journey from login to payment, QR ticket, notifications, and logout.</p>
+    </div>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 1160 760" role="img" aria-label="Travello AI flow diagram">
+        <defs>
+          <marker id="arr-main" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+            <path d="M1,1 L11,6 L1,11 Z" fill="#0ea5a3"></path>
+          </marker>
+          <marker id="arr-side" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+            <path d="M1,1 L11,6 L1,11 Z" fill="#264a63"></path>
+          </marker>
+          <filter id="soft-glow" x="-40%" y="-40%" width="180%" height="180%">
+            <feDropShadow dx="0" dy="0" stdDeviation="9" flood-color="#0ea5a3" flood-opacity="0.28"></feDropShadow>
+          </filter>
+        </defs>
+
+        <rect x="42" y="34" width="1076" height="690" rx="24" class="chip"></rect>
+
+        <rect x="68" y="332" width="120" height="80" rx="18" class="node delay-1" />
+        <text class="title" x="128" y="368">End User</text>
+
+        <rect x="252" y="332" width="160" height="74" rx="16" class="node delay-2" />
+        <text class="title" x="332" y="365">AI Travel Agent</text>
+        <text class="lab" x="332" y="385">Assisted Booking</text>
+
+        <rect x="252" y="92" width="160" height="74" rx="16" class="node delay-2" />
+        <text class="title" x="332" y="132">Login/Register</text>
+
+        <rect x="468" y="92" width="152" height="74" rx="16" class="node delay-3" />
+        <text class="title" x="544" y="132">Search Trip</text>
+        <text class="lab" x="544" y="152">Flights | Hotels | Trains</text>
+
+        <rect x="684" y="92" width="142" height="74" rx="16" class="node delay-4" />
+        <text class="title" x="755" y="132">View Details</text>
+
+        <rect x="898" y="92" width="174" height="74" rx="16" class="node delay-5" />
+        <text class="title" x="985" y="132">Passenger Info</text>
+
+        <rect x="898" y="220" width="174" height="74" rx="16" class="node delay-6" />
+        <text class="title" x="985" y="260">Booking Created</text>
+
+        <rect x="898" y="348" width="174" height="74" rx="16" class="node delay-7" />
+        <text class="title" x="985" y="388">Payment</text>
+
+        <rect x="684" y="476" width="174" height="74" rx="16" class="node delay-8" style="filter:url(#soft-glow)"></rect>
+        <text class="title" x="771" y="516">QR Ticket</text>
+
+        <rect x="898" y="476" width="174" height="74" rx="16" class="node delay-8" />
+        <text class="title" x="985" y="509">Notifications</text>
+        <text class="lab" x="985" y="529">Alerts Only</text>
+
+        <rect x="252" y="606" width="160" height="74" rx="16" class="node delay-9" />
+        <text class="title" x="332" y="646">Logout</text>
+
+        <rect x="468" y="220" width="152" height="64" rx="14" class="node delay-4" />
+        <text class="lab" x="544" y="258">Weather Lookup</text>
+
+        <rect x="684" y="220" width="142" height="64" rx="14" class="node delay-4" />
+        <text class="lab" x="755" y="258">Wishlist</text>
+
+        <path class="flow main" marker-end="url(#arr-main)" d="M188 332 L252 128" style="animation-delay:0.15s"></path>
+        <path class="flow main" marker-end="url(#arr-main)" d="M412 128 L468 128" style="animation-delay:0.22s"></path>
+        <path class="flow main" marker-end="url(#arr-main)" d="M620 128 L684 128" style="animation-delay:0.29s"></path>
+        <path class="flow main" marker-end="url(#arr-main)" d="M826 128 L898 128" style="animation-delay:0.36s"></path>
+        <path class="flow main" marker-end="url(#arr-main)" d="M985 166 L985 220" style="animation-delay:0.43s"></path>
+        <path class="flow main" marker-end="url(#arr-main)" d="M985 294 L985 348" style="animation-delay:0.50s"></path>
+        <path class="flow main" marker-end="url(#arr-main)" d="M898 385 L806 476" style="animation-delay:0.57s"></path>
+        <path class="flow main" marker-end="url(#arr-main)" d="M858 513 L898 513" style="animation-delay:0.64s"></path>
+        <path class="flow main" marker-end="url(#arr-main)" d="M898 528 L530 528 L530 643 L412 643" style="animation-delay:0.71s"></path>
+
+        <path class="flow side" marker-end="url(#arr-side)" d="M188 372 L252 369" style="animation-delay:0.32s"></path>
+        <path class="flow side" marker-end="url(#arr-side)" d="M412 369 L442 369 L442 190 L468 166" style="animation-delay:0.40s"></path>
+        <path class="flow side" marker-end="url(#arr-side)" d="M412 352 L860 352 L860 257 L898 257" style="animation-delay:0.48s"></path>
+
+        <path class="flow side" marker-end="url(#arr-side)" d="M544 166 L544 220" style="animation-delay:0.6s"></path>
+        <path class="flow side" marker-end="url(#arr-side)" d="M620 252 L684 252" style="animation-delay:0.68s"></path>
+        <path class="flow side" marker-end="url(#arr-side)" d="M826 252 L898 257" style="animation-delay:0.76s"></path>
+      </svg>
+    </div>
+  </main>
 </body>
 </html>

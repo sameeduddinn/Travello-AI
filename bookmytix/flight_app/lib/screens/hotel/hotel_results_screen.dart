@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/models/hotel.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -39,6 +40,7 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
   bool? filterPetFriendly;
   String propertyType = 'Hotel';
   String sortBy = 'recommended';
+  bool _isLoading = false;
 
   // Active filter count
   int get _activeFilters {
@@ -72,27 +74,89 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
         args['checkOutDate'] ?? DateTime.now().add(const Duration(days: 1));
     rooms = args['rooms'] ?? 1;
     guests = args['guests'] ?? 2;
-    _loadHotels();
+    _fetchHotels();
   }
 
-  void _loadHotels() {
+  // ── Backend fetch with local-data fallback ────────────────────────────────
+  Future<void> _fetchHotels() async {
+    setState(() => _isLoading = true);
+    try {
+      final raw = await ApiClient.searchHotels(
+        city: city,
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        guests: guests,
+        rooms: rooms,
+      );
+
+      if (raw.isEmpty) {
+        _loadLocalHotels();
+      } else {
+        hotels = raw.map((json) {
+          final m = ApiClient.hotelFromJson(json);
+          return Hotel(
+            id: m['id'],
+            name: m['name'],
+            address: m['address'],
+            city: m['city'],
+            rating: (m['rating'] as num).toDouble(),
+            totalReviews: m['totalReviews'] as int,
+            images: List<String>.from(m['images'] ?? []),
+            amenities: List<String>.from(m['amenities'] ?? []),
+            pricePerNight: (m['pricePerNight'] as num).toDouble(),
+            category: m['category'],
+            isRefundable: m['isRefundable'] as bool,
+            hasBreakfast: m['hasBreakfast'] as bool,
+            hasFreeWifi: m['hasFreeWifi'] as bool,
+            hasParking: m['hasParking'] as bool,
+            hasPool: m['hasPool'] as bool,
+            description: m['description'],
+            distanceFromCenter: (m['distanceFromCenter'] as num).toDouble(),
+            neighborhood: m['neighborhood']?.toString(),
+          );
+        }).toList();
+        _applyFilters();
+      }
+    } catch (_) {
+      // Backend unreachable — use local mock data so the demo always works
+      _loadLocalHotels();
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _loadLocalHotels() {
     hotels = PakistanHotels.getHotels(city);
     _applyFilters();
   }
 
   void _applyFilters() {
     setState(() {
-      filteredHotels = PakistanHotels.searchHotels(
-        city: city,
-        category: selectedCategory,
-        maxPrice: maxPrice > 0 ? maxPrice : null,
-        minRating: minRating > 0 ? minRating : null,
-        hasPool: filterPool,
-        hasBreakfast: filterBreakfast,
-      );
+      // Always start from the loaded hotels list (API or local), never re-query local data
+      filteredHotels = List<Hotel>.from(hotels);
+
+      if (selectedCategory != null) {
+        filteredHotels =
+            filteredHotels.where((h) => h.category == selectedCategory).toList();
+      }
+      if (minRating > 0) {
+        filteredHotels =
+            filteredHotels.where((h) => h.rating >= minRating).toList();
+      }
       if (minPrice > 3000) {
         filteredHotels =
             filteredHotels.where((h) => h.pricePerNight >= minPrice).toList();
+      }
+      if (maxPrice < 160000) {
+        filteredHotels =
+            filteredHotels.where((h) => h.pricePerNight <= maxPrice).toList();
+      }
+      if (filterBreakfast == true) {
+        filteredHotels =
+            filteredHotels.where((h) => h.hasBreakfast).toList();
+      }
+      if (filterPool == true) {
+        filteredHotels = filteredHotels.where((h) => h.hasPool).toList();
       }
       if (filterWifi == true) {
         filteredHotels = filteredHotels.where((h) => h.hasFreeWifi).toList();
@@ -354,49 +418,49 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
                           {
                             'label': 'Free WiFi',
                             'icon': Icons.wifi,
-                            'count': 21,
+                            'count': hotels.where((h) => h.hasFreeWifi).length,
                             'val': filterWifi,
                             'key': 'wifi'
                           },
                           {
                             'label': 'Free parking',
                             'icon': Icons.local_parking,
-                            'count': 17,
+                            'count': hotels.where((h) => h.hasParking).length,
                             'val': filterParking,
                             'key': 'parking'
                           },
                           {
                             'label': 'Breakfast included',
                             'icon': Icons.free_breakfast,
-                            'count': 14,
+                            'count': hotels.where((h) => h.hasBreakfast).length,
                             'val': filterBreakfast,
                             'key': 'breakfast'
                           },
                           {
                             'label': 'Swimming pool',
                             'icon': Icons.pool,
-                            'count': 9,
+                            'count': hotels.where((h) => h.hasPool).length,
                             'val': filterPool,
                             'key': 'pool'
                           },
                           {
                             'label': 'Pet-friendly',
                             'icon': Icons.pets,
-                            'count': 5,
+                            'count': hotels.where((h) => h.amenities.any((a) => a.toLowerCase().contains('pet'))).length,
                             'val': filterPetFriendly,
                             'key': 'pet'
                           },
                           {
                             'label': 'Airport shuttle',
                             'icon': Icons.airport_shuttle,
-                            'count': 8,
+                            'count': hotels.where((h) => h.amenities.any((a) => a.toLowerCase().contains('shuttle') || a.toLowerCase().contains('airport'))).length,
                             'val': filterAirportShuttle,
                             'key': 'shuttle'
                           },
                           {
                             'label': 'Spa & wellness',
                             'icon': Icons.spa,
-                            'count': 6,
+                            'count': hotels.where((h) => h.amenities.any((a) => a.toLowerCase().contains('spa'))).length,
                             'val': filterSpa,
                             'key': 'spa'
                           },
@@ -682,6 +746,13 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
                             _applyFilters();
                           })),
                   _SortPill(
+                      label: 'Price ↓',
+                      active: sortBy == 'price_high',
+                      onTap: () => setState(() {
+                            sortBy = 'price_high';
+                            _applyFilters();
+                          })),
+                  _SortPill(
                       label: 'Stars ★★★',
                       active: sortBy == 'rating',
                       onTap: () => setState(() {
@@ -701,28 +772,40 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
           ),
           // ── Hotel List ─────────────────────────────────────────────────────
           Expanded(
-            child: filteredHotels.isEmpty
-                ? Center(
+            child: _isLoading
+                ? const Center(
                     child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.hotel_outlined,
-                              size: 64, color: Colors.grey.shade400),
-                          const SizedBox(height: 16),
-                          Text('No hotels found',
-                              style: TravelloTheme.subtitle
-                                  .copyWith(color: Colors.grey.shade600)),
-                          const SizedBox(height: 8),
-                          const Text('Try adjusting your filters',
-                              style: TravelloTheme.caption),
-                        ]),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(color: Color(0xFFD4AF37)),
+                        SizedBox(height: 16),
+                        Text('Searching hotels...',
+                            style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredHotels.length,
-                    itemBuilder: (context, index) =>
-                        _buildHotelCard(filteredHotels[index], index, fmt),
-                  ),
+                : filteredHotels.isEmpty
+                    ? Center(
+                        child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.hotel_outlined,
+                                  size: 64, color: Colors.grey.shade400),
+                              const SizedBox(height: 16),
+                              Text('No hotels found',
+                                  style: TravelloTheme.subtitle
+                                      .copyWith(color: Colors.grey.shade600)),
+                              const SizedBox(height: 8),
+                              const Text('Try adjusting your filters',
+                                  style: TravelloTheme.caption),
+                            ]),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filteredHotels.length,
+                        itemBuilder: (context, index) =>
+                            _buildHotelCard(filteredHotels[index], index, fmt),
+                      ),
           ),
         ],
       ),
@@ -745,8 +828,11 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
             ? const Color(0xFF1565C0)
             : Colors.grey.shade700;
     final bool isEcoCertified =
-        hotel.description.toLowerCase().contains('eco') || index == 2;
-    final int roomsLeft = (index % 4) + 1; // 1–4 rooms left
+        hotel.description.toLowerCase().contains('eco') ||
+        hotel.amenities.any((a) => a.toLowerCase().contains('eco'));
+    // Use a deterministic but varied seed so cards don't all show the same count
+    final int roomsLeft =
+        ((hotel.id.hashCode.abs() % 4) + 1); // 1–4 rooms left
     final bool isLastRoom = roomsLeft == 1;
 
     return GestureDetector(
@@ -778,17 +864,23 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
                 ClipRRect(
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: Image.network(
-                    hotel.images.first,
-                    height: R.rh(context, 180),
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                        height: R.rh(context, 180),
-                        color: Colors.grey.shade200,
-                        child: const Icon(Icons.hotel,
-                            size: 64, color: Colors.grey)),
-                  ),
+                  child: hotel.images.isNotEmpty
+                      ? Image.network(
+                          hotel.images.first,
+                          height: R.rh(context, 180),
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                              height: R.rh(context, 180),
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.hotel,
+                                  size: 64, color: Colors.grey)),
+                        )
+                      : Container(
+                          height: R.rh(context, 180),
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.hotel,
+                              size: 64, color: Colors.grey)),
                 ),
                 // Eco Certified
                 if (isEcoCertified)

@@ -10,6 +10,8 @@ import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/services/transactional_service.dart';
+import 'package:flight_app/services/api_client.dart';
+import 'package:flight_app/utils/booking_service.dart';
 import 'dart:math' as math;
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -40,6 +42,10 @@ class _BookingPaymentState extends State<BookingPayment>
   FlightResult? _outboundFlight;
   FlightResult? _returnFlight;
   DateTime? _returnDate;
+
+  // Backend booking IDs (set by booking_checkout.dart before navigating here)
+  String? _backendBookingId;
+  String? _backendPnr;
 
   // Contact information
   String _contactEmail = '';
@@ -182,29 +188,60 @@ class _BookingPaymentState extends State<BookingPayment>
       return;
     }
 
+    // Try backend first; fall back to Supabase Edge Function
+    try {
+      if (_backendBookingId != null) {
+        final data = await ApiClient.initiatePayment(
+          bookingId: _backendBookingId!,
+          method: paymentMethod,
+          amount: _grandTotal,
+          phone: TransactionalService.normalizePkPhone(phoneNumber),
+          email: _contactEmail,
+        );
+        if (!mounted) return;
+        final requestId = data['request_id']?.toString();
+        if (requestId != null) {
+          setState(() {
+            _otpRequestId = requestId;
+            _otpValue = '';
+            _isOtpVerified = false;
+            if (paymentMethod == 'easypaisa') {
+              _showEasypaisaOTP = true;
+            } else {
+              _showJazzcashOTP = true;
+            }
+          });
+          _startOTPTimer();
+          Get.snackbar('OTP Sent',
+              data['message']?.toString() ?? 'Check your phone for the OTP.',
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: Colors.green.shade100,
+              colorText: Colors.green.shade900,
+              duration: const Duration(seconds: 3));
+          return;
+        }
+      }
+    } catch (_) {
+      // Fall through to Supabase edge-function fallback
+    }
+
+    // Fallback: Supabase edge function
     final result = await TransactionalService.sendPaymentOtp(
       bookingType: 'flight',
       paymentMethod: paymentMethod,
       email: _contactEmail,
       phoneNumber: phoneNumber,
     );
-
     if (!mounted) return;
-
     if (!result.success || result.requestId == null) {
-      final message = TransactionalService.lastError ??
-          'Unable to send OTP right now. Please try again.';
-      Get.snackbar(
-        'OTP Failed',
-        message,
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
-      );
+      Get.snackbar('OTP Failed',
+          TransactionalService.lastError ?? 'Unable to send OTP right now.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade900,
+          duration: const Duration(seconds: 3));
       return;
     }
-
     setState(() {
       _otpRequestId = result.requestId;
       _otpValue = '';
@@ -215,19 +252,14 @@ class _BookingPaymentState extends State<BookingPayment>
         _showJazzcashOTP = true;
       }
     });
-
     _startOTPTimer();
-
-    Get.snackbar(
-      result.isFallback ? 'Demo OTP Mode' : 'OTP Sent',
-      result.message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor:
-          result.isFallback ? Colors.blue.shade100 : Colors.green.shade100,
-      colorText:
-          result.isFallback ? Colors.blue.shade900 : Colors.green.shade900,
-      duration: const Duration(seconds: 3),
-    );
+    Get.snackbar(result.isFallback ? 'Demo OTP Mode' : 'OTP Sent', result.message,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor:
+            result.isFallback ? Colors.blue.shade100 : Colors.green.shade100,
+        colorText:
+            result.isFallback ? Colors.blue.shade900 : Colors.green.shade900,
+        duration: const Duration(seconds: 3));
   }
 
   Future<void> _verifyWalletOtp({
@@ -236,47 +268,56 @@ class _BookingPaymentState extends State<BookingPayment>
   }) async {
     if (_otpValue.length != 6) return;
     if (_otpRequestId == null || _otpRequestId!.isEmpty) {
-      Get.snackbar(
-        'OTP Required',
-        'Please request a new OTP code first.',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.orange.shade100,
-        colorText: Colors.orange.shade900,
-      );
+      Get.snackbar('OTP Required', 'Please request a new OTP code first.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.orange.shade100,
+          colorText: Colors.orange.shade900);
       return;
     }
 
-    final verified = await TransactionalService.verifyPaymentOtp(
-      requestId: _otpRequestId!,
-      code: _otpValue,
-      email: _contactEmail,
-      phoneNumber: phoneNumber,
-    );
+    // Try backend first
+    bool verified = false;
+    try {
+      if (_backendBookingId != null &&
+          !_otpRequestId!.startsWith('local_')) {
+        final data = await ApiClient.verifyPaymentOtp(
+          requestId: _otpRequestId!,
+          otp: _otpValue,
+        );
+        verified = data['success'] == true;
+        // Capture PNR from backend if not already set
+        if (verified) {
+          _backendPnr ??= data['pnr']?.toString();
+        }
+      }
+    } catch (_) {
+      // Fall through to Supabase edge-function fallback
+    }
+
+    if (!verified) {
+      verified = await TransactionalService.verifyPaymentOtp(
+        requestId: _otpRequestId!,
+        code: _otpValue,
+        email: _contactEmail,
+        phoneNumber: phoneNumber,
+      );
+    }
 
     if (!mounted) return;
-
     if (verified) {
       setState(() => _isOtpVerified = true);
-      Get.snackbar(
-        'OTP Verified',
-        '$paymentMethod OTP verified successfully.',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade900,
-      );
+      Get.snackbar('OTP Verified', '$paymentMethod OTP verified successfully.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade900);
       return;
     }
-
-    final message =
-        TransactionalService.lastError ?? 'Invalid or expired OTP code.';
-    Get.snackbar(
-      'Verification Failed',
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.red.shade100,
-      colorText: Colors.red.shade900,
-      duration: const Duration(seconds: 3),
-    );
+    Get.snackbar('Verification Failed',
+        TransactionalService.lastError ?? 'Invalid or expired OTP code.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3));
   }
 
   @override
@@ -378,6 +419,10 @@ class _BookingPaymentState extends State<BookingPayment>
     _outboundFlight = args['outboundFlight'] as FlightResult?;
     _returnFlight = args['returnFlight'] as FlightResult?;
 
+    // Backend booking ID created in booking_checkout.dart (may be null if offline)
+    _backendBookingId = args['backendBookingId'] as String?;
+    _backendPnr = args['backendPnr'] as String?;
+
     // Calculate price breakdown for flights
     final passengerCount = _passengers.length;
     if (_isRoundTrip && _outboundFlight != null && _returnFlight != null) {
@@ -430,41 +475,47 @@ class _BookingPaymentState extends State<BookingPayment>
     return 'PKR ${formatter.format(amount.round())}';
   }
 
-  void _processPayment() async {
+  Future<void> _processPayment() async {
     if (_selectedPaymentMethod.isEmpty) {
-      Get.snackbar(
-        'Payment Method Required',
-        'Please select a payment method',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.orange.shade100,
-        colorText: Colors.orange.shade900,
-      );
+      Get.snackbar('Payment Method Required', 'Please select a payment method',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.orange.shade100,
+          colorText: Colors.orange.shade900);
       return;
     }
-
     if (_selectedPaymentMethod == 'card' &&
         !_formKey.currentState!.validate()) {
       return;
     }
 
-    setState(() {
-      _isProcessing = true;
-    });
+    setState(() => _isProcessing = true);
 
-    // Simulate payment processing
-    await Future.delayed(const Duration(seconds: 3));
-
-    setState(() {
-      _isProcessing = false;
-    });
-
-    // Generate PNR and Transaction ID
     final random = math.Random();
-    final pnr = 'TVL${random.nextInt(900000) + 100000}'; // TVL123456
-    final transactionId =
+    String pnr = _backendPnr ?? 'TVL${random.nextInt(900000) + 100000}';
+    String transactionId =
         'TXN${DateTime.now().millisecondsSinceEpoch}${random.nextInt(1000)}';
 
-    // Navigate to payment success page (Done page) with all booking data
+    // For card payments: call backend initiate + treat as instant confirmation
+    if (_selectedPaymentMethod == 'card' && _backendBookingId != null) {
+      try {
+        final data = await ApiClient.initiatePayment(
+          bookingId: _backendBookingId!,
+          method: 'card',
+          amount: _grandTotal,
+          email: _contactEmail,
+        );
+        pnr = data['pnr']?.toString() ?? pnr;
+        transactionId = data['transaction_id']?.toString() ?? transactionId;
+      } catch (_) {
+        // Non-fatal — continue with locally generated IDs
+      }
+    } else {
+      // Simulate a short processing delay for UX
+      await Future.delayed(const Duration(seconds: 2));
+    }
+
+    setState(() => _isProcessing = false);
+
     final Map<String, dynamic> paymentData = {
       'pnr': pnr,
       'transactionId': transactionId,
@@ -482,9 +533,6 @@ class _BookingPaymentState extends State<BookingPayment>
       'isRoundTrip': _isRoundTrip,
       'departureDate': _departureDate,
       'returnDate': _returnDate,
-    };
-
-    paymentData.addAll({
       'bookingType': 'flight',
       'flight': _flight,
       'outboundFlight': _outboundFlight,
@@ -500,7 +548,10 @@ class _BookingPaymentState extends State<BookingPayment>
       'outboundSeatSelections': _outboundSeatSelections,
       'returnSeatSelections': _returnSeatSelections,
       'seatTotal': _seatTotal,
-    });
+    };
+
+    // Persist to local BookingService so My Bookings always works offline
+    BookingService.saveBooking(Map<String, dynamic>.from(paymentData));
 
     Get.toNamed(AppLink.paymentStatus, arguments: paymentData);
   }

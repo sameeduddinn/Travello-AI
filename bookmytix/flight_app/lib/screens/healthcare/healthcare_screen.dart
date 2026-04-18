@@ -1,4 +1,5 @@
 import 'package:flight_app/models/hospital.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
@@ -14,6 +15,7 @@ class _HealthcareScreenState extends State<HealthcareScreen>
     with SingleTickerProviderStateMixin {
   String _selectedCity = 'Karachi';
   List<Hospital> _hospitals = [];
+  bool _isLoadingHospitals = false;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -50,17 +52,43 @@ class _HealthcareScreenState extends State<HealthcareScreen>
     super.dispose();
   }
 
-  void _loadHospitals() {
+  Future<void> _loadHospitals() async {
+    setState(() => _isLoadingHospitals = true);
+    try {
+      final raw = await ApiClient.getNearbyHospitals(city: _selectedCity);
+      if (raw.isNotEmpty) {
+        setState(() {
+          _hospitals = raw
+              .map((m) => Hospital(
+                    id: m['id']?.toString() ?? '',
+                    name: m['name']?.toString() ?? 'Hospital',
+                    address: m['address']?.toString() ?? '',
+                    city: m['city']?.toString() ?? _selectedCity,
+                    phone: m['phone']?.toString() ?? '',
+                    type: m['type']?.toString() ?? 'General',
+                    hasEmergency: m['emergency_available'] == true,
+                    distance:
+                        (m['distance_km'] as num?)?.toDouble() ?? 0.0,
+                  ))
+              .toList();
+        });
+        return;
+      }
+    } catch (_) {
+      // Backend unreachable — fall through to local data
+    } finally {
+      if (mounted) setState(() => _isLoadingHospitals = false);
+    }
+    // Fallback: local mock data
     setState(() {
       _hospitals = PakistanHospitals.getHospitalsByCity(_selectedCity);
+      _isLoadingHospitals = false;
     });
   }
 
   void _changeCity(String city) {
-    setState(() {
-      _selectedCity = city;
-      _loadHospitals();
-    });
+    setState(() => _selectedCity = city);
+    _loadHospitals();
   }
 
   Future<void> _makePhoneCall(String phoneNumber) async {
@@ -331,7 +359,14 @@ class _HealthcareScreenState extends State<HealthcareScreen>
                 const SizedBox(height: 16),
 
                 // Hospitals List
-                if (_hospitals.isEmpty)
+                if (_isLoadingHospitals)
+                  const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(
+                        child: CircularProgressIndicator(
+                            color: TravelloTheme.primaryMain)),
+                  )
+                else if (_hospitals.isEmpty)
                   Padding(
                     padding: const EdgeInsets.all(32),
                     child: Center(

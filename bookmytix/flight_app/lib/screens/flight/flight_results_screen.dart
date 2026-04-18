@@ -11,6 +11,7 @@ import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/format_utils.dart';
 import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:intl/intl.dart';
 
 // Flight model for results
@@ -28,6 +29,10 @@ class FlightResult {
   final String badge; // 'Cheapest', 'Fastest', 'Recommended'
   final bool isRefundable;
   final String cabinClass;
+  // Fields populated from real API (null for dummy data)
+  final int? seatsAvailable;
+  final String? baggage;
+  final String? flightNumber;
 
   FlightResult({
     required this.id,
@@ -43,6 +48,9 @@ class FlightResult {
     this.badge = '',
     required this.isRefundable,
     required this.cabinClass,
+    this.seatsAvailable,
+    this.baggage,
+    this.flightNumber,
   });
 }
 
@@ -82,6 +90,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
 
   List<FlightResult> _allFlights = [];
   List<FlightResult> _filteredFlights = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -110,8 +119,70 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
       _selectedReturnDate = null;
     }
 
-    _loadDummyFlights();
-    _applyFilters();
+    _fetchFlights();
+  }
+
+  // ── Backend fetch with dummy-data fallback ────────────────────────────────
+  Future<void> _fetchFlights() async {
+    setState(() => _isLoading = true);
+    try {
+      final fromAirport = searchParams['fromAirport'] as Airport?;
+      final toAirport = searchParams['toAirport'] as Airport?;
+
+      if (fromAirport == null || toAirport == null) {
+        _loadDummyFlights();
+      } else {
+        // For round-trip return leg, swap origin ↔ destination
+        final bool isReturnLeg = _isRoundTrip && _currentJourneyIndex == 1;
+        final raw = await ApiClient.searchFlights(
+          origin: isReturnLeg ? toAirport.code : fromAirport.code,
+          destination: isReturnLeg ? fromAirport.code : toAirport.code,
+          date: _selectedDate,
+          returnDate: null, // return_date only needed on the outbound search
+          adults: _adults,
+          cabinClass: _selectedCabinClass,
+        );
+
+        // Sort by price so we can assign badges correctly
+        raw.sort((a, b) {
+          final pa = (a['total_price_pkr'] as num?)?.toDouble() ?? 0;
+          final pb = (b['total_price_pkr'] as num?)?.toDouble() ?? 0;
+          return pa.compareTo(pb);
+        });
+
+        _allFlights = raw.asMap().entries.map((entry) {
+          final m = ApiClient.flightResultFromJson(entry.value, entry.key);
+          return FlightResult(
+            id: m['id'],
+            airlineName: m['airlineName'],
+            airlineCode: m['airlineCode'],
+            airlineLogo: '',
+            departureTime: m['departureTime'],
+            arrivalTime: m['arrivalTime'],
+            duration: m['duration'],
+            stops: m['stops'],
+            stopCities: List<String>.from(m['stopCities'] ?? []),
+            price: m['price'],
+            badge: entry.key == 0 ? 'Cheapest' : (entry.key == 1 ? 'Fastest' : ''),
+            isRefundable: m['isRefundable'],
+            cabinClass: m['cabinClass'],
+            seatsAvailable: m['seatsAvailable'] as int?,
+            baggage: m['baggage'] as String?,
+            flightNumber: m['flightNumber'] as String?,
+          );
+        }).toList();
+
+        if (_allFlights.isEmpty) _loadDummyFlights();
+      }
+    } catch (_) {
+      // Backend unreachable — use dummy data so the screen always works
+      _loadDummyFlights();
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _applyFilters();
+      }
+    }
   }
 
   void _loadDummyFlights() {
@@ -817,22 +888,33 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
 
           // Flight list
           Expanded(
-            child: _filteredFlights.isEmpty
-                ? NoData(
-                    image: ImgApi.emptyNotFound,
-                    title: 'No Flights Found',
-                    desc:
-                        'No flights matched your search. Try different dates, routes, or adjust your filters.',
-                    primaryTxtBtn: 'CHANGE SEARCH',
-                    primaryAction: () => Get.back(),
+            child: _isLoading
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(color: Color(0xFFD4AF37)),
+                        SizedBox(height: 16),
+                        Text('Searching flights...', style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
                   )
-                : ListView.builder(
-                    padding: EdgeInsets.all(16.r),
-                    itemCount: _filteredFlights.length,
-                    itemBuilder: (context, index) {
-                      final flight = _filteredFlights[index];
-                      return _buildFlightCard(flight);
-                    },
+                : _filteredFlights.isEmpty
+                    ? NoData(
+                        image: ImgApi.emptyNotFound,
+                        title: 'No Flights Found',
+                        desc:
+                            'No flights matched your search. Try different dates, routes, or adjust your filters.',
+                        primaryTxtBtn: 'CHANGE SEARCH',
+                        primaryAction: () => Get.back(),
+                      )
+                    : ListView.builder(
+                        padding: EdgeInsets.all(16.r),
+                        itemCount: _filteredFlights.length,
+                        itemBuilder: (context, index) {
+                          final flight = _filteredFlights[index];
+                          return _buildFlightCard(flight);
+                        },
                   ),
           ),
         ],
@@ -2502,8 +2584,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                       _currentJourneyIndex = 1;
                       _selectedDate = _selectedReturnDate ?? _selectedDate;
                     });
-                    _loadDummyFlights();
-                    _applyFilters();
+                    _fetchFlights();
 
                     // Show message
                     Get.snackbar(
@@ -2768,6 +2849,60 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                     ),
                                   ],
                                 ),
+
+                                SizedBox(height: 6.h),
+
+                                // Flight number, baggage, seats
+                                Row(
+                                  children: [
+                                    if (flight.flightNumber != null) ...[
+                                      Icon(Icons.confirmation_number_outlined,
+                                          size: 12.sp,
+                                          color: Colors.grey.shade500),
+                                      SizedBox(width: 3.w),
+                                      Text(
+                                        flight.flightNumber!,
+                                        style: TextStyle(
+                                            fontSize: 11.sp,
+                                            color: Colors.grey.shade600),
+                                      ),
+                                      SizedBox(width: 10.w),
+                                    ],
+                                    if (flight.baggage != null) ...[
+                                      Icon(Icons.luggage_outlined,
+                                          size: 12.sp,
+                                          color: Colors.grey.shade500),
+                                      SizedBox(width: 3.w),
+                                      Text(
+                                        flight.baggage!,
+                                        style: TextStyle(
+                                            fontSize: 11.sp,
+                                            color: Colors.grey.shade600),
+                                      ),
+                                      SizedBox(width: 10.w),
+                                    ],
+                                    if (flight.seatsAvailable != null) ...[
+                                      Icon(Icons.event_seat_outlined,
+                                          size: 12.sp,
+                                          color: flight.seatsAvailable! <= 5
+                                              ? Colors.orange
+                                              : Colors.grey.shade500),
+                                      SizedBox(width: 3.w),
+                                      Text(
+                                        '${flight.seatsAvailable} left',
+                                        style: TextStyle(
+                                            fontSize: 11.sp,
+                                            color: flight.seatsAvailable! <= 5
+                                                ? Colors.orange
+                                                : Colors.grey.shade600,
+                                            fontWeight:
+                                                flight.seatsAvailable! <= 5
+                                                    ? FontWeight.w600
+                                                    : FontWeight.normal),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                               ],
                             ),
                           ),
@@ -2827,8 +2962,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                   _selectedDate =
                                       _selectedReturnDate ?? _selectedDate;
                                 });
-                                _loadDummyFlights();
-                                _applyFilters();
+                                _fetchFlights();
 
                                 // Show message
                                 messenger.showSnackBar(

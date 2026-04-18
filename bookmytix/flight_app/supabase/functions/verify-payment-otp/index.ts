@@ -1,3 +1,4 @@
+/// <reference path="../_shared/compat.d.ts" />
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { isValidEmail, isValidPkPhone, normalizeEmail, normalizePkPhone, sha256 } from '../_shared/security.ts';
@@ -32,7 +33,8 @@ Deno.serve(async (req) => {
     const email = normalizeEmail((body.email ?? '').toString());
     const phone = normalizePkPhone((body.phone ?? '').toString());
 
-    if (requestId.isEmpty || code.length != 6) {
+    // Fix: was requestId.isEmpty (Dart) → use .length === 0
+    if (requestId.length === 0 || code.length !== 6) {
       return jsonResponse({ verified: false, message: 'Invalid request id or OTP.' }, 400);
     }
 
@@ -54,16 +56,17 @@ Deno.serve(async (req) => {
       return jsonResponse({ verified: false, message: 'OTP request not found.' }, 400);
     }
 
-    if ((otpRow.phone ?? '').toString() != phone) {
+    if ((otpRow.phone ?? '').toString() !== phone) {
       return jsonResponse({ verified: false, message: 'Phone does not match OTP request.' }, 400);
     }
 
     const storedEmail = (otpRow.email ?? '').toString().toLowerCase();
-    if (email.isNotEmpty && isValidEmail(email) && storedEmail.isNotEmpty && storedEmail != email) {
+    // Fix: was email.isNotEmpty (Dart) → use email.length > 0
+    if (email.length > 0 && isValidEmail(email) && storedEmail.length > 0 && storedEmail !== email) {
       return jsonResponse({ verified: false, message: 'Email does not match OTP request.' }, 400);
     }
 
-    if (otpRow.verified == true) {
+    if (otpRow.verified === true) {
       return jsonResponse({ verified: true, message: 'OTP already verified.' }, 200);
     }
 
@@ -73,7 +76,8 @@ Deno.serve(async (req) => {
       return jsonResponse({ verified: false, message: 'OTP expired. Please request a new code.' }, 400);
     }
 
-    const attempts = (otpRow.attempts as number? ?? 0);
+    // Fix: was number? (Dart nullable) → use (number | null)
+    const attempts = ((otpRow.attempts as number | null) ?? 0);
     if (attempts >= 5) {
       return jsonResponse({ verified: false, message: 'Too many invalid attempts. Request a new OTP.' }, 400);
     }
@@ -81,7 +85,7 @@ Deno.serve(async (req) => {
     const otpPepper = Deno.env.get('OTP_PEPPER') ?? 'travello-demo-pepper';
     const expectedHash = await sha256(`${requestId}:${code}:${otpPepper}`);
 
-    if (expectedHash != otpRow.otp_hash) {
+    if (expectedHash !== otpRow.otp_hash) {
       await adminClient
         .from('payment_otps')
         .update({ attempts: attempts + 1 })

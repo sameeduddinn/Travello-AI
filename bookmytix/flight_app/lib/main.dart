@@ -21,10 +21,15 @@ void main() async {
     );
   }
 
-  await Supabase.initialize(
-    url: SupabaseConfig.url,
-    anonKey: SupabaseConfig.anonKey,
-  );
+  try {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.anonKey,
+    );
+  } catch (_) {
+    // Supabase init failure (e.g. no internet at launch) — app still opens,
+    // auth features will show errors gracefully instead of crashing.
+  }
 
   await AuthService.initializeDemoUsers();
 

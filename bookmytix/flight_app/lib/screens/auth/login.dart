@@ -1,6 +1,5 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
-import 'package:flight_app/widgets/app_button/back_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/route_manager.dart';
@@ -19,20 +18,8 @@ class Login extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           forceMaterialTransparency: true,
+          automaticallyImplyLeading: false,
           toolbarHeight: isDesktop ? 56.h : 44.h,
-          leadingWidth: isDesktop ? 64.w : 48.w,
-          leading: Padding(
-            padding: EdgeInsets.only(
-              left: 12.w,
-              top: isDesktop ? 2.h : 0,
-              bottom: isDesktop ? 2.h : 0,
-            ),
-            child: BackIconButton(
-                isSquare: true,
-                onTap: () {
-                  Get.back();
-                }),
-          ),
           actionsPadding: EdgeInsets.only(right: isDesktop ? 8.w : 0),
           actions: [
             TextButton(

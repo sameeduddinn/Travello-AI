@@ -416,9 +416,37 @@ class _PaymentStatusState extends State<PaymentStatus>
         'bookingType': _bookingData['bookingType'],
       },
     );
-    await TransactionalService.sendBookingConfirmationEmail(
+    final emailSent = await TransactionalService.sendBookingConfirmationEmail(
       bookingData: _bookingData,
     );
+    final emailAddress = (_bookingData['email'] ?? '').toString();
+    if (mounted) {
+      if (emailSent && emailAddress.isNotEmpty && emailAddress != 'N/A') {
+        Get.snackbar(
+          'Confirmation Email Sent',
+          'Booking confirmation sent to $emailAddress. Check your inbox (and spam folder).',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFF34A853).withValues(alpha: 0.9),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 5),
+          margin: const EdgeInsets.all(12),
+        );
+      } else {
+        final reason = TransactionalService.lastError ??
+            (emailAddress.isEmpty || emailAddress == 'N/A'
+                ? 'No contact email found.'
+                : 'Email service unavailable.');
+        Get.snackbar(
+          'Email Not Sent',
+          reason,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.shade700.withValues(alpha: 0.9),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 6),
+          margin: const EdgeInsets.all(12),
+        );
+      }
+    }
 
     // 🔔 Push notification for this booking
     _pushBookingNotification(bookingType, args);

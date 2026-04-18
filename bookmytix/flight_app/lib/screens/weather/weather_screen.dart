@@ -1,8 +1,59 @@
 import 'package:flight_app/models/weather.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
+
+// ---------------------------------------------------------------------------
+// Helper: map backend icon string → Flutter IconData
+// ---------------------------------------------------------------------------
+IconData _iconFromName(String name) {
+  switch (name) {
+    case 'wb_sunny':
+      return Icons.wb_sunny;
+    case 'wb_cloudy':
+      return Icons.wb_cloudy;
+    case 'cloud':
+      return Icons.cloud;
+    case 'water_drop':
+      return Icons.water_drop;
+    case 'thunderstorm':
+      return Icons.thunderstorm;
+    case 'ac_unit':
+      return Icons.ac_unit;
+    case 'foggy':
+      return Icons.foggy;
+    case 'grain':
+      return Icons.grain;
+    case 'air':
+      return Icons.air;
+    case 'local_fire_department':
+      return Icons.local_fire_department;
+    default:
+      return Icons.wb_sunny;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Convert backend weather map → WeatherData model
+// ---------------------------------------------------------------------------
+WeatherData _fromApi(Map<String, dynamic> map) {
+  return WeatherData(
+    city: map['city']?.toString() ?? '',
+    temperature: (map['temperature'] as num?)?.toDouble() ?? 27.0,
+    condition: map['condition']?.toString() ?? 'Pleasant',
+    icon: _iconFromName(map['icon']?.toString() ?? 'wb_sunny'),
+    humidity: (map['humidity'] as num?)?.toInt() ?? 55,
+    windSpeed: (map['wind_speed'] as num?)?.toDouble() ?? 10.0,
+    travelWarning: map['travel_warning'] == true,
+    warningMessage: map['warning_message']?.toString() ?? '',
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 
 class WeatherScreen extends StatefulWidget {
   const WeatherScreen({super.key});
@@ -14,7 +65,11 @@ class WeatherScreen extends StatefulWidget {
 class _WeatherScreenState extends State<WeatherScreen>
     with SingleTickerProviderStateMixin {
   String _selectedCity = 'Karachi';
-  late WeatherData _currentWeather;
+  WeatherData _currentWeather =
+      PakistanWeatherData.getWeatherForCity('Karachi');
+  List<WeatherData> _allCities = PakistanWeatherData.getAllCitiesWeather();
+  bool _loadingCurrent = false;
+  bool _loadingAll = false;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -23,7 +78,6 @@ class _WeatherScreenState extends State<WeatherScreen>
   @override
   void initState() {
     super.initState();
-    _currentWeather = PakistanWeatherData.getWeatherForCity(_selectedCity);
 
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
@@ -43,6 +97,9 @@ class _WeatherScreenState extends State<WeatherScreen>
       curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic),
     ));
     _animationController.forward();
+
+    // Load live data after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAllCities());
   }
 
   @override
@@ -51,16 +108,43 @@ class _WeatherScreenState extends State<WeatherScreen>
     super.dispose();
   }
 
-  void _changeCity(String city) {
+  Future<void> _loadAllCities() async {
+    setState(() => _loadingAll = true);
+    final data = await ApiClient.getAllCitiesWeather();
+    if (!mounted) return;
+    if (data != null && data.isNotEmpty) {
+      final cities = data.map(_fromApi).toList();
+      setState(() {
+        _allCities = cities;
+        // Update selected city weather from bulk fetch
+        final match = cities.where((c) => c.city == _selectedCity);
+        if (match.isNotEmpty) _currentWeather = match.first;
+        _loadingAll = false;
+      });
+    } else {
+      setState(() => _loadingAll = false);
+    }
+  }
+
+  Future<void> _changeCity(String city) async {
     setState(() {
       _selectedCity = city;
+      // Show static data immediately while fetching
       _currentWeather = PakistanWeatherData.getWeatherForCity(city);
+      _loadingCurrent = true;
+    });
+
+    final data = await ApiClient.getWeather(city);
+    if (!mounted) return;
+    setState(() {
+      if (data != null) _currentWeather = _fromApi(data);
+      _loadingCurrent = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final warnings = PakistanWeatherData.getCitiesWithWarnings();
+    final warnings = _allCities.where((w) => w.travelWarning).toList();
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
@@ -132,7 +216,8 @@ class _WeatherScreenState extends State<WeatherScreen>
                                       decoration: BoxDecoration(
                                         color: Colors.white
                                             .withValues(alpha: 0.25),
-                                        borderRadius: BorderRadius.circular(14),
+                                        borderRadius:
+                                            BorderRadius.circular(14),
                                         boxShadow: [
                                           BoxShadow(
                                             color: Colors.black
@@ -205,9 +290,10 @@ class _WeatherScreenState extends State<WeatherScreen>
               children: [
                 // City Selector
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
                   child: DropdownButtonFormField<String>(
+                    key: ValueKey(_selectedCity),
                     initialValue: _selectedCity,
                     dropdownColor: Colors.white,
                     style: const TextStyle(
@@ -260,56 +346,67 @@ class _WeatherScreenState extends State<WeatherScreen>
                   child: Card(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final isSmall = constraints.maxWidth < 360;
-                          return Column(
-                            children: [
-                              Icon(
-                                _currentWeather.icon,
-                                size: isSmall ? 56.0 : 72.0,
-                                color: TravelloTheme.primaryMain,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                '${_currentWeather.temperature.toStringAsFixed(0)}°C',
-                                style: TextStyle(
-                                  fontSize: isSmall ? 36.0 : 48.0,
-                                  fontWeight: FontWeight.bold,
+                      child: _loadingCurrent
+                          ? const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(24),
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFFD4AF37),
                                 ),
                               ),
-                              Text(
-                                _currentWeather.condition,
-                                style:
-                                    TravelloTheme.title.copyWith(fontSize: 16),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 24),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceAround,
-                                children: [
-                                  _WeatherDetail(
-                                    icon: Icons.water_drop,
-                                    label: 'Humidity',
-                                    value: '${_currentWeather.humidity}%',
-                                  ),
-                                  _WeatherDetail(
-                                    icon: Icons.air,
-                                    label: 'Wind',
-                                    value: '${_currentWeather.windSpeed} km/h',
-                                  ),
-                                ],
-                              ),
-                            ],
-                          );
-                        },
-                      ),
+                            )
+                          : LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isSmall = constraints.maxWidth < 360;
+                                return Column(
+                                  children: [
+                                    Icon(
+                                      _currentWeather.icon,
+                                      size: isSmall ? 56.0 : 72.0,
+                                      color: TravelloTheme.primaryMain,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      '${_currentWeather.temperature.toStringAsFixed(0)}°C',
+                                      style: TextStyle(
+                                        fontSize: isSmall ? 36.0 : 48.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      _currentWeather.condition,
+                                      style: TravelloTheme.title
+                                          .copyWith(fontSize: 16),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceAround,
+                                      children: [
+                                        _WeatherDetail(
+                                          icon: Icons.water_drop,
+                                          label: 'Humidity',
+                                          value:
+                                              '${_currentWeather.humidity}%',
+                                        ),
+                                        _WeatherDetail(
+                                          icon: Icons.air,
+                                          label: 'Wind',
+                                          value:
+                                              '${_currentWeather.windSpeed.toStringAsFixed(0)} km/h',
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
                     ),
                   ),
                 ),
 
-                // Travel Warning (if applicable)
+                // Travel Warning
                 if (_currentWeather.travelWarning)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -352,7 +449,7 @@ class _WeatherScreenState extends State<WeatherScreen>
                     ),
                   ),
 
-                // Weather Warnings Section
+                // Active Weather Alerts
                 if (warnings.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.all(16),
@@ -367,18 +464,30 @@ class _WeatherScreenState extends State<WeatherScreen>
                   ...warnings.map((weather) => _WarningCard(weather: weather)),
                 ],
 
-                // All Cities Weather
+                // All Cities
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'All Cities',
-                      style: TravelloTheme.title.copyWith(fontSize: 16),
-                    ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'All Cities',
+                        style: TravelloTheme.title.copyWith(fontSize: 16),
+                      ),
+                      if (_loadingAll) ...[
+                        const SizedBox(width: 10),
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFFD4AF37),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                ...PakistanWeatherData.getAllCitiesWeather().map((weather) {
+                ..._allCities.map((weather) {
                   return _CityWeatherTile(
                     weather: weather,
                     isSelected: weather.city == _selectedCity,
@@ -427,37 +536,24 @@ class _WarningCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         color: Colors.red.shade50,
         child: ListTile(
           leading: CircleAvatar(
             backgroundColor: Colors.red.shade100,
-            child: Icon(
-              weather.icon,
-              size: 24,
-              color: Colors.red.shade700,
-            ),
+            child: Icon(weather.icon, size: 24, color: Colors.red.shade700),
           ),
           title: Text(
             weather.city,
-            style: TravelloTheme.subtitle.copyWith(
-              color: Colors.red.shade900,
-            ),
+            style: TravelloTheme.subtitle.copyWith(color: Colors.red.shade900),
           ),
           subtitle: Text(
             weather.warningMessage,
-            style: TravelloTheme.caption.copyWith(
-              color: Colors.red.shade800,
-            ),
+            style:
+                TravelloTheme.caption.copyWith(color: Colors.red.shade800),
           ),
-          trailing: Icon(
-            Icons.warning,
-            color: Colors.red.shade700,
-          ),
+          trailing: Icon(Icons.warning, color: Colors.red.shade700),
         ),
       ),
     );
@@ -478,10 +574,7 @@ class _CityWeatherTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         color: isSelected ? TravelloTheme.primaryMainContainer : null,
         child: ListTile(
@@ -496,15 +589,17 @@ class _CityWeatherTile extends StatelessWidget {
           title: Text(
             weather.city,
             style: TravelloTheme.subtitle.copyWith(
-              color:
-                  isSelected ? colorScheme(context).onPrimaryContainer : null,
+              color: isSelected
+                  ? colorScheme(context).onPrimaryContainer
+                  : null,
             ),
           ),
           subtitle: Text(
             weather.condition,
             style: TravelloTheme.caption.copyWith(
-              color:
-                  isSelected ? colorScheme(context).onPrimaryContainer : null,
+              color: isSelected
+                  ? colorScheme(context).onPrimaryContainer
+                  : null,
             ),
           ),
           trailing: Text(

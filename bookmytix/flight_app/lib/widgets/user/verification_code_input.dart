@@ -356,9 +356,15 @@ class _VerificationCodeInputState extends State<VerificationCodeInput> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'VERIFY CODE',
-                          style: TravelloTheme.subtitle,
+                      : FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'VERIFY CODE',
+                            maxLines: 1,
+                            style: TravelloTheme.subtitle.copyWith(
+                              fontSize: R.sp(context, 15),
+                            ),
+                          ),
                         ),
                 ),
               ),

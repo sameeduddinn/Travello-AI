@@ -1,3 +1,5 @@
+/// <reference path="./compat.d.ts" />
+
 type SendSmsInput = {
   to: string;
   message: string;

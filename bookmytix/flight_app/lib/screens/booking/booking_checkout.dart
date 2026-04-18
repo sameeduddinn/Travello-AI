@@ -3,6 +3,7 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -60,6 +61,9 @@ class _BookingCheckoutState extends State<BookingCheckout> {
 
   bool _agreeToTerms = false;
   bool _showTermsError = false;
+  bool _isCreatingBooking = false;
+  String? _backendBookingId;
+  String? _backendPnr;
 
   final ScrollController _refundScrollController = ScrollController();
   final ScrollController _cancellationScrollController = ScrollController();
@@ -255,7 +259,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
       _checkoutServiceFee -
       _discount;
 
-  void _proceedToCheckout() {
+  Future<void> _proceedToCheckout() async {
     if (!_agreeToTerms) {
       setState(() => _showTermsError = true);
       Get.snackbar(
@@ -268,6 +272,43 @@ class _BookingCheckoutState extends State<BookingCheckout> {
         margin: const EdgeInsets.all(12),
       );
       return;
+    }
+
+    // Create booking on backend and add passengers.
+    // Non-fatal: if backend is unreachable the payment screen still works
+    // with locally generated IDs.
+    setState(() => _isCreatingBooking = true);
+    try {
+      final booking = await ApiClient.bookFlight(
+        offerId: _flight.id,
+        contactEmail: _contactEmail,
+        contactPhone: _contactPhone.isNotEmpty ? _contactPhone : null,
+      );
+      _backendBookingId = booking['booking_id']?.toString();
+      _backendPnr = booking['pnr']?.toString();
+
+      if (_backendBookingId != null && _passengers.isNotEmpty) {
+        await ApiClient.addPassengers(
+          bookingId: _backendBookingId!,
+          passengers: _passengers
+              .map((p) => {
+                    'title': p['title'] ?? 'Mr',
+                    'first_name': p['firstName'] ?? p['first_name'] ?? '',
+                    'last_name': p['lastName'] ?? p['last_name'] ?? '',
+                    'date_of_birth':
+                        p['dateOfBirth'] ?? p['date_of_birth'] ?? '',
+                    'gender': p['gender'] ?? 'male',
+                    'cnic': p['cnic'] ?? p['idNumber'] ?? '',
+                    'passenger_type':
+                        p['type'] ?? p['passenger_type'] ?? 'adult',
+                  })
+              .toList(),
+        );
+      }
+    } catch (_) {
+      // Backend unreachable or not logged in — continue with local flow
+    } finally {
+      if (mounted) setState(() => _isCreatingBooking = false);
     }
 
     Get.toNamed(AppLink.payment, arguments: {
@@ -294,6 +335,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
       'transferAdded': _transferAdded,
       'transferVehicleType': _transferVehicleType,
       'transferFee': _transferFee,
+      'backendBookingId': _backendBookingId,
+      'backendPnr': _backendPnr,
     });
   }
 
@@ -3054,12 +3097,16 @@ class _BookingCheckoutState extends State<BookingCheckout> {
         ],
       ),
       child: SafeArea(
-        child: DSButton(
-          label: 'CHECKOUT',
-          trailingIcon: Icons.arrow_forward_rounded,
-          onTap: _proceedToCheckout,
-          height: R.rh(context, 52),
-        ),
+        child: _isCreatingBooking
+            ? const Center(
+                child: CircularProgressIndicator(
+                    color: TravelloTheme.primaryMain))
+            : DSButton(
+                label: 'CHECKOUT',
+                trailingIcon: Icons.arrow_forward_rounded,
+                onTap: _proceedToCheckout,
+                height: R.rh(context, 52),
+              ),
       ),
     );
   }
