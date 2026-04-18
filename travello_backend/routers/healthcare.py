@@ -2,7 +2,7 @@
 # FILE: routers/healthcare.py
 # PREFIX: /healthcare
 # PURPOSE: Healthcare guidance — nearby hospitals, pharmacies, emergency numbers.
-#          Uses Google Places API if configured; falls back to curated mock data.
+#          Uses curated mock data and OpenStreetMap links (no Google API).
 # =============================================================================
 #
 # FLUTTER INTEGRATION (Flutter 3.28.3 / Dart 3.10.1)
@@ -46,15 +46,10 @@ import logging
 import math
 from typing import Any
 
-import httpx
-from fastapi import APIRouter, Query
-
-from core.config import settings
+from fastapi import APIRouter, HTTPException, Query, status
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/healthcare", tags=["Healthcare"])
-
-GOOGLE_PLACES_BASE = "https://maps.googleapis.com/maps/api/place"
 
 
 # ---------------------------------------------------------------------------
@@ -71,58 +66,76 @@ def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 
 def _maps_url(lat: float, lng: float) -> str:
-    return f"https://www.google.com/maps/dir/?api=1&destination={lat},{lng}"
+    return f"https://www.openstreetmap.org/?mlat={lat}&mlon={lng}#map=15/{lat}/{lng}"
 
 
 # ---------------------------------------------------------------------------
-# Google Places nearby search
+# City coordinates (for city-based lookup support)
 # ---------------------------------------------------------------------------
 
-async def _google_nearby(
-    lat: float,
-    lng: float,
-    radius_m: int,
-    place_type: str,
-) -> list[dict[str, Any]]:
-    if not settings.GOOGLE_PLACES_API_KEY:
-        return []
-    try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(
-                f"{GOOGLE_PLACES_BASE}/nearbysearch/json",
-                params={
-                    "location": f"{lat},{lng}",
-                    "radius": radius_m,
-                    "type": place_type,
-                    "key": settings.GOOGLE_PLACES_API_KEY,
-                },
-            )
-        if resp.status_code != 200:
-            logger.warning("Google Places error %d", resp.status_code)
-            return []
-        data = resp.json()
-        results = data.get("results", [])
-        out = []
-        for r in results[:10]:
-            loc = r.get("geometry", {}).get("location", {})
-            p_lat = loc.get("lat", lat)
-            p_lng = loc.get("lng", lng)
-            out.append({
-                "place_id": r.get("place_id", ""),
-                "name": r.get("name", ""),
-                "address": r.get("vicinity", ""),
-                "distance_km": round(_haversine_km(lat, lng, p_lat, p_lng), 2),
-                "phone": None,
-                "is_open": r.get("opening_hours", {}).get("open_now"),
-                "lat": p_lat,
-                "lng": p_lng,
-                "maps_url": _maps_url(p_lat, p_lng),
-                "rating": r.get("rating"),
-            })
-        return out
-    except Exception as exc:
-        logger.error("Google Places request failed: %s", exc)
-        return []
+_CITY_COORDS: dict[str, tuple[float, float]] = {
+    # Major cities
+    "karachi":          (24.8607, 67.0011),
+    "lahore":           (31.5204, 74.3587),
+    "islamabad":        (33.6844, 73.0479),
+    "rawalpindi":       (33.5651, 73.0169),
+    "multan":           (30.1575, 71.5249),
+    "faisalabad":       (31.4504, 73.1350),
+    "peshawar":         (34.0151, 71.5249),
+    "quetta":           (30.1798, 66.9750),
+    "sialkot":          (32.4945, 74.5229),
+    "gujranwala":       (32.1877, 74.1945),
+    "bahawalpur":       (29.3956, 71.6836),
+    "hyderabad":        (25.3960, 68.3578),
+    "sukkur":           (27.7052, 68.8574),
+    "larkana":          (27.5580, 68.2150),
+    "dera ghazi khan":  (30.0571, 70.6350),
+    "dg khan":          (30.0571, 70.6350),
+    "gwadar":           (25.1264, 62.3225),
+    "mirpur":           (33.1475, 73.7511),
+    # Northern Pakistan & tourism
+    "skardu":           (35.2971, 75.6338),
+    "gilgit":           (35.9208, 74.3149),
+    "hunza":            (36.3167, 74.6500),
+    "karimabad":        (36.3167, 74.6500),
+    "aliabad":          (36.2185, 74.6513),
+    "naran":            (34.9030, 73.6540),
+    "kaghan":           (34.7733, 73.5419),
+    "chitral":          (35.8518, 71.7864),
+    "swat":             (34.7462, 72.3578),
+    "mingora":          (34.7726, 72.3600),
+    "abbottabad":       (34.1463, 73.2117),
+    "mansehra":         (34.3300, 73.2000),
+    "nathiagali":       (34.0741, 73.3778),
+    "murree":           (33.9072, 73.3943),
+    "muzaffarabad":     (34.3700, 73.4711),
+    "rawalakot":        (33.8575, 73.7614),
+    "ziarat":           (30.3810, 67.7285),
+    "fairy meadows":    (35.3753, 74.5958),
+    "kalash valley":    (35.7000, 71.6000),
+    "bumburet":         (35.7200, 71.6500),
+}
+
+
+def _resolve_coordinates(
+    lat: float | None,
+    lng: float | None,
+    lon: float | None,
+    city: str | None,
+) -> tuple[float, float]:
+    final_lng = lng if lng is not None else lon
+    if lat is not None and final_lng is not None:
+        return lat, final_lng
+
+    if city:
+        coords = _CITY_COORDS.get(city.strip().lower())
+        if coords:
+            return coords
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Provide either lat/lng coordinates or a supported city name.",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -195,6 +208,100 @@ _MOCK_HOSPITALS: list[dict[str, Any]] = [
     {"name": "Ayub Teaching Hospital", "city": "Abbottabad",
      "address": "Mansehra Road, Abbottabad", "phone": "0992-381166",
      "lat": 34.1606, "lng": 73.2180, "is_open": True},
+    {"name": "CMH Abbottabad", "city": "Abbottabad",
+     "address": "Cantt, Abbottabad", "phone": "0992-9310401",
+     "lat": 34.1490, "lng": 73.2135, "is_open": True},
+    # Hunza
+    {"name": "Aga Khan Health Service Aliabad", "city": "Hunza",
+     "address": "Aliabad, Hunza", "phone": "05813-440077",
+     "lat": 36.2185, "lng": 74.6513, "is_open": True},
+    {"name": "DHQ Hospital Hunza (Karimabad)", "city": "Hunza",
+     "address": "Karimabad, Hunza-Nagar", "phone": "05813-457001",
+     "lat": 36.3168, "lng": 74.6541, "is_open": True},
+    # Naran
+    {"name": "Naran Emergency Health Centre", "city": "Naran",
+     "address": "Main Bazaar, Naran", "phone": "0997-415001",
+     "lat": 34.9065, "lng": 73.6511, "is_open": True},
+    # Chitral
+    {"name": "DHQ Hospital Chitral", "city": "Chitral",
+     "address": "Ataliq Bazaar, Chitral", "phone": "0943-412026",
+     "lat": 35.8508, "lng": 71.7882, "is_open": True},
+    {"name": "Aga Khan Health Service Chitral", "city": "Chitral",
+     "address": "Mastuj Road, Chitral", "phone": "0943-412200",
+     "lat": 35.8530, "lng": 71.7910, "is_open": False},
+    # Mansehra
+    {"name": "DHQ Hospital Mansehra", "city": "Mansehra",
+     "address": "Shinkiari Road, Mansehra", "phone": "0997-302401",
+     "lat": 34.3298, "lng": 73.1974, "is_open": True},
+    # Murree
+    {"name": "DHQ Hospital Murree", "city": "Murree",
+     "address": "The Mall, Murree", "phone": "051-3410501",
+     "lat": 33.9072, "lng": 73.3903, "is_open": True},
+    {"name": "CMH Murree", "city": "Murree",
+     "address": "GPO Road, Murree", "phone": "051-3410601",
+     "lat": 33.9090, "lng": 73.3940, "is_open": True},
+    # Nathiagali
+    {"name": "Nathiagali Health Centre", "city": "Nathiagali",
+     "address": "Nathiagali Bazaar, KPK", "phone": "0992-380050",
+     "lat": 34.0741, "lng": 73.3778, "is_open": True},
+    # Rawalakot
+    {"name": "DHQ Hospital Rawalakot", "city": "Rawalakot",
+     "address": "Bazar Road, Rawalakot, AJK", "phone": "05824-440200",
+     "lat": 33.8575, "lng": 73.7614, "is_open": True},
+    # Mirpur
+    {"name": "DHQ Hospital Mirpur", "city": "Mirpur",
+     "address": "New Mirpur City, AJK", "phone": "05827-920001",
+     "lat": 33.1475, "lng": 73.7511, "is_open": True},
+    # Gujranwala
+    {"name": "DHQ Hospital Gujranwala", "city": "Gujranwala",
+     "address": "Peoples Colony, Gujranwala", "phone": "055-9200421",
+     "lat": 32.1601, "lng": 74.1967, "is_open": True},
+    {"name": "Govt. Victoria Hospital Gujranwala", "city": "Gujranwala",
+     "address": "GT Road, Gujranwala", "phone": "055-9200401",
+     "lat": 32.1877, "lng": 74.1945, "is_open": True},
+    # Sialkot
+    {"name": "Allama Iqbal Memorial Hospital", "city": "Sialkot",
+     "address": "Paris Road, Sialkot", "phone": "052-9250101",
+     "lat": 32.4921, "lng": 74.5400, "is_open": True},
+    # Bahawalpur
+    {"name": "Bahawal Victoria Hospital", "city": "Bahawalpur",
+     "address": "Circular Road, Bahawalpur", "phone": "062-9250201",
+     "lat": 29.3956, "lng": 71.6836, "is_open": True},
+    # Hyderabad
+    {"name": "Liaquat University Hospital", "city": "Hyderabad",
+     "address": "Jamshoro Road, Hyderabad", "phone": "022-9200401",
+     "lat": 25.3813, "lng": 68.3400, "is_open": True},
+    {"name": "Civil Hospital Hyderabad", "city": "Hyderabad",
+     "address": "Tilak Incline, Hyderabad", "phone": "022-9200301",
+     "lat": 25.3960, "lng": 68.3578, "is_open": True},
+    # Sukkur
+    {"name": "DHQ Hospital Sukkur", "city": "Sukkur",
+     "address": "Military Road, Sukkur", "phone": "071-9310101",
+     "lat": 27.7052, "lng": 68.8574, "is_open": True},
+    # Larkana
+    {"name": "Chandka Medical College Hospital", "city": "Larkana",
+     "address": "Dokri Road, Larkana", "phone": "074-9310201",
+     "lat": 27.5580, "lng": 68.2150, "is_open": True},
+    # Dera Ghazi Khan
+    {"name": "DHQ Hospital Dera Ghazi Khan", "city": "Dera Ghazi Khan",
+     "address": "Hospital Road, DG Khan", "phone": "064-9260101",
+     "lat": 30.0571, "lng": 70.6350, "is_open": True},
+    # Gwadar
+    {"name": "DHQ Hospital Gwadar", "city": "Gwadar",
+     "address": "Shaheed Square, Gwadar", "phone": "0864-210101",
+     "lat": 25.1264, "lng": 62.3225, "is_open": True},
+    # Ziarat
+    {"name": "DHQ Hospital Ziarat", "city": "Ziarat",
+     "address": "Main Bazaar, Ziarat", "phone": "081-9201801",
+     "lat": 30.3810, "lng": 67.7285, "is_open": True},
+    # Fairy Meadows
+    {"name": "Tato Basic Health Unit", "city": "Fairy Meadows",
+     "address": "Tato Village, Near Fairy Meadows", "phone": "0346-5510001",
+     "lat": 35.3520, "lng": 74.5800, "is_open": True},
+    # Kalash Valley
+    {"name": "Aga Khan Health Post Bumburet", "city": "Kalash Valley",
+     "address": "Bumburet Valley, Chitral", "phone": "0943-416100",
+     "lat": 35.7200, "lng": 71.6500, "is_open": False},
 ]
 
 _MOCK_PHARMACIES: list[dict[str, Any]] = [
@@ -216,6 +323,24 @@ _MOCK_PHARMACIES: list[dict[str, Any]] = [
     {"name": "Northern Pharmacy", "city": "Gilgit",
      "address": "KKH Road, Gilgit", "phone": "058-1920060",
      "lat": 35.9215, "lng": 74.3095, "is_open": True},
+    {"name": "Hunza Pharmacy Aliabad", "city": "Hunza",
+     "address": "Main Bazar, Aliabad, Hunza", "phone": "05813-440050",
+     "lat": 36.2189, "lng": 74.6507, "is_open": True},
+    {"name": "Skardu Medicos", "city": "Skardu",
+     "address": "Yadgar Chowk, Skardu", "phone": "058-9270060",
+     "lat": 35.2945, "lng": 75.6310, "is_open": True},
+    {"name": "Chitral Medical Store", "city": "Chitral",
+     "address": "Ataliq Bazaar, Chitral", "phone": "0943-412050",
+     "lat": 35.8512, "lng": 71.7875, "is_open": True},
+    {"name": "Naran Medical Store", "city": "Naran",
+     "address": "Main Bazaar, Naran", "phone": "0997-415010",
+     "lat": 34.9068, "lng": 73.6514, "is_open": True},
+    {"name": "Swat Valley Pharmacy", "city": "Swat",
+     "address": "Mingora Bazaar, Swat", "phone": "0946-9230060",
+     "lat": 34.7730, "lng": 72.3605, "is_open": True},
+    {"name": "Murree Medical Centre", "city": "Murree",
+     "address": "The Mall, Murree", "phone": "051-3410510",
+     "lat": 33.9074, "lng": 73.3907, "is_open": True},
 ]
 
 
@@ -271,39 +396,34 @@ def _mock_nearby(
 
 @router.get("/nearby")
 async def get_nearby_hospitals(
-    lat: float = Query(..., description="Latitude"),
-    lng: float = Query(..., description="Longitude"),
+    lat: float | None = Query(None, description="Latitude"),
+    lng: float | None = Query(None, description="Longitude"),
+    lon: float | None = Query(None, description="Longitude alias"),
+    city: str | None = Query(None, description="City name fallback"),
     radius: float = Query(5.0, description="Search radius in km"),
 ) -> list[dict[str, Any]]:
     """
-    Find hospitals near the given coordinates.
-    Uses Google Places API if GOOGLE_PLACES_API_KEY is set, otherwise returns
-    curated Pakistani hospital data (covers 11 major cities).
+    Find hospitals near coordinates or by city name.
+    Returns curated Pakistani hospital data with OpenStreetMap links.
     """
-    if settings.GOOGLE_PLACES_API_KEY:
-        results = await _google_nearby(lat, lng, int(radius * 1000), "hospital")
-        if results:
-            return results
-
-    return _mock_nearby(lat, lng, max(radius, 50.0), _MOCK_HOSPITALS)
+    resolved_lat, resolved_lng = _resolve_coordinates(lat, lng, lon, city)
+    return _mock_nearby(resolved_lat, resolved_lng, max(radius, 0.5), _MOCK_HOSPITALS)
 
 
 @router.get("/pharmacies")
 async def get_nearby_pharmacies(
-    lat: float = Query(..., description="Latitude"),
-    lng: float = Query(..., description="Longitude"),
+    lat: float | None = Query(None, description="Latitude"),
+    lng: float | None = Query(None, description="Longitude"),
+    lon: float | None = Query(None, description="Longitude alias"),
+    city: str | None = Query(None, description="City name fallback"),
     radius: float = Query(5.0, description="Search radius in km"),
 ) -> list[dict[str, Any]]:
     """
-    Find pharmacies near the given coordinates.
-    Uses Google Places API if configured, otherwise returns mock data.
+    Find pharmacies near coordinates or by city name.
+    Returns curated Pakistani pharmacy data with OpenStreetMap links.
     """
-    if settings.GOOGLE_PLACES_API_KEY:
-        results = await _google_nearby(lat, lng, int(radius * 1000), "pharmacy")
-        if results:
-            return results
-
-    return _mock_nearby(lat, lng, max(radius, 50.0), _MOCK_PHARMACIES)
+    resolved_lat, resolved_lng = _resolve_coordinates(lat, lng, lon, city)
+    return _mock_nearby(resolved_lat, resolved_lng, max(radius, 0.5), _MOCK_PHARMACIES)
 
 
 @router.get("/emergency-numbers")

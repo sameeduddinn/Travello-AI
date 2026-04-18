@@ -57,23 +57,12 @@ services:
       - key: DATABASE_URL
         sync: false
 
-      # Amadeus
-      - key: AMADEUS_CLIENT_ID
-        sync: false
-      - key: AMADEUS_CLIENT_SECRET
-        sync: false
-      - key: AMADEUS_HOSTNAME
-        value: test
 
       # RapidAPI
       - key: RAPIDAPI_KEY
         sync: false
       - key: RAPIDAPI_HOST
-        value: hotels4.p.rapidapi.com
-
-      # Google Places API (optional — for live hospital/pharmacy search)
-      - key: GOOGLE_PLACES_API_KEY
-        sync: false
+        value: tripadvisor-com1.p.rapidapi.com
 
       # Resend
       - key: RESEND_API_KEY

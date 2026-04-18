@@ -9,6 +9,7 @@ import 'package:flight_app/screens/railway/train_results_screen.dart';
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/services/transactional_service.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'dart:math' as math;
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -70,6 +71,8 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
   String _otpValue = '';
   bool _isOtpVerified = false;
   String? _otpRequestId;
+  String? _backendBookingId;
+  String? _backendPnr;
 
   // Form controllers
   final _formKey = GlobalKey<FormState>();
@@ -143,6 +146,47 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
       return;
     }
 
+    // Try backend first; fall back to edge-function demo flow.
+    try {
+      if (_backendBookingId != null) {
+        final data = await ApiClient.initiatePayment(
+          bookingId: _backendBookingId!,
+          method: paymentMethod,
+          amount: _grandTotal,
+          phone: TransactionalService.normalizePkPhone(phoneNumber),
+          email: _contactEmail,
+        );
+
+        if (!mounted) return;
+        final requestId = data['request_id']?.toString();
+        if (requestId != null && requestId.isNotEmpty) {
+          setState(() {
+            _otpRequestId = requestId;
+            _otpValue = '';
+            _isOtpVerified = false;
+            if (paymentMethod == 'easypaisa') {
+              _showEasypaisaOTP = true;
+            } else {
+              _showJazzcashOTP = true;
+            }
+          });
+
+          _startOTPTimer();
+          Get.snackbar(
+            'OTP Sent',
+            data['message']?.toString() ?? 'Check your email for the OTP.',
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: Colors.green.shade100,
+            colorText: Colors.green.shade900,
+            duration: const Duration(seconds: 3),
+          );
+          return;
+        }
+      }
+    } catch (_) {
+      // Fall through to edge-function fallback
+    }
+
     final result = await TransactionalService.sendPaymentOtp(
       bookingType: 'train',
       paymentMethod: paymentMethod,
@@ -207,12 +251,33 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
       return;
     }
 
-    final verified = await TransactionalService.verifyPaymentOtp(
-      requestId: _otpRequestId!,
-      code: _otpValue,
-      email: _contactEmail,
-      phoneNumber: phoneNumber,
-    );
+    bool verified = false;
+
+    // Try backend first for non-local OTP sessions.
+    try {
+      if (_backendBookingId != null && !_otpRequestId!.startsWith('local_')) {
+        final data = await ApiClient.verifyPaymentOtp(
+          requestId: _otpRequestId!,
+          otp: _otpValue,
+        );
+        verified = data['success'] == true;
+        if (verified) {
+          _backendPnr ??=
+              data['pnr']?.toString() ?? data['booking_id']?.toString();
+        }
+      }
+    } catch (_) {
+      // Fall through to edge-function verification
+    }
+
+    if (!verified) {
+      verified = await TransactionalService.verifyPaymentOtp(
+        requestId: _otpRequestId!,
+        code: _otpValue,
+        email: _contactEmail,
+        phoneNumber: phoneNumber,
+      );
+    }
 
     if (!mounted) return;
 
@@ -288,6 +353,8 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
     _isRoundTrip = args['isRoundTrip'] as bool? ?? false;
     _departureDate = args['departureDate'] as DateTime?;
     _returnDate = args['returnDate'] as DateTime?;
+    _backendBookingId = args['backendBookingId'] as String?;
+    _backendPnr = args['backendPnr'] as String?;
 
     // Count passengers by concessionType (set by checkout)
     // concessionType values: 'ADULT', 'CHILD_3_10', 'INFANT'
@@ -393,7 +460,7 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
     });
   }
 
-  void _processPayment() {
+  Future<void> _processPayment() async {
     if (_selectedPaymentMethod == 'card') {
       if (_formKey.currentState?.validate() == false) return;
     }
@@ -401,118 +468,137 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
     setState(() {
       _isProcessing = true;
     });
+    final random = math.Random();
+    String pnr = _backendPnr ?? 'TRN${random.nextInt(900000) + 100000}';
+    String transactionId =
+        'TXN${DateTime.now().millisecondsSinceEpoch}${random.nextInt(1000)}';
 
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      setState(() {
-        _isProcessing = false;
-      });
-
-      final paymentData = {
-        'bookingType': 'train',
-        'fromStation': _fromStation,
-        'toStation': _toStation,
-        'fromStationCode': _fromStationCode,
-        'toStationCode': _toStationCode,
-        'selectedClass': _selectedClass,
-        'isRoundTrip': _isRoundTrip,
-        'passengers': _passengers,
-        'luggageData': _luggageData,
-        'contactEmail': _contactEmail,
-        'contactPhone': _contactPhone,
-        'paymentMethod': _selectedPaymentMethod,
-        // Keys payment_status.dart expects:
-        'grandTotal': _grandTotal,
-        'totalAmount': _grandTotal, // kept for any other readers
-        'baseFare': _baseFare,
-        'taxes': _reservationCharges, // reservation fee = tax equivalent
-        'serviceFee': _serviceFee,
-        'baggageFee': 0.0,
-        'insuranceFee': 0.0,
-        'discount': _discount,
-        'departureDate': _departureDate,
-        'returnDate': _returnDate,
-        'train': _train,
-      };
-
-      if (_isRoundTrip) {
-        paymentData['outboundTrain'] = _outboundTrain;
-        paymentData['returnTrain'] = _returnTrain;
+    if (_selectedPaymentMethod == 'card' && _backendBookingId != null) {
+      try {
+        final data = await ApiClient.initiatePayment(
+          bookingId: _backendBookingId!,
+          method: 'card',
+          amount: _grandTotal,
+          email: _contactEmail,
+        );
+        pnr = data['pnr']?.toString() ?? data['booking_id']?.toString() ?? pnr;
+        transactionId = data['transaction_id']?.toString() ??
+            data['request_id']?.toString() ??
+            transactionId;
+      } catch (_) {
+        // Continue with local identifiers
       }
+    } else {
+      await Future.delayed(const Duration(seconds: 2));
+    }
 
-      // ── Generate Pakistan Railways booking references ──────────────────
-      // Seed by train number + departure date so same train/date always
-      // produces consistent-but-unique references across different sessions.
-      final activeTrain = _isRoundTrip ? _outboundTrain : _train;
-      final trainNumStr = activeTrain?.trainNumber ?? '';
-      final numericPart =
-          int.tryParse(trainNumStr.replaceAll(RegExp(r'\D'), '')) ?? 1;
-      final dateSeed = (_departureDate?.millisecondsSinceEpoch ??
-              DateTime.now().millisecondsSinceEpoch) ~/
-          1000;
-      final rng = math.Random(numericPart * 31 + dateSeed);
-
-      // 10-digit PNR (Pakistan Railways standard)
-      final pnr = (1000000000 + rng.nextInt(900000000)).toString();
-
-      // Transaction ID: TXN-YYYY-8digits
-      final year = DateTime.now().year;
-      final txnId =
-          'TXN-$year-${rng.nextInt(99999999).toString().padLeft(8, '0')}';
-
-      // Extract actual seat selections
-      List<String> seatNumbers = [];
-      String coach = 'B-1'; // Default coach
-
-      if (_isRoundTrip && _outboundSeatSelections.isNotEmpty) {
-        // Use outbound seats for primary display (return seats stored separately)
-        coach = (_outboundSeatSelections[0]['coach'] ?? 'B-1').toString();
-        seatNumbers = _outboundSeatSelections
-            .map((s) => (s['seatName'] ?? '').toString())
-            .where((name) => name.isNotEmpty)
-            .toList();
-      } else if (_seatSelections.isNotEmpty) {
-        // One-way trip
-        coach = (_seatSelections[0]['coach'] ?? 'B-1').toString();
-        seatNumbers = _seatSelections
-            .map((s) => (s['seatName'] ?? '').toString())
-            .where((name) => name.isNotEmpty)
-            .toList();
-      }
-
-      // Fallback to generated seats if no selections
-      if (seatNumbers.isEmpty) {
-        final firstSeat = rng.nextInt(52) + 1;
-        seatNumbers = List<String>.generate(
-            _passengers.length, (i) => '${firstSeat + i}');
-        coach = 'B-${rng.nextInt(8) + 1}';
-      }
-
-      // Ticket numbers: STATIONCODE-YEAR-6digits (unique per passenger)
-      final stationCode =
-          _fromStationCode.isNotEmpty ? _fromStationCode : 'PKR';
-      final ticketNumbers = List<String>.generate(_passengers.length, (i) {
-        final seq = (rng.nextInt(899999) + 100000);
-        return '$stationCode-$year-$seq';
-      });
-
-      paymentData['pnr'] = pnr;
-      paymentData['transactionId'] = txnId;
-      paymentData['coach'] = coach;
-      paymentData['seatNumbers'] = seatNumbers;
-      paymentData['ticketNumbers'] = ticketNumbers;
-
-      // Pass seat selections to payment status for round trip PDF generation
-      if (_isRoundTrip) {
-        paymentData['outboundSeatSelections'] = _outboundSeatSelections;
-        paymentData['returnSeatSelections'] = _returnSeatSelections;
-      } else {
-        paymentData['seatSelections'] = _seatSelections;
-      }
-      // ──────────────────────────────────────────────────────────────────
-
-      Get.toNamed(AppLink.paymentStatus, arguments: paymentData);
+    if (!mounted) return;
+    setState(() {
+      _isProcessing = false;
     });
+
+    final paymentData = {
+      'bookingType': 'train',
+      'fromStation': _fromStation,
+      'toStation': _toStation,
+      'fromStationCode': _fromStationCode,
+      'toStationCode': _toStationCode,
+      'selectedClass': _selectedClass,
+      'isRoundTrip': _isRoundTrip,
+      'passengers': _passengers,
+      'luggageData': _luggageData,
+      'contactEmail': _contactEmail,
+      'contactPhone': _contactPhone,
+      'paymentMethod': _selectedPaymentMethod,
+      // Keys payment_status.dart expects:
+      'grandTotal': _grandTotal,
+      'totalAmount': _grandTotal, // kept for any other readers
+      'baseFare': _baseFare,
+      'taxes': _reservationCharges, // reservation fee = tax equivalent
+      'serviceFee': _serviceFee,
+      'baggageFee': 0.0,
+      'insuranceFee': 0.0,
+      'discount': _discount,
+      'departureDate': _departureDate,
+      'returnDate': _returnDate,
+      'train': _train,
+      'backendBookingId': _backendBookingId,
+    };
+
+    if (_isRoundTrip) {
+      paymentData['outboundTrain'] = _outboundTrain;
+      paymentData['returnTrain'] = _returnTrain;
+    }
+
+    // ── Generate Pakistan Railways booking references ──────────────────
+    // Seed by train number + departure date so same train/date always
+    // produces consistent-but-unique references across different sessions.
+    final activeTrain = _isRoundTrip ? _outboundTrain : _train;
+    final trainNumStr = activeTrain?.trainNumber ?? '';
+    final numericPart =
+        int.tryParse(trainNumStr.replaceAll(RegExp(r'\D'), '')) ?? 1;
+    final dateSeed = (_departureDate?.millisecondsSinceEpoch ??
+            DateTime.now().millisecondsSinceEpoch) ~/
+        1000;
+    final rng = math.Random(numericPart * 31 + dateSeed);
+
+    // Transaction ID fallback: TXN-YYYY-8digits
+    final year = DateTime.now().year;
+    final fallbackTxnId =
+        'TXN-$year-${rng.nextInt(99999999).toString().padLeft(8, '0')}';
+
+    // Extract actual seat selections
+    List<String> seatNumbers = [];
+    String coach = 'B-1'; // Default coach
+
+    if (_isRoundTrip && _outboundSeatSelections.isNotEmpty) {
+      // Use outbound seats for primary display (return seats stored separately)
+      coach = (_outboundSeatSelections[0]['coach'] ?? 'B-1').toString();
+      seatNumbers = _outboundSeatSelections
+          .map((s) => (s['seatName'] ?? '').toString())
+          .where((name) => name.isNotEmpty)
+          .toList();
+    } else if (_seatSelections.isNotEmpty) {
+      // One-way trip
+      coach = (_seatSelections[0]['coach'] ?? 'B-1').toString();
+      seatNumbers = _seatSelections
+          .map((s) => (s['seatName'] ?? '').toString())
+          .where((name) => name.isNotEmpty)
+          .toList();
+    }
+
+    // Fallback to generated seats if no selections
+    if (seatNumbers.isEmpty) {
+      final firstSeat = rng.nextInt(52) + 1;
+      seatNumbers =
+          List<String>.generate(_passengers.length, (i) => '${firstSeat + i}');
+      coach = 'B-${rng.nextInt(8) + 1}';
+    }
+
+    // Ticket numbers: STATIONCODE-YEAR-6digits (unique per passenger)
+    final stationCode = _fromStationCode.isNotEmpty ? _fromStationCode : 'PKR';
+    final ticketNumbers = List<String>.generate(_passengers.length, (i) {
+      final seq = (rng.nextInt(899999) + 100000);
+      return '$stationCode-$year-$seq';
+    });
+
+    paymentData['pnr'] = pnr;
+    paymentData['transactionId'] =
+        transactionId.isNotEmpty ? transactionId : fallbackTxnId;
+    paymentData['coach'] = coach;
+    paymentData['seatNumbers'] = seatNumbers;
+    paymentData['ticketNumbers'] = ticketNumbers;
+
+    // Pass seat selections to payment status for round trip PDF generation
+    if (_isRoundTrip) {
+      paymentData['outboundSeatSelections'] = _outboundSeatSelections;
+      paymentData['returnSeatSelections'] = _returnSeatSelections;
+    } else {
+      paymentData['seatSelections'] = _seatSelections;
+    }
+    // ──────────────────────────────────────────────────────────────────
+
+    Get.toNamed(AppLink.paymentStatus, arguments: paymentData);
   }
 
   @override

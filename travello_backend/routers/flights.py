@@ -75,8 +75,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 
 from core.auth import CurrentUser
 from models.flight import FlightBookRequest, FlightOffer, FlightSearchRequest, FlightSearchResponse
-from services.amadeus_service import search_flights as search_flights_amadeus, _mock_flights
-from services.aviationstack_service import search_flights_aviationstack
+from services.flight_service import search_flights as _search_flights
 from services.booking_service import create_booking
 from typing import Any
 
@@ -98,31 +97,20 @@ async def search_flights_endpoint(
     payload: FlightSearchRequest,
 ):
     """
-    Search for available flights using Amadeus (or rich mock data if not configured).
-    Returns a list of flight offers with prices in PKR.
-    Results are cached in memory so the offer can be retrieved by ID.
+    Search for available flights.
+    Domestic Pakistan routes → seeded mock data (no API quota used).
+    International routes → AviationStack API (if key set) or generated mock.
+    Results cached in memory so GET /flights/{offer_id} can retrieve them.
     """
-    # 1. Try AviationStack (real schedules + mock prices)
-    offers = await search_flights_aviationstack(
+    offers = await _search_flights(
         origin=payload.origin,
         destination=payload.destination,
-        date=str(payload.date),
+        date=payload.date,
         adults=payload.adults,
         cabin_class=payload.cabin_class,
+        return_date=payload.return_date,
     )
 
-    # 2. Fall back to Amadeus (or Amadeus mock data) if AviationStack returned nothing
-    if not offers:
-        offers = await search_flights_amadeus(
-            origin=payload.origin,
-            destination=payload.destination,
-            date=str(payload.date),
-            adults=payload.adults,
-            cabin_class=payload.cabin_class,
-            return_date=str(payload.return_date) if payload.return_date else None,
-        )
-
-    # Cache offers so GET /flights/{offer_id} can look them up
     ts = time.time()
     for offer in offers:
         _offer_cache[offer.offer_id] = (offer, ts)

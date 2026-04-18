@@ -103,8 +103,12 @@ async def get_me(user: CurrentUser):
         prefs_data = prefs_res.data[0]
 
     return MeOut(
-        profile=ProfileOut(**{**profile_data, "id": str(profile_data.get("id", user.id))}),
-        preferences=PreferencesOut(**{**prefs_data, "user_id": str(prefs_data.get("user_id", user.id))}),
+        profile=ProfileOut.model_validate(
+            {**profile_data, "id": str(profile_data.get("id", user.id))}
+        ),
+        preferences=PreferencesOut.model_validate(
+            {**prefs_data, "user_id": str(prefs_data.get("user_id", user.id))}
+        ),
     )
 
 
@@ -140,7 +144,7 @@ async def update_profile(payload: ProfileUpdate, user: CurrentUser):
         raise HTTPException(status_code=404, detail="Profile not found.")
 
     row = result.data[0]
-    return ProfileOut(**{**row, "id": str(row.get("id", user.id))})
+    return ProfileOut.model_validate({**row, "id": str(row.get("id", user.id))})
 
 
 # ---------------------------------------------------------------------------
@@ -172,4 +176,6 @@ async def update_preferences(payload: PreferencesUpdate, user: CurrentUser):
         raise HTTPException(status_code=500, detail="Failed to update preferences.")
 
     row = result.data[0]
-    return PreferencesOut(**{**row, "user_id": str(row.get("user_id", user.id))})
+    return PreferencesOut.model_validate(
+        {**row, "user_id": str(row.get("user_id", user.id))}
+    )

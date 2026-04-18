@@ -13,19 +13,52 @@
 // =============================================================================
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// ── CHANGE THIS BEFORE RUNNING ────────────────────────────────────────────────
-// Android emulator:  'http://10.0.2.2:8000'
-// Physical device:   'http://192.168.1.X:8000'   (run `ipconfig` to find your IP)
-// After deployment:  'https://travello-backend.onrender.com'
-// const String kBackendBaseUrl = 'http://10.0.2.2:8000';
-const String kBackendBaseUrl = 'http://192.168.0.102:8000';
-// ─────────────────────────────────────────────────────────────────────────────
+// Override in build commands:
+// flutter run --dart-define=BACKEND_BASE_URL=https://travello-backend.onrender.com
+const String _backendFromDartDefine =
+    String.fromEnvironment('BACKEND_BASE_URL', defaultValue: '');
+const String _defaultAndroidBackendUrl = 'http://10.0.2.2:8000';
+const String _defaultDesktopBackendUrl = 'http://127.0.0.1:8000';
+// const String _defaultWebBackendUrl = 'https://travello-backend.onrender.com';
 
 class ApiClient {
-  static String get _baseUrl => kBackendBaseUrl;
+  static String get resolvedBaseUrl => _baseUrl;
+
+  static void _logDebug(String message) {
+    if (kDebugMode) {
+      debugPrint('[ApiClient] $message');
+    }
+  }
+
+  static String get _baseUrl {
+    final configured = _backendFromDartDefine.trim();
+    if (configured.isNotEmpty) return configured;
+    // if (kIsWeb) return _defaultWebBackendUrl;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return _defaultAndroidBackendUrl;
+    }
+    return _defaultDesktopBackendUrl;
+  }
+
+  static const Map<String, List<double>> _cityCoords = {
+    'karachi': [24.8607, 67.0011],
+    'lahore': [31.5204, 74.3587],
+    'islamabad': [33.6844, 73.0479],
+    'rawalpindi': [33.5651, 73.0169],
+    'multan': [30.1575, 71.5249],
+    'faisalabad': [31.4504, 73.1350],
+    'peshawar': [34.0151, 71.5249],
+    'quetta': [30.1798, 66.9750],
+    'skardu': [35.2971, 75.6338],
+    'gilgit': [35.9208, 74.3149],
+    'swat': [34.7462, 72.3578],
+    'muzaffarabad': [34.3700, 73.4711],
+    'abbottabad': [34.1463, 73.2117],
+  };
 
   /// Returns the current Supabase session JWT, or null if not logged in.
   static String? get _token =>
@@ -48,6 +81,7 @@ class ApiClient {
     int adults = 1,
     String cabinClass = 'Economy',
   }) async {
+    _logDebug('POST $_baseUrl/flights/search');
     final res = await http
         .post(
           Uri.parse('$_baseUrl/flights/search'),
@@ -63,6 +97,7 @@ class ApiClient {
         )
         .timeout(const Duration(seconds: 20));
 
+    _logDebug('Flight search response: HTTP ${res.statusCode}');
     _throwIfError(res, 'Flight search');
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     return List<Map<String, dynamic>>.from(data['offers'] ?? []);
@@ -107,6 +142,7 @@ class ApiClient {
     int guests = 1,
     int rooms = 1,
   }) async {
+    _logDebug('POST $_baseUrl/hotels/search city=$city');
     final res = await http
         .post(
           Uri.parse('$_baseUrl/hotels/search'),
@@ -121,6 +157,7 @@ class ApiClient {
         )
         .timeout(const Duration(seconds: 20));
 
+    _logDebug('Hotel search response: HTTP ${res.statusCode}');
     _throwIfError(res, 'Hotel search');
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     return List<Map<String, dynamic>>.from(data['hotels'] ?? []);
@@ -343,44 +380,61 @@ class ApiClient {
   static Future<List<Map<String, dynamic>>> getNearbyHospitals({
     String? city,
     double? lat,
-    double? lon,
+    double? lng,
     double radiusKm = 10,
   }) async {
+    double? resolvedLat = lat;
+    double? resolvedLng = lng;
+
+    if ((resolvedLat == null || resolvedLng == null) && city != null) {
+      final coords = _cityCoords[city.trim().toLowerCase()];
+      if (coords != null) {
+        resolvedLat = coords[0];
+        resolvedLng = coords[1];
+      }
+    }
+
+    if (resolvedLat == null || resolvedLng == null) return [];
+
     final params = <String, String>{
-      if (city != null) 'city': city,
-      if (lat != null) 'lat': '$lat',
-      if (lon != null) 'lon': '$lon',
-      'radius_km': '$radiusKm',
-      'type': 'hospital',
+      'lat': '$resolvedLat',
+      'lng': '$resolvedLng',
+      'radius': '$radiusKm',
+      if (city != null && city.trim().isNotEmpty) 'city': city,
     };
     try {
-      final res = await http
-          .get(
-            Uri.parse('$_baseUrl/healthcare/nearby')
-                .replace(queryParameters: params),
-            headers: {'Content-Type': 'application/json'},
-          )
-          .timeout(const Duration(seconds: 10));
+      _logDebug('GET $_baseUrl/healthcare/nearby params=$params');
+      final res = await http.get(
+        Uri.parse('$_baseUrl/healthcare/nearby')
+            .replace(queryParameters: params),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 10));
+      _logDebug('Healthcare nearby response: HTTP ${res.statusCode}');
       if (res.statusCode < 200 || res.statusCode >= 300) return [];
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      return List<Map<String, dynamic>>.from(data['results'] ?? []);
-    } catch (_) {
+      final data = jsonDecode(res.body);
+      if (data is List) {
+        return data
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+      if (data is Map && data['results'] is List) {
+        return List<Map<String, dynamic>>.from(data['results'] as List);
+      }
+      return [];
+    } catch (e) {
+      _logDebug('Healthcare nearby request failed: $e');
       return [];
     }
   }
 
   /// Get emergency contact numbers for a city/country.
-  static Future<Map<String, dynamic>?> getEmergencyNumbers({
-    String country = 'Pakistan',
-  }) async {
+  static Future<Map<String, dynamic>?> getEmergencyNumbers() async {
     try {
-      final res = await http
-          .get(
-            Uri.parse('$_baseUrl/healthcare/emergency-numbers')
-                .replace(queryParameters: {'country': country}),
-            headers: {'Content-Type': 'application/json'},
-          )
-          .timeout(const Duration(seconds: 8));
+      final res = await http.get(
+        Uri.parse('$_baseUrl/healthcare/emergency-numbers'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 8));
       if (res.statusCode < 200 || res.statusCode >= 300) return null;
       return jsonDecode(res.body) as Map<String, dynamic>;
     } catch (_) {
@@ -394,12 +448,10 @@ class ApiClient {
   /// Returns null if the backend is unreachable — caller should use fallback.
   static Future<Map<String, dynamic>?> getWeather(String city) async {
     try {
-      final res = await http
-          .get(
-            Uri.parse('$_baseUrl/weather/${Uri.encodeComponent(city)}'),
-            headers: {'Content-Type': 'application/json'},
-          )
-          .timeout(const Duration(seconds: 8));
+      final res = await http.get(
+        Uri.parse('$_baseUrl/weather/${Uri.encodeComponent(city)}'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 8));
 
       if (res.statusCode < 200 || res.statusCode >= 300) return null;
       return jsonDecode(res.body) as Map<String, dynamic>;
@@ -411,12 +463,10 @@ class ApiClient {
   /// Fetch weather for all Pakistani cities in one call.
   static Future<List<Map<String, dynamic>>?> getAllCitiesWeather() async {
     try {
-      final res = await http
-          .get(
-            Uri.parse('$_baseUrl/weather/'),
-            headers: {'Content-Type': 'application/json'},
-          )
-          .timeout(const Duration(seconds: 12));
+      final res = await http.get(
+        Uri.parse('$_baseUrl/weather/'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 12));
 
       if (res.statusCode < 200 || res.statusCode >= 300) return null;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -442,8 +492,9 @@ class ApiClient {
     final segments =
         (firstItin['segments'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final firstSeg = segments.isNotEmpty ? segments[0] : <String, dynamic>{};
-    final lastSeg =
-        segments.isNotEmpty ? segments[segments.length - 1] : <String, dynamic>{};
+    final lastSeg = segments.isNotEmpty
+        ? segments[segments.length - 1]
+        : <String, dynamic>{};
 
     final depTime = _parseTime(firstSeg['departure_time']?.toString());
     final arrTime = _parseTime(lastSeg['arrival_time']?.toString());
@@ -491,15 +542,20 @@ class ApiClient {
 
     final classSeats = <String, int?>{};
     final classPrices = <String, double>{};
+    final classCodes = <String, String>{};
     final availableClasses = <String>[];
 
     for (final c in classes) {
       final name = c['class_name']?.toString() ?? '';
       final seats = (c['seats_available'] as num?)?.toInt();
       final price = (c['price_pkr'] as num?)?.toDouble() ?? 0.0;
+      final code = c['class_code']?.toString() ?? '';
       if (name.isNotEmpty) {
         classSeats[name] = seats;
         classPrices[name] = price;
+        if (code.isNotEmpty) {
+          classCodes[name] = code;
+        }
         availableClasses.add(name);
       }
     }
@@ -512,8 +568,7 @@ class ApiClient {
       arr = DateTime.parse(arrStr);
     } catch (_) {}
 
-    final arrivesNextDay =
-        dep != null && arr != null && arr.day > dep.day;
+    final arrivesNextDay = dep != null && arr != null && arr.day > dep.day;
 
     return {
       'id': train['train_id']?.toString() ?? 'train-$index',
@@ -525,6 +580,7 @@ class ApiClient {
       'duration': train['duration']?.toString() ?? '',
       'classSeats': classSeats,
       'classPrices': classPrices,
+      'classCodes': classCodes,
       'availableClasses': availableClasses,
       'isRefundable': true,
       // Keep raw IDs for the booking step
@@ -534,8 +590,7 @@ class ApiClient {
 
   /// Map a backend HotelOffer JSON → fields for the Flutter Hotel model.
   static Map<String, dynamic> hotelFromJson(Map<String, dynamic> hotel) {
-    final rooms =
-        (hotel['rooms'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final rooms = (hotel['rooms'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final amenities =
         (hotel['amenities'] as List?)?.map((e) => e.toString()).toList() ?? [];
     final images =
@@ -575,8 +630,8 @@ class ApiClient {
       'pricePerNight': pricePerNight,
       'category': category,
       'isRefundable': isRefundable,
-      'hasBreakfast': amenitySet.any((a) =>
-          a.contains('breakfast') || a.contains('restaurant')),
+      'hasBreakfast': amenitySet
+          .any((a) => a.contains('breakfast') || a.contains('restaurant')),
       'hasFreeWifi': amenitySet.any((a) => a.contains('wifi')),
       'hasParking': amenitySet.any((a) => a.contains('parking')),
       'hasPool': amenitySet.any((a) => a.contains('pool')),
@@ -616,7 +671,7 @@ class ApiClient {
     const airlines = {
       'PK': 'Pakistan International Airlines',
       'PA': 'Airblue',
-      'ED': 'Airblue',   // alternate Airblue code returned by AviationStack
+      'ED': 'Airblue', // alternate Airblue code returned by AviationStack
       'ER': 'SereneAir',
       'PF': 'AirSial',
       '9P': 'Fly Jinnah',
@@ -657,6 +712,7 @@ class ApiClient {
 
   static void _throwIfError(http.Response res, String context) {
     if (res.statusCode < 200 || res.statusCode >= 300) {
+      _logDebug('$context failed with HTTP ${res.statusCode}: ${res.body}');
       throw Exception('$context failed: HTTP ${res.statusCode} — ${res.body}');
     }
   }

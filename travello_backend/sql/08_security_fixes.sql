@@ -30,6 +30,20 @@ CREATE INDEX IF NOT EXISTS idx_passengers_booking_id
 -- ---------------------------------------------------------------------------
 -- 3. saved_searches table
 -- ---------------------------------------------------------------------------
+-- If table already exists from sql/07 (which used column 'search_params'),
+-- add the 'query' column that the API router expects.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name   = 'saved_searches'
+          AND column_name  = 'search_params'
+    ) THEN
+        ALTER TABLE public.saved_searches ADD COLUMN IF NOT EXISTS query jsonb DEFAULT '{}';
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.saved_searches (
     id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id     uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -52,11 +66,27 @@ CREATE INDEX IF NOT EXISTS idx_saved_searches_user_id
 -- ---------------------------------------------------------------------------
 -- 4. reviews table
 -- ---------------------------------------------------------------------------
+-- If table already exists from sql/07 (which had booking_id as UUID FK),
+-- the router uses booking_id as TEXT (human-readable TRV-FL-... code).
+-- Drop and recreate with the correct schema.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name   = 'reviews'
+          AND column_name  = 'booking_id'
+          AND data_type    = 'uuid'
+    ) THEN
+        DROP TABLE IF EXISTS public.reviews CASCADE;
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.reviews (
     id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id      uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    booking_id   text NOT NULL UNIQUE,  -- human-readable booking ID, one review per booking
-    booking_uuid uuid,
+    booking_id   text NOT NULL UNIQUE,  -- human-readable booking ID (TRV-FL-...), one review per booking
+    booking_uuid uuid,                  -- UUID of the booking row (for joins)
     rating       smallint NOT NULL CHECK (rating BETWEEN 1 AND 5),
     comment      text,
     created_at   timestamptz NOT NULL DEFAULT now(),

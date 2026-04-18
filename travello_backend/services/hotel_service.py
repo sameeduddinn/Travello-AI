@@ -25,6 +25,35 @@ logger = logging.getLogger(__name__)
 
 RAPIDAPI_BASE = "https://tripadvisor-com1.p.rapidapi.com"
 
+# ---------------------------------------------------------------------------
+# City name normalisation — handles typos, aliases, IATA codes
+# ---------------------------------------------------------------------------
+
+CITY_ALIASES: dict[str, str] = {
+    "hunza": "Hunza", "karimabad": "Hunza", "aliabad": "Hunza",
+    "skardu": "Skardu", "skardo": "Skardu",
+    "gilgit": "Gilgit", "gilgit baltistan": "Gilgit",
+    "swat": "Swat", "mingora": "Swat",
+    "abbottabad": "Abbottabad", "abbotabad": "Abbottabad",
+    "murree": "Murree",
+    "nathiagali": "Nathiagali", "nathia gali": "Nathiagali",
+    "naran": "Naran", "kaghan": "Naran", "naran kaghan": "Naran",
+    "muzaffarabad": "Muzaffarabad", "mzd": "Muzaffarabad",
+    "bahawalpur": "Bahawalpur", "bwp": "Bahawalpur",
+    "larkana": "Larkana",
+    "sukkur": "Sukkur", "skz": "Sukkur",
+    "hyderabad": "Hyderabad", "hyd": "Hyderabad",
+    "sialkot": "Sialkot", "skt": "Sialkot",
+    "karachi": "Karachi", "khi": "Karachi",
+    "lahore": "Lahore", "lhe": "Lahore",
+    "islamabad": "Islamabad", "isb": "Islamabad",
+    "rawalpindi": "Rawalpindi", "rwp": "Rawalpindi", "pindi": "Rawalpindi",
+    "multan": "Multan", "mul": "Multan",
+    "peshawar": "Peshawar", "pew": "Peshawar",
+    "quetta": "Quetta", "qta": "Quetta",
+    "faisalabad": "Faisalabad", "lyp": "Faisalabad",
+}
+
 def _get_headers() -> dict:
     return {
         "X-RapidAPI-Key": settings.RAPIDAPI_KEY,
@@ -233,13 +262,24 @@ async def search_hotels(
 ) -> HotelSearchResponse:
     """
     Search hotels for a given city and date range.
-    Uses rich Pakistani hotel mock catalogue — TripAdvisor API has no Pakistan
-    coverage so we serve curated mock data directly (faster, no API quota used).
+
+    Priority:
+      1. Curated mock catalogue (instant, rich data — covers all major PK cities).
+      2. OpenStreetMap Overpass API (free, real OSM data — supplements or replaces
+         mock for cities not in the catalogue, including remote northern areas).
     """
     nights = max((check_out - check_in).days, 1)
-    hotels = _mock_hotels(city, check_in, check_out, guests, rooms)
-    logger.info("Hotel search: %d hotels returned for %s", len(hotels), city)
+    canonical = CITY_ALIASES.get(city.strip().lower(), city.strip())
 
+    # Always start with curated mock data (fast, no quota)
+    hotels = _mock_hotels(city, check_in, check_out, guests, rooms)
+
+    # If mock has nothing, query Overpass for real OSM hotel data
+    if not hotels:
+        logger.info("No mock hotels for '%s' — querying Overpass OSM.", canonical)
+        hotels = await _fetch_overpass_hotels(canonical)
+
+    logger.info("Hotel search: %d hotels returned for %s", len(hotels), city)
     return HotelSearchResponse(
         city=city, check_in=check_in, check_out=check_out,
         nights=nights, count=len(hotels), hotels=hotels,
@@ -478,16 +518,152 @@ _HOTEL_DATA: list[dict] = [
      "lat": 34.9034, "lon": 73.6540,
      "amenities": ["Restaurant", "Parking", "Mountain View"],
      "images": ["https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800"]},
+    {"id": "NRN-003", "name": "Lalazar Hotel Naran", "city": "Naran",
+     "stars": 3, "address": "Kaghan Road, Naran", "price_usd": 35,
+     "lat": 34.9080, "lon": 73.6520,
+     "amenities": ["Free WiFi", "Hot Water", "Restaurant", "Mountain View", "Bonfire Area"],
+     "images": ["https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800"]},
+
+    # Hunza (expanded)
+    {"id": "HNZ-003", "name": "Hunza Serena Inn", "city": "Hunza",
+     "stars": 4, "address": "Aliabad, Hunza", "price_usd": 75,
+     "lat": 36.3100, "lon": 74.6400,
+     "amenities": ["Mountain View", "Free WiFi", "Restaurant", "Bonfire Area"],
+     "images": ["https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800"]},
+    {"id": "HNZ-004", "name": "Old Hunza Inn", "city": "Hunza",
+     "stars": 3, "address": "Karimabad, Hunza", "price_usd": 35,
+     "lat": 36.3150, "lon": 74.6550,
+     "amenities": ["Free WiFi", "Hot Water", "Room Service", "Mountain View"],
+     "images": ["https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800"]},
+    {"id": "HNZ-005", "name": "Baltit Fort View Hotel", "city": "Hunza",
+     "stars": 3, "address": "Near Baltit Fort, Karimabad", "price_usd": 40,
+     "lat": 36.3220, "lon": 74.6620,
+     "amenities": ["Fort View", "Free WiFi", "Hot Water", "Trekking Guide"],
+     "images": ["https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800"]},
+
+    # Skardu (expanded)
+    {"id": "SKD-004", "name": "Concordia Hotel Skardu", "city": "Skardu",
+     "stars": 3, "address": "Skardu City", "price_usd": 35,
+     "lat": 35.3080, "lon": 75.6280,
+     "amenities": ["Free WiFi", "Hot Water", "Parking", "Mountain View"],
+     "images": ["https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?w=800"]},
+    {"id": "SKD-005", "name": "PTDC Motel Skardu", "city": "Skardu",
+     "stars": 2, "address": "PTDC Complex, Skardu", "price_usd": 25,
+     "lat": 35.3050, "lon": 75.6400,
+     "amenities": ["Hot Water", "Parking", "Basic Meals"],
+     "images": ["https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800"]},
+
+    # Gilgit (expanded)
+    {"id": "GIL-003", "name": "Park Hotel Gilgit", "city": "Gilgit",
+     "stars": 3, "address": "Bank Road, Gilgit", "price_usd": 30,
+     "lat": 35.9200, "lon": 74.3050,
+     "amenities": ["Free WiFi", "Hot Water", "Restaurant", "Parking"],
+     "images": ["https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=800"]},
+    {"id": "GIL-004", "name": "Jasmine Guest House Gilgit", "city": "Gilgit",
+     "stars": 3, "address": "Jutial, Gilgit", "price_usd": 28,
+     "lat": 35.9250, "lon": 74.3120,
+     "amenities": ["Free WiFi", "Hot Water", "Garden", "Mountain View"],
+     "images": ["https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?w=800"]},
+
+    # Swat (expanded)
+    {"id": "SWT-003", "name": "White Palace Hotel Swat", "city": "Swat",
+     "stars": 4, "address": "Mingora, Swat", "price_usd": 60,
+     "lat": 34.7700, "lon": 72.3580,
+     "amenities": ["Restaurant", "Free WiFi", "Garden", "Mountain View"],
+     "images": ["https://images.unsplash.com/photo-1455587734955-081b22074882?w=800"]},
+
+    # Abbottabad (expanded)
+    {"id": "ABT-003", "name": "Sarban Hotel Abbottabad", "city": "Abbottabad",
+     "stars": 3, "address": "Mall Road, Abbottabad", "price_usd": 35,
+     "lat": 34.1480, "lon": 73.2080,
+     "amenities": ["Free WiFi", "Hot Water", "Restaurant", "Parking"],
+     "images": ["https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=800"]},
+
+    # Murree (expanded — new IDs to avoid conflict with MRE-*)
+    {"id": "MUR-003", "name": "Shangrila Resort Murree", "city": "Murree",
+     "stars": 4, "address": "Bhurban Road, Murree", "price_usd": 60,
+     "lat": 33.9100, "lon": 73.3960,
+     "amenities": ["Pool", "Restaurant", "Free WiFi", "Valley View", "Bonfire Area"],
+     "images": ["https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800"]},
+    {"id": "MUR-004", "name": "Cecil Hotel Murree", "city": "Murree",
+     "stars": 3, "address": "The Mall, Murree", "price_usd": 40,
+     "lat": 33.9055, "lon": 73.3920,
+     "amenities": ["Free WiFi", "Hot Water", "Restaurant", "Valley View"],
+     "images": ["https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800"]},
+
+    # Nathiagali (expanded)
+    {"id": "NTG-003", "name": "PTDC Motel Nathiagali", "city": "Nathiagali",
+     "stars": 2, "address": "PTDC, Nathiagali", "price_usd": 20,
+     "lat": 34.0680, "lon": 73.3730,
+     "amenities": ["Hot Water", "Parking", "Basic Meals"],
+     "images": ["https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=800"]},
+
+    # Muzaffarabad (expanded)
+    {"id": "MZD-003", "name": "Neelum Valley Hotel", "city": "Muzaffarabad",
+     "stars": 3, "address": "Neelum Chowk, Muzaffarabad", "price_usd": 35,
+     "lat": 34.3680, "lon": 73.4700,
+     "amenities": ["Free WiFi", "Hot Water", "Restaurant", "River View"],
+     "images": ["https://images.unsplash.com/photo-1455587734955-081b22074882?w=800"]},
+
+    # Larkana (new city)
+    {"id": "LRK-001", "name": "Hotel Indus Larkana", "city": "Larkana",
+     "stars": 3, "address": "Station Road, Larkana", "price_usd": 30,
+     "lat": 27.5580, "lon": 68.2150,
+     "amenities": ["Restaurant", "Free WiFi", "Parking", "AC"],
+     "images": ["https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?w=800"]},
+    {"id": "LRK-002", "name": "Hotel Al-Meezan Larkana", "city": "Larkana",
+     "stars": 2, "address": "Shaheed Chowk, Larkana", "price_usd": 20,
+     "lat": 27.5560, "lon": 68.2130,
+     "amenities": ["Hot Water", "Parking", "AC", "Room Service"],
+     "images": ["https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800"]},
+
+    # Sukkur (new city)
+    {"id": "SUK-001", "name": "Hotel Mehran Sukkur", "city": "Sukkur",
+     "stars": 3, "address": "Military Road, Sukkur", "price_usd": 28,
+     "lat": 27.7052, "lon": 68.8574,
+     "amenities": ["Restaurant", "Free WiFi", "AC", "Parking"],
+     "images": ["https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=800"]},
+    {"id": "SUK-002", "name": "Hotel Al-Falah Sukkur", "city": "Sukkur",
+     "stars": 2, "address": "Bunder Road, Sukkur", "price_usd": 18,
+     "lat": 27.7040, "lon": 68.8560,
+     "amenities": ["Hot Water", "AC", "Parking", "Room Service"],
+     "images": ["https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?w=800"]},
+
+    # Hyderabad (new city)
+    {"id": "HYD-001", "name": "Hotel Faran Hyderabad", "city": "Hyderabad",
+     "stars": 3, "address": "Saddar, Hyderabad", "price_usd": 35,
+     "lat": 25.3960, "lon": 68.3578,
+     "amenities": ["Restaurant", "Free WiFi", "AC", "Parking"],
+     "images": ["https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800"]},
+    {"id": "HYD-002", "name": "Hotel City Gate Hyderabad", "city": "Hyderabad",
+     "stars": 3, "address": "Autobahn Road, Hyderabad", "price_usd": 30,
+     "lat": 25.3940, "lon": 68.3560,
+     "amenities": ["Restaurant", "Free WiFi", "AC", "Gym"],
+     "images": ["https://images.unsplash.com/photo-1455587734955-081b22074882?w=800"]},
+
+    # Sialkot (new city)
+    {"id": "SKT-001", "name": "Hotel One Sialkot", "city": "Sialkot",
+     "stars": 4, "address": "Cantt, Sialkot", "price_usd": 48,
+     "lat": 32.4945, "lon": 74.5229,
+     "amenities": ["Restaurant", "Free WiFi", "Pool", "Gym", "Parking"],
+     "images": ["https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800"]},
+    {"id": "SKT-002", "name": "Tariq Hotel Sialkot", "city": "Sialkot",
+     "stars": 3, "address": "Shahabpura Road, Sialkot", "price_usd": 32,
+     "lat": 32.4930, "lon": 74.5210,
+     "amenities": ["Restaurant", "Free WiFi", "AC", "Parking"],
+     "images": ["https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=800"]},
 ]
 
 
 def _mock_hotel_catalogue(city: str) -> list[HotelOffer]:
-    """Build HotelOffer objects from static catalogue, filtered by city."""
-    city_lower = city.lower()
-    matches = [h for h in _HOTEL_DATA if h["city"].lower() == city_lower]
+    """Build HotelOffer objects from static catalogue, filtered by city.
+    Uses CITY_ALIASES to normalise aliases/typos → canonical city name.
+    Returns [] for unknown cities (not a fallback dump of all hotels).
+    """
+    canonical = CITY_ALIASES.get(city.strip().lower(), city.strip())
+    matches = [h for h in _HOTEL_DATA if h["city"] == canonical]
     if not matches:
-        # Return all if city not found — demo-safe
-        matches = _HOTEL_DATA[:6]
+        return []
 
     offers: list[HotelOffer] = []
     for h in matches:
@@ -548,3 +724,142 @@ def _mock_hotels(
     rooms: int,
 ) -> list[HotelOffer]:
     return _mock_hotel_catalogue(city)
+
+
+# ---------------------------------------------------------------------------
+# OpenStreetMap / Overpass API — live hotel data for any Pakistan city
+# ---------------------------------------------------------------------------
+
+# City → (lat, lon) for Overpass radius queries
+_OVERPASS_CITY_COORDS: dict[str, tuple[float, float]] = {
+    "Karachi": (24.8607, 67.0011), "Lahore": (31.5204, 74.3587),
+    "Islamabad": (33.7294, 73.0931), "Rawalpindi": (33.6007, 73.0679),
+    "Faisalabad": (31.4504, 73.1350), "Multan": (30.1978, 71.4711),
+    "Peshawar": (34.0151, 71.5249), "Quetta": (30.1798, 66.9750),
+    "Sialkot": (32.4945, 74.5229), "Gujranwala": (32.1877, 74.1945),
+    "Bahawalpur": (29.3956, 71.6836), "Hyderabad": (25.3960, 68.3578),
+    "Sukkur": (27.7052, 68.8574), "Larkana": (27.5580, 68.2150),
+    "Dera Ghazi Khan": (30.0571, 70.6350), "Gwadar": (25.1264, 62.3225),
+    "Murree": (33.9072, 73.3943), "Nathiagali": (34.0741, 73.3778),
+    "Abbottabad": (34.1463, 73.2117), "Mansehra": (34.3300, 73.2000),
+    "Swat": (34.7462, 72.3578), "Chitral": (35.8518, 71.7864),
+    "Gilgit": (35.9219, 74.3085), "Skardu": (35.2971, 75.6349),
+    "Hunza": (36.3167, 74.6500), "Naran": (34.9030, 73.6540),
+    "Muzaffarabad": (34.3700, 73.4711), "Rawalakot": (33.8575, 73.7614),
+    "Ziarat": (30.3810, 67.7285), "Mirpur": (33.1475, 73.7511),
+    "Fairy Meadows": (35.3753, 74.5958), "Kalash Valley": (35.7000, 71.6000),
+}
+
+_OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+_OVERPASS_RADIUS_M = 15_000   # 15 km radius around city centre
+
+
+async def _fetch_overpass_hotels(canonical_city: str) -> list[HotelOffer]:
+    """
+    Query the Overpass API (free OSM data) for hotels/guest houses near a city.
+    Returns an empty list on any error — caller falls back to mock data.
+    """
+    coords = _OVERPASS_CITY_COORDS.get(canonical_city)
+    if coords is None:
+        return []
+
+    lat, lon = coords
+    # Query nodes and ways tagged as hotel, hostel, or guest_house
+    query = (
+        f"[out:json][timeout:20];"
+        f"("
+        f'node["tourism"~"hotel|hostel|guest_house"](around:{_OVERPASS_RADIUS_M},{lat},{lon});'
+        f'way["tourism"~"hotel|hostel|guest_house"](around:{_OVERPASS_RADIUS_M},{lat},{lon});'
+        f");"
+        f"out body;"
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=22.0) as client:
+            resp = await client.post(_OVERPASS_URL, data={"data": query})
+        if resp.status_code != 200:
+            logger.warning("Overpass API error %s for %s", resp.status_code, canonical_city)
+            return []
+
+        elements: list[dict] = resp.json().get("elements", [])
+        offers: list[HotelOffer] = []
+
+        for idx, el in enumerate(elements[:20]):   # cap at 20 OSM results
+            tags: dict = el.get("tags", {})
+            name = tags.get("name") or tags.get("name:en") or tags.get("brand")
+            if not name:
+                continue
+
+            # Skip if no useful coordinates
+            osm_lat = el.get("lat") or (el.get("center") or {}).get("lat")
+            osm_lon = el.get("lon") or (el.get("center") or {}).get("lon")
+
+            stars_raw = tags.get("stars") or tags.get("star_rating")
+            try:
+                stars = min(5.0, float(stars_raw or 3))
+            except (ValueError, TypeError):
+                stars = 3.0
+
+            tourism_type = tags.get("tourism", "hotel")
+            base_price_usd = {
+                "hotel": random.uniform(35, 120),
+                "hostel": random.uniform(8, 25),
+                "guest_house": random.uniform(15, 45),
+            }.get(tourism_type, 35.0)
+            # Star-scale the price
+            base_price_usd = round(base_price_usd * (0.6 + stars * 0.18), 2)
+            price_pkr = round(base_price_usd * settings.USD_TO_PKR_RATE, 2)
+
+            addr_parts = [
+                tags.get("addr:housenumber", ""),
+                tags.get("addr:street", ""),
+                tags.get("addr:city", canonical_city),
+            ]
+            address = ", ".join(p for p in addr_parts if p) or canonical_city
+
+            amenities: list[str] = []
+            if tags.get("internet_access") in ("wlan", "wifi", "yes"):
+                amenities.append("Free WiFi")
+            if tags.get("parking") in ("yes", "private", "public"):
+                amenities.append("Parking")
+            if tags.get("restaurant") == "yes" or tags.get("amenity") == "restaurant":
+                amenities.append("Restaurant")
+            if tags.get("swimming_pool") == "yes":
+                amenities.append("Pool")
+            if not amenities:
+                amenities = ["Hot Water", "Room Service"]
+
+            hotel_id = f"OSM-{el['id']}"
+            rooms_list = [
+                RoomOffer(
+                    room_id=f"{hotel_id}-STD",
+                    room_type="Standard Room",
+                    bed_type="Double",
+                    price_per_night_pkr=price_pkr,
+                    max_guests=2,
+                    is_refundable=True,
+                    amenities=amenities,
+                ),
+            ]
+
+            offers.append(HotelOffer(
+                hotel_id=hotel_id,
+                name=name,
+                star_rating=stars,
+                address=address,
+                city=canonical_city,
+                latitude=osm_lat,
+                longitude=osm_lon,
+                images=[],
+                amenities=amenities,
+                rooms=rooms_list,
+                review_score=round(random.uniform(6.5, 9.0), 1),
+                review_count=random.randint(10, 400),
+            ))
+
+        logger.info("Overpass returned %d hotels for %s", len(offers), canonical_city)
+        return offers
+
+    except Exception as exc:
+        logger.warning("Overpass fetch failed for %s: %s", canonical_city, exc)
+        return []

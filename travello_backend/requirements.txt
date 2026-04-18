@@ -33,11 +33,6 @@ pydantic-settings==2.7.0           # typed settings from env vars
 # ── Serialisation ────────────────────────────────────────────────────────────
 orjson==3.10.12                    # fast JSON — FastAPI picks it up automatically
 
-# ── Amadeus flight search ────────────────────────────────────────────────────
-# We call Amadeus REST API directly via httpx.
-# The official SDK is optional; uncomment if you prefer it:
-# amadeus==9.0.0
-
 # ── Dev / testing (not installed in production) ──────────────────────────────
 # pytest==8.3.3
 # pytest-asyncio==0.24.0

@@ -77,7 +77,7 @@ async def _get_booking_row(booking_uuid: str, user_id: str) -> dict[str, Any]:
     try:
         result = (
             supabase_admin.table("bookings")
-            .select("id, user_id, status, contact_email, contact_phone, total_amount, booking_id")
+            .select("id, user_id, status, contact_email, contact_phone, total_amount, booking_id, pnr")
             .eq("id", booking_uuid)
             .eq("user_id", user_id)
             .single()
@@ -251,6 +251,8 @@ async def initiate_payment(
             message=f"A 6-digit OTP has been sent to {contact_email}. "
                     f"Enter it to confirm your {provider_display} payment.",
             expires_at=expires_at,
+            booking_id=booking.get("booking_id"),
+            pnr=booking.get("pnr"),
         )
 
     else:
@@ -292,6 +294,9 @@ async def initiate_payment(
             otp_required=False,
             message="Payment processed successfully. Your booking is confirmed.",
             expires_at=None,
+            booking_id=booking.get("booking_id"),
+            pnr=booking.get("pnr"),
+            transaction_id=transaction_id,
         )
 
 
@@ -394,10 +399,10 @@ async def verify_otp(
         data={"booking_id": booking_uuid, "transaction_id": transaction_id},
     )
 
-    # Fetch the booking_id (human-readable) for the response
+    # Fetch booking metadata for the response
     booking_result = (
         supabase_admin.table("bookings")
-        .select("booking_id")
+        .select("booking_id, pnr")
         .eq("id", booking_uuid)
         .single()
         .execute()
@@ -406,11 +411,13 @@ async def verify_otp(
         booking_result.data.get("booking_id", booking_uuid)
         if booking_result.data else booking_uuid
     )
+    pnr_value = booking_result.data.get("pnr") if booking_result.data else None
 
     return OTPVerifyResponse(
         success=True,
         booking_id=readable_booking_id,
         transaction_id=transaction_id,
+        pnr=pnr_value,
         message="Payment verified successfully. Your booking is confirmed!",
     )
 

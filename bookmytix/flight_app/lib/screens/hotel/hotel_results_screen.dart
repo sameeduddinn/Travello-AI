@@ -117,8 +117,12 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
         }).toList();
         _applyFilters();
       }
-    } catch (_) {
-      // Backend unreachable — use local mock data so the demo always works
+    } catch (e, st) {
+      // Keep fallback behavior, but log enough context to debug connectivity.
+      debugPrint(
+          '[HotelResults] API fetch failed. Base URL: ${ApiClient.resolvedBaseUrl}');
+      debugPrint('[HotelResults] Error: $e');
+      debugPrint('[HotelResults] Stack: $st');
       _loadLocalHotels();
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -131,13 +135,15 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
   }
 
   void _applyFilters() {
+    if (!mounted) return;
     setState(() {
       // Always start from the loaded hotels list (API or local), never re-query local data
       filteredHotels = List<Hotel>.from(hotels);
 
       if (selectedCategory != null) {
-        filteredHotels =
-            filteredHotels.where((h) => h.category == selectedCategory).toList();
+        filteredHotels = filteredHotels
+            .where((h) => h.category == selectedCategory)
+            .toList();
       }
       if (minRating > 0) {
         filteredHotels =
@@ -152,8 +158,7 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
             filteredHotels.where((h) => h.pricePerNight <= maxPrice).toList();
       }
       if (filterBreakfast == true) {
-        filteredHotels =
-            filteredHotels.where((h) => h.hasBreakfast).toList();
+        filteredHotels = filteredHotels.where((h) => h.hasBreakfast).toList();
       }
       if (filterPool == true) {
         filteredHotels = filteredHotels.where((h) => h.hasPool).toList();
@@ -220,8 +225,7 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
                 children: [
                   // Header
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                        16, 12, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                     child: Row(
                       children: [
                         const Text('Filter results',
@@ -446,21 +450,31 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
                           {
                             'label': 'Pet-friendly',
                             'icon': Icons.pets,
-                            'count': hotels.where((h) => h.amenities.any((a) => a.toLowerCase().contains('pet'))).length,
+                            'count': hotels
+                                .where((h) => h.amenities.any(
+                                    (a) => a.toLowerCase().contains('pet')))
+                                .length,
                             'val': filterPetFriendly,
                             'key': 'pet'
                           },
                           {
                             'label': 'Airport shuttle',
                             'icon': Icons.airport_shuttle,
-                            'count': hotels.where((h) => h.amenities.any((a) => a.toLowerCase().contains('shuttle') || a.toLowerCase().contains('airport'))).length,
+                            'count': hotels
+                                .where((h) => h.amenities.any((a) =>
+                                    a.toLowerCase().contains('shuttle') ||
+                                    a.toLowerCase().contains('airport')))
+                                .length,
                             'val': filterAirportShuttle,
                             'key': 'shuttle'
                           },
                           {
                             'label': 'Spa & wellness',
                             'icon': Icons.spa,
-                            'count': hotels.where((h) => h.amenities.any((a) => a.toLowerCase().contains('spa'))).length,
+                            'count': hotels
+                                .where((h) => h.amenities.any(
+                                    (a) => a.toLowerCase().contains('spa')))
+                                .length,
                             'val': filterSpa,
                             'key': 'spa'
                           },
@@ -707,8 +721,7 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
           // ── Info bar ───────────────────────────────────────────────────────
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
                 Text(
@@ -829,10 +842,9 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
             : Colors.grey.shade700;
     final bool isEcoCertified =
         hotel.description.toLowerCase().contains('eco') ||
-        hotel.amenities.any((a) => a.toLowerCase().contains('eco'));
+            hotel.amenities.any((a) => a.toLowerCase().contains('eco'));
     // Use a deterministic but varied seed so cards don't all show the same count
-    final int roomsLeft =
-        ((hotel.id.hashCode.abs() % 4) + 1); // 1–4 rooms left
+    final int roomsLeft = ((hotel.id.hashCode.abs() % 4) + 1); // 1–4 rooms left
     final bool isLastRoom = roomsLeft == 1;
 
     return GestureDetector(
@@ -1099,8 +1111,7 @@ class _SortPill extends StatelessWidget {
           color: active ? TravelloTheme.primaryMain : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color:
-                  active ? TravelloTheme.primaryMain : Colors.grey.shade400),
+              color: active ? TravelloTheme.primaryMain : Colors.grey.shade400),
         ),
         child: Text(label,
             style: TextStyle(

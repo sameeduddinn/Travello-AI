@@ -10,6 +10,7 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flight_app/utils/column_row_utils.dart';
 import 'package:flight_app/services/notification_service.dart';
+import 'package:flight_app/services/transactional_service.dart';
 import 'package:flight_app/utils/booking_service.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -110,10 +111,15 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
     }
   }
 
-  void _saveBooking(Map<String, dynamic> args) {
+  Future<void> _saveBooking(Map<String, dynamic> args) async {
     try {
       final hotel = args['hotel'];
       final roomType = args['roomType'];
+      final bookingUuid =
+          (args['backendBookingId'] ?? bookingReference).toString();
+      final contactEmail = (args['contactEmail'] ?? '').toString();
+      final contactPhone = (args['contactPhone'] ?? '').toString();
+      final transactionId = (args['transactionId'] ?? '').toString();
 
       // Calculate price breakdown
       final basePrice = (args['basePrice'] as num?)?.toDouble() ?? 0.0;
@@ -123,7 +129,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
       final gst = basePrice * 0.16;
       final totalTax = serviceCharge + tourismTax + gst;
 
-      BookingService.saveBooking({
+      final localBooking = {
         'bookingType': 'hotel',
         'pnr': bookingReference,
         'bookingReference': bookingReference,
@@ -149,7 +155,37 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
           'nights': args['nights'] ?? 1,
           'rating': hotel?.rating ?? 0,
         },
-      });
+      };
+
+      await BookingService.saveBooking(localBooking);
+
+      final syncPayload = <String, dynamic>{
+        'bookingType': 'hotel',
+        'bookingId': bookingUuid,
+        'pnr': bookingReference,
+        'transactionId': transactionId,
+        'email': contactEmail,
+        'phone': contactPhone,
+        'total': args['totalPrice'] ?? 0.0,
+        'currency': 'PKR',
+        'hotelDetails': localBooking['hotelDetails'],
+      };
+
+      await TransactionalService.saveBookingToSupabase(syncPayload);
+      await TransactionalService.savePaymentAttemptToSupabase(
+        bookingId: bookingUuid,
+        paymentMethod: (args['paymentMethod'] ?? 'card').toString(),
+        amount: (args['totalPrice'] as num?)?.toDouble() ?? 0.0,
+        status: 'success',
+        metadata: {
+          'transactionId': transactionId,
+          'bookingType': 'hotel',
+        },
+      );
+
+      await TransactionalService.sendBookingConfirmationEmail(
+        bookingData: syncPayload,
+      );
     } catch (_) {}
   }
 

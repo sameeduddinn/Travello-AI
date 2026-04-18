@@ -5,10 +5,8 @@ import 'package:flight_app/app/routes_payment.dart';
 import 'package:flight_app/app/routes_profile.dart';
 import 'package:flight_app/app/routes_ui_collection.dart';
 import 'package:flight_app/app/routes_professional.dart';
-import 'package:flight_app/screens/ai/ai_assistant.dart';
 import 'package:flight_app/screens/auth/email_verification.dart';
 import 'package:flight_app/screens/explore/explore_main.dart';
-import 'package:flight_app/screens/healthcare/healthcare_screen.dart';
 import 'package:flight_app/screens/intro/intro_screen.dart';
 import 'package:flight_app/screens/intro/launch_splash_screen.dart';
 import 'package:flight_app/screens/intro/start_screen.dart';
@@ -19,9 +17,6 @@ import 'package:flight_app/screens/not_found.dart';
 import 'package:flight_app/screens/orders/booking_detail.dart';
 import 'package:flight_app/screens/orders/hotel_booking_confirmation.dart';
 import 'package:flight_app/screens/orders/my_bookings.dart';
-import 'package:flight_app/screens/profile/contact.dart';
-import 'package:flight_app/screens/profile/faq_list.dart';
-import 'package:flight_app/screens/profile/terms_condition.dart';
 import 'package:flight_app/screens/promo/flight_package_detail.dart';
 import 'package:flight_app/screens/promo/promo_main.dart';
 import 'package:flight_app/screens/promo/voucher_detail.dart';
@@ -35,7 +30,6 @@ import 'package:flight_app/screens/railway_booking/railway_booking_checkout.dart
 import 'package:flight_app/screens/search/search_flight.dart';
 import 'package:flight_app/screens/search/search_list.dart';
 import 'package:flight_app/screens/search/city_search_results.dart';
-import 'package:flight_app/screens/weather/weather_screen.dart';
 import 'package:flight_app/ui/layouts/general_layout.dart';
 import 'package:flight_app/ui/layouts/home_layout.dart';
 import 'package:get/route_manager.dart';
@@ -90,18 +84,6 @@ final List<GetPage> appRoutes = [
   GetPage(
     name: AppLink.notification,
     page: () => const GeneralLayout(content: Notification()),
-  ),
-  GetPage(
-    name: AppLink.faq,
-    page: () => const GeneralLayout(content: FaqList()),
-  ),
-  GetPage(
-    name: AppLink.contact,
-    page: () => const GeneralLayout(content: Contact()),
-  ),
-  GetPage(
-    name: AppLink.terms,
-    page: () => const GeneralLayout(content: TermsCondition()),
   ),
   GetPage(
     name: AppLink.notFound,
@@ -198,18 +180,6 @@ final List<GetPage> appRoutes = [
       page: () => const GeneralLayout(content: RailwayBookingCheckout()),
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: pageTransitionDuration)),
-  GetPage(
-    name: AppLink.aiAssistant,
-    page: () => const GeneralLayout(content: AIAssistantScreen()),
-  ),
-  GetPage(
-    name: AppLink.weather,
-    page: () => const GeneralLayout(content: WeatherScreen()),
-  ),
-  GetPage(
-    name: AppLink.healthcare,
-    page: () => const GeneralLayout(content: HealthcareScreen()),
-  ),
 
   /// AUTH
   ...routesAuth,

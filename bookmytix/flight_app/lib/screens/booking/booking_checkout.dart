@@ -284,7 +284,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
         contactEmail: _contactEmail,
         contactPhone: _contactPhone.isNotEmpty ? _contactPhone : null,
       );
-      _backendBookingId = booking['id']?.toString();       // UUID — required by /passengers and /payments
+      _backendBookingId =
+          booking['booking_uuid']?.toString() ?? booking['id']?.toString();
       _backendPnr = booking['pnr']?.toString();
 
       if (_backendBookingId != null && _passengers.isNotEmpty) {
@@ -3099,8 +3100,8 @@ class _BookingCheckoutState extends State<BookingCheckout> {
       child: SafeArea(
         child: _isCreatingBooking
             ? const Center(
-                child: CircularProgressIndicator(
-                    color: TravelloTheme.primaryMain))
+                child:
+                    CircularProgressIndicator(color: TravelloTheme.primaryMain))
             : DSButton(
                 label: 'CHECKOUT',
                 trailingIcon: Icons.arrow_forward_rounded,

@@ -25,6 +25,12 @@ class _MyBookingsState extends State<MyBookings>
   String _selectedType = 'All';
   bool _isLoading = true;
 
+  String _normalizedStatus(Map<String, dynamic> booking) {
+    final raw = (booking['status'] ?? '').toString().toLowerCase();
+    if (raw == 'canceled') return 'cancelled';
+    return raw;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -112,17 +118,18 @@ class _MyBookingsState extends State<MyBookings>
     final now = DateTime.now();
     if (_selectedFilter == 'Upcoming') {
       filtered = filtered.where((b) {
-        if (b['status'] == 'canceled') return false;
+        if (_normalizedStatus(b) == 'cancelled') return false;
         return _getTravelDate(b)?.isAfter(now) ?? false;
       }).toList();
     } else if (_selectedFilter == 'Past') {
       filtered = filtered.where((b) {
-        if (b['status'] == 'canceled') return false;
+        if (_normalizedStatus(b) == 'cancelled') return false;
         final d = _getTravelDate(b);
         return d == null || d.isBefore(now);
       }).toList();
     } else if (_selectedFilter == 'Canceled') {
-      filtered = filtered.where((b) => b['status'] == 'canceled').toList();
+      filtered =
+          filtered.where((b) => _normalizedStatus(b) == 'cancelled').toList();
     }
     setState(() => _filteredBookings = filtered);
   }
@@ -183,7 +190,7 @@ class _MyBookingsState extends State<MyBookings>
   int get _upcomingCount {
     final now = DateTime.now();
     return _allBookings.where((b) {
-      if (b['status'] == 'canceled') return false;
+      if (_normalizedStatus(b) == 'cancelled') return false;
       return _getTravelDate(b)?.isAfter(now) ?? false;
     }).length;
   }
@@ -772,21 +779,23 @@ class _MyBookingsState extends State<MyBookings>
   }
 
   Widget _buildStatusBadge(String status) {
+    final normalized =
+        status.toLowerCase() == 'canceled' ? 'cancelled' : status.toLowerCase();
     Color bgColor;
     Color textColor;
     String label;
     IconData icon;
-    switch (status.toLowerCase()) {
+    switch (normalized) {
       case 'confirmed':
         bgColor = const Color(0xFF10B981).withValues(alpha: 0.15);
         textColor = const Color(0xFF10B981);
         label = 'CONFIRMED';
         icon = Icons.check_circle;
         break;
-      case 'canceled':
+      case 'cancelled':
         bgColor = const Color(0xFFEF4444).withValues(alpha: 0.15);
         textColor = const Color(0xFFEF4444);
-        label = 'CANCELED';
+        label = 'CANCELLED';
         icon = Icons.cancel;
         break;
       case 'completed':

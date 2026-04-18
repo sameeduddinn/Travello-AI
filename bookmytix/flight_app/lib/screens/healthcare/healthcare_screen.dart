@@ -1,6 +1,8 @@
 import 'package:flight_app/models/hospital.dart';
 import 'package:flight_app/services/api_client.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 
@@ -13,9 +15,47 @@ class HealthcareScreen extends StatefulWidget {
 
 class _HealthcareScreenState extends State<HealthcareScreen>
     with SingleTickerProviderStateMixin {
+  static const Map<String, List<double>> _cityCoords = {
+    // Major cities
+    'Karachi':        [24.8607, 67.0011],
+    'Lahore':         [31.5204, 74.3587],
+    'Islamabad':      [33.6844, 73.0479],
+    'Rawalpindi':     [33.5651, 73.0169],
+    'Multan':         [30.1575, 71.5249],
+    'Faisalabad':     [31.4504, 73.1350],
+    'Peshawar':       [34.0151, 71.5249],
+    'Quetta':         [30.1798, 66.9750],
+    'Sialkot':        [32.4945, 74.5229],
+    'Gujranwala':     [32.1877, 74.1945],
+    'Bahawalpur':     [29.3956, 71.6836],
+    'Hyderabad':      [25.3960, 68.3578],
+    'Sukkur':         [27.7052, 68.8574],
+    'Larkana':        [27.5580, 68.2150],
+    'Dera Ghazi Khan':[30.0571, 70.6350],
+    'Gwadar':         [25.1264, 62.3225],
+    'Mirpur':         [33.1475, 73.7511],
+    // Northern Pakistan & tourism
+    'Skardu':         [35.2971, 75.6338],
+    'Gilgit':         [35.9208, 74.3149],
+    'Hunza':          [36.3167, 74.6500],
+    'Naran':          [34.9030, 73.6540],
+    'Chitral':        [35.8518, 71.7864],
+    'Swat':           [34.7462, 72.3578],
+    'Abbottabad':     [34.1463, 73.2117],
+    'Mansehra':       [34.3300, 73.2000],
+    'Nathiagali':     [34.0741, 73.3778],
+    'Murree':         [33.9072, 73.3943],
+    'Muzaffarabad':   [34.3700, 73.4711],
+    'Rawalakot':      [33.8575, 73.7614],
+    'Ziarat':         [30.3810, 67.7285],
+    'Fairy Meadows':  [35.3753, 74.5958],
+    'Kalash Valley':  [35.7000, 71.6000],
+  };
+
   String _selectedCity = 'Karachi';
   List<Hospital> _hospitals = [];
   bool _isLoadingHospitals = false;
+  final MapController _mapController = MapController();
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -53,22 +93,27 @@ class _HealthcareScreenState extends State<HealthcareScreen>
   }
 
   Future<void> _loadHospitals() async {
+    if (!mounted) return;
     setState(() => _isLoadingHospitals = true);
     try {
       final raw = await ApiClient.getNearbyHospitals(city: _selectedCity);
       if (raw.isNotEmpty) {
+        if (!mounted) return;
         setState(() {
           _hospitals = raw
               .map((m) => Hospital(
-                    id: m['id']?.toString() ?? '',
+                    id: m['place_id']?.toString() ?? m['id']?.toString() ?? '',
                     name: m['name']?.toString() ?? 'Hospital',
                     address: m['address']?.toString() ?? '',
-                    city: m['city']?.toString() ?? _selectedCity,
+                    city: _selectedCity,
                     phone: m['phone']?.toString() ?? '',
-                    type: m['type']?.toString() ?? 'General',
-                    hasEmergency: m['emergency_available'] == true,
-                    distance:
-                        (m['distance_km'] as num?)?.toDouble() ?? 0.0,
+                    type: m['type']?.toString() ?? 'Hospital',
+                    hasEmergency:
+                        m['has_emergency'] == true || m['is_open'] == true,
+                    distance: (m['distance_km'] as num?)?.toDouble() ?? 0.0,
+                    lat: (m['lat'] as num?)?.toDouble(),
+                    lng: (m['lng'] as num?)?.toDouble(),
+                    mapsUrl: m['maps_url']?.toString(),
                   ))
               .toList();
         });
@@ -80,15 +125,123 @@ class _HealthcareScreenState extends State<HealthcareScreen>
       if (mounted) setState(() => _isLoadingHospitals = false);
     }
     // Fallback: local mock data
+    if (!mounted) return;
     setState(() {
       _hospitals = PakistanHospitals.getHospitalsByCity(_selectedCity);
-      _isLoadingHospitals = false;
     });
   }
 
   void _changeCity(String city) {
     setState(() => _selectedCity = city);
+    final coords = _cityCoords[city] ?? _cityCoords['Karachi']!;
+    // Move map to the selected city immediately; zoom out slightly to show all markers.
+    Future.microtask(() {
+      try {
+        _mapController.move(LatLng(coords[0], coords[1]), 12.0);
+      } catch (_) {}
+    });
     _loadHospitals();
+  }
+
+  LatLng _mapCenter() {
+    final coords = _cityCoords[_selectedCity] ?? _cityCoords['Karachi']!;
+    return LatLng(coords[0], coords[1]);
+  }
+
+  /// Opens Google Maps navigation to the hospital.
+  /// Falls back to geo: URI, then OSM routing if Maps is unavailable.
+  Future<void> _navigateToHospital(Hospital hospital) async {
+    if (hospital.lat == null || hospital.lng == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location coordinates not available')),
+        );
+      }
+      return;
+    }
+    final lat = hospital.lat!;
+    final lng = hospital.lng!;
+
+    // Google Maps directions — opens Maps app on Android/iOS if installed,
+    // otherwise falls back to browser.
+    final googleMaps = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1'
+      '&destination=$lat,$lng'
+      '&travelmode=driving',
+    );
+    if (await canLaunchUrl(googleMaps)) {
+      await launchUrl(googleMaps, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    // geo: URI — handled by any installed maps app on Android.
+    final geo = Uri.parse('geo:$lat,$lng?q=$lat,$lng(${Uri.encodeComponent(hospital.name)})');
+    if (await canLaunchUrl(geo)) {
+      await launchUrl(geo, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    // Last-resort: OSM routing page in browser.
+    final osm = Uri.parse(
+      'https://www.openstreetmap.org/directions?from=&to=$lat%2C$lng',
+    );
+    if (await canLaunchUrl(osm)) {
+      await launchUrl(osm, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open navigation')),
+      );
+    }
+  }
+
+
+  Widget _buildOsmMap() {
+    final center = _mapCenter();
+    final markers = _hospitals
+        .where((h) => h.lat != null && h.lng != null)
+        .map(
+          (hospital) => Marker(
+            width: 36,
+            height: 36,
+            point: LatLng(hospital.lat!, hospital.lng!),
+            child: Tooltip(
+              message: hospital.name,
+              child: const Icon(
+                Icons.location_on,
+                color: Color(0xFFD4AF37),
+                size: 32,
+              ),
+            ),
+          ),
+        )
+        .toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: SizedBox(
+          height: 220,
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: 12.0,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.travello.flight_app',
+              ),
+              MarkerLayer(markers: markers),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _makePhoneCall(String phoneNumber) async {
@@ -358,6 +511,10 @@ class _HealthcareScreenState extends State<HealthcareScreen>
 
                 const SizedBox(height: 16),
 
+                _buildOsmMap(),
+
+                const SizedBox(height: 16),
+
                 // Hospitals List
                 if (_isLoadingHospitals)
                   const Padding(
@@ -393,6 +550,7 @@ class _HealthcareScreenState extends State<HealthcareScreen>
                     return _HospitalCard(
                       hospital: hospital,
                       onCall: () => _makePhoneCall(hospital.phone),
+                      onNavigate: () => _navigateToHospital(hospital),
                     );
                   }),
 
@@ -409,10 +567,12 @@ class _HealthcareScreenState extends State<HealthcareScreen>
 class _HospitalCard extends StatelessWidget {
   final Hospital hospital;
   final VoidCallback onCall;
+  final VoidCallback onNavigate;
 
   const _HospitalCard({
     required this.hospital,
     required this.onCall,
+    required this.onNavigate,
   });
 
   @override
@@ -546,14 +706,7 @@ class _HospitalCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   FilledButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Navigation feature coming soon'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
+                    onPressed: onNavigate,
                     icon: const Icon(Icons.directions, size: 18),
                     label: const Text('Navigate'),
                   ),

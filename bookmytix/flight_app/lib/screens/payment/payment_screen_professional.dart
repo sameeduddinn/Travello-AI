@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/screens/orders/hotel_booking_confirmation.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -47,6 +48,8 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
   bool _showOutboundDetails = false;
   bool _showReturnDetails = false;
   bool _showTrainDetails = false;
+  String? _backendBookingId;
+  String? _backendPnr;
 
   @override
   void initState() {
@@ -65,6 +68,9 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
           : 0.0;
       totalPrice = base * 1.24 + extras + protection;
     }
+
+    _backendBookingId = bookingData['backendBookingId'] as String?;
+    _backendPnr = bookingData['backendPnr'] as String?;
   }
 
   @override
@@ -92,7 +98,7 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
     return clean.length == 10 && clean.startsWith('3');
   }
 
-  void _processPayment() {
+  Future<void> _processPayment() async {
     // Validate the active form based on payment method
     final isCardMethod = _selectedPaymentMethod == 'Card';
     final activeKey = isCardMethod ? _formKey : _mobileFormKey;
@@ -112,130 +118,156 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
     setState(() => _isProcessing = true);
     final nav = Navigator.of(context);
     final ctx = context;
+    var ref = _backendPnr ??
+        'HTL${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+    var transactionId =
+        'TXN${DateTime.now().millisecondsSinceEpoch.toString().substring(4)}';
 
-    // Simulate payment processing
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      setState(() => _isProcessing = false);
-
-      final ref =
-          'HTL${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-
-      // For hotel bookings navigate directly — no popup dialog
-      if (bookingType == 'hotel') {
-        Get.to(
-          () => const HotelBookingConfirmation(),
-          arguments: {
-            'bookingReference': ref,
-            'hotel': bookingData['hotel'],
-            'roomType': bookingData['roomType'],
-            'checkInDate': bookingData['checkInDate'],
-            'checkOutDate': bookingData['checkOutDate'],
-            'nights': bookingData['nights'],
-            'rooms': bookingData['rooms'],
-            'guests': bookingData['guests'],
-            'guestsData': bookingData['guestsData'],
-            'protectionPlan': bookingData['protectionPlan'],
-            'protectionPlanCost': bookingData['protectionPlan'] == true
-                ? ((bookingData['basePrice'] ??
-                            bookingData['totalPrice'] ??
-                            0.0) as num)
-                        .toDouble() *
-                    0.05
-                : 0.0,
-            'basePrice': bookingData['basePrice'] ?? bookingData['totalPrice'],
-            'extrasTotal': bookingData['extrasTotal'],
-            'extrasIncluded': bookingData['extrasIncluded'],
-            'totalPrice': totalPrice,
-          },
+    // Backend-first card payment for hotel flow. Wallet flow stays in local OTP
+    // mode here and can still fall back to demo behavior.
+    if (bookingType == 'hotel' &&
+        _selectedPaymentMethod == 'Card' &&
+        _backendBookingId != null) {
+      try {
+        final data = await ApiClient.initiatePayment(
+          bookingId: _backendBookingId!,
+          method: 'card',
+          amount: totalPrice,
+          email: (bookingData['contactEmail'] ?? '').toString(),
         );
-        return;
+        ref = data['pnr']?.toString() ?? data['booking_id']?.toString() ?? ref;
+        transactionId = data['transaction_id']?.toString() ??
+            data['request_id']?.toString() ??
+            transactionId;
+      } catch (_) {
+        // Keep local fallback references if backend is unavailable.
       }
+    } else {
+      await Future.delayed(const Duration(seconds: 2));
+    }
 
-      // Show success dialog for non-hotel bookings
-      // ignore: use_build_context_synchronously
-      Get.dialog(
-        AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: TravelloTheme.primaryMainContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  CupertinoIcons.check_mark_circled,
-                  color: TravelloTheme.primaryMain,
-                  size: 60,
-                ),
+    if (!mounted) return;
+    setState(() => _isProcessing = false);
+
+    // For hotel bookings navigate directly — no popup dialog
+    if (bookingType == 'hotel') {
+      Get.to(
+        () => const HotelBookingConfirmation(),
+        arguments: {
+          'bookingReference': ref,
+          'transactionId': transactionId,
+          'hotel': bookingData['hotel'],
+          'roomType': bookingData['roomType'],
+          'checkInDate': bookingData['checkInDate'],
+          'checkOutDate': bookingData['checkOutDate'],
+          'nights': bookingData['nights'],
+          'rooms': bookingData['rooms'],
+          'guests': bookingData['guests'],
+          'guestsData': bookingData['guestsData'],
+          'protectionPlan': bookingData['protectionPlan'],
+          'protectionPlanCost': bookingData['protectionPlan'] == true
+              ? ((bookingData['basePrice'] ?? bookingData['totalPrice'] ?? 0.0)
+                          as num)
+                      .toDouble() *
+                  0.05
+              : 0.0,
+          'basePrice': bookingData['basePrice'] ?? bookingData['totalPrice'],
+          'extrasTotal': bookingData['extrasTotal'],
+          'extrasIncluded': bookingData['extrasIncluded'],
+          'totalPrice': totalPrice,
+          'backendBookingId': _backendBookingId,
+          'backendPnr': ref,
+          'contactEmail': bookingData['contactEmail'],
+          'contactPhone': bookingData['contactPhone'],
+          'bookingType': 'hotel',
+        },
+      );
+      return;
+    }
+
+    // Show success dialog for non-hotel bookings
+    // ignore: use_build_context_synchronously
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: TravelloTheme.primaryMainContainer,
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Booking Confirmed!',
-                style: TextStyle(
-                  // ignore: use_build_context_synchronously
-                  fontSize: R.sp(ctx, 24),
-                  fontWeight: FontWeight.bold,
-                ),
+              child: const Icon(
+                CupertinoIcons.check_mark_circled,
+                color: TravelloTheme.primaryMain,
+                size: 60,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Your ${bookingType == 'flight' ? 'flight' : bookingType == 'train' ? 'train' : 'transport'} has been booked successfully',
-                textAlign: TextAlign.center,
-                style: TravelloTheme.caption,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Booking Confirmed!',
+              style: TextStyle(
+                // ignore: use_build_context_synchronously
+                fontSize: R.sp(ctx, 24),
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: TravelloTheme.paperLightContainerHighest,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your ${bookingType == 'flight' ? 'flight' : bookingType == 'train' ? 'train' : 'transport'} has been booked successfully',
+              textAlign: TextAlign.center,
+              style: TravelloTheme.caption,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: TravelloTheme.paperLightContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Booking Reference',
+                    style: TravelloTheme.caption,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'TRA${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                nav.pop();
+                Get.until((route) => route.isFirst);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: TravelloTheme.primaryMain,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Booking Reference',
-                      style: TravelloTheme.caption,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'TRA${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ],
-                ),
               ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  nav.pop();
-                  Get.until((route) => route.isFirst);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: TravelloTheme.primaryMain,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Done'),
-              ),
-            ],
-          ),
+              child: const Text('Done'),
+            ),
+          ],
         ),
-        barrierDismissible: false,
-      );
-    });
+      ),
+      barrierDismissible: false,
+    );
   }
 
   @override

@@ -163,7 +163,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
             stops: m['stops'],
             stopCities: List<String>.from(m['stopCities'] ?? []),
             price: m['price'],
-            badge: entry.key == 0 ? 'Cheapest' : (entry.key == 1 ? 'Fastest' : ''),
+            badge:
+                entry.key == 0 ? 'Cheapest' : (entry.key == 1 ? 'Fastest' : ''),
             isRefundable: m['isRefundable'],
             cabinClass: m['cabinClass'],
             seatsAvailable: m['seatsAvailable'] as int?,
@@ -174,8 +175,12 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
 
         if (_allFlights.isEmpty) _loadDummyFlights();
       }
-    } catch (_) {
-      // Backend unreachable — use dummy data so the screen always works
+    } catch (e, st) {
+      // Keep fallback behavior, but log enough context to debug connectivity.
+      debugPrint(
+          '[FlightResults] API fetch failed. Base URL: ${ApiClient.resolvedBaseUrl}');
+      debugPrint('[FlightResults] Error: $e');
+      debugPrint('[FlightResults] Stack: $st');
       _loadDummyFlights();
     } finally {
       if (mounted) {
@@ -895,7 +900,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                       children: [
                         CircularProgressIndicator(color: Color(0xFFD4AF37)),
                         SizedBox(height: 16),
-                        Text('Searching flights...', style: TextStyle(color: Colors.grey)),
+                        Text('Searching flights...',
+                            style: TextStyle(color: Colors.grey)),
                       ],
                     ),
                   )
@@ -915,7 +921,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           final flight = _filteredFlights[index];
                           return _buildFlightCard(flight);
                         },
-                  ),
+                      ),
           ),
         ],
       ),
@@ -2469,7 +2475,8 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                       prefixIcon: const Icon(CupertinoIcons.search),
                       suffixIcon: searchController.text.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(CupertinoIcons.clear_circled_solid),
+                              icon: const Icon(
+                                  CupertinoIcons.clear_circled_solid),
                               onPressed: () {
                                 setModalState(() {
                                   searchController.clear();

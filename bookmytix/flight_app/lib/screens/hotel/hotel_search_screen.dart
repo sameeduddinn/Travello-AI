@@ -72,9 +72,6 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
     super.dispose();
   }
 
-  // BUG 6 FIX: removed dead _guestsLabel getter (was never used)
-  // BUG 7 FIX: removed tourism cities that have no hotel data
-  // (Murree, Swat, Gilgit, Hunza, Skardu removed — empty results with no feedback)
   final Map<String, String> _cityProvinceMap = const {
     'Karachi': 'Sindh',
     'Lahore': 'Punjab',
@@ -94,6 +91,11 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
     'Gilgit': 'Gilgit-Baltistan',
     'Swat': 'KPK',
     'Murree': 'Punjab',
+    'Nathiagali': 'KPK',
+    'Naran': 'KPK',
+    'Muzaffarabad': 'AJK',
+    'Larkana': 'Sindh',
+    'Sukkur': 'Sindh',
   };
 
   int get _nights {

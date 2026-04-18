@@ -38,6 +38,9 @@ class PaymentInitiateResponse(BaseModel):
     otp_required: bool           # True for jazzcash / easypaisa; False for card
     message:      str
     expires_at:   Optional[datetime] = None   # OTP expiry time (if otp_required)
+    booking_id:   Optional[str] = None
+    pnr:          Optional[str] = None
+    transaction_id: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -61,6 +64,7 @@ class OTPVerifyResponse(BaseModel):
     success:        bool
     booking_id:     str
     transaction_id: str
+    pnr:            Optional[str] = None
     message:        str
 
 

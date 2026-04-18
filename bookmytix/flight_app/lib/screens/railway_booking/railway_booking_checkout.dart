@@ -2,6 +2,7 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/screens/railway/train_results_screen.dart';
 import 'package:flight_app/models/railway_station.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -52,6 +53,9 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
 
   bool _agreedToTerms = false;
   bool _showTermsError = false;
+  bool _isCreatingBooking = false;
+  String? _backendBookingId;
+  String? _backendPnr;
 
   @override
   void initState() {
@@ -239,7 +243,28 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
     }
   }
 
-  void _proceedToCheckout() {
+  String _toTrainClassCode(String className) {
+    final normalized = className.toLowerCase();
+    if (normalized.contains('business')) return 'ACB';
+    if (normalized.contains('parlour')) return 'PAR';
+    if (normalized.contains('sleeper')) return 'SL';
+    if (normalized.contains('ac bus')) return 'BUS-AC';
+    if (normalized.contains('standard bus')) return 'BUS-STD';
+    if (normalized.contains('ac')) return 'AC';
+    return 'EC';
+  }
+
+  String _toPassengerType(Map<String, dynamic> passenger) {
+    final concession =
+        (passenger['concessionType'] ?? passenger['type'] ?? 'ADULT')
+            .toString()
+            .toUpperCase();
+    if (concession == 'INFANT') return 'infant';
+    if (concession == 'CHILD_3_10' || concession == 'CHILD') return 'child';
+    return 'adult';
+  }
+
+  Future<void> _proceedToCheckout() async {
     if (!_agreedToTerms) {
       setState(() => _showTermsError = true);
       Get.snackbar(
@@ -254,12 +279,55 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
       return;
     }
 
-    // Get passenger counts from searchParams
+    // Get passenger counts from searchParams and fallback to entered list.
     final searchParams =
         Get.arguments?['searchParams'] as Map<String, dynamic>?;
     final adults = (searchParams?['adults'] as int?) ?? 1;
     final children = (searchParams?['children'] as int?) ?? 0;
     final infants = (searchParams?['infants'] as int?) ?? 0;
+    final passengerCount = _passengers.isNotEmpty
+        ? _passengers.length.clamp(1, 9)
+        : (adults + children + infants).clamp(1, 9);
+
+    setState(() => _isCreatingBooking = true);
+    try {
+      final selectedClassForBooking =
+          _isRoundTrip ? (_outboundClass ?? _selectedClass) : _selectedClass;
+      final booking = await ApiClient.bookTrain(
+        trainId: _train.id,
+        classCode: _toTrainClassCode(selectedClassForBooking),
+        contactEmail: _contactEmail,
+        passengers: passengerCount,
+        contactPhone: _contactPhone.isNotEmpty ? _contactPhone : null,
+      );
+
+      _backendBookingId =
+          booking['booking_uuid']?.toString() ?? booking['id']?.toString();
+      _backendPnr = booking['pnr']?.toString();
+
+      if (_backendBookingId != null && _passengers.isNotEmpty) {
+        await ApiClient.addPassengers(
+          bookingId: _backendBookingId!,
+          passengers: _passengers
+              .map(
+                (p) => {
+                  'title': p['title'] ?? 'Mr',
+                  'first_name': p['firstName'] ?? p['first_name'] ?? '',
+                  'last_name': p['lastName'] ?? p['last_name'] ?? '',
+                  'date_of_birth': p['dateOfBirth'] ?? p['date_of_birth'] ?? '',
+                  'gender': p['gender'] ?? 'male',
+                  'cnic': p['cnic'] ?? p['idNumber'] ?? '',
+                  'passenger_type': _toPassengerType(p),
+                },
+              )
+              .toList(),
+        );
+      }
+    } catch (_) {
+      // Non-fatal: continue with local references when backend is unreachable.
+    } finally {
+      if (mounted) setState(() => _isCreatingBooking = false);
+    }
 
     // Pre-compute per-train prices so payment page never re-derives them
     final outPrice = _isRoundTrip && _outboundTrain != null
@@ -300,6 +368,8 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
       'transferAdded': _transferAdded,
       'transferVehicleType': _transferVehicleType,
       'transferFee': _transferFee,
+      'backendBookingId': _backendBookingId,
+      'backendPnr': _backendPnr,
     });
   }
 
@@ -2742,9 +2812,10 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
       ),
       child: SafeArea(
         child: DSButton(
-          label: 'CHECKOUT',
+          label: _isCreatingBooking ? 'CREATING BOOKING...' : 'CHECKOUT',
           trailingIcon: Icons.arrow_forward_rounded,
           onTap: _proceedToCheckout,
+          disabled: _isCreatingBooking,
           height: R.rh(context, 52),
           color: const Color(0xFFD4AF37),
         ),

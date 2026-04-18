@@ -11,7 +11,6 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/services/transactional_service.dart';
 import 'package:flight_app/services/api_client.dart';
-import 'package:flight_app/utils/booking_service.dart';
 import 'dart:math' as math;
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -287,7 +286,8 @@ class _BookingPaymentState extends State<BookingPayment>
         verified = data['success'] == true;
         // Capture PNR from backend if not already set
         if (verified) {
-          _backendPnr ??= data['pnr']?.toString();
+          _backendPnr ??=
+              data['pnr']?.toString() ?? data['booking_id']?.toString();
         }
       }
     } catch (_) {
@@ -504,8 +504,9 @@ class _BookingPaymentState extends State<BookingPayment>
           amount: _grandTotal,
           email: _contactEmail,
         );
-        pnr = data['pnr']?.toString() ?? pnr;
-        transactionId = data['transaction_id']?.toString() ?? transactionId;
+        pnr = data['pnr']?.toString() ?? data['booking_id']?.toString() ?? pnr;
+        transactionId =
+            data['transaction_id']?.toString() ?? data['request_id']?.toString() ?? transactionId;
       } catch (_) {
         // Non-fatal — continue with locally generated IDs
       }
@@ -549,9 +550,6 @@ class _BookingPaymentState extends State<BookingPayment>
       'returnSeatSelections': _returnSeatSelections,
       'seatTotal': _seatTotal,
     };
-
-    // Persist to local BookingService so My Bookings always works offline
-    BookingService.saveBooking(Map<String, dynamic>.from(paymentData));
 
     Get.toNamed(AppLink.paymentStatus, arguments: paymentData);
   }

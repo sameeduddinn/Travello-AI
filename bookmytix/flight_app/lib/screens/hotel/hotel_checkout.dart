@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/models/hotel.dart';
 import 'package:flight_app/models/room_type.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -40,6 +41,9 @@ class _HotelCheckoutState extends State<HotelCheckout> {
   // Policy
   bool _agreeToTerms = false;
   bool _showTermsError = false;
+  bool _isCreatingBooking = false;
+  String? _backendBookingId;
+  String? _backendPnr;
 
   final fmt = NumberFormat('#,##0', 'en_US');
 
@@ -78,7 +82,10 @@ class _HotelCheckoutState extends State<HotelCheckout> {
 
   String _fmtDate(DateTime d) => DateFormat('EEE, MMM d, yyyy').format(d);
 
-  void _proceedToPayment() {
+  String _fmtIso(DateTime dt) =>
+      '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+
+  Future<void> _proceedToPayment() async {
     if (!_agreeToTerms) {
       setState(() => _showTermsError = true);
       Get.snackbar(
@@ -92,9 +99,62 @@ class _HotelCheckoutState extends State<HotelCheckout> {
       );
       return;
     }
+
+    setState(() => _isCreatingBooking = true);
+    try {
+      final contactEmail = (_args['contactEmail'] as String?)?.trim() ??
+          (_guestsData.isNotEmpty
+              ? (_guestsData.first['email']?.toString() ?? '').trim()
+              : '');
+      final contactPhone = (_args['contactPhone'] as String?)?.trim() ??
+          (_guestsData.isNotEmpty
+              ? (_guestsData.first['phone']?.toString() ?? '').trim()
+              : '');
+
+      final booking = await ApiClient.bookHotel(
+        hotelId: _hotel.id,
+        roomId: _roomType?.id ?? '${_hotel.id}-STD',
+        checkIn: _fmtIso(_checkIn),
+        checkOut: _fmtIso(_checkOut),
+        contactEmail: contactEmail,
+        guests: _guests,
+        rooms: _rooms,
+        contactPhone: contactPhone.isNotEmpty ? contactPhone : null,
+      );
+
+      _backendBookingId =
+          booking['booking_uuid']?.toString() ?? booking['id']?.toString();
+      _backendPnr = booking['pnr']?.toString();
+
+      if (_backendBookingId != null && _guestsData.isNotEmpty) {
+        await ApiClient.addPassengers(
+          bookingId: _backendBookingId!,
+          passengers: _guestsData
+              .map(
+                (guest) => {
+                  'title': guest['title'] ?? 'Mr',
+                  'first_name': guest['firstName'] ?? '',
+                  'last_name': guest['lastName'] ?? '',
+                  'date_of_birth': guest['dateOfBirth'] ?? '',
+                  'gender': guest['gender'] ?? 'male',
+                  'cnic': guest['cnic'] ?? '',
+                  'passenger_type': 'adult',
+                },
+              )
+              .toList(),
+        );
+      }
+    } catch (_) {
+      // Non-fatal fallback keeps hotel flow usable when backend is unavailable.
+    } finally {
+      if (mounted) setState(() => _isCreatingBooking = false);
+    }
+
     Get.toNamed('/payment-professional', arguments: {
       ..._args,
       'totalPrice': _totalWithTax,
+      'backendBookingId': _backendBookingId,
+      'backendPnr': _backendPnr,
     });
   }
 
@@ -203,10 +263,11 @@ class _HotelCheckoutState extends State<HotelCheckout> {
               child: SizedBox(
                 width: double.infinity,
                 child: DSButton(
-                  label:
-                      'Confirm Payment • PKR ${fmt.format(_totalWithTax.round())}',
+                  label: _isCreatingBooking
+                      ? 'Creating Booking...'
+                      : 'Confirm Payment • PKR ${fmt.format(_totalWithTax.round())}',
                   onTap: _proceedToPayment,
-                  disabled: !_agreeToTerms,
+                  disabled: !_agreeToTerms || _isCreatingBooking,
                   height: R.rh(context, 56),
                 ),
               ),

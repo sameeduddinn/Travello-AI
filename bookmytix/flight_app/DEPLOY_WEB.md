@@ -56,14 +56,20 @@ To redeploy: drag the folder again or use Netlify CLI (`netlify deploy --prod --
 
 ## Step 3 — Point the App to Your Deployed Backend
 
-If deploying to Render.com, update the base URL in the Flutter app:
+The app now reads the backend URL from a Dart define.
 
-```dart
-// lib/services/api_client.dart  (or wherever baseUrl is defined)
-const String kBaseUrl = 'https://travello-backend.onrender.com';
+Use this when building/deploying web:
+
+```bash
+flutter build web --release --web-renderer canvaskit \
+	--dart-define=BACKEND_BASE_URL=https://travello-backend.onrender.com
 ```
 
-Then rebuild and redeploy.
+For local Android emulator testing:
+
+```bash
+flutter run -d emulator-5554 --dart-define=BACKEND_BASE_URL=http://10.0.2.2:8000
+```
 
 ---
 

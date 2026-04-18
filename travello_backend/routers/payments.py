@@ -108,7 +108,7 @@ async def initiate_payment_endpoint(
     try:
         pax = (
             supabase_admin.table("passengers")
-            .select("id", count="exact")
+            .select("id")
             .eq("booking_id", payload.booking_id)
             .execute()
         )

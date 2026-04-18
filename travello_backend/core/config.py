@@ -32,13 +32,6 @@ class Settings(BaseSettings):
     DATABASE_URL: str = ""
 
     # -------------------------------------------------------------------------
-    # Amadeus (flight search — optional, kept for fallback)
-    # -------------------------------------------------------------------------
-    AMADEUS_CLIENT_ID: str = ""
-    AMADEUS_CLIENT_SECRET: str = ""
-    AMADEUS_HOSTNAME: str = "test"
-
-    # -------------------------------------------------------------------------
     # AviationStack (real flight schedules — https://aviationstack.com)
     # Free tier: 100 req/month. Routes are cached 24 h to minimise calls.
     # Leave blank → rich mock flight data is used.
@@ -50,13 +43,6 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     RAPIDAPI_KEY: str = ""
     RAPIDAPI_HOST: str = "tripadvisor-com1.p.rapidapi.com"
-
-    # -------------------------------------------------------------------------
-    # Google Places API (healthcare nearby search — optional)
-    # Sign up at: https://console.cloud.google.com → Enable Places API
-    # Leave blank to use built-in mock Pakistani hospital data
-    # -------------------------------------------------------------------------
-    GOOGLE_PLACES_API_KEY: str = ""
 
     # -------------------------------------------------------------------------
     # Resend (email)

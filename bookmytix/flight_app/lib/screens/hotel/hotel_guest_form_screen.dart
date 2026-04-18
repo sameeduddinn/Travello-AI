@@ -328,6 +328,8 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
       'breakfastAdded': _addBreakfast,
       'airportTransferAdded': _addAirportTransfer,
       'lateCheckoutAdded': _addLateCheckout,
+      'contactEmail': _emailCtrl.text.trim(),
+      'contactPhone': _phoneCtrl.text.trim(),
       'bookingType': 'hotel',
     });
   }
