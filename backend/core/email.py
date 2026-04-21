@@ -1,21 +1,26 @@
 # =============================================================================
 # FILE: core/email.py
-# PURPOSE: Thin wrapper around the Resend API for sending transactional emails.
-#          Uses onboarding@resend.dev as sender — works without domain
-#          verification on Resend free tier (FYP demo-safe).
+# PURPOSE: Unified email sender — Gmail SMTP (preferred) or Resend API.
 #
-# Usage:
-#   from core.email import send_email
-#   await send_email(
-#       to="user@example.com",
-#       subject="Your booking confirmation",
-#       html="<h1>Confirmed!</h1>",
-#   )
+# Priority:
+#   1. Gmail SMTP  — if SMTP_USER + SMTP_PASSWORD are set in .env
+#   2. Resend API  — if RESEND_API_KEY is set (free tier: only own email)
+#   3. Disabled    — logs a warning, returns {"id": "disabled"}
+#
+# Gmail setup (free, no domain needed, sends to any address):
+#   1. Enable 2-Step Verification on Google Account
+#   2. Google Account → Security → App Passwords → create for "Mail"
+#   3. Add to .env:  SMTP_USER=you@gmail.com  SMTP_PASSWORD=xxxx-xxxx-xxxx-xxxx
 # =============================================================================
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import re
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import Sequence
 
 import httpx
@@ -27,33 +32,52 @@ logger = logging.getLogger(__name__)
 RESEND_API_URL = "https://api.resend.com/emails"
 
 
-async def send_email(
-    to: str | Sequence[str],
-    subject: str,
-    html: str,
-    reply_to: str | None = None,
-) -> dict:
-    """
-    Send an HTML email via the Resend API.
+# ---------------------------------------------------------------------------
+# Gmail SMTP backend
+# ---------------------------------------------------------------------------
 
-    Args:
-        to:       Recipient address(es).
-        subject:  Email subject line.
-        html:     Full HTML body.
-        reply_to: Optional reply-to address.
+def _parse_sender_address(from_field: str) -> str:
+    """Extract bare email from 'Display Name <email@x.com>' or return as-is."""
+    m = re.search(r"<(.+?)>", from_field)
+    return m.group(1) if m else from_field.strip()
 
-    Returns:
-        Resend API response dict containing {"id": "<message-id>"}.
 
-    Raises:
-        RuntimeError if the API returns a non-2xx status or RESEND_API_KEY is missing.
-    """
-    if not settings.RESEND_API_KEY:
-        logger.warning("RESEND_API_KEY not set — email sending is disabled.")
-        return {"id": "disabled", "skipped": True}
+def _send_via_smtp(recipients: list[str], subject: str, html: str) -> dict:
+    """Blocking SMTP send — run inside asyncio.to_thread."""
+    sender_address = _parse_sender_address(settings.EMAIL_FROM)
 
-    recipients = [to] if isinstance(to, str) else list(to)
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = settings.EMAIL_FROM
+    msg["To"] = ", ".join(recipients)
+    msg.attach(MIMEText(html, "html", "utf-8"))
 
+    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15) as server:
+        server.ehlo()
+        server.starttls()
+        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD.replace(" ", ""))
+        server.sendmail(sender_address, recipients, msg.as_string())
+
+    logger.info("Email sent via Gmail SMTP to %s", recipients)
+    return {"id": f"smtp-{recipients[0]}", "backend": "smtp"}
+
+
+async def _send_smtp(recipients: list[str], subject: str, html: str) -> dict:
+    try:
+        return await asyncio.to_thread(_send_via_smtp, recipients, subject, html)
+    except smtplib.SMTPAuthenticationError:
+        logger.error("Gmail SMTP auth failed — check SMTP_USER and SMTP_PASSWORD (App Password)")
+        return {"id": "failed", "reason": "smtp_auth_error"}
+    except Exception as exc:
+        logger.error("Gmail SMTP error: %s", exc)
+        return {"id": "failed", "reason": str(exc)}
+
+
+# ---------------------------------------------------------------------------
+# Resend API backend
+# ---------------------------------------------------------------------------
+
+async def _send_resend(recipients: list[str], subject: str, html: str, reply_to: str | None) -> dict:
     payload: dict = {
         "from": settings.EMAIL_FROM,
         "to": recipients,
@@ -68,10 +92,6 @@ async def send_email(
         "Content-Type": "application/json",
     }
 
-    if not recipients or not recipients[0]:
-        logger.warning("Email skipped — no recipient address")
-        return {"id": "skipped", "reason": "no_recipient"}
-
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(RESEND_API_URL, json=payload, headers=headers)
@@ -81,19 +101,44 @@ async def send_email(
             logger.info("Email sent via Resend — message id: %s", data.get("id"))
             return data
         else:
-            logger.error(
-                "Resend API %s: %s", response.status_code, response.text[:200]
-            )
-            return {
-                "id": "failed",
-                "reason": f"api_error_{response.status_code}",
-            }
+            logger.error("Resend API %s: %s", response.status_code, response.text[:200])
+            return {"id": "failed", "reason": f"api_error_{response.status_code}"}
     except httpx.TimeoutException:
         logger.error("Resend timeout for %s", recipients)
         return {"id": "failed", "reason": "timeout"}
     except Exception as exc:
         logger.error("Resend error: %s", exc)
         return {"id": "failed", "reason": str(exc)}
+
+
+# ---------------------------------------------------------------------------
+# Public API — unchanged interface, auto-selects backend
+# ---------------------------------------------------------------------------
+
+async def send_email(
+    to: str | Sequence[str],
+    subject: str,
+    html: str,
+    reply_to: str | None = None,
+) -> dict:
+    """
+    Send an HTML email. Uses Gmail SMTP if configured, else Resend API.
+    Returns a dict with at least {"id": ...}.
+    """
+    recipients = [to] if isinstance(to, str) else list(to)
+
+    if not recipients or not recipients[0]:
+        logger.warning("Email skipped — no recipient address")
+        return {"id": "skipped", "reason": "no_recipient"}
+
+    if settings.SMTP_USER and settings.SMTP_PASSWORD:
+        return await _send_smtp(recipients, subject, html)
+
+    if settings.RESEND_API_KEY:
+        return await _send_resend(recipients, subject, html, reply_to)
+
+    logger.warning("No email backend configured — set SMTP_USER/SMTP_PASSWORD or RESEND_API_KEY")
+    return {"id": "disabled", "skipped": True}
 
 
 async def send_otp_email(

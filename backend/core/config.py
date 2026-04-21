@@ -45,13 +45,21 @@ class Settings(BaseSettings):
     RAPIDAPI_HOST: str = "tripadvisor-com1.p.rapidapi.com"
 
     # -------------------------------------------------------------------------
-    # Resend (email)
+    # Email — Resend API (primary) OR Gmail SMTP (fallback/alternative)
+    # Set SMTP_USER + SMTP_PASSWORD to use Gmail instead of Resend.
     # -------------------------------------------------------------------------
     RESEND_API_KEY: str = ""
-
-    # Use onboarding@resend.dev for FYP demo — works without domain verification
     EMAIL_FROM: str = "Travello AI <onboarding@resend.dev>"
     EMAIL_REPLY_TO: str = "support@travello.ai"
+
+    # Gmail SMTP (free, no domain needed, sends to any address)
+    # 1. Enable 2-Step Verification on your Google account
+    # 2. Google Account → Security → App Passwords → create one for "Mail"
+    # 3. Set SMTP_USER=you@gmail.com  SMTP_PASSWORD=xxxx-xxxx-xxxx-xxxx
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
 
     # -------------------------------------------------------------------------
     # Currency

@@ -63,7 +63,7 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
 from core.auth import CurrentUser
 from core.supabase_client import supabase_admin
@@ -93,6 +93,7 @@ router = APIRouter(prefix="/payments", tags=["Payments"])
 async def initiate_payment_endpoint(
     payload: PaymentInitiateRequest,
     user: CurrentUser,
+    background_tasks: BackgroundTasks,
 ):
     """
     Start a payment for a booking.
@@ -102,7 +103,7 @@ async def initiate_payment_endpoint(
       OTP expires in 10 minutes. Max 3 attempts.
 
     - **Card**: Simulates instant approval, marks booking as paid,
-      returns `otp_required: false`. No step 2 needed.
+      returns `otp_required: false`. Confirmation email sent in background.
     """
     # Verify passengers are on record before processing payment
     try:
@@ -122,7 +123,7 @@ async def initiate_payment_endpoint(
     except Exception:
         pass  # Non-fatal; let payment service handle further validation
 
-    return await initiate_payment(
+    result = await initiate_payment(
         user_id=user.id,
         booking_uuid=payload.booking_id,
         method=payload.method,
@@ -131,13 +132,23 @@ async def initiate_payment_endpoint(
         email_override=payload.email,
     )
 
+    # Card payment: booking is already paid — send confirmation in background
+    if not result.otp_required:
+        background_tasks.add_task(send_booking_confirmation, payload.booking_id)
+
+    return result
+
 
 # ---------------------------------------------------------------------------
 # POST /payments/verify-otp
 # ---------------------------------------------------------------------------
 
 @router.post("/verify-otp", response_model=OTPVerifyResponse)
-async def verify_otp_endpoint(payload: OTPVerifyRequest, user: CurrentUser):
+async def verify_otp_endpoint(
+    payload: OTPVerifyRequest,
+    user: CurrentUser,
+    background_tasks: BackgroundTasks,
+):
     """
     Verify the OTP for a JazzCash or EasyPaisa payment.
 
@@ -145,7 +156,7 @@ async def verify_otp_endpoint(payload: OTPVerifyRequest, user: CurrentUser):
       - Marks payment_attempt as 'completed'
       - Marks booking as 'paid'
       - Creates an in-app notification
-      - Sends booking confirmation email
+      - Sends booking confirmation email (in background — does not delay response)
 
     On failure:
       - Increments attempt counter
@@ -159,11 +170,8 @@ async def verify_otp_endpoint(payload: OTPVerifyRequest, user: CurrentUser):
         otp=payload.otp,
     )
 
-    # Trigger confirmation email asynchronously (failure is non-fatal)
     if result.success:
         try:
-            # Fetch the booking UUID from payment attempt
-            from core.supabase_client import supabase_admin
             attempt = (
                 supabase_admin.table("payment_attempts")
                 .select("booking_id")
@@ -172,9 +180,11 @@ async def verify_otp_endpoint(payload: OTPVerifyRequest, user: CurrentUser):
                 .execute()
             )
             if attempt.data:
-                await send_booking_confirmation(attempt.data["booking_id"])
+                background_tasks.add_task(
+                    send_booking_confirmation, attempt.data["booking_id"]
+                )
         except Exception as exc:
-            logger.warning("Post-OTP email dispatch failed (non-fatal): %s", exc)
+            logger.warning("Could not schedule confirmation email (non-fatal): %s", exc)
 
     return result
 

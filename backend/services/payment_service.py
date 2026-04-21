@@ -284,17 +284,6 @@ async def initiate_payment(
             data={"booking_id": booking_uuid, "transaction_id": transaction_id},
         )
 
-        # Step 3: Send confirmation email — completely isolated
-        try:
-            from services.email_service import send_booking_confirmation
-            await send_booking_confirmation(booking_uuid)
-            logger.info("Confirmation email sent for booking %s", booking_uuid)
-        except Exception as email_exc:
-            logger.warning(
-                "Confirmation email failed (non-fatal) for %s: %s",
-                booking_uuid, email_exc,
-            )
-
         return PaymentInitiateResponse(
             request_id=attempt_id,
             otp_required=False,
@@ -425,17 +414,6 @@ async def verify_otp(
         notif_type="booking_confirmed",
         data={"booking_id": booking_uuid, "transaction_id": transaction_id, "pnr": _pnr},
     )
-
-    # Send confirmation email — completely isolated, must never affect payment response
-    try:
-        from services.email_service import send_booking_confirmation
-        await send_booking_confirmation(booking_uuid)
-        logger.info("Confirmation email sent for booking %s", booking_uuid)
-    except Exception as email_exc:
-        logger.warning(
-            "Confirmation email failed (non-fatal) for %s: %s",
-            booking_uuid, email_exc,
-        )
 
     # Use booking metadata already fetched for the notification
     readable_booking_id = _nd.get("booking_id") or booking_uuid
