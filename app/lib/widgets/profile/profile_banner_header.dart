@@ -1,4 +1,3 @@
-import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flight_app/widgets/action_headers/home_action_group.dart';
@@ -189,15 +188,11 @@ class ProfileBannerHeader extends SliverPersistentHeaderDelegate {
                       ),
 
                       /// POINTS
-                      GestureDetector(
-                          onTap: () {
-                            Get.toNamed(AppLink.reward);
-                          },
-                          child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: ThemeSize.sm,
-                              ),
-                              child: const PanelPoint())),
+                      ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: ThemeSize.sm,
+                          ),
+                          child: const PanelPoint()),
 
                       /// DECORATION
                       Container(

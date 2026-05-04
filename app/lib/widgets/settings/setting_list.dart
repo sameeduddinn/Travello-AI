@@ -21,7 +21,6 @@ class SettingList extends StatefulWidget {
 class _SettingListState extends State<SettingList> {
   bool _isGuestMode = false;
   String _currentCityName = 'Karachi';
-  String _currency = 'PKR';
 
   @override
   void initState() {
@@ -33,41 +32,15 @@ class _SettingListState extends State<SettingList> {
     final isGuest = await AuthService.isGuestMode();
     final isLoggedIn = await AuthService.isLoggedIn();
     final cityData = await LocationPreferenceService.getOriginCity();
-    final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
         _isGuestMode = isGuest || !isLoggedIn;
         _currentCityName = cityData['cityName']!;
-        _currency = prefs.getString('currency') ?? 'PKR';
       });
     }
   }
 
-  Future<void> _selectCurrency() async {
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: const Text('Select Currency'),
-        children: ['PKR', 'USD', 'SAR'].map((c) {
-          return SimpleDialogOption(
-            onPressed: () => Navigator.pop(ctx, c),
-            child: Text(c,
-                style: TextStyle(
-                    fontWeight: c == _currency
-                        ? FontWeight.bold
-                        : FontWeight.normal)),
-          );
-        }).toList(),
-      ),
-    );
-    if (result != null && result != _currency) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('currency', result);
-      setState(() => _currency = result);
-    }
-  }
-
-  Future<void> _confirmSignOut() async {
+Future<void> _confirmSignOut() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -193,9 +166,10 @@ class _SettingListState extends State<SettingList> {
                     color: Color(0xFF059669)),
                 title: const Text('Booking History',
                     style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('All past and upcoming bookings'),
+                subtitle: const Text('View your completed & past bookings'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 12),
-                onTap: () => Get.toNamed(AppLink.orderHistory),
+                onTap: () => Get.toNamed(AppLink.myTicket,
+                    arguments: {'historyMode': true}),
               ),
               const LineList(),
               ListTile(
@@ -206,16 +180,6 @@ class _SettingListState extends State<SettingList> {
                 subtitle: const Text('Your liked flights, hotels & trains'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                 onTap: () => Get.toNamed(AppLink.wishlist),
-              ),
-              const LineList(),
-              ListTile(
-                leading: const Icon(Icons.confirmation_num_rounded,
-                    color: Color(0xFF7C3AED)),
-                title: const Text('E-Ticket',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('Download or view your e-tickets'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 12),
-                onTap: () => Get.toNamed(AppLink.eTicket),
               ),
             ]),
           ),
@@ -260,18 +224,16 @@ class _SettingListState extends State<SettingList> {
                 onTap: _openCityPicker,
               ),
               const LineList(),
-              ListTile(
-                leading: const Icon(Icons.attach_money_rounded,
+              const ListTile(
+                leading: Icon(Icons.attach_money_rounded,
                     color: Color(0xFF059669)),
-                title: const Text('Currency',
+                title: Text('Currency',
                     style: TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text(
-                  _currency,
-                  style: const TextStyle(
+                  'PKR',
+                  style: TextStyle(
                       color: Color(0xFF059669), fontWeight: FontWeight.w600),
                 ),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 12),
-                onTap: _selectCurrency,
               ),
               const LineList(),
               ListTile(

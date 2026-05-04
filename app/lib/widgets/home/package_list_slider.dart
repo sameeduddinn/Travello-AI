@@ -312,6 +312,16 @@ class _PackageListSliderState extends State<PackageListSlider> {
 
                       return _FlightCardHover(
                         packageId: item.id,
+                        itemData: {
+                          'id': item.id,
+                          'from': item.from.name,
+                          'to': item.to.name,
+                          'price': item.price,
+                          'airline': item.plane.name,
+                          'class_type': item.plane.classType,
+                          'round_trip': item.roundTrip,
+                          'image': item.img,
+                        },
                         onTap: () {
                           // Detail page is FREE — auth gate only at BOOK NOW inside detail
                           Get.toNamed(AppLink.flightDetailPackage, arguments: {
@@ -419,8 +429,12 @@ class _FlightCardHover extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
   final String packageId;
+  final Map<String, dynamic>? itemData;
   const _FlightCardHover(
-      {required this.child, required this.onTap, required this.packageId});
+      {required this.child,
+      required this.onTap,
+      required this.packageId,
+      this.itemData});
 
   @override
   State<_FlightCardHover> createState() => _FlightCardHoverState();
@@ -460,7 +474,9 @@ class _FlightCardHoverState extends State<_FlightCardHover>
   }
 
   Future<void> _toggle() async {
-    final added = await WishlistService.toggle('flight', widget.packageId);
+    final added = await WishlistService.toggle(
+        'flight', widget.packageId,
+        itemData: widget.itemData);
     if (mounted) {
       setState(() => _wishlisted = added);
       _heartCtrl.forward(from: 0);

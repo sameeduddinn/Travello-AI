@@ -3,6 +3,7 @@ import 'package:flight_app/utils/booking_service.dart';
 import 'package:flight_app/services/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
 
@@ -24,6 +25,7 @@ class _MyBookingsState extends State<MyBookings>
   String _selectedFilter = 'All';
   String _selectedType = 'All';
   bool _isLoading = true;
+  bool _historyMode = false;
 
   String _normalizedStatus(Map<String, dynamic> booking) {
     final raw = (booking['status'] ?? '').toString().toLowerCase();
@@ -34,6 +36,11 @@ class _MyBookingsState extends State<MyBookings>
   @override
   void initState() {
     super.initState();
+    final args = Get.arguments;
+    if (args is Map && args['historyMode'] == true) {
+      _historyMode = true;
+      _selectedFilter = 'Past';
+    }
     _loadBookings();
   }
 
@@ -45,6 +52,120 @@ class _MyBookingsState extends State<MyBookings>
     _loadBookings();
   }
 
+  // ── Helpers for normalizing backend flat fields ──────────────────────────
+
+  static String _fmtTime(DateTime dt) => DateFormat('HH:mm').format(dt);
+  static String _fmtDateStr(DateTime dt) => DateFormat('d MMM yyyy').format(dt);
+
+  static String _calcDuration(DateTime? dep, DateTime? arr) {
+    if (dep == null || arr == null) return 'N/A';
+    final diff = arr.difference(dep);
+    final h = diff.inHours;
+    final m = diff.inMinutes % 60;
+    return m > 0 ? '${h}h ${m}m' : '${h}h';
+  }
+
+  /// Builds the nested detail map expected by the booking card widgets,
+  /// converting flat backend fields (origin, departure_at, hotel_name, etc.)
+  static Map<String, dynamic> _normalizeBackendBooking(
+      Map<String, dynamic> m) {
+    final bookingType = (m['booking_type'] ?? 'flight') as String;
+
+    DateTime? depDt = _parseDt(m['departure_at'] as String?);
+    DateTime? arrDt = _parseDt(m['arrival_at'] as String?);
+
+    Map<String, dynamic>? flightDetails;
+    Map<String, dynamic>? trainDetails;
+    Map<String, dynamic>? hotelDetails;
+
+    if (bookingType == 'hotel') {
+      final ci = m['check_in'] as String? ?? '';
+      final co = m['check_out'] as String? ?? '';
+      int nights = 1;
+      final ciDt = _parseDt(ci);
+      final coDt = _parseDt(co);
+      if (ciDt != null && coDt != null) {
+        nights = coDt.difference(ciDt).inDays.clamp(1, 365);
+      }
+      hotelDetails = {
+        'hotelName': m['hotel_name'] ?? 'Hotel',
+        'city': m['destination'] ?? m['origin'] ?? '',
+        'checkIn': ci,
+        'checkOut': co,
+        'nights': nights,
+        'rating': 0,
+        'roomType': 'Standard Room',
+      };
+    } else if (bookingType == 'train') {
+      trainDetails = {
+        'from': m['origin'] ?? '',
+        'to': m['destination'] ?? '',
+        'fromCode': _toCode(m['origin'] as String? ?? ''),
+        'toCode': _toCode(m['destination'] as String? ?? ''),
+        'departure':
+            depDt != null ? _fmtTime(depDt) : 'N/A',
+        'arrival':
+            arrDt != null ? _fmtTime(arrDt) : 'N/A',
+        'date': depDt != null ? _fmtDateStr(depDt) : '',
+        'duration': _calcDuration(depDt, arrDt),
+        'class': 'Economy',
+      };
+    } else {
+      flightDetails = {
+        'from': m['origin'] ?? '',
+        'to': m['destination'] ?? '',
+        'departure':
+            depDt != null ? _fmtTime(depDt) : 'N/A',
+        'arrival':
+            arrDt != null ? _fmtTime(arrDt) : 'N/A',
+        'date': depDt != null ? _fmtDateStr(depDt) : '',
+      };
+    }
+
+    // Passenger count from raw_payload if available
+    int passengerCount = 1;
+    final rp = m['raw_payload'];
+    if (rp is Map) {
+      passengerCount =
+          (rp['passenger_count'] ?? rp['passengers'] ?? 1) as int? ?? 1;
+    }
+
+    return {
+      'bookingId': m['booking_id'] ?? m['id'] ?? '',
+      'bookingType': bookingType,
+      'status': m['status'] ?? 'confirmed',
+      'bookingDate': m['created_at'] ?? '',
+      'pnr': m['pnr'] ?? '',
+      'total': (m['total_amount'] as num?)?.toDouble() ?? 0.0,
+      'passengerCount': passengerCount,
+      if (flightDetails != null) 'flightDetails': flightDetails,
+      if (trainDetails != null) 'trainDetails': trainDetails,
+      if (hotelDetails != null) 'hotelDetails': hotelDetails,
+      // keep all raw backend fields for booking detail screen
+      ...m,
+    };
+  }
+
+  static DateTime? _parseDt(String? s) {
+    if (s == null || s.isEmpty) return null;
+    return DateTime.tryParse(s);
+  }
+
+  static String _toCode(String name) {
+    // Extract 3-letter code from "City (CODE)" format, else use first 3 letters
+    final match = RegExp(r'\(([A-Z]{2,4})\)').firstMatch(name);
+    if (match != null) return match.group(1)!;
+    final clean = name.trim().replaceAll(RegExp(r'[^A-Za-z ]'), '');
+    final words = clean.trim().split(RegExp(r'\s+'));
+    if (words.length >= 2) {
+      return '${words[0][0]}${words[1][0]}${words.length > 2 ? words[2][0] : words[0][1]}'
+          .toUpperCase();
+    }
+    return clean.substring(0, clean.length.clamp(0, 3)).toUpperCase();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   Future<void> _loadBookings() async {
     setState(() => _isLoading = true);
 
@@ -55,20 +176,10 @@ class _MyBookingsState extends State<MyBookings>
       final data = await ApiClient.getBookings(perPage: 100);
       final raw = data['bookings'] as List<dynamic>? ?? [];
       if (raw.isNotEmpty) {
-        // Normalise backend booking shape to match local BookingService shape
-        bookings = raw.map((b) {
-          final m = Map<String, dynamic>.from(b as Map);
-          return {
-            'bookingId': m['booking_id'] ?? m['id'] ?? '',
-            'bookingType': m['booking_type'] ?? 'flight',
-            'status': m['status'] ?? 'confirmed',
-            'bookingDate': m['created_at'] ?? '',
-            'pnr': m['pnr'] ?? '',
-            'total': m['total_amount'] ?? 0,
-            // Keep raw backend fields accessible too
-            ...m,
-          };
-        }).toList();
+        bookings = raw
+            .map((b) =>
+                _normalizeBackendBooking(Map<String, dynamic>.from(b as Map)))
+            .toList();
       }
     } catch (_) {
       // Backend unreachable or user not logged in — fall through to local
@@ -267,14 +378,17 @@ class _MyBookingsState extends State<MyBookings>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('My Bookings',
+                          Text(
+                              _historyMode ? 'Booking History' : 'My Bookings',
                               style: TravelloTheme.title.copyWith(
                                   color: Colors.white,
                                   fontSize: R.sp(context, 26),
                                   fontWeight: FontWeight.w800)),
                           SizedBox(height: spacingUnit(0.4)),
                           Text(
-                              '${_allBookings.length} Total  •  $_upcomingCount Upcoming',
+                              _historyMode
+                                  ? '${_filteredBookings.length} Past Bookings'
+                                  : '${_allBookings.length} Total  •  $_upcomingCount Upcoming',
                               style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 13,

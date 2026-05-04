@@ -1,8 +1,10 @@
 import 'package:flight_app/app/app_link.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flight_app/utils/support_message_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MessageForm extends StatefulWidget {
   const MessageForm({super.key});
@@ -38,11 +40,24 @@ class _MessageFormState extends State<MessageForm> {
   Future<void> _send() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSending = true);
-    await SupportMessageService.send(
-      topic: _selectedTopic!,
-      subject: _subjectCtrl.text.trim(),
-      description: _descCtrl.text.trim(),
-    );
+
+    final topic = _selectedTopic!;
+    final subject = _subjectCtrl.text.trim();
+    final description = _descCtrl.text.trim();
+    final senderEmail =
+        Supabase.instance.client.auth.currentSession?.user.email ?? '';
+
+    // Save locally + send email to travelloo.ai@gmail.com in parallel
+    await Future.wait([
+      SupportMessageService.send(
+          topic: topic, subject: subject, description: description),
+      ApiClient.sendContactSupport(
+          topic: topic,
+          subject: subject,
+          description: description,
+          senderEmail: senderEmail),
+    ]);
+
     setState(() => _isSending = false);
     if (!mounted) return;
 

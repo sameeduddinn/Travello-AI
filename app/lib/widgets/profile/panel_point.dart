@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flight_app/utils/auth_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 
@@ -71,33 +71,50 @@ class _PanelPointState extends State<PanelPoint>
 
   Future<void> _loadBookingData() async {
     try {
-      // Check if user is logged in
       final loggedIn = await AuthService.isLoggedIn();
+      setState(() => _isLoggedIn = loggedIn);
 
-      setState(() {
-        _isLoggedIn = loggedIn;
-      });
+      if (!loggedIn) return;
 
-      if (loggedIn) {
-        // Load booking statistics from SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        final bookingsJson = prefs.getString('user_bookings');
+      final result = await ApiClient.getBookings(perPage: 100);
+      final bookings = (result['bookings'] as List?) ?? [];
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
 
-        if (bookingsJson != null && bookingsJson.isNotEmpty) {
-          // Count total and upcoming bookings
-          // For now using dummy data, replace with actual booking parsing
-          setState(() {
-            _totalBookings = prefs.getInt('total_bookings') ?? 0;
-            _upcomingTrips = prefs.getInt('upcoming_trips') ?? 0;
-          });
+      int total = 0;
+      int upcoming = 0;
+
+      for (final b in bookings) {
+        final status = (b['status'] as String? ?? '').toLowerCase();
+        if (status == 'cancelled') continue;
+        total++;
+
+        // Determine the travel date: departure_at for flights/trains, check_in for hotels
+        DateTime? travelDate;
+        final depAt = b['departure_at'] as String?;
+        final checkIn = b['check_in'] as String?;
+        if (depAt != null && depAt.isNotEmpty) {
+          travelDate = DateTime.tryParse(depAt);
+        } else if (checkIn != null && checkIn.isNotEmpty) {
+          travelDate = DateTime.tryParse(checkIn);
         }
+
+        if (travelDate != null) {
+          final travelDay = DateTime(travelDate.year, travelDate.month, travelDate.day);
+          if (!travelDay.isBefore(today)) upcoming++;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _totalBookings = total;
+          _upcomingTrips = upcoming;
+        });
       }
     } catch (e) {
       debugPrint('Error loading booking data: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

@@ -578,6 +578,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
               ]),
               const SizedBox(height: 4),
               Text(_fmtDate(_checkIn),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       fontSize: 15, fontWeight: FontWeight.bold)),
               Text('2:00 PM',
@@ -613,6 +615,8 @@ class _HotelCheckoutState extends State<HotelCheckout> {
               ]),
               const SizedBox(height: 4),
               Text(_fmtDate(_checkOut),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       fontSize: 15, fontWeight: FontWeight.bold)),
               Text('12:00 PM',

@@ -36,11 +36,22 @@ class PakistanWeatherData {
       'Quetta',
       'Sialkot',
       'Gujranwala',
+      'Bahawalpur',
       'Hyderabad',
       'Sukkur',
+      'Larkana',
+      'Gwadar',
       'Murree',
+      'Nathiagali',
+      'Abbottabad',
+      'Swat',
       'Gilgit',
       'Skardu',
+      'Hunza',
+      'Naran',
+      'Chitral',
+      'Muzaffarabad',
+      'Ziarat',
     ];
   }
 

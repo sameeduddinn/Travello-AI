@@ -1,30 +1,3 @@
-# =============================================================================
-# FILE: routers/email.py
-# PREFIX: /email
-# =============================================================================
-#
-# FLUTTER INTEGRATION (Flutter 3.28.3 / Dart 3.10.1)
-# -------------------------------------------------------
-# // POST /email/booking-confirmation
-# // Useful for "Resend Email" button on the booking detail screen
-# Future<Map<String, dynamic>> resendBookingEmail(String bookingId) async {
-#   final res = await http.post(
-#     Uri.parse('$baseUrl/email/booking-confirmation'),
-#     headers: {
-#       'Authorization': 'Bearer $_token',
-#       'Content-Type': 'application/json',
-#     },
-#     body: jsonEncode({'booking_id': bookingId}),
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-#   // response: {sent: true, to: "email@example.com", resend_id: "..."}
-# }
-#
-# NOTE: Confirmation emails are also sent automatically after payment
-#       verification in POST /payments/verify-otp. This endpoint is only
-#       needed if the user wants to manually resend the email.
-# =============================================================================
-
 import logging
 
 from fastapi import APIRouter, HTTPException, status
@@ -40,8 +13,96 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/email", tags=["Email"])
 
 
+SUPPORT_INBOX = "travelloo.ai@gmail.com"
+
+
 class BookingConfirmationRequest(BaseModel):
     booking_id: str   # UUID of the booking
+
+
+class ContactSupportRequest(BaseModel):
+    topic: str
+    subject: str
+    description: str
+    sender_email: str = ""   # user's own email — used as Reply-To
+
+
+# ---------------------------------------------------------------------------
+# POST /email/contact-support
+# ---------------------------------------------------------------------------
+
+@router.post("/contact-support")
+async def contact_support(payload: ContactSupportRequest):
+    """
+    Forward a user's support message to travelloo.ai@gmail.com via SMTP.
+    Sets Reply-To to the sender's email so support can reply directly.
+    """
+    reply_to = payload.sender_email.strip() or None
+    sender_label = reply_to or "Anonymous user"
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body {{ font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 24px; }}
+        .card {{ background: #fff; border-radius: 12px; padding: 28px 32px;
+                 max-width: 560px; margin: 0 auto;
+                 box-shadow: 0 2px 10px rgba(0,0,0,0.09); }}
+        .logo {{ color: #C9A84C; font-size: 22px; font-weight: bold; margin-bottom: 4px; }}
+        .badge {{ display: inline-block; background: #FFF8E7; color: #C9A84C;
+                  border: 1px solid #E6C86A; border-radius: 20px;
+                  padding: 4px 14px; font-size: 13px; font-weight: 600;
+                  margin-bottom: 16px; }}
+        .label {{ font-size: 11px; font-weight: 700; color: #999;
+                  text-transform: uppercase; letter-spacing: 0.6px;
+                  margin-bottom: 4px; }}
+        .value {{ font-size: 15px; color: #222; margin-bottom: 16px; }}
+        .msg-box {{ background: #FAFAFA; border-left: 4px solid #C9A84C;
+                    border-radius: 6px; padding: 16px 18px;
+                    font-size: 14px; color: #333; line-height: 1.7;
+                    white-space: pre-wrap; margin-top: 4px; }}
+        .footer {{ color: #aaa; font-size: 12px; text-align: center;
+                   margin-top: 28px; }}
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="logo">Travello AI</div>
+        <p style="color:#777;font-size:13px;margin-top:2px">New support message received</p>
+        <div class="badge">&#128394; {payload.topic}</div>
+
+        <div class="label">From</div>
+        <div class="value">{ sender_label}</div>
+
+        <div class="label">Subject</div>
+        <div class="value">{ payload.subject}</div>
+
+        <div class="label">Message</div>
+        <div class="msg-box">{ payload.description}</div>
+
+        <div class="footer">
+          &copy; Travello AI &mdash; Support Inbox &mdash;
+          Reply directly to this email to respond to the user.
+        </div>
+      </div>
+    </body>
+    </html>
+    """
+
+    result = await send_email(
+        to=SUPPORT_INBOX,
+        subject=f"[Support] {payload.topic}: {payload.subject}",
+        html=html,
+        reply_to=reply_to,
+    )
+
+    sent = result.get("id") not in ("failed", "disabled", "skipped", None)
+    if not sent:
+        logger.warning("Contact-support email not delivered: %s", result)
+
+    return {"sent": sent, "result": result}
 
 
 # ---------------------------------------------------------------------------

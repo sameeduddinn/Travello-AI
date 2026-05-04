@@ -1,13 +1,3 @@
-# =============================================================================
-# FILE: services/weather_service.py
-# PURPOSE: Real-time weather data via Open-Meteo API.
-#          Open-Meteo is completely free — no API key required.
-#          Docs: https://open-meteo.com/en/docs
-#
-# Supported cities: all major Pakistani cities + popular international
-#                   destinations (Dubai, London, Doha, etc.)
-# =============================================================================
-
 from __future__ import annotations
 
 import logging
@@ -39,7 +29,7 @@ CITY_COORDS: dict[str, tuple[float, float]] = {
     "Dera Ghazi Khan":  (30.0571,  70.6350),
     "Gwadar":           (25.1264,  62.3225),
     "Mirpur":           (33.1475,  73.7511),
-    # ── Northern Pakistan & tourism ───────────────────────────────────────────
+    # Northern Pakistan & tourism ───────────────────────────────────────────
     "Murree":           (33.9072,  73.3943),
     "Nathiagali":       (34.0741,  73.3778),
     "Gilgit":           (35.9219,  74.3085),
@@ -105,9 +95,9 @@ def _wmo_to_condition(code: int) -> tuple[str, str]:
     return "Cloudy", "cloud"
 
 
-# ---------------------------------------------------------------------------
+# --------------------------------
 # Travel warning heuristics
-# ---------------------------------------------------------------------------
+# --------------------------------
 
 def _travel_warning(
     condition: str,
@@ -116,7 +106,7 @@ def _travel_warning(
     humidity: int,
 ) -> tuple[bool, str]:
     """Return (has_warning, warning_message) based on weather parameters."""
-    if temp_c >= 42:
+    if temp_c >= 40:
         return True, "Extreme heat warning. Stay hydrated and avoid outdoor travel during peak hours."
     if temp_c <= 0:
         return True, "Freezing temperatures. Ice on roads likely — travel with extreme caution."

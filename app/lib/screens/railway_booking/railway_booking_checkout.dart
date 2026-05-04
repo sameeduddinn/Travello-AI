@@ -644,24 +644,29 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Row(
                   children: [
-                    Flexible(
+                    Expanded(
                       child: Text(
                         '$_fromStation($_fromStationCode) - $_toStation($_toStationCode)',
                         style: TravelloTheme.cardHeading,
                         overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
+                        maxLines: 1,
                       ),
                     ),
                     const SizedBox(width: 8),
                     const Icon(Icons.schedule_rounded,
                         size: 15, color: Color(0xFF666666)),
-                    const SizedBox(width: 5),
-                    Text(
-                      _train.duration,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFB3B3B3),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      fit: FlexFit.loose,
+                      child: Text(
+                        _train.duration,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFB3B3B3),
+                        ),
                       ),
                     ),
                   ],
@@ -888,32 +893,42 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                         children: [
                           Text(
                             _train.trainName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 3),
                           Text(
                             'Train ${_train.trainNumber}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 fontSize: 13, color: Color(0xFFB3B3B3)),
                           ),
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5E6D3),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFE6C68E)),
-                      ),
-                      child: Text(
-                        _selectedClass,
-                        style: const TextStyle(
-                          color: greenTheme,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                    const SizedBox(width: 8),
+                    Flexible(
+                      fit: FlexFit.loose,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5E6D3),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFE6C68E)),
+                        ),
+                        child: Text(
+                          _selectedClass,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: greenTheme,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),

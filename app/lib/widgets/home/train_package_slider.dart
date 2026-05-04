@@ -191,6 +191,19 @@ class _TrainPackageSliderState extends State<TrainPackageSlider> {
 
                       return _TrainCardHover(
                         packageId: item.id,
+                        itemData: {
+                          'id': item.id,
+                          'name': item.name,
+                          'train_number': item.trainNumber,
+                          'from': item.fromStation,
+                          'to': item.toStation,
+                          'departure_time': item.departureTime,
+                          'duration': item.duration,
+                          'class': item.trainClass,
+                          'price': item.price,
+                          'round_trip': item.roundTrip,
+                          'image': item.imageUrl,
+                        },
                         onTap: () {
                           Get.toNamed(
                             AppLink.trainDetailPackage,
@@ -345,8 +358,12 @@ class _TrainCardHover extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
   final String packageId;
+  final Map<String, dynamic>? itemData;
   const _TrainCardHover(
-      {required this.child, required this.onTap, required this.packageId});
+      {required this.child,
+      required this.onTap,
+      required this.packageId,
+      this.itemData});
 
   @override
   State<_TrainCardHover> createState() => _TrainCardHoverState();
@@ -386,7 +403,9 @@ class _TrainCardHoverState extends State<_TrainCardHover>
   }
 
   Future<void> _toggle() async {
-    final added = await WishlistService.toggle('train', widget.packageId);
+    final added = await WishlistService.toggle(
+        'train', widget.packageId,
+        itemData: widget.itemData);
     if (mounted) {
       setState(() => _wishlisted = added);
       _heartCtrl.forward(from: 0);

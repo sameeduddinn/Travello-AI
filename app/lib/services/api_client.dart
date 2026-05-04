@@ -947,6 +947,58 @@ class ApiClient {
     return map[backend.toUpperCase()] ?? 'Economy';
   }
 
+  /// Send a contact-support message to travelloo.ai@gmail.com via backend SMTP.
+  /// Fire-and-forget safe — never throws.
+  static Future<bool> sendContactSupport({
+    required String topic,
+    required String subject,
+    required String description,
+    String senderEmail = '',
+  }) async {
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$_baseUrl/email/contact-support'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'topic': topic,
+              'subject': subject,
+              'description': description,
+              'sender_email': senderEmail,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+      if (res.statusCode < 200 || res.statusCode >= 300) return false;
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      return data['sent'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// PUT /auth/profile — updates name and phone in the profiles table via FastAPI.
+  static Future<bool> updateProfile({
+    String? name,
+    String? phone,
+  }) async {
+    final body = <String, dynamic>{};
+    if (name != null) body['full_name'] = name;
+    if (phone != null) body['phone'] = phone;
+    if (body.isEmpty) return true;
+    try {
+      final res = await http
+          .put(
+            Uri.parse('$_baseUrl/auth/profile'),
+            headers: _headers,
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 15));
+      return res.statusCode >= 200 && res.statusCode < 300;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static void _throwIfError(http.Response res, String context) {
     if (res.statusCode < 200 || res.statusCode >= 300) {
       _logDebug('$context failed with HTTP ${res.statusCode}: ${res.body}');

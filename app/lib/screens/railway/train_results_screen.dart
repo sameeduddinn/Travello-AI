@@ -680,9 +680,15 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
         ),
       ];
   void _resetPriceRangeForSelectedClass() {
+    final cls = _backendClassName;
     final prices = _allTrains
-        .where((train) => train.availableClasses.contains(_selectedTrainClass))
-        .map((train) => train.classPrices[_selectedTrainClass] ?? 0.0)
+        .where((train) =>
+            train.availableClasses.contains(cls) ||
+            train.availableClasses.contains(_selectedTrainClass))
+        .map((train) =>
+            train.classPrices[cls] ??
+            train.classPrices[_selectedTrainClass] ??
+            0.0)
         .where((price) => price > 0)
         .toList();
 
@@ -696,14 +702,27 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
     _priceRange = RangeValues(minPrice, maxPrice);
   }
 
+  // Maps Flutter search-screen class names to the backend's class_name strings.
+  static const _classNameMap = {
+    'Economy (Seat)': 'Economy',
+    'Economy (Berth)': 'Sleeper',
+    'AC Lower / Standard (Berth)': 'AC Standard',
+    'AC Business': 'AC Business',
+  };
+
+  String get _backendClassName =>
+      _classNameMap[_selectedTrainClass] ?? _selectedTrainClass;
+
   void _applyFiltersAndSort() {
+    final cls = _backendClassName;
     setState(() {
       _trains = _allTrains.where((train) {
-        if (!train.availableClasses.contains(_selectedTrainClass)) {
+        if (train.availableClasses.isEmpty ||
+            !train.availableClasses.contains(cls)) {
           return false;
         }
 
-        final price = train.classPrices[_selectedTrainClass] ?? 0.0;
+        final price = train.classPrices[cls] ?? 0.0;
         if (price <= 0 ||
             price < _priceRange.start ||
             price > _priceRange.end) {
@@ -727,8 +746,8 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
       switch (_sortBy) {
         case 'Cheapest':
           _trains.sort((a, b) {
-            final priceA = a.classPrices[_selectedTrainClass] ?? 0.0;
-            final priceB = b.classPrices[_selectedTrainClass] ?? 0.0;
+            final priceA = a.classPrices[cls] ?? 0.0;
+            final priceB = b.classPrices[cls] ?? 0.0;
             return priceA.compareTo(priceB);
           });
           break;
@@ -749,9 +768,10 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
     RangeValues tempTime = _departureTimeRange;
     bool tempRefundable = _refundableOnly;
 
+    final cls = _backendClassName;
     final prices = _allTrains
-        .where((train) => train.availableClasses.contains(_selectedTrainClass))
-        .map((train) => train.classPrices[_selectedTrainClass] ?? 0.0)
+        .where((train) => train.availableClasses.contains(cls))
+        .map((train) => train.classPrices[cls] ?? 0.0)
         .where((price) => price > 0)
         .toList();
 
@@ -2818,7 +2838,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
           final abbr = _classAbbr[cls] ?? cls;
           final seats = train.classSeats[cls];
           final price = train.classPrices[cls];
-          final isSelected = cls == _selectedTrainClass;
+          final isSelected = cls == _selectedTrainClass || cls == _backendClassName;
           final isNA = seats == null || price == null;
 
           bool isHovered = false;
@@ -2905,7 +2925,9 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
   }
 
   Widget _buildTrainCard(TrainResult train) {
-    final priceForClass = train.classPrices[_selectedTrainClass] ?? 0.0;
+    final priceForClass = train.classPrices[_backendClassName] ??
+        train.classPrices[_selectedTrainClass] ??
+        0.0;
     final isSelectedOutbound = _isRoundTrip &&
         _currentJourneyIndex == 1 &&
         _selectedOutboundTrain?.id == train.id;
@@ -3479,9 +3501,14 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
     if (_trains.isEmpty) return '';
 
     // Get cheapest train for selected class
+    final cls = _backendClassName;
     final cheapestTrain = _trains.reduce((a, b) {
-      final priceA = a.classPrices[_selectedTrainClass] ?? double.infinity;
-      final priceB = b.classPrices[_selectedTrainClass] ?? double.infinity;
+      final priceA = a.classPrices[cls] ??
+          a.classPrices[_selectedTrainClass] ??
+          double.infinity;
+      final priceB = b.classPrices[cls] ??
+          b.classPrices[_selectedTrainClass] ??
+          double.infinity;
       return priceA < priceB ? a : b;
     });
 

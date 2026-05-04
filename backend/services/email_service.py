@@ -247,14 +247,14 @@ def _train_email_html(b: dict) -> str:
     </div>
     <div class="section">
       <div class="section-title">Train Details</div>
-      <div class="info-row"><span class="label">Train</span>
-        <span class="value">{train_name} ({train_number})</span></div>
-      <div class="info-row"><span class="label">Route</span>
-        <span class="value">{origin} → {destination}</span></div>
-      <div class="info-row"><span class="label">Departure</span>
-        <span class="value">{dep}</span></div>
-      <div class="info-row"><span class="label">Arrival</span>
-        <span class="value">{arr}</span></div>
+      <div class="info-row"><span class="label">Train: </span>
+        <span class="value">{ train_name} ({train_number})</span></div>
+      <div class="info-row"><span class="label">Route:</span>
+        <span class="value">{ origin} → {destination}</span></div>
+      <div class="info-row"><span class="label">Departure: </span>
+        <span class="value">{ dep}</span></div>
+      <div class="info-row"><span class="label">Arrival: </span>
+        <span class="value">{ arr}</span></div>
     </div>
     <div class="section">
       <div class="section-title">Passengers</div>

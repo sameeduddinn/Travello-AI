@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/route_manager.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -48,11 +49,14 @@ class _EditProfileState extends State<EditProfile> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
-    final success = await AuthService.updateUserProfile(
-      name: _nameCtrl.text.trim(),
-      phone: _phoneCtrl.text.trim(),
-      email: _emailCtrl.text.trim(),
-    );
+    final name = _nameCtrl.text.trim();
+    final phone = _phoneCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
+    final results = await Future.wait([
+      AuthService.updateUserProfile(name: name, phone: phone, email: email),
+      ApiClient.updateProfile(name: name, phone: phone),
+    ]);
+    final success = results[0];
     setState(() => _isSaving = false);
     if (!mounted) return;
     if (success) {
