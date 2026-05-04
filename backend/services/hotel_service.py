@@ -167,19 +167,19 @@ async def _get_geo_id(city: str) -> str | None:
     """Search TripAdvisor for a city and return its geoId."""
     try:
         data = await _rapidapi_get_json(
-            ["/location/search", "/locations/search"],
-            {"searchQuery": city, "language": "en_US"},
+            ["/api/v1/hotels/searchLocation"],
+            {"query": city},
             timeout=15.0,
         )
         if not data:
             return None
 
         results = data.get("data", [])
-        if not results and isinstance(data.get("results"), list):
-            results = data.get("results", [])
+        if not isinstance(results, list):
+            results = []
 
         for item in results:
-            location_id = item.get("locationId") or item.get("location_id")
+            location_id = item.get("geoId") or item.get("locationId") or item.get("location_id")
             if location_id:
                 return str(location_id)
         return None
@@ -202,14 +202,13 @@ async def _search_hotels_tripadvisor(
     """Call TripAdvisor hotels/list endpoint."""
     try:
         data = await _rapidapi_get_json(
-            ["/hotels/list", "/hotels/search"],
+            ["/api/v1/hotels/searchHotels"],
             {
                 "geoId": geo_id,
                 "checkIn": check_in.strftime("%Y-%m-%d"),
                 "checkOut": check_out.strftime("%Y-%m-%d"),
                 "rooms": rooms,
                 "adults": guests,
-                "language": "en_US",
                 "currencyCode": "USD",
             },
             timeout=20.0,
@@ -393,6 +392,8 @@ def _parse_hotel(prop: dict, check_in: date, check_out: date, city: str) -> Hote
             raw = price_info.get("amount") or price_info.get("value") or 0
         elif isinstance(price_info, (int, float)):
             raw = price_info
+        elif isinstance(price_info, str):
+            raw = price_info  # e.g. "$35" — stripped below
         else:
             raw = 0
         price_usd_per_night = float(str(raw).replace("$", "").replace(",", "").strip() or 0)
@@ -411,9 +412,13 @@ def _parse_hotel(prop: dict, check_in: date, check_out: date, city: str) -> Hote
         if isinstance(raw_imgs, list):
             for img in raw_imgs[:4]:
                 if isinstance(img, dict):
+                    # tripadvisor16: nested under img.sizes.urlTemplate
+                    sizes = img.get("sizes") or {}
+                    nested_template = sizes.get("urlTemplate", "") if isinstance(sizes, dict) else ""
                     url = (
                         img.get("url") or
                         img.get("urlTemplate", "").replace("{width}", "800").replace("{height}", "600") or
+                        nested_template.replace("{width}", "800").replace("{height}", "600") or
                         img.get("src", "")
                     )
                     if url:
@@ -426,7 +431,8 @@ def _parse_hotel(prop: dict, check_in: date, check_out: date, city: str) -> Hote
     for sf in ["bubbleRating", "rating", "stars", "starRating", "categoryDescriptions"]:
         val = prop.get(sf)
         if isinstance(val, dict):
-            val = val.get("ratingValue") or val.get("value") or val.get("overallRating")
+            val = (val.get("rating") or val.get("ratingValue") or
+                   val.get("value") or val.get("overallRating"))
         if val is not None:
             try:
                 star_rating = min(5.0, float(val))
@@ -441,8 +447,11 @@ def _parse_hotel(prop: dict, check_in: date, check_out: date, city: str) -> Hote
         rv = prop.get(rf)
         if isinstance(rv, dict):
             try:
-                review_score = float(rv.get("ratingValue") or rv.get("rating") or rv.get("score") or 0) or None
-                review_count = int(rv.get("count") or rv.get("total") or rv.get("reviewCount") or 0) or None
+                review_score = float(rv.get("rating") or rv.get("ratingValue") or rv.get("score") or 0) or None
+                # count may come as "(45)" string — strip parens before int()
+                raw_count = rv.get("count") or rv.get("total") or rv.get("reviewCount") or 0
+                clean_count = str(raw_count).replace("(", "").replace(")", "").strip()
+                review_count = int(clean_count) if clean_count.isdigit() else None
             except (ValueError, TypeError):
                 pass
             if review_score:
@@ -561,8 +570,20 @@ async def search_hotels(
         mock_count = len(mock_hotels)
         hotels = _merge_hotel_lists(hotels, mock_hotels, limit=_TARGET_RESULT_COUNT)
 
+    # Drop hotels with no images — Nominatim/OSM results without TripAdvisor
+    # enrichment have images=[] and show blank cards + crash the detail screen.
+    hotels = [h for h in hotels if h.images]
+
+    # 5) If the image filter depleted results (e.g. RapidAPI quota hit and all
+    #    Nominatim hotels had no images), backfill with mock data which always
+    #    carries curated Unsplash images.
+    if len(hotels) < _TARGET_RESULT_COUNT:
+        additional_mock = _mock_hotels(city, check_in, check_out, guests, rooms)
+        mock_count += len(additional_mock)
+        hotels = _merge_hotel_lists(hotels, additional_mock, limit=_TARGET_RESULT_COUNT)
+
     logger.info(
-        "Hotel search merged for %s: rapid=%d, nominatim=%d, osm=%d, mock=%d, final=%d",
+        "Hotel search merged for %s: rapid=%d, nominatim=%d, osm=%d, mock=%d, final=%d (after image filter)",
         city,
         rapid_count,
         nominatim_count,

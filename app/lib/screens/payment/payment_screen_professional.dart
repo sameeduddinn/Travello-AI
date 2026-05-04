@@ -22,7 +22,6 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
   late double totalPrice;
 
   final _formKey = GlobalKey<FormState>();
-  final _mobileFormKey = GlobalKey<FormState>();
 
   String _selectedPaymentMethod = 'Card';
 
@@ -32,17 +31,9 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
   final TextEditingController _expiryController = TextEditingController();
   final TextEditingController _cvvController = TextEditingController();
 
-  // Mobile wallet
-  final TextEditingController _mobileNumberController = TextEditingController();
-  final TextEditingController _pinController = TextEditingController();
-
   bool _saveCard = false;
   bool _isProcessing = false;
 
-  // Mobile wallet OTP state
-  bool _showWalletOTP = false;
-  String _otpValue = '';
-  bool _isOtpVerified = false;
   // Detected network prefix for dynamic logo highlighting
   String? _cardNetwork;
   bool _showOutboundDetails = false;
@@ -79,42 +70,12 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
     _cardHolderController.dispose();
     _expiryController.dispose();
     _cvvController.dispose();
-    _mobileNumberController.dispose();
-    _pinController.dispose();
     super.dispose();
   }
 
-  bool get _canPay {
-    if (_selectedPaymentMethod == 'JazzCash' ||
-        _selectedPaymentMethod == 'Easypaisa') {
-      return _isOtpVerified &&
-          _isValidPkWalletPhone(_mobileNumberController.text);
-    }
-    return true;
-  }
-
-  bool _isValidPkWalletPhone(String value) {
-    final clean = value.replaceAll(RegExp(r'\D'), '');
-    return clean.length == 10 && clean.startsWith('3');
-  }
+  bool get _canPay => true;
 
   Future<void> _processPayment() async {
-    // Validate the active form based on payment method
-    final isCardMethod = _selectedPaymentMethod == 'Card';
-    final activeKey = isCardMethod ? _formKey : _mobileFormKey;
-    if (!(activeKey.currentState?.validate() ?? true)) {
-      // If form is not valid, show error message
-      Get.snackbar(
-        'Validation Error',
-        'Please fill in all required fields correctly',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-      );
-      return;
-    }
-
     setState(() => _isProcessing = true);
     final nav = Navigator.of(context);
     final ctx = context;
@@ -123,15 +84,14 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
     var transactionId =
         'TXN${DateTime.now().millisecondsSinceEpoch.toString().substring(4)}';
 
-    // Backend-first card payment for hotel flow. Wallet flow stays in local OTP
-    // mode here and can still fall back to demo behavior.
-    if (bookingType == 'hotel' &&
-        _selectedPaymentMethod == 'Card' &&
-        _backendBookingId != null) {
+    if (_backendBookingId != null) {
       try {
+        final method = _selectedPaymentMethod == 'Bank Transfer'
+            ? 'bank_transfer'
+            : 'card';
         final data = await ApiClient.initiatePayment(
           bookingId: _backendBookingId!,
-          method: 'card',
+          method: method,
           amount: totalPrice,
           email: (bookingData['contactEmail'] ?? '').toString(),
         );
@@ -139,11 +99,29 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
         transactionId = data['transaction_id']?.toString() ??
             data['request_id']?.toString() ??
             transactionId;
-      } catch (_) {
-        // Keep local fallback references if backend is unavailable.
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _isProcessing = false);
+        final message = e
+            .toString()
+            .replaceFirst('Exception:', '')
+            .trim()
+            .replaceFirst('Payment initiation failed:', '')
+            .trim();
+        Get.snackbar(
+          'Payment Failed',
+          message.isNotEmpty
+              ? message
+              : 'Unable to process payment. Please try again.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.red.shade700,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 4),
+        );
+        return;
       }
     } else {
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 1));
     }
 
     if (!mounted) return;
@@ -667,18 +645,6 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                             bgColor: const Color(0xFFFBF5DC),
                             iconColor: const Color(0xFFD4AF37),
                             icon: Icons.credit_card),
-                        _dividerLine(),
-                        _buildMethodRow(
-                            'JazzCash', 'JazzCash', 'Pay with JazzCash wallet',
-                            bgColor: const Color(0xFFFBF5DC),
-                            iconColor: const Color(0xFFD4AF37),
-                            icon: Icons.account_balance_wallet_rounded),
-                        _dividerLine(),
-                        _buildMethodRow('Easypaisa', 'Easypaisa',
-                            'Pay with Easypaisa wallet',
-                            bgColor: const Color(0xFFFBF5DC),
-                            iconColor: const Color(0xFFD4AF37),
-                            icon: Icons.account_balance_wallet_rounded),
                         if (bookingType == 'transport') ...[
                           _dividerLine(),
                           _buildMethodRow('Bank Transfer', 'Bank Transfer',
@@ -696,9 +662,6 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
                   // Payment details form
                   if (_selectedPaymentMethod == 'Card')
                     _buildCardForm()
-                  else if (_selectedPaymentMethod == 'JazzCash' ||
-                      _selectedPaymentMethod == 'Easypaisa')
-                    _buildMobileWalletForm()
                   else if (bookingType == 'transport' &&
                       _selectedPaymentMethod == 'Bank Transfer')
                     _buildBankTransferInfo(),
@@ -872,9 +835,6 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
       child: InkWell(
         onTap: () => setState(() {
           _selectedPaymentMethod = value;
-          _showWalletOTP = false;
-          _otpValue = '';
-          _isOtpVerified = false;
         }),
         borderRadius: BorderRadius.circular(14),
         child: Padding(
@@ -1291,232 +1251,6 @@ class _PaymentScreenProfessionalState extends State<PaymentScreenProfessional> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildMobileWalletForm() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Add New Account',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87)),
-            InkWell(
-              onTap: () => setState(() {
-                _selectedPaymentMethod = '';
-                _showWalletOTP = false;
-                _otpValue = '';
-                _isOtpVerified = false;
-              }),
-              borderRadius: BorderRadius.circular(20),
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child: Icon(Icons.close, size: 20, color: Colors.grey.shade500),
-              ),
-            ),
-          ]),
-          Divider(height: 24, color: Colors.grey.shade200),
-
-          // ── Step 1: Phone entry (hidden once OTP is sent) ──
-          if (!_showWalletOTP) ...[
-            Text('Phone Number',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-            SizedBox(height: spacingUnit(0.75)),
-            Form(
-              key: _mobileFormKey,
-              child: TextFormField(
-                controller: _mobileNumberController,
-                decoration: InputDecoration(
-                  hintText: 'Enter a phone number',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 12),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Text('\uD83C\uDDF5\uD83C\uDDF0',
-                          style: TextStyle(fontSize: 18)),
-                      const SizedBox(width: 4),
-                      Icon(Icons.keyboard_arrow_down,
-                          size: 16, color: Colors.grey.shade600),
-                    ]),
-                  ),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300)),
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300)),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(
-                          color: Color(0xFF1E88E5), width: 1.5)),
-                ),
-                keyboardType: TextInputType.phone,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(10),
-                  _NoLeadingZeroFormatter(),
-                ],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter phone number';
-                  }
-                  if (!_isValidPkWalletPhone(value)) {
-                    return 'Enter valid PK mobile number (3XXXXXXXXX)';
-                  }
-                  return null;
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_mobileFormKey.currentState!.validate()) {
-                    setState(() {
-                      _showWalletOTP = true;
-                      _otpValue = '';
-                    });
-                    Get.snackbar(
-                      'Code Sent',
-                      'Verification code sent to ${_mobileNumberController.text}',
-                      snackPosition: SnackPosition.TOP,
-                      backgroundColor: Colors.green.shade600,
-                      colorText: Colors.white,
-                      duration: const Duration(seconds: 3),
-                      margin: const EdgeInsets.all(12),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFC49A22),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  elevation: 0,
-                ),
-                child: const Text('Get Code',
-                    style:
-                        TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ],
-
-          // ── Step 2: OTP entry + verification ──
-          if (_showWalletOTP) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(
-                6,
-                (index) => Container(
-                  width: 45,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300, width: 1.5),
-                  ),
-                  child: TextField(
-                    textAlign: TextAlign.center,
-                    keyboardType: TextInputType.number,
-                    maxLength: 1,
-                    decoration: const InputDecoration(
-                      counterText: '',
-                      border: InputBorder.none,
-                    ),
-                    style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black),
-                    onChanged: (value) {
-                      setState(() {
-                        if (value.length == 1) {
-                          if (_otpValue.length < 6) _otpValue += value;
-                          if (index < 5) FocusScope.of(context).nextFocus();
-                        } else {
-                          _otpValue = _otpValue.length > index
-                              ? _otpValue.substring(0, index)
-                              : _otpValue;
-                        }
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Verify OTP button (shown until verified)
-            if (!_isOtpVerified)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _otpValue.length == 6
-                      ? () => setState(() => _isOtpVerified = true)
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFC49A22),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey.shade300,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    elevation: 0,
-                  ),
-                  child: const Text('Verify OTP',
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            // Success banner (shown after verified)
-            if (_isOtpVerified)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.shade300),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle,
-                        color: Colors.green.shade700, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      'OTP Verified Successfully',
-                      style: TextStyle(
-                        color: Colors.green.shade700,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ],
       ),
     );
   }

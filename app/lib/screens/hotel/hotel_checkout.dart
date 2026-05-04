@@ -114,6 +114,7 @@ class _HotelCheckoutState extends State<HotelCheckout> {
       final booking = await ApiClient.bookHotel(
         hotelId: _hotel.id,
         roomId: _roomType?.id ?? '${_hotel.id}-STD',
+        city: _hotel.city,
         checkIn: _fmtIso(_checkIn),
         checkOut: _fmtIso(_checkOut),
         contactEmail: contactEmail,
@@ -144,10 +145,39 @@ class _HotelCheckoutState extends State<HotelCheckout> {
               .toList(),
         );
       }
-    } catch (_) {
-      // Non-fatal fallback keeps hotel flow usable when backend is unavailable.
+    } catch (e) {
+      if (!mounted) return;
+      final message = e
+          .toString()
+          .replaceFirst('Exception:', '')
+          .trim()
+          .replaceFirst('Hotel booking failed:', '')
+          .trim();
+      Get.snackbar(
+        'Booking Failed',
+        message.isNotEmpty
+            ? message
+            : 'Unable to create hotel booking. Please try again.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      return;
     } finally {
       if (mounted) setState(() => _isCreatingBooking = false);
+    }
+
+    if (_backendBookingId == null || _backendBookingId!.isEmpty) {
+      Get.snackbar(
+        'Booking Failed',
+        'Booking was not created on server. Please try again.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      return;
     }
 
     Get.toNamed('/payment-professional', arguments: {

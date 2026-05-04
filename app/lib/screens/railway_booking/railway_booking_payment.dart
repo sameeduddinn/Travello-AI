@@ -1,5 +1,3 @@
-import 'dart:async';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/widgets/app_button/design_system_button.dart';
 import 'package:flutter/services.dart';
@@ -8,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:flight_app/screens/railway/train_results_screen.dart';
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
-import 'package:flight_app/services/transactional_service.dart';
 import 'package:flight_app/services/api_client.dart';
 import 'dart:math' as math;
 import 'package:flight_app/ui/themes/theme_system.dart';
@@ -55,22 +52,11 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
   String _contactPhone = '';
 
   // Payment state
-  String _selectedPaymentMethod = '';
+  String _selectedPaymentMethod = 'card';
   bool _isPriceBreakdownExpanded = false;
   bool _saveCard = false;
   bool _isProcessing = false;
-  String _selectedCountryCode = '+92';
-  bool _showEasypaisaOTP = false;
-  bool _showJazzcashOTP = false;
 
-  // OTP Timer
-  Timer? _otpTimer;
-  int _otpRemainingSeconds = 27;
-
-  // OTP state tracking (Easypaisa / JazzCash)
-  String _otpValue = '';
-  bool _isOtpVerified = false;
-  String? _otpRequestId;
   String? _backendBookingId;
   String? _backendPnr;
 
@@ -80,229 +66,30 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
   final _cardNumberController = TextEditingController();
   final _expiryController = TextEditingController();
   final _cvvController = TextEditingController();
-  final _easypaisaPhoneController = TextEditingController();
-  final _jazzcashPhoneController = TextEditingController();
 
   // Price calculations (Train)
   double _baseFare = 0;
   double _reservationCharges = 50; // Pakistan Railways reservation fee
   double _serviceFee = 100; // Pakistan Railways service/convenience fee
-  double _paymentMethodFee = 0; // gateway fee: card=74, jazz/easy=24
   double _transferFee = 0; // Station transfer add-on
+  final double _paymentMethodFee = 0; // Additional fee based on payment method
   final double _discount = 0;
   double get _grandTotal =>
       _baseFare +
       _reservationCharges +
       _serviceFee +
-      _paymentMethodFee +
       _transferFee -
       _discount;
 
   bool get _isPaymentDetailsValid {
-    if (_selectedPaymentMethod.isEmpty) return false;
-
-    if (_selectedPaymentMethod == 'card') {
-      final cardNumberDigits = _cardNumberController.text.replaceAll(' ', '');
-      final cardOk = DSValidators.cardNumber(cardNumberDigits) == null;
-      final expiryOk =
-          DSValidators.cardExpiry(_expiryController.text.trim()) == null;
-      final cvvOk = DSValidators.cvv(_cvvController.text.trim()) == null;
-      final nameOk =
-          DSValidators.cardholderName(_cardNameController.text.trim()) == null;
-      return cardOk && expiryOk && cvvOk && nameOk;
-    } else if (_selectedPaymentMethod == 'easypaisa') {
-      return _isValidPkWalletPhone(_easypaisaPhoneController.text) &&
-          _isOtpVerified;
-    } else if (_selectedPaymentMethod == 'jazzcash') {
-      return _isValidPkWalletPhone(_jazzcashPhoneController.text) &&
-          _isOtpVerified;
-    }
-    return true;
-  }
-
-  bool _isValidPkWalletPhone(String value) {
-    final clean = value.replaceAll(RegExp(r'\D'), '');
-    return clean.length == 10 && clean.startsWith('3');
-  }
-
-  void _showPkPhoneValidationError() {
-    if (!mounted) return;
-    Get.snackbar(
-      'Invalid Number',
-      'Enter valid PK mobile number (3XXXXXXXXX)',
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.orange.shade100,
-      colorText: Colors.orange.shade900,
-      duration: const Duration(seconds: 2),
-    );
-  }
-
-  Future<void> _requestWalletOtp({
-    required String paymentMethod,
-    required String phoneNumber,
-  }) async {
-    if (!_isValidPkWalletPhone(phoneNumber)) {
-      _showPkPhoneValidationError();
-      return;
-    }
-
-    // Try backend first; fall back to edge-function demo flow.
-    try {
-      if (_backendBookingId != null) {
-        final data = await ApiClient.initiatePayment(
-          bookingId: _backendBookingId!,
-          method: paymentMethod,
-          amount: _grandTotal,
-          phone: TransactionalService.normalizePkPhone(phoneNumber),
-          email: _contactEmail,
-        );
-
-        if (!mounted) return;
-        final requestId = data['request_id']?.toString();
-        if (requestId != null && requestId.isNotEmpty) {
-          setState(() {
-            _otpRequestId = requestId;
-            _otpValue = '';
-            _isOtpVerified = false;
-            if (paymentMethod == 'easypaisa') {
-              _showEasypaisaOTP = true;
-            } else {
-              _showJazzcashOTP = true;
-            }
-          });
-
-          _startOTPTimer();
-          Get.snackbar(
-            'OTP Sent',
-            data['message']?.toString() ?? 'Check your email for the OTP.',
-            snackPosition: SnackPosition.TOP,
-            backgroundColor: Colors.green.shade100,
-            colorText: Colors.green.shade900,
-            duration: const Duration(seconds: 3),
-          );
-          return;
-        }
-      }
-    } catch (_) {
-      // Fall through to edge-function fallback
-    }
-
-    final result = await TransactionalService.sendPaymentOtp(
-      bookingType: 'train',
-      paymentMethod: paymentMethod,
-      email: _contactEmail,
-      phoneNumber: phoneNumber,
-    );
-
-    if (!mounted) return;
-
-    if (!result.success || result.requestId == null) {
-      final message = TransactionalService.lastError ??
-          'Unable to send OTP right now. Please try again.';
-      Get.snackbar(
-        'OTP Failed',
-        message,
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
-      );
-      return;
-    }
-
-    setState(() {
-      _otpRequestId = result.requestId;
-      _otpValue = '';
-      _isOtpVerified = false;
-      if (paymentMethod == 'easypaisa') {
-        _showEasypaisaOTP = true;
-      } else {
-        _showJazzcashOTP = true;
-      }
-    });
-
-    _startOTPTimer();
-
-    Get.snackbar(
-      result.isFallback ? 'Demo OTP Mode' : 'OTP Sent',
-      result.message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor:
-          result.isFallback ? Colors.blue.shade100 : Colors.green.shade100,
-      colorText:
-          result.isFallback ? Colors.blue.shade900 : Colors.green.shade900,
-      duration: const Duration(seconds: 3),
-    );
-  }
-
-  Future<void> _verifyWalletOtp({
-    required String paymentMethod,
-    required String phoneNumber,
-  }) async {
-    if (_otpValue.length != 6) return;
-    if (_otpRequestId == null || _otpRequestId!.isEmpty) {
-      Get.snackbar(
-        'OTP Required',
-        'Please request a new OTP code first.',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.orange.shade100,
-        colorText: Colors.orange.shade900,
-      );
-      return;
-    }
-
-    bool verified = false;
-
-    // Try backend first for non-local OTP sessions.
-    try {
-      if (_backendBookingId != null && !_otpRequestId!.startsWith('local_')) {
-        final data = await ApiClient.verifyPaymentOtp(
-          requestId: _otpRequestId!,
-          otp: _otpValue,
-        );
-        verified = data['success'] == true;
-        if (verified) {
-          _backendPnr ??=
-              data['pnr']?.toString() ?? data['booking_id']?.toString();
-        }
-      }
-    } catch (_) {
-      // Fall through to edge-function verification
-    }
-
-    if (!verified) {
-      verified = await TransactionalService.verifyPaymentOtp(
-        requestId: _otpRequestId!,
-        code: _otpValue,
-        email: _contactEmail,
-        phoneNumber: phoneNumber,
-      );
-    }
-
-    if (!mounted) return;
-
-    if (verified) {
-      setState(() => _isOtpVerified = true);
-      Get.snackbar(
-        'OTP Verified',
-        '$paymentMethod OTP verified successfully.',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade900,
-      );
-      return;
-    }
-
-    final message =
-        TransactionalService.lastError ?? 'Invalid or expired OTP code.';
-    Get.snackbar(
-      'Verification Failed',
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.red.shade100,
-      colorText: Colors.red.shade900,
-      duration: const Duration(seconds: 3),
-    );
+    final cardNumberDigits = _cardNumberController.text.replaceAll(' ', '');
+    final cardOk = DSValidators.cardNumber(cardNumberDigits) == null;
+    final expiryOk =
+        DSValidators.cardExpiry(_expiryController.text.trim()) == null;
+    final cvvOk = DSValidators.cvv(_cvvController.text.trim()) == null;
+    final nameOk =
+        DSValidators.cardholderName(_cardNameController.text.trim()) == null;
+    return cardOk && expiryOk && cvvOk && nameOk;
   }
 
   @override
@@ -313,19 +100,14 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
     _expiryController.addListener(() => setState(() {}));
     _cvvController.addListener(() => setState(() {}));
     _cardNameController.addListener(() => setState(() {}));
-    _easypaisaPhoneController.addListener(() => setState(() {}));
-    _jazzcashPhoneController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
-    _otpTimer?.cancel();
     _cardNameController.dispose();
     _cardNumberController.dispose();
     _expiryController.dispose();
     _cvvController.dispose();
-    _easypaisaPhoneController.dispose();
-    _jazzcashPhoneController.dispose();
     super.dispose();
   }
 
@@ -425,39 +207,9 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
     _transferFee = (args['transferFee'] as num?)?.toDouble() ?? 0;
   }
 
-  void _updatePaymentMethodFees(String method) {
-    setState(() {
-      switch (method) {
-        case 'card':
-          _paymentMethodFee = 74.0;
-          break;
-        case 'jazzcash':
-        case 'easypaisa':
-          _paymentMethodFee = 24.0;
-          break;
-        default:
-          _paymentMethodFee = 0.0;
-      }
-    });
-  }
-
   String _formatPKR(double amount) {
     final formatter = NumberFormat('#,##0', 'en_US');
     return 'PKR ${formatter.format(amount)}';
-  }
-
-  void _startOTPTimer() {
-    _otpRemainingSeconds = 27;
-    _otpTimer?.cancel();
-    _otpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_otpRemainingSeconds > 0) {
-          _otpRemainingSeconds--;
-        } else {
-          timer.cancel();
-        }
-      });
-    });
   }
 
   Future<void> _processPayment() async {
@@ -485,8 +237,28 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
         transactionId = data['transaction_id']?.toString() ??
             data['request_id']?.toString() ??
             transactionId;
-      } catch (_) {
-        // Continue with local identifiers
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _isProcessing = false;
+        });
+        final message = e
+            .toString()
+            .replaceFirst('Exception:', '')
+            .trim()
+            .replaceFirst('Payment initiation failed:', '')
+            .trim();
+        Get.snackbar(
+          'Payment Failed',
+          message.isNotEmpty
+              ? message
+              : 'Unable to process payment. Please try again.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.red.shade700,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 4),
+        );
+        return;
       }
     } else {
       await Future.delayed(const Duration(seconds: 2));
@@ -619,18 +391,8 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                   const SizedBox(height: 16),
                   _buildPaymentMethods(),
                   const SizedBox(height: 16),
-                  if (_selectedPaymentMethod == 'card') ...[
-                    _buildCardForm(),
-                    const SizedBox(height: 16),
-                  ],
-                  if (_selectedPaymentMethod == 'easypaisa') ...[
-                    _buildEasypaisaForm(),
-                    const SizedBox(height: 16),
-                  ],
-                  if (_selectedPaymentMethod == 'jazzcash') ...[
-                    _buildJazzcashForm(),
-                    const SizedBox(height: 16),
-                  ],
+                  _buildCardForm(),
+                  const SizedBox(height: 16),
                   _buildPriceBreakdown(),
                   const SizedBox(height: 16),
                   _buildSecurityBadges(),
@@ -1193,24 +955,8 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
           _buildPaymentOption(
             'card',
             'Credit / Debit Card',
-            'Visa, MasterCard — Rs. 74 gateway fee',
+            '(Master and VISA Cards)',
             Icons.credit_card_rounded,
-            color: const Color(0xFFD4AF37),
-          ),
-          Divider(height: 1, color: Colors.grey.shade100, indent: 68),
-          _buildPaymentOption(
-            'jazzcash',
-            'JazzCash',
-            'Mobile wallet — Rs. 24 gateway fee',
-            Icons.account_balance_wallet_rounded,
-            color: const Color(0xFFD4AF37),
-          ),
-          Divider(height: 1, color: Colors.grey.shade100, indent: 68),
-          _buildPaymentOption(
-            'easypaisa',
-            'EasyPaisa',
-            'Mobile wallet — Rs. 24 gateway fee',
-            Icons.account_balance_wallet_rounded,
             color: const Color(0xFFD4AF37),
           ),
         ],
@@ -1231,7 +977,6 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
       onTap: () {
         setState(() {
           _selectedPaymentMethod = method;
-          _updatePaymentMethodFees(method);
         });
       },
       child: Container(
@@ -1289,7 +1034,6 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
               onChanged: (value) {
                 setState(() {
                   _selectedPaymentMethod = value!;
-                  _updatePaymentMethodFees(value);
                 });
               },
               child: Radio<String>(
@@ -1829,521 +1573,6 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
   }
 
   // ────────────────────────────────────────────────────────────
-  // EASYPAISA FORM
-  // ────────────────────────────────────────────────────────────
-  Widget _buildEasypaisaForm() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Colors.grey.shade200, width: 1),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Text(
-                  'Add New Account',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
-                ),
-                const Spacer(),
-                InkWell(
-                  onTap: () {
-                    setState(() {
-                      _selectedPaymentMethod = '';
-                      _showEasypaisaOTP = false;
-                    });
-                  },
-                  child: const Icon(Icons.close,
-                      size: 24, color: Color(0xFFB3B3B3)),
-                ),
-              ],
-            ),
-          ),
-          if (!_showEasypaisaOTP)
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Phone Number',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFB3B3B3),
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextFormField(
-                    controller: _easypaisaPhoneController,
-                    keyboardType: TextInputType.phone,
-                    style: const TextStyle(color: Colors.black),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(10),
-                      _NoLeadingZeroFormatter(),
-                    ],
-                    decoration: InputDecoration(
-                      hintText: '3001234567',
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 15,
-                      ),
-                      prefixIcon: PopupMenuButton<String>(
-                        offset: const Offset(0, 50),
-                        onSelected: (value) {
-                          setState(() {
-                            _selectedCountryCode = value;
-                          });
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: '+92',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.flag, size: 20),
-                                const SizedBox(width: 12),
-                                Text(
-                                  'Pakistan (پاکستان) $_selectedCountryCode',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.flag,
-                                size: 22,
-                                color: Color(0xFFB3B3B3),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_drop_down,
-                                  size: 20, color: Color(0xFFB3B3B3)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                            color: Color(0xFFC6A75E), width: 2),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  DSButton(
-                    label: 'Get Code',
-                    onTap: () async {
-                      await _requestWalletOtp(
-                        paymentMethod: 'easypaisa',
-                        phoneNumber: _easypaisaPhoneController.text,
-                      );
-                    },
-                    height: 50,
-                  ),
-                ],
-              ),
-            )
-          else
-            _buildOTPVerification(
-              'Easypaisa',
-              _easypaisaPhoneController.text,
-              onChangeNumber: () => setState(() {
-                _showEasypaisaOTP = false;
-                _isOtpVerified = false;
-                _otpValue = '';
-                _otpRequestId = null;
-              }),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // ────────────────────────────────────────────────────────────
-  // JAZZCASH FORM
-  // ────────────────────────────────────────────────────────────
-  Widget _buildJazzcashForm() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Colors.grey.shade200, width: 1),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Text(
-                  'Add New Account',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
-                ),
-                const Spacer(),
-                InkWell(
-                  onTap: () {
-                    setState(() {
-                      _selectedPaymentMethod = '';
-                      _showJazzcashOTP = false;
-                    });
-                  },
-                  child: const Icon(Icons.close,
-                      size: 24, color: Color(0xFFB3B3B3)),
-                ),
-              ],
-            ),
-          ),
-          if (!_showJazzcashOTP)
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Phone Number',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFB3B3B3),
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextFormField(
-                    controller: _jazzcashPhoneController,
-                    keyboardType: TextInputType.phone,
-                    style: const TextStyle(color: Colors.black),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(10),
-                      _NoLeadingZeroFormatter(),
-                    ],
-                    decoration: InputDecoration(
-                      hintText: '3001234567',
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 15,
-                      ),
-                      prefixIcon: PopupMenuButton<String>(
-                        offset: const Offset(0, 50),
-                        onSelected: (value) {
-                          setState(() {
-                            _selectedCountryCode = value;
-                          });
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: '+92',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.flag, size: 20),
-                                const SizedBox(width: 12),
-                                Text(
-                                  'Pakistan (پاکستان) $_selectedCountryCode',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.flag,
-                                size: 22,
-                                color: Color(0xFFB3B3B3),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_drop_down,
-                                  size: 20, color: Color(0xFFB3B3B3)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide:
-                            BorderSide(color: Colors.red.shade600, width: 2),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  DSButton(
-                    label: 'Get Code',
-                    onTap: () async {
-                      await _requestWalletOtp(
-                        paymentMethod: 'jazzcash',
-                        phoneNumber: _jazzcashPhoneController.text,
-                      );
-                    },
-                    height: 50,
-                  ),
-                ],
-              ),
-            )
-          else
-            _buildOTPVerification(
-              'JazzCash',
-              _jazzcashPhoneController.text,
-              onChangeNumber: () => setState(() {
-                _showJazzcashOTP = false;
-                _isOtpVerified = false;
-                _otpValue = '';
-                _otpRequestId = null;
-              }),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // ────────────────────────────────────────────────────────────
-  // OTP VERIFICATION
-  // ────────────────────────────────────────────────────────────
-  Widget _buildOTPVerification(String paymentMethod, String phoneNumber,
-      {required VoidCallback onChangeNumber}) {
-    final formattedPhone =
-        '$_selectedCountryCode ${phoneNumber.substring(0, math.min(3, phoneNumber.length))} ${phoneNumber.length > 3 ? phoneNumber.substring(3) : ''}';
-
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          RichText(
-            text: TextSpan(
-              style: const TextStyle(
-                  fontSize: 14, color: Colors.black87, height: 1.5),
-              children: [
-                const TextSpan(text: 'We have sent an OTP on your '),
-                TextSpan(
-                  text: formattedPhone,
-                  style: const TextStyle(
-                    color: Color(0xFFD4AF37),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const TextSpan(text: ' mobile number. '),
-                TextSpan(
-                  text: 'Change Number',
-                  style: const TextStyle(
-                    color: Color(0xFFD4AF37),
-                    fontWeight: FontWeight.w600,
-                    decoration: TextDecoration.underline,
-                  ),
-                  recognizer: TapGestureRecognizer()..onTap = onChangeNumber,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5E6D3),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE6C68E)),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.info_outline, size: 20, color: Color(0xFFD4AF37)),
-                SizedBox(width: 12),
-                Text(
-                  'An OTP has been sent.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFFD4AF37),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(
-              6,
-              (index) => Container(
-                width: 45,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300, width: 1.5),
-                ),
-                child: TextField(
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  maxLength: 1,
-                  decoration: const InputDecoration(
-                    counterText: '',
-                    border: InputBorder.none,
-                  ),
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      if (value.length == 1) {
-                        if (_otpValue.length < 6) _otpValue += value;
-                        if (index < 5) FocusScope.of(context).nextFocus();
-                      } else {
-                        _otpValue = _otpValue.length > index
-                            ? _otpValue.substring(0, index)
-                            : _otpValue;
-                      }
-                    });
-                  },
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Step 1: Verify OTP
-          if (!_isOtpVerified)
-            DSButton(
-              label: 'Verify OTP',
-              onTap: _otpValue.length == 6
-                  ? () => _verifyWalletOtp(
-                        paymentMethod: paymentMethod,
-                        phoneNumber: phoneNumber,
-                      )
-                  : null,
-              disabled: _otpValue.length < 6,
-              height: 50,
-            ),
-          // Step 2: Pay Now (only after OTP is verified)
-          if (_isOtpVerified) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.shade300),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle,
-                      color: Colors.green.shade700, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    'OTP Verified Successfully',
-                    style: TextStyle(
-                      color: Colors.green.shade700,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            DSButton(
-              label: 'Pay Now',
-              onTap: () => _processPayment(),
-              height: 50,
-            ),
-          ],
-          const SizedBox(height: 16),
-          Center(
-            child: RichText(
-              text: TextSpan(
-                style: const TextStyle(fontSize: 13, color: Colors.black87),
-                children: [
-                  const TextSpan(text: 'Unable to receive an OTP? '),
-                  TextSpan(
-                    text: _otpRemainingSeconds > 0
-                        ? 'Select Method in ${_otpRemainingSeconds}s'
-                        : 'Resend OTP',
-                    style: const TextStyle(
-                      color: Color(0xFFD4AF37),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ────────────────────────────────────────────────────────────
   // PRICE BREAKDOWN (Train)
   // ────────────────────────────────────────────────────────────
   Widget _buildPriceBreakdown() {
@@ -2822,16 +2051,3 @@ class _ExpiryDateInputFormatter extends TextInputFormatter {
   }
 }
 
-// ── Prevent leading zero in phone number (international format) ────────────
-
-class _NoLeadingZeroFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
-    // If user tries to type 0 as first character, reject it
-    if (newValue.text.startsWith('0')) {
-      return oldValue;
-    }
-    return newValue;
-  }
-}

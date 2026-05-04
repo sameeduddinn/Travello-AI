@@ -1,74 +1,42 @@
 # =============================================================================
 # FILE: services/payment_service.py
-# PURPOSE: Simulated JazzCash / EasyPaisa / Card payment flow.
+# PURPOSE: Card / bank transfer payment flow (instant simulated success).
 #
-# Flow for mobile wallets (JazzCash / EasyPaisa):
-#   1. POST /payments/initiate
-#       → create payment_attempt row (status='otp_sent')
-#       → generate 6-digit OTP
-#       → bcrypt-hash the OTP and store in payment_otps
-#       → send OTP to user's email (simulating SMS — no paid SMS gateway needed)
-#       → return {request_id, otp_required: true, expires_at}
-#
-#   2. POST /payments/verify-otp
-#       → look up payment_otp by request_id
-#       → verify bcrypt hash, check expiry, check attempts <= 3
-#       → if valid: mark payment_attempt='completed', mark booking='paid',
-#                   create notification, trigger confirmation email
-#       → return {success, booking_id, transaction_id}
-#
-# Flow for card:
-#   1. POST /payments/initiate
-#       → create payment_attempt row (status='completed' after simulated 2s)
-#       → return {request_id, otp_required: false}
-#   (no step 2 needed — booking is marked paid immediately)
+# POST /payments/initiate  (method: 'card' | 'bank_transfer')
+#   → create payment_attempt row (status='pending')
+#   → mark booking as paid
+#   → create in-app notification
+#   → update payment_attempt to 'completed'
+#   → return {request_id, otp_required: false, transaction_id}
 # =============================================================================
 
 from __future__ import annotations
 
 import logging
 import random
-import secrets
 import string
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException, status
-from passlib.context import CryptContext
-from postgrest.types import CountMethod
 
-from core.config import settings
-from core.email import send_otp_email
 from core.supabase_client import supabase_admin
-from models.payment import PaymentAttemptOut, PaymentInitiateResponse, OTPVerifyResponse
+from models.payment import PaymentAttemptOut, PaymentInitiateResponse
 from services.booking_service import mark_booking_paid
 
 logger = logging.getLogger(__name__)
 
-# bcrypt context for hashing OTPs
-_bcrypt = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-WALLET_METHODS = {"jazzcash", "easypaisa"}
+INSTANT_METHODS = {"card", "bank_transfer"}
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _generate_otp(length: int = 6) -> str:
-    """Generate a cryptographically random 6-digit numeric OTP."""
-    return "".join(secrets.choice(string.digits) for _ in range(length))
-
-
 def _generate_transaction_id(method: str) -> str:
     """Simulate a provider reference number."""
-    prefix = {
-        "jazzcash": "JC",
-        "easypaisa": "EP",
-        "card": "CRD",
-        "bank_transfer": "BNK",
-    }.get(method, "TRV")
+    prefix = {"bank_transfer": "BNK"}.get(method, "TRV")
     ts = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     rand = "".join(random.choices(string.digits, k=6))
     return f"{prefix}{ts}{rand}"
@@ -117,23 +85,110 @@ async def _create_payment_attempt(
 ) -> str:
     """Insert a payment_attempt row and return its UUID."""
     attempt_id = str(uuid.uuid4())
-    row: dict[str, Any] = {
+    row_without_status: dict[str, Any] = {
         "id": attempt_id,
         "user_id": user_id,
         "booking_id": booking_uuid,
         "payment_method": method,
         "amount": amount,
         "currency": currency,
-        "status": attempt_status,
         "provider_reference": provider_reference,
         "metadata": metadata or {},
     }
+
+    # Try explicit statuses first so both migrated and legacy DB constraints work.
+    for status_value in _status_insert_candidates(attempt_status):
+        row = dict(row_without_status)
+        row["status"] = status_value
+        try:
+            supabase_admin.table("payment_attempts").insert(row).execute()
+            return attempt_id
+        except Exception as exc:
+            if _is_status_constraint_error(exc):
+                logger.warning(
+                    "payment_attempt insert status '%s' rejected for booking %s; trying fallback",
+                    status_value,
+                    booking_uuid,
+                )
+                continue
+            logger.error("Failed to create payment attempt: %s", exc)
+            raise HTTPException(status_code=500, detail="Failed to initiate payment.")
+
+    # Final fallback: omit status and use DB default value.
     try:
-        supabase_admin.table("payment_attempts").insert(row).execute()
+        supabase_admin.table("payment_attempts").insert(row_without_status).execute()
     except Exception as exc:
         logger.error("Failed to create payment attempt: %s", exc)
         raise HTTPException(status_code=500, detail="Failed to initiate payment.")
     return attempt_id
+
+
+def _is_status_constraint_error(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return (
+        "payment_attempts_status_check" in text
+        or ("23514" in text and "status" in text)
+    )
+
+
+def _status_insert_candidates(preferred_status: str) -> list[str]:
+    """Return candidate statuses from most preferred to broad compatibility fallbacks."""
+    candidates = [
+        preferred_status,
+        "pending",
+        "otp_sent",
+        "initiated",
+        "created",
+        "processing",
+        "completed",
+        "paid",
+        "success",
+        "failed",
+    ]
+
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for value in candidates:
+        if value in seen:
+            continue
+        seen.add(value)
+        ordered.append(value)
+    return ordered
+
+
+def _update_payment_attempt_status_best_effort(
+    attempt_id: str,
+    preferred_status: str,
+    provider_reference: str | None = None,
+) -> str | None:
+    """Try multiple status labels to handle drift between local and live DB constraints."""
+    candidates = [preferred_status, "paid", "success", "completed", "pending"]
+    seen: set[str] = set()
+    for status_value in candidates:
+        if status_value in seen:
+            continue
+        seen.add(status_value)
+
+        payload: dict[str, Any] = {"status": status_value}
+        if provider_reference:
+            payload["provider_reference"] = provider_reference
+
+        try:
+            supabase_admin.table("payment_attempts").update(payload).eq("id", attempt_id).execute()
+            return status_value
+        except Exception as exc:
+            if _is_status_constraint_error(exc):
+                logger.warning(
+                    "payment_attempt status '%s' rejected for %s; trying fallback",
+                    status_value,
+                    attempt_id,
+                )
+                continue
+            logger.warning("Failed updating payment_attempt %s status: %s", attempt_id, exc)
+            return None
+
+    logger.warning("All fallback statuses rejected for payment_attempt %s", attempt_id)
+    return None
 
 
 async def _create_notification(
@@ -173,259 +228,56 @@ async def initiate_payment(
 ) -> PaymentInitiateResponse:
     """
     Start a payment attempt.
-    - Wallet methods → OTP flow
-    - Card → instant simulated success
+    - card / bank_transfer → instant simulated success, booking marked paid immediately
     """
+    if method not in INSTANT_METHODS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported payment method '{method}'. Use 'card' or 'bank_transfer'.",
+        )
+
     booking = await _get_booking_row(booking_uuid, user_id)
-    contact_email = email_override or booking.get("contact_email", "")
 
-    if method in WALLET_METHODS:
-        # Rate limit: max 3 OTP requests per user in the last 15 minutes
-        cutoff = (datetime.utcnow() - timedelta(minutes=15)).isoformat()
-        try:
-            rate_result = (
-                supabase_admin.table("payment_otps")
-                .select("id", count=CountMethod.exact)
-                .eq("user_id", user_id)
-                .gte("created_at", cutoff)
-                .execute()
-            )
-            if (rate_result.count or 0) >= 3:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="Too many OTP requests. Please wait 15 minutes.",
-                )
-        except HTTPException:
-            raise
-        except Exception as exc:
-            logger.warning("OTP rate limit check failed (continuing): %s", exc)
+    # --- Card / bank transfer: instant simulated success ---
+    transaction_id = _generate_transaction_id(method)
 
-        # --- Wallet OTP flow ---
-        otp = _generate_otp()
-        otp_hash = _bcrypt.hash(otp)
-        expires_at = datetime.utcnow() + timedelta(minutes=settings.OTP_EXPIRE_MINUTES)
-
-        attempt_id = await _create_payment_attempt(
-            user_id=user_id,
-            booking_uuid=booking_uuid,
-            method=method,
-            amount=amount,
-            currency=currency,
-            attempt_status="otp_sent",
-            metadata={"phone": phone, "email": contact_email},
-        )
-
-        # Store OTP record
-        otp_row = {
-            "id": str(uuid.uuid4()),
-            "request_id": attempt_id,
-            "user_id": user_id,
-            "email": contact_email,
-            "phone": phone or booking.get("contact_phone"),
-            "provider": method,
-            "otp_hash": otp_hash,
-            "attempts": 0,
-            "verified": False,
-            "expires_at": expires_at.isoformat(),
-        }
-        try:
-            supabase_admin.table("payment_otps").insert(otp_row).execute()
-        except Exception as exc:
-            logger.error("Failed to store OTP: %s", exc)
-            raise HTTPException(status_code=500, detail="Failed to generate OTP.")
-
-        # Send OTP email (simulates SMS for FYP demo)
-        try:
-            await send_otp_email(
-                to=contact_email,
-                otp=otp,
-                provider=method,
-                amount=amount,
-                phone=phone or booking.get("contact_phone"),
-            )
-        except Exception as exc:
-            logger.warning("OTP email failed (continuing): %s", exc)
-
-        provider_display = "JazzCash" if method == "jazzcash" else "EasyPaisa"
-        return PaymentInitiateResponse(
-            request_id=attempt_id,
-            otp_required=True,
-            message=f"A 6-digit OTP has been sent to {contact_email}. "
-                    f"Enter it to confirm your {provider_display} payment.",
-            expires_at=expires_at,
-            booking_id=booking.get("booking_id"),
-            pnr=booking.get("pnr"),
-        )
-
-    else:
-        # --- Card / bank transfer: instant simulated success ---
-        transaction_id = _generate_transaction_id(method)
-
-        attempt_id = await _create_payment_attempt(
-            user_id=user_id,
-            booking_uuid=booking_uuid,
-            method=method,
-            amount=amount,
-            currency=currency,
-            attempt_status="completed",
-            provider_reference=transaction_id,
-            metadata={"simulated": True},
-        )
-
-        # Step 1: Mark booking paid FIRST — must always succeed
-        await mark_booking_paid(booking_uuid, transaction_id)
-
-        # Step 2: Create notification — isolated
-        await _create_notification(
-            user_id=user_id,
-            title="Payment Successful",
-            body=f"Your payment of PKR {amount:,.0f} was processed successfully.",
-            notif_type="payment_success",
-            data={"booking_id": booking_uuid, "transaction_id": transaction_id},
-        )
-
-        return PaymentInitiateResponse(
-            request_id=attempt_id,
-            otp_required=False,
-            message="Payment processed successfully. Your booking is confirmed.",
-            expires_at=None,
-            booking_id=booking.get("booking_id"),
-            pnr=booking.get("pnr"),
-            transaction_id=transaction_id,
-        )
-
-
-# ---------------------------------------------------------------------------
-# Verify OTP
-# ---------------------------------------------------------------------------
-
-async def verify_otp(
-    user_id: str,
-    request_id: str,
-    otp: str,
-) -> OTPVerifyResponse:
-    """
-    Verify the OTP for a wallet payment.
-    Returns success response with booking_id and transaction_id.
-    """
-    # Fetch OTP record
-    try:
-        result = (
-            supabase_admin.table("payment_otps")
-            .select("*")
-            .eq("request_id", request_id)
-            .eq("user_id", user_id)
-            .eq("verified", False)
-            .single()
-            .execute()
-        )
-    except Exception:
-        raise HTTPException(status_code=404, detail="OTP request not found.")
-
-    if not result.data:
-        raise HTTPException(status_code=404, detail="OTP request not found or already used.")
-
-    otp_record = result.data
-
-    # Check expiry
-    expires_at = datetime.fromisoformat(str(otp_record["expires_at"]).replace("Z", "+00:00"))
-    if datetime.utcnow().replace(tzinfo=expires_at.tzinfo) > expires_at:
-        raise HTTPException(
-            status_code=status.HTTP_410_GONE,
-            detail="OTP has expired. Please initiate a new payment.",
-        )
-
-    # Check max attempts
-    attempts = int(otp_record.get("attempts", 0))
-    if attempts >= settings.OTP_MAX_ATTEMPTS:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Maximum OTP attempts ({settings.OTP_MAX_ATTEMPTS}) exceeded. "
-                   "Please start a new payment.",
-        )
-
-    # Increment attempt counter first (prevents timing attacks)
-    supabase_admin.table("payment_otps").update(
-        {"attempts": attempts + 1}
-    ).eq("id", otp_record["id"]).execute()
-
-    # Verify OTP hash
-    otp_valid = _bcrypt.verify(otp, otp_record["otp_hash"])
-    if not otp_valid:
-        remaining = settings.OTP_MAX_ATTEMPTS - (attempts + 1)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid OTP. {remaining} attempt(s) remaining.",
-        )
-
-    # --- OTP correct ---
-
-    # Mark OTP as verified
-    supabase_admin.table("payment_otps").update(
-        {"verified": True, "verified_at": datetime.utcnow().isoformat()}
-    ).eq("id", otp_record["id"]).execute()
-
-    # Generate transaction ID and update payment attempt
-    transaction_id = _generate_transaction_id(otp_record["provider"])
-    supabase_admin.table("payment_attempts").update(
-        {"status": "completed", "provider_reference": transaction_id}
-    ).eq("id", request_id).execute()
-
-    # Fetch the booking linked to this payment attempt
-    attempt_result = (
-        supabase_admin.table("payment_attempts")
-        .select("booking_id")
-        .eq("id", request_id)
-        .single()
-        .execute()
+    attempt_id = await _create_payment_attempt(
+        user_id=user_id,
+        booking_uuid=booking_uuid,
+        method=method,
+        amount=amount,
+        currency=currency,
+        attempt_status="pending",
+        provider_reference=transaction_id,
+        metadata={"simulated": True},
     )
-    if not attempt_result.data:
-        raise HTTPException(status_code=404, detail="Payment attempt not found.")
-    booking_uuid = attempt_result.data["booking_id"]
 
-    # Mark booking as paid
     await mark_booking_paid(booking_uuid, transaction_id)
-
-    # Fetch booking details for the rich notification
-    try:
-        _notif_res = (
-            supabase_admin.table("bookings")
-            .select("pnr, booking_type, total_amount, booking_id")
-            .eq("id", booking_uuid)
-            .single()
-            .execute()
-        )
-        _nd = _notif_res.data or {}
-    except Exception:
-        _nd = {}
-
-    _pnr  = _nd.get("pnr", "")
-    _btype = (_nd.get("booking_type", "") or "Travel").title()
-    _amount = _nd.get("total_amount", 0)
-    _ref   = _nd.get("booking_id", "")
 
     await _create_notification(
         user_id=user_id,
-        title=f"{_btype} Booking Confirmed ✅",
-        body=(
-            f"Booking {_ref} confirmed. PNR: {_pnr}. "
-            f"Total: PKR {float(_amount):,.0f}"
-        ) if _pnr else f"Your {otp_record['provider'].title()} payment was confirmed. Your booking is now paid.",
-        notif_type="booking_confirmed",
-        data={"booking_id": booking_uuid, "transaction_id": transaction_id, "pnr": _pnr},
+        title="Payment Successful",
+        body=f"Your payment of PKR {amount:,.0f} was processed successfully.",
+        notif_type="payment_success",
+        data={"booking_id": booking_uuid, "transaction_id": transaction_id},
     )
 
-    # Use booking metadata already fetched for the notification
-    readable_booking_id = _nd.get("booking_id") or booking_uuid
-    pnr_value = _nd.get("pnr")
+    _update_payment_attempt_status_best_effort(
+        attempt_id=attempt_id,
+        preferred_status="completed",
+        provider_reference=transaction_id,
+    )
 
-    return OTPVerifyResponse(
-        success=True,
-        booking_id=readable_booking_id,
+    return PaymentInitiateResponse(
+        request_id=attempt_id,
+        otp_required=False,
+        message="Payment processed successfully. Your booking is confirmed.",
+        expires_at=None,
+        booking_id=booking.get("booking_id"),
+        pnr=booking.get("pnr"),
         transaction_id=transaction_id,
-        pnr=pnr_value,
-        message="Payment verified successfully. Your booking is confirmed!",
     )
+
 
 
 # ---------------------------------------------------------------------------

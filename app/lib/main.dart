@@ -12,7 +12,6 @@ import 'package:flight_app/config/supabase_config.dart';
 import 'package:flight_app/widgets/no_internet_banner.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

@@ -1657,8 +1657,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                             });
 
                             // Reload
-                            _loadDummyFlights();
-                            _applyFilters();
+                            _fetchFlights();
 
                             // Close modal
                             Navigator.pop(context);

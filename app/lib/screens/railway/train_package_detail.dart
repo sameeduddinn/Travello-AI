@@ -381,7 +381,17 @@ class _TrainPackageCardItemState extends State<_TrainPackageCardItem>
   }
 
   Future<void> _toggle() async {
-    final added = await WishlistService.toggle('train', widget.package.id);
+    final added = await WishlistService.toggle('train', widget.package.id,
+        itemData: {
+          'id': widget.package.id,
+          'name': widget.package.name,
+          'fromStation': widget.package.fromStation,
+          'toStation': widget.package.toStation,
+          'price': widget.package.price,
+          'imageUrl': widget.package.imageUrl,
+          'trainClass': widget.package.trainClass,
+          'departureTime': widget.package.departureTime,
+        });
     if (mounted) {
       setState(() => _wishlisted = added);
       _heartCtrl.forward(from: 0);

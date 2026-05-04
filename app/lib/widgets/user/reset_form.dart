@@ -388,13 +388,16 @@ class _ResetFormState extends State<ResetForm> {
                       textAlign: TextAlign.center,
                       keyboardType: TextInputType.number,
                       maxLength: 1,
+                      textAlignVertical: TextAlignVertical.center,
                       style: TravelloTheme.title2.copyWith(
                         fontSize: codeFontSize,
+                        height: 1.0,
                       ),
                       decoration: InputDecoration(
                         counterText: '',
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest,
+                        contentPadding: EdgeInsets.zero,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(
                             (boxWidth * 0.24).clamp(10.0, 14.0).toDouble(),

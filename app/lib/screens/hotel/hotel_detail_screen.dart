@@ -1553,17 +1553,23 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
               topLeft: Radius.circular(11),
               topRight: Radius.circular(11),
             ),
-            child: Image.network(
-              room.images.first,
-              height: 120,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                height: 120,
-                color: Colors.grey.shade200,
-                child: const Icon(Icons.bed, size: 40),
-              ),
-            ),
+            child: room.images.isNotEmpty
+                ? Image.network(
+                    room.images.first,
+                    height: 120,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 120,
+                      color: Colors.grey.shade200,
+                      child: const Icon(Icons.bed, size: 40, color: Colors.grey),
+                    ),
+                  )
+                : Container(
+                    height: 120,
+                    color: Colors.grey.shade200,
+                    child: const Icon(Icons.bed, size: 40, color: Colors.grey),
+                  ),
           ),
 
           Padding(

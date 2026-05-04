@@ -323,10 +323,39 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
               .toList(),
         );
       }
-    } catch (_) {
-      // Non-fatal: continue with local references when backend is unreachable.
+    } catch (e) {
+      if (!mounted) return;
+      final message = e
+          .toString()
+          .replaceFirst('Exception:', '')
+          .trim()
+          .replaceFirst('Train booking failed:', '')
+          .trim();
+      Get.snackbar(
+        'Booking Failed',
+        message.isNotEmpty
+            ? message
+            : 'Unable to create train booking. Please try again.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      return;
     } finally {
       if (mounted) setState(() => _isCreatingBooking = false);
+    }
+
+    if (_backendBookingId == null || _backendBookingId!.isEmpty) {
+      Get.snackbar(
+        'Booking Failed',
+        'Booking was not created on server. Please try again.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      return;
     }
 
     // Pre-compute per-train prices so payment page never re-derives them

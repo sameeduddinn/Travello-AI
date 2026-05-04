@@ -40,10 +40,10 @@ env/
 **/pubspec.lock
 # (keep pubspec.lock committed for reproducible builds — remove line above if preferred)
 
-# ── Supabase ──────────────────────────────────────────────────────────────────
+# Supabase ──────────────────────────────────────────────────────────────────
 **/supabase/.temp/
 
-# ── Reports / temp files ──────────────────────────────────────────────────────
+# Reports / temp files ──────────────────────────────────────────────────────
 IMPLEMENTATION_PROGRESS_REPORT_*.md
 AUTH_AUDIT_REPORT_*.md
 /documentation/Overview.md

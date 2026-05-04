@@ -58,7 +58,7 @@ class _BookingDetailState extends State<BookingDetail> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor:
-            isTrainBooking ? const Color(0xFF059669) : const Color(0xFF3B82F6),
+            isTrainBooking ? const Color(0xFF059669) : const Color(0xFFD4AF37),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () => Get.back(),
@@ -2275,7 +2275,7 @@ class _BookingDetailState extends State<BookingDetail> {
       downloadBtnText = 'DOWNLOAD E-TICKET';
       buttonAction = _downloadETicket;
     } else {
-      primaryBtnColor = const Color(0xFF3B82F6); // Blue
+      primaryBtnColor = const Color(0xFFD4AF37); // Gold (app primary)
       downloadBtnText = 'DOWNLOAD E-TICKET & BOARDING PASS';
       buttonAction = _downloadETicket;
     }
@@ -2284,79 +2284,128 @@ class _BookingDetailState extends State<BookingDetail> {
     final canCancel = status != 'cancelled' && status != 'canceled';
     final canReview = status == 'paid' || status == 'confirmed';
 
-    return BottomAppBar(
-      elevation: 8,
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: _downloadingPdf ? null : buttonAction,
-              style: ThemeButton.btnBig.merge(
-                FilledButton.styleFrom(
+    return SafeArea(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: FilledButton(
+                onPressed: _downloadingPdf ? null : buttonAction,
+                style: FilledButton.styleFrom(
                   backgroundColor: primaryBtnColor,
                   foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
+                child: _downloadingPdf
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : Text(
+                        downloadBtnText,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
               ),
-              child: _downloadingPdf
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    )
-                  : Text(downloadBtnText, textAlign: TextAlign.center),
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              if (canReview)
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _reviewSubmitted ? null : _showReviewSheet,
-                    icon: Icon(
-                      _reviewSubmitted ? Icons.check_circle : Icons.star_outline,
-                      size: 16,
+            if (canReview || canCancel) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  if (canReview)
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: OutlinedButton.icon(
+                          onPressed: _reviewSubmitted ? null : _showReviewSheet,
+                          icon: Icon(
+                            _reviewSubmitted
+                                ? Icons.check_circle
+                                : Icons.star_outline,
+                            size: 16,
+                          ),
+                          label: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _reviewSubmitted
+                                  ? 'Review Submitted'
+                                  : 'Leave a Review',
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFD4AF37),
+                            side: const BorderSide(color: Color(0xFFD4AF37)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                        ),
+                      ),
                     ),
-                    label: Text(
-                      _reviewSubmitted ? 'Review Submitted' : 'Leave a Review',
-                      style: const TextStyle(fontSize: 12),
+                  if (canReview && canCancel) const SizedBox(width: 8),
+                  if (canCancel)
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: OutlinedButton.icon(
+                          onPressed:
+                              _cancellingBooking ? null : _showCancelDialog,
+                          icon: _cancellingBooking
+                              ? const SizedBox(
+                                  height: 14,
+                                  width: 14,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.red))
+                              : const Icon(Icons.cancel_outlined, size: 16),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Cancel Booking',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                        ),
+                      ),
                     ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFD4AF37),
-                      side: const BorderSide(color: Color(0xFFD4AF37)),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-              if (canReview && canCancel) const SizedBox(width: 8),
-              if (canCancel)
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _cancellingBooking ? null : _showCancelDialog,
-                    icon: _cancellingBooking
-                        ? const SizedBox(
-                            height: 14,
-                            width: 14,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.red))
-                        : const Icon(Icons.cancel_outlined, size: 16),
-                    label: const Text('Cancel',
-                        style: TextStyle(fontSize: 12)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
+                ],
+              ),
             ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

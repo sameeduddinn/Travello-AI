@@ -150,7 +150,9 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
         }).toList();
 
         if (backendTrains.isEmpty) {
-          _loadDummyTrains();
+          _allTrains = [];
+          _trains = [];
+          if (mounted) setState(() {});
         } else {
           _allTrains = backendTrains;
           if (mounted) setState(() {});
@@ -1237,8 +1239,8 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                               const SizedBox(height: 8),
                               Text(
                                 'Try different cities or check bus alternatives',
-                                style: TravelloTheme.caption.copyWith(
-                                    color: Colors.grey.shade500),
+                                style: TravelloTheme.caption
+                                    .copyWith(color: Colors.grey.shade500),
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 24),
@@ -2093,7 +2095,9 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                 children: [
                   Text(
                     'Passengers',
-                    style: TextStyle(fontSize: R.sp(context, 22), fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: R.sp(context, 22),
+                        fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 24),
                   _buildPassengerRow(
@@ -2257,7 +2261,9 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                 children: [
                   Text(
                     'Train Class',
-                    style: TextStyle(fontSize: R.sp(context, 22), fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: R.sp(context, 22),
+                        fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 24),
                   _buildTrainClassOption(

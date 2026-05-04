@@ -37,6 +37,7 @@ class _WishlistScreenState extends State<WishlistScreen>
   }
 
   Future<void> _load() async {
+    await WishlistService.syncFromBackend();
     final h = await WishlistService.getAll('hotel');
     final f = await WishlistService.getAll('flight');
     final t = await WishlistService.getAll('train');

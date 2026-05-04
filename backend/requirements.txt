@@ -33,6 +33,9 @@ pydantic-settings==2.7.0           # typed settings from env vars
 # ── Serialisation ────────────────────────────────────────────────────────────
 orjson==3.10.12                    # fast JSON — FastAPI picks it up automatically
 
+# ── Stripe (payment gateway) ─────────────────────────────────────────────────
+stripe==10.12.0                    # official Stripe Python SDK
+
 # ── Dev / testing (not installed in production) ──────────────────────────────
 # pytest==8.3.3
 # pytest-asyncio==0.24.0

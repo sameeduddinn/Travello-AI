@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import base64
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -26,6 +27,21 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from core.config import settings
+
+
+def _load_jwt_key(secret: str) -> bytes | str:
+    """
+    Supabase shows the JWT secret as base64-encoded bytes in the dashboard.
+    python-jose needs the raw bytes for HS256 to match Supabase's signing.
+    Try base64-decode first; fall back to raw UTF-8 string if it fails.
+    """
+    try:
+        decoded = base64.b64decode(secret)
+        if len(decoded) >= 32:   # sanity: must be at least 256-bit key
+            return decoded
+    except Exception:
+        pass
+    return secret
 
 # HTTPBearer extracts the token from "Authorization: Bearer <token>" header.
 # auto_error=True means FastAPI returns 403 automatically if the header is missing.
@@ -66,20 +82,27 @@ async def get_current_user(
     # NEVER leave this enabled in production (set DEBUG=False in .env).
     # ─────────────────────────────────────────────────────────────────────────
     _jwt_secret = settings.SUPABASE_JWT_SECRET
-    _is_configured = bool(_jwt_secret) and not _jwt_secret.startswith("REPLACE_WITH_")
-    skip_verify = settings.DEBUG and not _is_configured
 
     try:
-        decode_options: dict = {"verify_aud": False}
-        if skip_verify:
-            decode_options["verify_signature"] = False
-
-        payload = jwt.decode(
-            token,
-            _jwt_secret if _is_configured else "dummy-secret-for-debug",
-            algorithms=["HS256"],
-            options=decode_options,
-        )
+        if settings.DEBUG:
+            # In DEBUG/dev mode: decode without signature or expiry verification.
+            # The user_id is still read from the token payload so bookings are
+            # associated with the correct Supabase user. Disable in production.
+            payload = jwt.decode(
+                token,
+                options={"verify_signature": False, "verify_aud": False, "verify_exp": False},
+                algorithms=["HS256"],
+                key="",
+            )
+        else:
+            # Production: full HS256 verification with base64-decoded key
+            jwt_key = _load_jwt_key(_jwt_secret)
+            payload = jwt.decode(
+                token,
+                jwt_key,
+                algorithms=["HS256"],
+                options={"verify_aud": False},
+            )
     except JWTError:
         raise credentials_exception
 

@@ -235,6 +235,92 @@ PAKISTAN_ROUTES: dict[str, dict] = {
         "duration_minutes": 30, "price_min_pkr": 4000, "price_max_pkr": 10000,
         "departure_times": ["08:00", "14:00", "18:00"],
     },
+    "LHE-UET": {
+        "airlines": [
+            {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
+        ],
+        "duration_minutes": 120, "price_min_pkr": 12000, "price_max_pkr": 32000,
+        "departure_times": ["08:00", "14:00"],
+    },
+    "UET-LHE": {
+        "airlines": [
+            {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
+        ],
+        "duration_minutes": 120, "price_min_pkr": 12000, "price_max_pkr": 32000,
+        "departure_times": ["09:00", "15:00"],
+    },
+    "ISB-UET": {
+        "airlines": [
+            {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
+        ],
+        "duration_minutes": 90, "price_min_pkr": 10000, "price_max_pkr": 28000,
+        "departure_times": ["07:30", "13:30"],
+    },
+    "UET-ISB": {
+        "airlines": [
+            {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
+        ],
+        "duration_minutes": 90, "price_min_pkr": 10000, "price_max_pkr": 28000,
+        "departure_times": ["09:00", "15:00"],
+    },
+    "ISB-MUX": {
+        "airlines": [
+            {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
+            {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
+        ],
+        "duration_minutes": 55, "price_min_pkr": 6000, "price_max_pkr": 16000,
+        "departure_times": ["08:00", "12:00", "17:00"],
+    },
+    "MUX-ISB": {
+        "airlines": [
+            {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
+            {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
+        ],
+        "duration_minutes": 55, "price_min_pkr": 6000, "price_max_pkr": 16000,
+        "departure_times": ["09:30", "14:00", "19:00"],
+    },
+    "KHI-SWN": {
+        "airlines": [
+            {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
+        ],
+        "duration_minutes": 60, "price_min_pkr": 6500, "price_max_pkr": 17000,
+        "departure_times": ["08:30", "14:30"],
+    },
+    "SWN-KHI": {
+        "airlines": [
+            {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
+        ],
+        "duration_minutes": 60, "price_min_pkr": 6500, "price_max_pkr": 17000,
+        "departure_times": ["10:00", "16:00"],
+    },
+    "KHI-BHV": {
+        "airlines": [
+            {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
+        ],
+        "duration_minutes": 75, "price_min_pkr": 7500, "price_max_pkr": 20000,
+        "departure_times": ["09:00", "15:00"],
+    },
+    "BHV-KHI": {
+        "airlines": [
+            {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
+        ],
+        "duration_minutes": 75, "price_min_pkr": 7500, "price_max_pkr": 20000,
+        "departure_times": ["10:30", "16:30"],
+    },
+    "LHE-LYP": {
+        "airlines": [
+            {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 42"},
+        ],
+        "duration_minutes": 30, "price_min_pkr": 4000, "price_max_pkr": 10000,
+        "departure_times": ["08:30", "13:00", "17:30"],
+    },
+    "LYP-LHE": {
+        "airlines": [
+            {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 42"},
+        ],
+        "duration_minutes": 30, "price_min_pkr": 4000, "price_max_pkr": 10000,
+        "departure_times": ["09:30", "14:00", "18:30"],
+    },
 }
 
 
@@ -619,6 +705,12 @@ async def search_flights(
 
     offers: list[FlightOffer] = []
     aviationstack_count = 0
+    now_utc = datetime.utcnow()
+
+    def _is_future_offer(offer: FlightOffer) -> bool:
+        if not offer.itineraries or not offer.itineraries[0].segments:
+            return True
+        return offer.itineraries[0].segments[0].departure_time >= now_utc
 
     is_domestic = origin in PAKISTAN_IATA_CODES and destination in PAKISTAN_IATA_CODES
 
@@ -638,6 +730,8 @@ async def search_flights(
             offers = _merge_flight_offers(offers, domestic_generic, limit=_TARGET_FLIGHT_RESULT_COUNT)
 
         final_offers = _sort_flight_offers(offers)
+        if date == now_utc.date():
+            final_offers = [o for o in final_offers if _is_future_offer(o)]
         logger.info(
             "Flight search merged (domestic) %s->%s: seeded=%d, aviationstack=%d, generic=%d, final=%d",
             origin,
@@ -661,6 +755,8 @@ async def search_flights(
         offers = _merge_flight_offers(offers, intl_mock, limit=_TARGET_FLIGHT_RESULT_COUNT)
 
     final_offers = _sort_flight_offers(offers)
+    if date == now_utc.date():
+        final_offers = [o for o in final_offers if _is_future_offer(o)]
     logger.info(
         "Flight search merged (international) %s->%s: aviationstack=%d, intl_mock=%d, final=%d",
         origin,

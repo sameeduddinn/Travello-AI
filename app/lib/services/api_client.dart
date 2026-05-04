@@ -21,7 +21,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 // flutter run --dart-define=BACKEND_BASE_URL=https://travello-backend.onrender.com
 const String _backendFromDartDefine =
     String.fromEnvironment('BACKEND_BASE_URL', defaultValue: '');
-const String _defaultAndroidBackendUrl = 'http://10.0.2.2:8000';
+// Physical device on same WiFi as the dev PC — update if your PC's IP changes
+const String _defaultAndroidBackendUrl = 'http://192.168.0.103:8000';
 const String _defaultDesktopBackendUrl = 'http://127.0.0.1:8000';
 const String _defaultWebBackendUrl = 'https://travello-backend.onrender.com';
 
@@ -223,6 +224,7 @@ class ApiClient {
     required String checkIn,
     required String checkOut,
     required String contactEmail,
+    String? city,
     String roomId = 'standard',
     int guests = 1,
     int rooms = 1,
@@ -235,6 +237,7 @@ class ApiClient {
           body: jsonEncode({
             'hotel_id': hotelId,
             'room_id': roomId,
+            if (city != null && city.isNotEmpty) 'city': city,
             'check_in': checkIn,
             'check_out': checkOut,
             'contact_email': contactEmail,
@@ -256,13 +259,14 @@ class ApiClient {
     required String bookingId,
     required List<Map<String, dynamic>> passengers,
   }) async {
+    final normalizedPassengers = _normalizePassengersForApi(passengers);
     final res = await http
         .post(
           Uri.parse('$_baseUrl/passengers'),
           headers: _headers,
           body: jsonEncode({
             'booking_id': bookingId,
-            'passengers': passengers,
+            'passengers': normalizedPassengers,
           }),
         )
         .timeout(const Duration(seconds: 15));
@@ -406,7 +410,10 @@ class ApiClient {
       if (res.statusCode < 200 || res.statusCode >= 300) return [];
       final data = jsonDecode(res.body);
       if (data is List) {
-        return data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+        return data
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
       }
       return [];
     } catch (_) {
@@ -421,6 +428,64 @@ class ApiClient {
       await http
           .delete(
             Uri.parse('$_baseUrl/saved-searches/$id'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {}
+  }
+
+  // ── WISHLIST ──────────────────────────────────────────────────────────────
+
+  /// Fetch all wishlist items for the current user.
+  static Future<List<Map<String, dynamic>>> getWishlist() async {
+    if (_token == null) return [];
+    try {
+      final res = await http
+          .get(Uri.parse('$_baseUrl/wishlist'), headers: _headers)
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode < 200 || res.statusCode >= 300) return [];
+      final data = jsonDecode(res.body);
+      if (data is List) {
+        return data
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Add an item to the wishlist. Returns the backend UUID, or null on failure.
+  static Future<String?> addToWishlist({
+    required String itemType,
+    required Map<String, dynamic> itemData,
+  }) async {
+    if (_token == null) return null;
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$_baseUrl/wishlist'),
+            headers: _headers,
+            body: jsonEncode({'item_type': itemType, 'item_data': itemData}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode < 200 || res.statusCode >= 300) return null;
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      return data['id']?.toString();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Remove a wishlist item by its backend UUID.
+  static Future<void> removeFromWishlist(String backendItemId) async {
+    if (_token == null) return;
+    try {
+      await http
+          .delete(
+            Uri.parse('$_baseUrl/wishlist/$backendItemId'),
             headers: _headers,
           )
           .timeout(const Duration(seconds: 10));
@@ -481,11 +546,13 @@ class ApiClient {
     };
     try {
       _logDebug('GET $_baseUrl/healthcare/nearby params=$params');
-      final res = await http.get(
-        Uri.parse('$_baseUrl/healthcare/nearby')
-            .replace(queryParameters: params),
-        headers: _headers,
-      ).timeout(const Duration(seconds: 10));
+      final res = await http
+          .get(
+            Uri.parse('$_baseUrl/healthcare/nearby')
+                .replace(queryParameters: params),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 10));
       _logDebug('Healthcare nearby response: HTTP ${res.statusCode}');
       if (res.statusCode < 200 || res.statusCode >= 300) return [];
       final data = jsonDecode(res.body);
@@ -508,10 +575,12 @@ class ApiClient {
   /// Get emergency contact numbers for a city/country.
   static Future<Map<String, dynamic>?> getEmergencyNumbers() async {
     try {
-      final res = await http.get(
-        Uri.parse('$_baseUrl/healthcare/emergency-numbers'),
-        headers: _headers,
-      ).timeout(const Duration(seconds: 8));
+      final res = await http
+          .get(
+            Uri.parse('$_baseUrl/healthcare/emergency-numbers'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 8));
       if (res.statusCode < 200 || res.statusCode >= 300) return null;
       return jsonDecode(res.body) as Map<String, dynamic>;
     } catch (_) {
@@ -717,6 +786,97 @@ class ApiClient {
       'distanceFromCenter': 0.0,
       'neighborhood': hotel['city'],
     };
+  }
+
+  static List<Map<String, dynamic>> _normalizePassengersForApi(
+      List<Map<String, dynamic>> passengers) {
+    String? clean(dynamic value) {
+      if (value == null) return null;
+      final s = value.toString().trim();
+      return s.isEmpty ? null : s;
+    }
+
+    return passengers.map((rawPassenger) {
+      final raw = Map<String, dynamic>.from(rawPassenger);
+      final out = <String, dynamic>{};
+
+      final firstName =
+          clean(raw['first_name'] ?? raw['firstName'] ?? raw['fullName']);
+      final lastName = clean(raw['last_name'] ?? raw['lastName']);
+      if (firstName != null) out['first_name'] = firstName;
+      out['last_name'] = (lastName != null && lastName.isNotEmpty)
+          ? lastName
+          : (firstName ?? 'Guest');
+
+      final title = clean(raw['title']);
+      const validTitles = {'Mr', 'Mrs', 'Ms', 'Dr', 'Prof'};
+      if (title != null && validTitles.contains(title)) {
+        out['title'] = title;
+      }
+
+      final dobRaw = clean(raw['date_of_birth'] ?? raw['dateOfBirth']);
+      final normalizedDob = _normalizeDateForPassenger(dobRaw);
+      if (normalizedDob != null) {
+        out['date_of_birth'] = normalizedDob;
+      }
+
+      final genderRaw = clean(raw['gender'])?.toLowerCase();
+      if (genderRaw == 'male' || genderRaw == 'female') {
+        out['gender'] = genderRaw;
+      }
+
+      final nationality = clean(raw['nationality']);
+      if (nationality != null) out['nationality'] = nationality;
+
+      final cnic = clean(raw['cnic'] ?? raw['idNumber']);
+      if (cnic != null) out['cnic'] = cnic;
+
+      final passportNumber =
+          clean(raw['passport_number'] ?? raw['passportNumber']);
+      if (passportNumber != null) out['passport_number'] = passportNumber;
+
+      final seatNumber = clean(raw['seat_number'] ?? raw['seatNumber']);
+      if (seatNumber != null) out['seat_number'] = seatNumber;
+
+      final passengerType = clean(
+        raw['passenger_type'] ?? raw['passengerType'] ?? raw['type'],
+      )?.toLowerCase();
+      if (passengerType == 'adult' ||
+          passengerType == 'child' ||
+          passengerType == 'infant') {
+        out['passenger_type'] = passengerType;
+      } else {
+        out['passenger_type'] = 'adult';
+      }
+
+      return out;
+    }).toList();
+  }
+
+  static String? _normalizeDateForPassenger(String? rawDate) {
+    if (rawDate == null || rawDate.trim().isEmpty) return null;
+    final value = rawDate.trim();
+
+    final parsed = DateTime.tryParse(value);
+    if (parsed != null) {
+      return _fmtDate(parsed);
+    }
+
+    final dmy =
+        RegExp(r'^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$').firstMatch(value);
+    if (dmy != null) {
+      final day = int.tryParse(dmy.group(1)!);
+      final month = int.tryParse(dmy.group(2)!);
+      final year = int.tryParse(dmy.group(3)!);
+      if (day != null && month != null && year != null) {
+        final dt = DateTime.tryParse(
+          '$year-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}',
+        );
+        if (dt != null) return _fmtDate(dt);
+      }
+    }
+
+    return null;
   }
 
   // ── PRIVATE HELPERS ────────────────────────────────────────────────────────

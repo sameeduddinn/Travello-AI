@@ -11,13 +11,15 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
+
+
 # ---------------------------------------------------------------------------
 # Initiate payment
 # ---------------------------------------------------------------------------
 
 class PaymentInitiateRequest(BaseModel):
     booking_id: str  = Field(..., description="UUID of the booking to pay for")
-    method:     str  = Field(..., pattern="^(jazzcash|easypaisa|card|bank_transfer)$")
+    method:     str  = Field(..., pattern="^(card|bank_transfer)$")
     amount:     float = Field(..., gt=0)
     phone:      Optional[str] = Field(None, description="Mobile wallet phone number")
     email:      Optional[str] = Field(None, description="Override email for OTP delivery")
@@ -35,7 +37,7 @@ class PaymentInitiateRequest(BaseModel):
 
 class PaymentInitiateResponse(BaseModel):
     request_id:   str            # UUID of the payment_attempt row
-    otp_required: bool           # True for jazzcash / easypaisa; False for card
+    otp_required: bool           # True for jazzcash / easypaisa; False for bank transfer
     message:      str
     expires_at:   Optional[datetime] = None   # OTP expiry time (if otp_required)
     booking_id:   Optional[str] = None

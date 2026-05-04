@@ -30,6 +30,11 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
+
+# Prevent low-level HTTP debug logs from leaking sensitive headers/tokens.
+for noisy_logger in ("httpcore", "httpx", "hpack"):
+    logging.getLogger(noisy_logger).setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,13 +59,7 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("✅ Supabase configured")
 
-    if not settings.RESEND_API_KEY:
-        logger.warning(
-            "⚠️  RESEND_API_KEY not set — "
-            "booking confirmation emails will be SKIPPED. "
-            "Payments still work. Set RESEND_API_KEY in .env to enable emails."
-        )
-    else:
+    if settings.RESEND_API_KEY:
         logger.info("✅ Resend email configured — from: %s", settings.EMAIL_FROM)
 
     logger.info("Startup complete. Ready to accept requests.")

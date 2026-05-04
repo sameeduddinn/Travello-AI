@@ -180,7 +180,20 @@ async def book_hotel(payload: HotelBookRequest, user: CurrentUser):
     cached = _hotel_cache.get(payload.hotel_id)
     hotel = cached[0] if cached and time.time() - cached[1] <= _CACHE_TTL else None
     if not hotel:
-        hotel = await get_hotel_detail(payload.hotel_id)
+        hotel = await get_hotel_detail(payload.hotel_id, payload.city or "")
+    if not hotel and payload.city:
+        # If in-memory cache was missed, rebuild from a fresh city search.
+        refreshed = await search_hotels(
+            city=payload.city,
+            check_in=payload.check_in,
+            check_out=payload.check_out,
+            guests=payload.guests,
+            rooms=payload.rooms,
+        )
+        ts = time.time()
+        for h in refreshed.hotels:
+            _hotel_cache[h.hotel_id] = (h, ts)
+        hotel = next((h for h in refreshed.hotels if h.hotel_id == payload.hotel_id), None)
     if not hotel:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

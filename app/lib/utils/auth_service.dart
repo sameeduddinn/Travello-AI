@@ -407,6 +407,9 @@ class AuthService {
     }
   }
 
+  // Step 1 — yeh session store karne ke liye add karo class mein
+  static Session? _recoverySession;
+
   static Future<bool> verifyPasswordResetCode({
     required String emailOrPhone,
     required String code,
@@ -420,6 +423,11 @@ class AuthService {
         token: code.trim(),
         type: OtpType.recovery,
       );
+
+      // ── FIX: recovery session ko store karo ──
+      if (response.session != null) {
+        _recoverySession = response.session;
+      }
 
       return response.user != null || response.session != null;
     } on AuthException catch (e) {
@@ -437,12 +445,19 @@ class AuthService {
   }) async {
     try {
       _setAuthError(null);
+
+      // ── FIX: recovery session set karo ──
+      if (_recoverySession != null) {
+        await _supabase.auth.setSession(_recoverySession!.refreshToken!);
+        _recoverySession = null;
+      }
+
       await _supabase.auth.updateUser(
         UserAttributes(password: newPassword),
       );
       return true;
     } on AuthException catch (e) {
-      _setAuthError(e.message);
+      _setAuthError(_friendlyAuthError(e.message));
       return false;
     } catch (e) {
       _setAuthError(e.toString());

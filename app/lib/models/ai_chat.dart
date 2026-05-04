@@ -1,19 +1,252 @@
 import 'package:flutter/material.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ChatMessage — one turn in a conversation (user or assistant).
+// Mapped to the ai_messages table in Supabase.
+// ─────────────────────────────────────────────────────────────────────────────
 class ChatMessage {
   final String id;
+  final String? conversationId;   // FK → ai_conversations.id
   final String message;
-  final bool isUser;
+  final bool isUser;              // true = role:'user', false = role:'assistant'
   final DateTime timestamp;
+
+  // 'text' | 'itinerary' | 'action_result' | 'suggestion' | 'error'
+  final String messageType;
+
+  // Structured payload (itinerary days, search results, action details, etc.)
+  final Map<String, dynamic>? metadata;
 
   ChatMessage({
     required this.id,
+    this.conversationId,
     required this.message,
     required this.isUser,
     required this.timestamp,
+    this.messageType = 'text',
+    this.metadata,
   });
+
+  factory ChatMessage.fromMap(Map<String, dynamic> map) => ChatMessage(
+        id: map['id'] as String,
+        conversationId: map['conversation_id'] as String?,
+        message: map['content'] as String,
+        isUser: (map['role'] as String) == 'user',
+        timestamp: DateTime.parse(map['created_at'] as String),
+        messageType: (map['message_type'] as String?) ?? 'text',
+        metadata: map['metadata'] as Map<String, dynamic>?,
+      );
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'conversation_id': conversationId,
+        'content': message,
+        'role': isUser ? 'user' : 'assistant',
+        'created_at': timestamp.toIso8601String(),
+        'message_type': messageType,
+        'metadata': metadata,
+      };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DayPlan — one day inside a trip itinerary.
+// Serialised into ai_saved_itineraries.itinerary_data → { "days": [...] }
+// ─────────────────────────────────────────────────────────────────────────────
+class DayPlan {
+  final int day;
+  final String title;
+  final String iconName;          // icon code-point name stored as string
+  final List<String> activities;
+
+  const DayPlan({
+    required this.day,
+    required this.title,
+    required this.iconName,
+    required this.activities,
+  });
+
+  factory DayPlan.fromMap(Map<String, dynamic> map) => DayPlan(
+        day: map['day'] as int,
+        title: map['title'] as String,
+        iconName: (map['icon'] as String?) ?? 'place',
+        activities: List<String>.from(map['activities'] as List),
+      );
+
+  Map<String, dynamic> toMap() => {
+        'day': day,
+        'title': title,
+        'icon': iconName,
+        'activities': activities,
+      };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AISavedItinerary — a full trip plan persisted to ai_saved_itineraries.
+// ─────────────────────────────────────────────────────────────────────────────
+class AISavedItinerary {
+  final String? id;               // null until saved to DB
+  final String? conversationId;
+  final String destination;
+  final String province;
+  final String imageUrl;
+  final String travelStyle;       // Adventure | Cultural | Relaxing | Family | Nature | Mixed
+  final int durationDays;
+  final String budgetRange;       // Budget | Mid-range | Luxury
+  final List<DayPlan> days;
+  final DateTime? tripDate;
+  final String? notes;
+  final bool isBooked;
+  final DateTime? savedDate;
+
+  const AISavedItinerary({
+    this.id,
+    this.conversationId,
+    required this.destination,
+    required this.province,
+    required this.imageUrl,
+    required this.travelStyle,
+    required this.durationDays,
+    required this.budgetRange,
+    required this.days,
+    this.tripDate,
+    this.notes,
+    this.isBooked = false,
+    this.savedDate,
+  });
+
+  factory AISavedItinerary.fromMap(Map<String, dynamic> map) {
+    final data = map['itinerary_data'] as Map<String, dynamic>;
+    final rawDays = data['days'] as List;
+    return AISavedItinerary(
+      id: map['id'] as String?,
+      conversationId: map['conversation_id'] as String?,
+      destination: map['destination'] as String,
+      province: (map['province'] as String?) ?? '',
+      imageUrl: (map['image_url'] as String?) ?? '',
+      travelStyle: (map['travel_style'] as String?) ?? 'Mixed',
+      durationDays: (map['duration_days'] as int?) ?? rawDays.length,
+      budgetRange: (map['budget_range'] as String?) ?? 'Mid-range',
+      days: rawDays
+          .map((d) => DayPlan.fromMap(d as Map<String, dynamic>))
+          .toList(),
+      tripDate: map['trip_date'] != null
+          ? DateTime.tryParse(map['trip_date'] as String)
+          : null,
+      notes: map['notes'] as String?,
+      isBooked: (map['is_booked'] as bool?) ?? false,
+      savedDate: map['created_at'] != null
+          ? DateTime.tryParse(map['created_at'] as String)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        if (id != null) 'id': id,
+        'conversation_id': conversationId,
+        'destination': destination,
+        'province': province,
+        'image_url': imageUrl,
+        'travel_style': travelStyle,
+        'duration_days': durationDays,
+        'budget_range': budgetRange,
+        'itinerary_data': {'days': days.map((d) => d.toMap()).toList()},
+        'trip_date': tripDate?.toIso8601String().split('T').first,
+        'notes': notes,
+        'is_booked': isBooked,
+      };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AgentTask — one autonomous task the agent executes on behalf of the user.
+// Mapped to the agent_tasks table in Supabase.
+// ─────────────────────────────────────────────────────────────────────────────
+class AgentTask {
+  final String? id;
+  final String? conversationId;
+
+  // plan_trip | search_flights | search_hotels | search_trains |
+  // price_alert | book_flight | book_hotel | book_train |
+  // weather_check | summarise_options | custom
+  final String taskType;
+  final String taskDescription;
+  final Map<String, dynamic>? taskParams;
+
+  // pending | in_progress | completed | failed | cancelled
+  final String status;
+  final int priority;             // 1 (low) – 5 (critical)
+
+  final Map<String, dynamic>? result;
+  final String? errorMessage;
+  final int retryCount;
+
+  final DateTime createdAt;
+  final DateTime? startedAt;
+  final DateTime? completedAt;
+
+  const AgentTask({
+    this.id,
+    this.conversationId,
+    required this.taskType,
+    required this.taskDescription,
+    this.taskParams,
+    this.status = 'pending',
+    this.priority = 1,
+    this.result,
+    this.errorMessage,
+    this.retryCount = 0,
+    required this.createdAt,
+    this.startedAt,
+    this.completedAt,
+  });
+
+  factory AgentTask.fromMap(Map<String, dynamic> map) => AgentTask(
+        id: map['id'] as String?,
+        conversationId: map['conversation_id'] as String?,
+        taskType: map['task_type'] as String,
+        taskDescription: map['task_description'] as String,
+        taskParams: map['task_params'] as Map<String, dynamic>?,
+        status: (map['status'] as String?) ?? 'pending',
+        priority: (map['priority'] as int?) ?? 1,
+        result: map['result'] as Map<String, dynamic>?,
+        errorMessage: map['error_message'] as String?,
+        retryCount: (map['retry_count'] as int?) ?? 0,
+        createdAt: DateTime.parse(map['created_at'] as String),
+        startedAt: map['started_at'] != null
+            ? DateTime.tryParse(map['started_at'] as String)
+            : null,
+        completedAt: map['completed_at'] != null
+            ? DateTime.tryParse(map['completed_at'] as String)
+            : null,
+      );
+
+  Map<String, dynamic> toMap() => {
+        if (id != null) 'id': id,
+        'conversation_id': conversationId,
+        'task_type': taskType,
+        'task_description': taskDescription,
+        'task_params': taskParams,
+        'status': status,
+        'priority': priority,
+      };
+
+  bool get isPending => status == 'pending';
+  bool get isInProgress => status == 'in_progress';
+  bool get isCompleted => status == 'completed';
+  bool get isFailed => status == 'failed';
+
+  IconData get statusIcon => switch (status) {
+        'pending' => Icons.schedule,
+        'in_progress' => Icons.autorenew,
+        'completed' => Icons.check_circle,
+        'failed' => Icons.error_outline,
+        'cancelled' => Icons.cancel_outlined,
+        _ => Icons.help_outline,
+      };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AISuggestion — quick-reply chip shown below the first AI message.
+// ─────────────────────────────────────────────────────────────────────────────
 class AISuggestion {
   final String title;
   final IconData icon;
@@ -21,7 +254,10 @@ class AISuggestion {
   const AISuggestion({required this.title, required this.icon});
 }
 
-// Dummy AI responses for demo
+// ─────────────────────────────────────────────────────────────────────────────
+// AIAssistantData — static helpers used by the AI assistant screen.
+// (responses are pattern-matched locally; real Claude API call goes here later)
+// ─────────────────────────────────────────────────────────────────────────────
 class AIAssistantData {
   static List<AISuggestion> getSuggestions() {
     return const [

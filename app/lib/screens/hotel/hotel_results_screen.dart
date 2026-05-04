@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/models/hotel.dart';
+import 'package:flight_app/models/room_type.dart';
 import 'package:flight_app/services/api_client.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
@@ -91,10 +92,43 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
       );
 
       if (raw.isEmpty) {
-        _loadLocalHotels();
+        hotels = [];
+        _applyFilters();
       } else {
         hotels = raw.map((json) {
           final m = ApiClient.hotelFromJson(json);
+          final roomList = (json['rooms'] as List?)
+                  ?.map((e) => Map<String, dynamic>.from(e as Map))
+                  .toList() ??
+              <Map<String, dynamic>>[];
+          final parsedRooms = roomList
+              .map((r) => RoomType(
+                    id: r['room_id']?.toString() ?? '${m['id']}-STD',
+                    name: r['room_type']?.toString() ?? 'Standard Room',
+                    description:
+                        '${r['room_type']?.toString() ?? 'Room'} at ${m['name']?.toString() ?? 'this hotel'}',
+                    pricePerNight:
+                        (r['price_per_night_pkr'] as num?)?.toDouble() ??
+                            (m['pricePerNight'] as num).toDouble(),
+                    maxOccupancy: (r['max_guests'] as num?)?.toInt() ?? 2,
+                    bedCount: 1,
+                    bedType: r['bed_type']?.toString() ?? 'Double',
+                    sizeInSqFt: 0,
+                    amenities: (r['amenities'] as List?)
+                            ?.map((a) => a.toString())
+                            .toList() ??
+                        <String>[],
+                    images: List<String>.from(m['images'] ?? const []),
+                    hasCityView: false,
+                    hasBalcony: false,
+                    isRefundable: r['is_refundable'] == true,
+                    cancellationPolicy: r['is_refundable'] == true
+                        ? 'Free cancellation up to 24 hours before check-in'
+                        : 'Non-refundable',
+                    breakfastIncluded: false,
+                    roomsAvailable: 99,
+                  ))
+              .toList();
           return Hotel(
             id: m['id'],
             name: m['name'],
@@ -114,17 +148,19 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
             description: m['description'],
             distanceFromCenter: (m['distanceFromCenter'] as num).toDouble(),
             neighborhood: m['neighborhood']?.toString(),
+            rooms: parsedRooms,
           );
         }).toList();
         _applyFilters();
       }
     } catch (e, st) {
-      // Keep fallback behavior, but log enough context to debug connectivity.
+      // Avoid local/demo fallback here because those IDs cannot be booked on backend.
       debugPrint(
           '[HotelResults] API fetch failed. Base URL: ${ApiClient.resolvedBaseUrl}');
       debugPrint('[HotelResults] Error: $e');
       debugPrint('[HotelResults] Stack: $st');
-      _loadLocalHotels();
+      hotels = [];
+      _applyFilters();
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -181,6 +217,19 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
         filteredHotels = filteredHotels
             .where(
                 (h) => h.amenities.any((a) => a.toLowerCase().contains('spa')))
+            .toList();
+      }
+      if (filterPetFriendly == true) {
+        filteredHotels = filteredHotels
+            .where(
+                (h) => h.amenities.any((a) => a.toLowerCase().contains('pet')))
+            .toList();
+      }
+      if (filterAirportShuttle == true) {
+        filteredHotels = filteredHotels
+            .where((h) => h.amenities.any((a) =>
+                a.toLowerCase().contains('shuttle') ||
+                a.toLowerCase().contains('airport')))
             .toList();
       }
       if (searchQuery.isNotEmpty) {

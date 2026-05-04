@@ -25,9 +25,9 @@ class AirlineDesignSystem {
 
   // Primary Brand Colors
   static const brandNavy = Color(0xFF0A1628);
-  static const brandBlue = Color(0xFF2563EB);
-  static const brandSky = Color(0xFF3B82F6);
-  static const brandBlueLight = Color(0xFFDBEAFE);
+  static const brandBlue = Color(0xFFD4AF37);   // App gold primary
+  static const brandSky = Color(0xFFC6A75E);    // App gold light
+  static const brandBlueLight = Color(0xFFFFF4D6); // App gold container
 
   // Success Colors
   static const successPrimary = Color(0xFF10B981);
@@ -63,7 +63,7 @@ class AirlineDesignSystem {
   static const headerGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF0A1628), Color(0xFF1E3A70)],
+    colors: [Color(0xFF0A1628), Color(0xFF3D2E0A)],
   );
 
   static const successGradient = LinearGradient(

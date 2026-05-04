@@ -63,8 +63,8 @@ async def _fetch_booking_data(booking_uuid: str) -> dict[str, Any] | None:
 # Template helpers
 # ---------------------------------------------------------------------------
 
-_BRAND_COLOR = "#1a73e8"
-_BRAND_DARK  = "#0d47a1"
+_BRAND_COLOR = "#B09407FF"
+_BRAND_DARK  = "#f9fb87"
 
 _BASE_STYLE = """
 <style>
@@ -184,17 +184,17 @@ def _flight_email_html(b: dict) -> str:
     </div>
     <div class="pnr-box">
       <div class="pnr-label">Booking Reference / PNR</div>
-      <div class="pnr-value">{pnr}</div>
-      <div style="font-size:12px;color:#555;margin-top:6px">{booking_id}</div>
+      <div class="pnr-value">{ pnr}</div>
+      <div style="font-size:12px;color:#555;margin-top:6px">{ booking_id}</div>
     </div>
     <div class="section">
       <div class="section-title">Flight Details</div>
-      <div class="info-row"><span class="label">Route</span>
-        <span class="value">{origin} → {destination}</span></div>
-      <div class="info-row"><span class="label">Departure</span>
-        <span class="value">{dep}</span></div>
-      <div class="info-row"><span class="label">Arrival</span>
-        <span class="value">{arr}</span></div>
+      <div class="info-row"><span class="label">Route: </span>
+        <span class="value"> { origin} → {destination}</span></div>
+      <div class="info-row"><span class="label">Departure: </span>
+        <span class="value"> { dep}</span></div>
+      <div class="info-row"><span class="label">Arrival: </span>
+        <span class="value"> { arr}</span></div>
     </div>
     <div class="section">
       <div class="section-title">Passengers</div>
@@ -310,25 +310,25 @@ def _hotel_email_html(b: dict) -> str:
     </div>
     <div class="pnr-box">
       <div class="pnr-label">Reservation Number</div>
-      <div class="pnr-value">{pnr}</div>
-      <div style="font-size:12px;color:#555;margin-top:6px">{booking_id}</div>
+      <div class="pnr-value">{ pnr}</div>
+      <div style="font-size:12px;color:#555;margin-top:6px"> { booking_id}</div>
     </div>
     <div class="section">
       <div class="section-title">Reservation Details</div>
-      <div class="info-row"><span class="label">Hotel</span>
-        <span class="value">{hotel_name}</span></div>
-      <div class="info-row"><span class="label">City</span>
-        <span class="value">{city}</span></div>
-      <div class="info-row"><span class="label">Check-in</span>
-        <span class="value">{check_in}</span></div>
-      <div class="info-row"><span class="label">Check-out</span>
-        <span class="value">{check_out}</span></div>
-      <div class="info-row"><span class="label">Nights</span>
-        <span class="value">{nights_str}</span></div>
-      <div class="info-row"><span class="label">Guests</span>
-        <span class="value">{guests}</span></div>
-      <div class="info-row"><span class="label">Rooms</span>
-        <span class="value">{rooms}</span></div>
+      <div class="info-row"><span class="label">Hotel: </span>
+        <span class="value"> { hotel_name}</span></div>
+      <div class="info-row"><span class="label">City: </span>
+        <span class="value"> { city}</span></div>
+      <div class="info-row"><span class="label">Check-in: </span>
+        <span class="value"> { check_in}</span></div>
+      <div class="info-row"><span class="label">Check-out: </span>
+        <span class="value"> { check_out}</span></div>
+      <div class="info-row"><span class="label">Nights: </span>
+        <span class="value"> { nights_str}</span></div>
+      <div class="info-row"><span class="label">Guests: </span>
+        <span class="value"> { guests}</span></div>
+      <div class="info-row"><span class="label">Rooms: </span>
+        <span class="value"> { rooms}</span></div>
     </div>
     <div class="section">
       <div class="section-title">Payment</div>

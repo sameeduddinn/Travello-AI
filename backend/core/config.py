@@ -42,7 +42,9 @@ class Settings(BaseSettings):
     # RapidAPI (hotel search — TripAdvisor)
     # -------------------------------------------------------------------------
     RAPIDAPI_KEY: str = ""
-    RAPIDAPI_HOST: str = "tripadvisor-com1.p.rapidapi.com"
+    RAPIDAPI_HOST: str = "tripadvisor16.p.rapidapi.com"
+
+
 
     # -------------------------------------------------------------------------
     # Email — Resend API (primary) OR Gmail SMTP (fallback/alternative)

@@ -769,7 +769,15 @@ class _HotelWeekendDealCardState extends State<_HotelWeekendDealCard>
   }
 
   Future<void> _toggleWishlist() async {
-    final added = await WishlistService.toggle('hotel', widget.hotel.id);
+    final added = await WishlistService.toggle('hotel', widget.hotel.id,
+        itemData: {
+          'id': widget.hotel.id,
+          'name': widget.hotel.name,
+          'city': widget.hotel.city,
+          'category': widget.hotel.category,
+          'pricePerNight': widget.hotel.pricePerNight,
+          'images': widget.hotel.images,
+        });
     if (mounted) {
       setState(() => _wishlisted = added);
       _heartCtrl.forward(from: 0);

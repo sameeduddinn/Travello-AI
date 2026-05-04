@@ -399,7 +399,16 @@ class _FlightPackageCardItemState extends State<_FlightPackageCardItem>
   }
 
   Future<void> _toggle() async {
-    final added = await WishlistService.toggle('flight', widget.package.id);
+    final added = await WishlistService.toggle('flight', widget.package.id,
+        itemData: {
+          'id': widget.package.id,
+          'from': widget.package.from.name,
+          'to': widget.package.to.name,
+          'price': widget.package.price,
+          'img': widget.package.img,
+          'roundTrip': widget.package.roundTrip,
+          'date': widget.package.date,
+        });
     if (mounted) {
       setState(() => _wishlisted = added);
       _heartCtrl.forward(from: 0);
