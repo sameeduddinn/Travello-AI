@@ -81,8 +81,18 @@ class TrainSearchResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 class TrainBookRequest(BaseModel):
-    train_id:      str = Field(..., description="train_id from search results")
-    class_code:    str = Field(..., description="Seat class code, e.g. EC, AC, ACB")
-    contact_email: str
-    contact_phone: Optional[str] = None
-    passengers:    int = Field(1, ge=1, le=6)
+    train_id:        str = Field(..., description="train_id from search results")
+    class_code:      str = Field(..., description="Seat class code, e.g. EC, AC, ACB")
+    contact_email:   str
+    contact_phone:   Optional[str] = None
+    passengers:      int = Field(1, ge=1, le=6)
+
+    # Fallback fields — used when train_id is not in cache (e.g. featured packages)
+    train_name:      Optional[str] = None
+    train_number:    Optional[str] = None
+    origin:          Optional[str] = None
+    destination:     Optional[str] = None
+    departure_at:    Optional[str] = None  # ISO datetime string
+    arrival_at:      Optional[str] = None  # ISO datetime string
+    class_name:      Optional[str] = None
+    total_price_pkr: Optional[float] = None

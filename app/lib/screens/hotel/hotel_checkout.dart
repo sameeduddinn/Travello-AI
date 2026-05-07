@@ -121,6 +121,10 @@ class _HotelCheckoutState extends State<HotelCheckout> {
         guests: _guests,
         rooms: _rooms,
         contactPhone: contactPhone.isNotEmpty ? contactPhone : null,
+        hotelName: _hotel.name,
+        starRating: _hotel.rating,
+        pricePerNightPkr: _roomType?.pricePerNight ?? _hotel.pricePerNight,
+        roomType: _roomType?.name ?? 'Standard Room',
       );
 
       _backendBookingId =

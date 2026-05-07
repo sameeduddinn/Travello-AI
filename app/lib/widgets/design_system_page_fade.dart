@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// DSPageFade
-/// Wraps any page content in a 280ms fade-in + subtle upward slide.
-/// Drops directly into Scaffold body — zero configuration needed.
-///
-/// Why: Airline apps feel premium because pages never "snap" into view.
-/// A gentle fade-in signals the transition is intentional, not abrupt.
+
 class DSPageFade extends StatefulWidget {
   const DSPageFade({
     super.key,
@@ -15,11 +10,7 @@ class DSPageFade extends StatefulWidget {
   });
 
   final Widget child;
-
-  /// Optional delay before the animation starts (useful for staggered sections)
   final Duration delay;
-
-  /// Total fade-in duration. Keep between 200–320ms for airline-grade feel.
   final Duration duration;
 
   @override

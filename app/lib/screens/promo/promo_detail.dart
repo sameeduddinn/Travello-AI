@@ -1,7 +1,5 @@
-import 'dart:math';
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/models/flight_package.dart';
-import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
 import 'package:flight_app/widgets/cards/package_card.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +23,6 @@ class _PromoDetailState extends State<PromoDetail> {
   String _userOriginCityCode = 'KHI';
   String _userOriginCityName = 'Karachi';
   bool _isLoading = true;
-  bool _isGuestMode = false;
 
   @override
   void initState() {
@@ -34,11 +31,9 @@ class _PromoDetailState extends State<PromoDetail> {
   }
 
   Future<void> _loadUserOriginCity() async {
-    final isGuest = await AuthService.isGuestMode();
     final cityData = await LocationPreferenceService.getOriginCity();
     if (mounted) {
       setState(() {
-        _isGuestMode = isGuest;
         _userOriginCityCode = cityData['cityCode']!;
         _userOriginCityName = cityData['cityName']!;
         _isLoading = false;
@@ -48,13 +43,6 @@ class _PromoDetailState extends State<PromoDetail> {
 
   /// Packages from user's origin city (mirrors package_list_slider.dart logic)
   List<FlightPackage> get _cityPackages {
-    if (_isGuestMode) {
-      final seed = DateTime.now().day * 31 + DateTime.now().month;
-      final rng = Random(seed);
-      final all = List<FlightPackage>.from(flightPackageList);
-      all.shuffle(rng);
-      return all;
-    }
     final lowerCity = _userOriginCityName.toLowerCase();
     final isISBZone = lowerCity == 'islamabad' || lowerCity == 'rawalpindi';
     return flightPackageList.where((pkg) {
@@ -123,7 +111,7 @@ class _PromoDetailState extends State<PromoDetail> {
   }
 
   String get _appBarTitle {
-    if (_isLoading || _isGuestMode) return 'Featured Packages';
+    if (_isLoading) return 'Featured Packages';
     return 'Flight Packages from $_userOriginCityName';
   }
 

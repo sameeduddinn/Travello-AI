@@ -88,12 +88,17 @@ class HotelSearchResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 class HotelBookRequest(BaseModel):
-    hotel_id:      str  = Field(..., description="hotel_id from search results")
-    room_id:       str  = Field(..., description="room_id from hotel detail")
-    city:          Optional[str] = Field(None, description="City used during hotel search")
-    check_in:      date
-    check_out:     date
-    guests:        int  = Field(1, ge=1, le=10)
-    rooms:         int  = Field(1, ge=1, le=5)
-    contact_email: str
-    contact_phone: Optional[str] = None
+    hotel_id:            str  = Field(..., description="hotel_id from search results")
+    room_id:             str  = Field(..., description="room_id from hotel detail")
+    city:                Optional[str]   = Field(None, description="City used during hotel search")
+    check_in:            date
+    check_out:           date
+    guests:              int  = Field(1, ge=1, le=10)
+    rooms:               int  = Field(1, ge=1, le=5)
+    contact_email:       str
+    contact_phone:       Optional[str]   = None
+    # Optional fallback fields for featured packages (no prior search required)
+    hotel_name:          Optional[str]   = None
+    star_rating:         Optional[float] = None
+    price_per_night_pkr: Optional[float] = None
+    room_type:           Optional[str]   = None

@@ -885,7 +885,7 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
   }
 
   // ────────────────────────────────────────────────────────────
-  // PAYMENT METHODS (Train: card, jazzcash, easypaisa — no bank transfer)
+  // PAYMENT METHODS
   // ────────────────────────────────────────────────────────────
   Widget _buildPaymentMethods() {
     return Container(

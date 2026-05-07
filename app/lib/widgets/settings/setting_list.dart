@@ -2,6 +2,7 @@ import 'package:flight_app/app/app_link.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/constants/app_constants.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
 import 'package:flight_app/widgets/settings/account_info.dart';
 import 'package:flight_app/widgets/title/title_basic.dart';
@@ -11,6 +12,7 @@ import 'package:flight_app/widgets/onboarding/city_selection_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 
+
 class SettingList extends StatefulWidget {
   const SettingList({super.key});
 
@@ -19,7 +21,6 @@ class SettingList extends StatefulWidget {
 }
 
 class _SettingListState extends State<SettingList> {
-  bool _isGuestMode = false;
   String _currentCityName = 'Karachi';
 
   @override
@@ -29,12 +30,9 @@ class _SettingListState extends State<SettingList> {
   }
 
   Future<void> _checkAuthStatus() async {
-    final isGuest = await AuthService.isGuestMode();
-    final isLoggedIn = await AuthService.isLoggedIn();
     final cityData = await LocationPreferenceService.getOriginCity();
     if (mounted) {
       setState(() {
-        _isGuestMode = isGuest || !isLoggedIn;
         _currentCityName = cityData['cityName']!;
       });
     }
@@ -61,27 +59,113 @@ Future<void> _confirmSignOut() async {
     );
     if (confirmed != true) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final isGuest = prefs.getBool('guest_mode') ?? false;
+    await AuthService.logout();
+    Get.snackbar('Signed Out', 'You have been signed out successfully.',
+        backgroundColor: Colors.green.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.check_circle, color: Colors.white));
+    Get.offAllNamed(AppLink.welcome);
+  }
 
-    if (isGuest) {
-      await prefs.remove('guest_mode');
-      Get.snackbar('Goodbye!', 'Login to access all features!',
-          backgroundColor: Colors.blue.shade600,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
-          duration: const Duration(seconds: 2));
-      Get.offAllNamed(AppLink.welcome);
-    } else {
-      await AuthService.logout();
-      await prefs.setBool('guest_mode', true);
-      Get.snackbar('Signed Out', 'You have been signed out successfully.',
-          backgroundColor: Colors.green.shade600,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
-          duration: const Duration(seconds: 3),
-          icon: const Icon(Icons.check_circle, color: Colors.white));
-      Get.offAllNamed(AppLink.home);
+  bool _isDeletingAccount = false;
+
+  Future<void> _confirmDeleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account?',
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: const Text(
+          'This will permanently delete your account and all associated data — bookings, reviews, and preferences. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete My Account'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (!mounted) return;
+
+    // Second confirmation — type DELETE
+    final controller = TextEditingController();
+    final typed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Final Confirmation'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Type DELETE to confirm account deletion:'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'DELETE',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim() == 'DELETE'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (typed != true) {
+      if (mounted) {
+        Get.snackbar('Cancelled', 'You must type DELETE to confirm.',
+            backgroundColor: Colors.orange.shade600,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+            duration: const Duration(seconds: 2));
+      }
+      return;
+    }
+
+    if (mounted) setState(() => _isDeletingAccount = true);
+    try {
+      await ApiClient.deleteAccount();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      if (mounted) {
+        Get.offAllNamed(AppLink.welcome);
+        Get.snackbar('Account Deleted', 'Your account has been permanently deleted.',
+            backgroundColor: Colors.red.shade700,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+            duration: const Duration(seconds: 3));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isDeletingAccount = false);
+        Get.snackbar('Error', 'Failed to delete account. Please try again.',
+            backgroundColor: Colors.red.shade600,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+            duration: const Duration(seconds: 3));
+      }
     }
   }
 
@@ -115,36 +199,6 @@ Future<void> _confirmSignOut() async {
       physics: const ClampingScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: [
-        // ── Guest: quick auth access ───────────────────────────────────
-        if (_isGuestMode) ...[
-          const TitleBasicSmall(title: 'Quick Access'),
-          PaperCard(
-            content: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(children: [
-                ListTile(
-                  leading: const Icon(Icons.login, color: Colors.green),
-                  title: const Text('Login',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Access your account'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 12),
-                  onTap: () => Get.toNamed('/login'),
-                ),
-                const LineList(),
-                ListTile(
-                  leading: const Icon(Icons.person_add, color: Colors.blue),
-                  title: const Text('Sign Up',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Create a new account'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 12),
-                  onTap: () => Get.toNamed('/register'),
-                ),
-              ]),
-            ),
-          ),
-          const VSpace(),
-        ],
-
         // ── My Bookings ────────────────────────────────────────────────
         const TitleBasicSmall(title: 'My Bookings'),
         PaperCard(
@@ -180,6 +234,16 @@ Future<void> _confirmSignOut() async {
                 subtitle: const Text('Your liked flights, hotels & trains'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                 onTap: () => Get.toNamed(AppLink.wishlist),
+              ),
+              const LineList(),
+              ListTile(
+                leading: const Icon(Icons.manage_search_rounded,
+                    color: Color(0xFF6366F1)),
+                title: const Text('Saved Searches',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Your recent flight, train & hotel searches'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 12),
+                onTap: () => Get.toNamed(AppLink.savedSearches),
               ),
             ]),
           ),
@@ -299,6 +363,34 @@ Future<void> _confirmSignOut() async {
           ),
         ),
         const VSpace(),
+
+        // ── Danger Zone ────────────────────────────────────────────────
+        ...[
+          const TitleBasicSmall(title: 'Danger Zone'),
+          PaperCard(
+            content: Padding(
+              padding: const EdgeInsets.all(8),
+              child: ListTile(
+                leading: _isDeletingAccount
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.red))
+                    : const Icon(Icons.delete_forever_rounded, color: Colors.red),
+                title: const Text('Delete Account',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600, color: Colors.red)),
+                subtitle: const Text('Permanently remove your account and all data'),
+                trailing: _isDeletingAccount
+                    ? null
+                    : const Icon(Icons.arrow_forward_ios, size: 12),
+                onTap: _isDeletingAccount ? null : _confirmDeleteAccount,
+              ),
+            ),
+          ),
+          const VSpace(),
+        ],
 
         Center(
           child: Text(

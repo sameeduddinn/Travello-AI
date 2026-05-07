@@ -34,12 +34,8 @@ async def initiate_payment_endpoint(
     """
     Start a payment for a booking.
 
-    - **JazzCash / EasyPaisa**: Generates a 6-digit OTP, emails it to the
-      contact email, returns `otp_required: true` and a `request_id`.
-      OTP expires in 10 minutes. Max 3 attempts.
-
-        - **Bank transfer**: Simulates instant approval, marks booking as paid,
-      returns `otp_required: false`. Confirmation email sent in background.
+    Supported methods: `card`, `bank_transfer`.
+    Marks the booking as paid and sends a confirmation email in the background.
     """
     result = await initiate_payment(
         user_id=user.id,

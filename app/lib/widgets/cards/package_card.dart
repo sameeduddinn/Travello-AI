@@ -209,20 +209,29 @@ class PackageCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'Start from',
-                              style: TravelloTheme.caption.copyWith(
-                                  color: colorScheme(context).onSurfaceVariant),
-                            ),
-                            Text('Rs.${price.toStringAsFixed(0)}',
-                                style: TravelloTheme.title2.copyWith(
-                                    color: TravelloTheme.primaryMain,
-                                    fontWeight: FontWeight.bold,
-                                    height: 1.1)),
-                          ],
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(minWidth: 70),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'Start from',
+                                style: TravelloTheme.caption.copyWith(
+                                    color:
+                                        colorScheme(context).onSurfaceVariant),
+                              ),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                    'Rs.${price.toStringAsFixed(0)}',
+                                    style: TravelloTheme.title2.copyWith(
+                                        color: TravelloTheme.primaryMain,
+                                        fontWeight: FontWeight.bold,
+                                        height: 1.1)),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

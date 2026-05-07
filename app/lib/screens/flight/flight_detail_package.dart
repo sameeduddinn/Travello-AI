@@ -9,8 +9,6 @@ import 'package:flight_app/models/plane.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flight_app/widgets/app_button/back_icon_button.dart';
-import 'package:flight_app/utils/auth_service.dart';
-import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/widgets/decorations/oval_shape.dart';
 import 'package:flight_app/widgets/flight/flight_routes.dart';
@@ -184,13 +182,6 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
     final Airport fromAirport = _airportForCity(fromCity);
     final Airport toAirport = _airportForCity(toCity);
     final bool isRoundTrip = pkg?.roundTrip ?? false;
-    // Auth gate at BOOK NOW — browsing package detail was free
-    final nav = Navigator.of(context);
-    final isGuest = await AuthService.isGuestMode();
-    if (isGuest && mounted) {
-      AuthGateSheet.show(nav.context, action: 'to book this flight package');
-      return;
-    }
     // For round-trip the package price covers both legs; split evenly so the
     // booking screen sums back to _finalPrice correctly.
     final double legPrice = isRoundTrip ? _finalPrice / 2 : _finalPrice;
@@ -284,6 +275,7 @@ class _FlightDetailPackageState extends State<FlightDetailPackage> {
         shadowColor: TravelloTheme.paperLight,
         scrolledUnderElevation: 1,
         backgroundColor: Colors.transparent,
+        leadingWidth: 48,
         leading: BackIconButton(onTap: () {
           Get.back();
         }),

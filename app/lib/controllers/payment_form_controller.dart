@@ -58,6 +58,14 @@ class PaymentFormController extends GetxController {
   final _canPay = false.obs;
   bool get canPay => _canPay.value;
 
+  // Card-only variant — for screens where identity is collected separately.
+  // References Rx fields directly so Obx() rebuilds when any of them change.
+  bool get canPayCardOnly =>
+      cardNumberError.value == null && _cardNumberDirty.value &&
+      expiryError.value == null && _expiryDirty.value &&
+      cvvError.value == null && _cvvDirty.value &&
+      cardNameError.value == null && _cardNameDirty.value;
+
   void _updateCanPay() {
     _canPay.value = cardNumberError.value == null &&
         _cardNumberDirty.value &&

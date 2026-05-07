@@ -1,87 +1,6 @@
 class ImgApi {
   /// PHOTOS
   static List<String> photo = [
-    // CITY
-    // 1-10
-    '',
-    'https://placehold.co/600x480/b3dcff/black.png',
-    'https://placehold.co/600x480/1724ba/white.png',
-    'https://placehold.co/600x480/b3dcff/black.png',
-    'https://placehold.co/600x480/1724ba/white.png',
-    'https://placehold.co/600x480/b3dcff/black.png',
-    'https://placehold.co/600x480/1724ba/white.png',
-    'https://placehold.co/600x480/b3dcff/black.png',
-    'https://placehold.co/600x480/1724ba/white.png',
-    'https://placehold.co/600x480/b3dcff/black.png',
-    'https://placehold.co/600x480/1724ba/white.png',
-    // 11 - 20
-    'https://placehold.co/600x480/ffea94/black.png',
-    'https://placehold.co/600x480/f7a22e/white.png',
-    'https://placehold.co/600x480/ffea94/black.png',
-    'https://placehold.co/600x480/f7a22e/white.png',
-    'https://placehold.co/600x480/ffea94/black.png',
-    'https://placehold.co/600x480/f7a22e/white.png',
-    'https://placehold.co/600x480/ffea94/black.png',
-    'https://placehold.co/600x480/f7a22e/white.png',
-    'https://placehold.co/600x480/ffea94/black.png',
-    'https://placehold.co/600x480/f7a22e/white.png',
-    // 21 - 30
-    'https://placehold.co/600x480/a5eaff/black.png',
-    'https://placehold.co/600x480/1a95ba/white.png',
-    'https://placehold.co/600x480/a5eaff/black.png',
-    'https://placehold.co/600x480/1a95ba/white.png',
-    'https://placehold.co/600x480/a5eaff/black.png',
-    'https://placehold.co/600x480/1a95ba/white.png',
-    'https://placehold.co/600x480/a5eaff/black.png',
-    'https://placehold.co/600x480/1a95ba/white.png',
-    'https://placehold.co/600x480/a5eaff/black.png',
-    'https://placehold.co/600x480/1a95ba/white.png',
-    // HOTEL
-    // 31 - 40
-    'https://placehold.co/600x480/ffb0d8/black.png',
-    'https://placehold.co/600x480/db5096/white.png',
-    'https://placehold.co/600x480/ffb0d8/black.png',
-    'https://placehold.co/600x480/db5096/white.png',
-    'https://placehold.co/600x480/ffb0d8/black.png',
-    'https://placehold.co/600x480/db5096/white.png',
-    'https://placehold.co/600x480/ffb0d8/black.png',
-    'https://placehold.co/600x480/db5096/white.png',
-    'https://placehold.co/600x480/ffb0d8/black.png',
-    'https://placehold.co/600x480/db5096/white.png',
-    // 41 - 50
-    'https://placehold.co/600x480/eabeb4/black.png',
-    'https://placehold.co/600x480/9a6052/white.png',
-    'https://placehold.co/600x480/eabeb4/black.png',
-    'https://placehold.co/600x480/9a6052/white.png',
-    'https://placehold.co/600x480/eabeb4/black.png',
-    'https://placehold.co/600x480/9a6052/white.png',
-    'https://placehold.co/600x480/eabeb4/black.png',
-    'https://placehold.co/600x480/9a6052/white.png',
-    'https://placehold.co/600x480/eabeb4/black.png',
-    'https://placehold.co/600x480/9a6052/white.png',
-    // PACKAGE
-    // 51 - 60
-    'https://placehold.co/600x480/b3f7bd/black.png',
-    'https://placehold.co/600x480/539d5e/white.png',
-    'https://placehold.co/600x480/b3f7bd/black.png',
-    'https://placehold.co/600x480/539d5e/white.png',
-    'https://placehold.co/600x480/b3f7bd/black.png',
-    'https://placehold.co/600x480/539d5e/white.png',
-    'https://placehold.co/600x480/b3f7bd/black.png',
-    'https://placehold.co/600x480/539d5e/white.png',
-    'https://placehold.co/600x480/b3f7bd/black.png',
-    'https://placehold.co/600x480/539d5e/white.png',
-    // 61 - 70
-    'https://placehold.co/600x480/ddb6ff/black.png',
-    'https://placehold.co/600x480/7023b2/white.png',
-    'https://placehold.co/600x480/ddb6ff/black.png',
-    'https://placehold.co/600x480/7023b2/white.png',
-    'https://placehold.co/600x480/ddb6ff/black.png',
-    'https://placehold.co/600x480/7023b2/white.png',
-    'https://placehold.co/600x480/ddb6ff/black.png',
-    'https://placehold.co/600x480/7023b2/white.png',
-    'https://placehold.co/600x480/ddb6ff/black.png',
-    'https://placehold.co/600x480/7023b2/white.png',
     // PROMO
     // 71 - 80
     'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1600&h=900&fit=crop',
@@ -105,68 +24,13 @@ class ImgApi {
     'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=1600&h=900&fit=crop',
     'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1600&h=900&fit=crop',
     'https://images.unsplash.com/photo-1476900543704-4312b78632f8?w=1600&h=900&fit=crop',
-    // LOGO
-    // 91 - 100
-    'https://placehold.co/500x500/94eaff/black.png',
-    'https://placehold.co/500x500/f7a22e/white.png',
-    'https://placehold.co/500x500/ffea94/black.png',
-    'https://placehold.co/500x500/f7a22e/white.png',
-    'https://placehold.co/500x500/ffea94/black.png',
-    'https://placehold.co/500x500/f7a22e/white.png',
-    'https://placehold.co/500x500/ffea94/black.png',
-    'https://placehold.co/500x500/f7a22e/white.png',
-    'https://placehold.co/500x500/ffea94/black.png',
-    'https://placehold.co/500x500/f7a22e/white.png',
-    // 101 - 110
-    'https://placehold.co/500x500/94eaff/black.png',
-    'https://placehold.co/500x500/f7a22e/white.png',
-    'https://placehold.co/500x500/ffea94/black.png',
-    'https://placehold.co/500x500/f7a22e/white.png',
-    'https://placehold.co/500x500/ffea94/black.png',
-    'https://placehold.co/500x500/f7a22e/white.png',
-    'https://placehold.co/500x500/ffea94/black.png',
-    'https://placehold.co/500x500/f7a22e/white.png',
-    'https://placehold.co/500x500/ffea94/black.png',
-    'https://placehold.co/500x500/f7a22e/white.png',
-    // VOUCHER
-    // 111 - 120
-    'https://placehold.co/480x480/ffea94/black.png',
-    'https://placehold.co/480x480/f7a22e/white.png',
-    'https://placehold.co/480x480/ffea94/black.png',
-    'https://placehold.co/480x480/f7a22e/white.png',
-    'https://placehold.co/480x480/ffea94/black.png',
-    'https://placehold.co/480x480/f7a22e/white.png',
-    'https://placehold.co/480x480/ffea94/black.png',
-    'https://placehold.co/480x480/f7a22e/white.png',
-    'https://placehold.co/480x480/ffea94/black.png',
-    'https://placehold.co/600x480/f7a22e/white.png',
-    // AIRPORT
-    // 121 - 130
-    'https://placehold.co/480x480/a5eaff/black.png',
-    'https://placehold.co/480x480/1a95ba/white.png',
-    'https://placehold.co/480x480/a5eaff/black.png',
-    'https://placehold.co/480x480/1a95ba/white.png',
-    'https://placehold.co/480x480/b3f7bd/black.png',
-    'https://placehold.co/480x480/539d5e/white.png',
-    'https://placehold.co/480x480/eabeb4/black.png',
-    'https://placehold.co/480x480/9a6052/white.png',
-    'https://placehold.co/480x480/a5eaff/black.png',
-    'https://placehold.co/480x480/1a95ba/white.png',
+
+ 
   ];
 
   /// AVATARS
   static List<String> avatar = [
-    'https://placehold.co/480x480/a5eaff/black.png',
-    'https://placehold.co/480x480/1a95ba/white.png',
-    'https://placehold.co/480x480/b3dcff/black.png',
-    'https://placehold.co/480x480/f7a22e/white.png',
-    'https://placehold.co/480x480/a5eaff/black.png',
-    'https://placehold.co/480x480/1724ba/white.png',
-    'https://placehold.co/480x480/a5eaff/black.png',
-    'https://placehold.co/480x480/1a95ba/white.png',
-    'https://placehold.co/480x480/a5eaff/black.png',
-    'https://placehold.co/480x480/ddb6ff/black.png',
-    'https://placehold.co/480x480/7023b2/white.png',
+
   ];
 
   /// STATIC IMG ASSETS

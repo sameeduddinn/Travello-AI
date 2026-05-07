@@ -10,7 +10,6 @@ class AuthService {
 
   static const String _rememberMeKey = 'remember_me';
   static const String _rememberedUserKey = 'remembered_user';
-  static const String _guestModeKey = 'guest_mode';
   static String? _lastAuthError;
 
   static String? get lastAuthError => _lastAuthError;
@@ -212,9 +211,6 @@ class AuthService {
         phone: appUser['phone']?.toString(),
       );
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_guestModeKey);
-
       return appUser;
     } on AuthException catch (e) {
       _setAuthError(_friendlyAuthError(e.message));
@@ -254,8 +250,6 @@ class AuthService {
     while (DateTime.now().difference(startedAt) < timeout) {
       final user = await getCurrentUser();
       if (user != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove(_guestModeKey);
         return user;
       }
 
@@ -292,17 +286,11 @@ class AuthService {
   }
 
   static Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isGuest = prefs.getBool(_guestModeKey) ?? false;
-    return !isGuest && _supabase.auth.currentSession != null;
+    return _supabase.auth.currentSession != null;
   }
 
   static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
     await _supabase.auth.signOut();
-    await prefs.remove(_guestModeKey);
-
-    // Different users may be in different cities.
     await LocationPreferenceService.clearOriginCity();
   }
 
@@ -465,38 +453,11 @@ class AuthService {
     }
   }
 
-  static Future<void> enableGuestMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    await _supabase.auth.signOut();
-    await prefs.setBool(_guestModeKey, true);
-  }
-
-  static Future<bool> isGuestMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_guestModeKey) ?? false;
-  }
-
-  static Future<void> exitGuestMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_guestModeKey);
-  }
-
-  static Map<String, dynamic> getGuestUser() {
-    return {
-      'name': 'Guest User',
-      'email': 'guest@example.com',
-      'phone': '',
-      'avatar': '',
-      'isGuest': true,
-    };
-  }
-
   static Future<void> clearAllUsers() async {
     final prefs = await SharedPreferences.getInstance();
     await _supabase.auth.signOut();
     await prefs.remove(_rememberMeKey);
     await prefs.remove(_rememberedUserKey);
-    await prefs.remove(_guestModeKey);
     await prefs.remove('finishedIntro');
   }
 

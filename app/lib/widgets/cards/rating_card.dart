@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flight_app/widgets/cards/paper_card.dart';
-import 'package:flight_app/widgets/review/rating_star.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 
 class RatingCard extends StatelessWidget {
@@ -38,15 +37,6 @@ class RatingCard extends StatelessWidget {
             Text(name, style: TravelloTheme.subtitle2),
           ]),
           
-          /// RATING
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              RatingStar(initVal: rating, readOnly: true,),
-              const SizedBox(width: 4),
-              Text(date, style: TravelloTheme.caption)
-            ]),
-          ),
 
           /// DESCRIPTION
           Text(description, style: TravelloTheme.paragraph, maxLines: overflowDesc ? 2 : null, overflow: TextOverflow.ellipsis,)

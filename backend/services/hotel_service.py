@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import random
+import urllib.parse
 from datetime import date
 from typing import Any
 
@@ -350,6 +351,16 @@ async def _fetch_nominatim_hotels(canonical_city: str, *, limit: int = 20) -> li
             )
         ]
 
+        # Generic hotel images so these results survive the image filter
+        _HOTEL_PLACEHOLDER_IMAGES = [
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
+            "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80",
+            "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80",
+            "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80",
+            "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=800&q=80",
+        ]
+        placeholder_image = _HOTEL_PLACEHOLDER_IMAGES[len(offers) % len(_HOTEL_PLACEHOLDER_IMAGES)]
+
         offers.append(
             HotelOffer(
                 hotel_id=f"NOM-{osm_id}",
@@ -359,7 +370,7 @@ async def _fetch_nominatim_hotels(canonical_city: str, *, limit: int = 20) -> li
                 city=canonical_city,
                 latitude=lat,
                 longitude=lon,
-                images=[],
+                images=[placeholder_image],
                 amenities=amenities,
                 rooms=rooms_list,
                 review_score=round(random.uniform(6.0, 8.8), 1),
@@ -372,6 +383,154 @@ async def _fetch_nominatim_hotels(canonical_city: str, *, limit: int = 20) -> li
 
     logger.info("Nominatim returned %d hotels for %s", len(offers), canonical_city)
     return offers
+
+
+# ---------------------------------------------------------------------------
+# Google Places API — hotel search
+# ---------------------------------------------------------------------------
+
+_GOOGLE_PLACES_NEARBY_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+_GOOGLE_PLACES_PHOTO_URL  = "https://maps.googleapis.com/maps/api/place/photo"
+
+_GOOGLE_PRICE_LEVEL_TO_USD: dict[int, tuple[float, float]] = {
+    0: (15.0,  30.0),   # free / budget
+    1: (20.0,  50.0),   # inexpensive
+    2: (50.0,  100.0),  # moderate
+    3: (100.0, 200.0),  # expensive
+    4: (200.0, 400.0),  # very expensive
+}
+
+
+def _google_places_is_configured() -> bool:
+    key = (settings.GOOGLE_PLACES_API_KEY or "").strip()
+    return bool(key) and "your-google" not in key.lower() and not key.startswith("REPLACE")
+
+
+def _google_photo_url(photo_reference: str) -> str:
+    return (
+        f"{_GOOGLE_PLACES_PHOTO_URL}"
+        f"?maxwidth=800&photo_reference={photo_reference}"
+        f"&key={settings.GOOGLE_PLACES_API_KEY}"
+    )
+
+
+async def _fetch_google_places_hotels(canonical_city: str, *, limit: int = 20) -> list[HotelOffer]:
+    """
+    Query Google Places Nearby Search for lodging near a city centre.
+    Returns an empty list on any error — caller falls back to next source.
+    """
+    coords = _OVERPASS_CITY_COORDS.get(canonical_city)
+    if coords is None:
+        return []
+
+    lat, lon = coords
+    params = {
+        "location": f"{lat},{lon}",
+        "radius": 15000,          # 15 km radius
+        "type": "lodging",
+        "key": settings.GOOGLE_PLACES_API_KEY,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.get(_GOOGLE_PLACES_NEARBY_URL, params=params)
+
+        if resp.status_code != 200:
+            logger.warning(
+                "Google Places error %s for %s: %s",
+                resp.status_code, canonical_city, resp.text[:200],
+            )
+            return []
+
+        data = resp.json()
+        status = data.get("status", "")
+        if status not in ("OK", "ZERO_RESULTS"):
+            logger.warning("Google Places status '%s' for %s", status, canonical_city)
+            return []
+
+        results: list[dict] = data.get("results", [])
+        offers: list[HotelOffer] = []
+
+        for place in results[:limit]:
+            name = (place.get("name") or "").strip()
+            if not name:
+                continue
+
+            place_id  = place.get("place_id", f"GP-{random.randint(10000,99999)}")
+            vicinity  = place.get("vicinity") or canonical_city
+            geometry  = place.get("geometry", {}).get("location", {})
+            g_lat     = geometry.get("lat")
+            g_lon     = geometry.get("lng")
+
+            # Rating: Google uses 1.0–5.0 → treat as star rating directly
+            g_rating      = place.get("rating")
+            review_count  = place.get("user_ratings_total")
+            try:
+                star_rating  = float(g_rating) if g_rating is not None else 3.0
+                review_score = float(g_rating) if g_rating is not None else None
+            except (TypeError, ValueError):
+                star_rating, review_score = 3.0, None
+
+            # Price level → PKR estimate
+            price_level = place.get("price_level")
+            lo, hi = _GOOGLE_PRICE_LEVEL_TO_USD.get(price_level or 2, (40.0, 100.0))
+            price_usd = random.uniform(lo, hi)
+            price_pkr = round(price_usd * settings.USD_TO_PKR_RATE, 2)
+
+            # Photos — build signed URL for first photo
+            photos_raw = place.get("photos") or []
+            images: list[str] = []
+            for ph in photos_raw[:3]:
+                ref = ph.get("photo_reference")
+                if ref:
+                    images.append(_google_photo_url(ref))
+
+            amenities = ["Free WiFi", "AC", "Room Service"]
+            if star_rating >= 4.0:
+                amenities += ["Pool", "Gym", "Restaurant"]
+
+            rooms_list = [
+                RoomOffer(
+                    room_id=f"GP-{place_id}-STD",
+                    room_type="Standard Room",
+                    bed_type="Double",
+                    price_per_night_pkr=price_pkr,
+                    max_guests=2,
+                    is_refundable=True,
+                    amenities=amenities,
+                ),
+                RoomOffer(
+                    room_id=f"GP-{place_id}-DLX",
+                    room_type="Deluxe Room",
+                    bed_type="King",
+                    price_per_night_pkr=round(price_pkr * 1.35, 2),
+                    max_guests=3,
+                    is_refundable=True,
+                    amenities=amenities + ["City View"],
+                ),
+            ]
+
+            offers.append(HotelOffer(
+                hotel_id=f"GP-{place_id}",
+                name=name,
+                star_rating=min(star_rating, 5.0),
+                address=vicinity,
+                city=canonical_city,
+                latitude=g_lat,
+                longitude=g_lon,
+                images=images,
+                amenities=amenities,
+                rooms=rooms_list,
+                review_score=review_score,
+                review_count=review_count,
+            ))
+
+        logger.info("Google Places returned %d hotels for %s", len(offers), canonical_city)
+        return offers
+
+    except Exception as exc:
+        logger.warning("Google Places fetch failed for %s: %s", canonical_city, exc)
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -522,6 +681,7 @@ async def search_hotels(
 
     hotels: list[HotelOffer] = []
     rapid_count = 0
+    google_count = 0
     nominatim_count = 0
     osm_count = 0
     mock_count = 0
@@ -552,7 +712,13 @@ async def search_hotels(
     else:
         logger.info("RAPIDAPI_KEY not configured or placeholder detected; skipping RapidAPI.")
 
-    # 2) Nominatim supplements results if RapidAPI is empty/partial.
+    # 2) Google Places supplements if RapidAPI is empty/partial.
+    if len(hotels) < _TARGET_RESULT_COUNT and _google_places_is_configured():
+        google_hotels = await _fetch_google_places_hotels(canonical, limit=_TARGET_RESULT_COUNT)
+        google_count = len(google_hotels)
+        hotels = _merge_hotel_lists(hotels, google_hotels, limit=_TARGET_RESULT_COUNT)
+
+    # 3) Nominatim supplements remaining gaps.
     if len(hotels) < _TARGET_RESULT_COUNT:
         nominatim_hotels = await _fetch_nominatim_hotels(canonical, limit=_TARGET_RESULT_COUNT)
         nominatim_count = len(nominatim_hotels)
@@ -583,9 +749,10 @@ async def search_hotels(
         hotels = _merge_hotel_lists(hotels, additional_mock, limit=_TARGET_RESULT_COUNT)
 
     logger.info(
-        "Hotel search merged for %s: rapid=%d, nominatim=%d, osm=%d, mock=%d, final=%d (after image filter)",
+        "Hotel search merged for %s: rapid=%d, google=%d, nominatim=%d, osm=%d, mock=%d, final=%d (after image filter)",
         city,
         rapid_count,
+        google_count,
         nominatim_count,
         osm_count,
         mock_count,
@@ -1087,7 +1254,15 @@ async def _fetch_overpass_hotels(canonical_city: str) -> list[HotelOffer]:
 
     try:
         async with httpx.AsyncClient(timeout=22.0) as client:
-            resp = await client.post(_OVERPASS_URL, data={"data": query})
+            resp = await client.post(
+                _OVERPASS_URL,
+                content=urllib.parse.urlencode({"data": query}).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json",
+                    "User-Agent": "TravelloAI/1.0 (travel booking app)",
+                },
+            )
         if resp.status_code != 200:
             logger.warning("Overpass API error %s for %s", resp.status_code, canonical_city)
             return []

@@ -59,8 +59,6 @@ class AppLink {
 
   // PROFILE
   static const profile = '/profile';
-  static const reward = '/reward';
-  static const detailPoint = '/detail-point';
   static const editProfile = '/edit-profile';
   static const editPassword = '/edit-password';
 
@@ -99,6 +97,7 @@ class AppLink {
 
   // WISHLIST / SAVED
   static const wishlist = '/wishlist';
+  static const savedSearches = '/saved-searches';
 
   // LOCAL TRANSPORT
   static const transport = '/transport';

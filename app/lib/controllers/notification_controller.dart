@@ -27,9 +27,7 @@ class NotificationController extends GetxController {
       return '$_storagePrefix$userId';
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final isGuest = prefs.getBool('guest_mode') ?? false;
-    return isGuest ? '${_storagePrefix}guest' : '${_storagePrefix}anonymous';
+    return '${_storagePrefix}anonymous';
   }
 
   List<NotificationModel> _decodeList(dynamic source) {

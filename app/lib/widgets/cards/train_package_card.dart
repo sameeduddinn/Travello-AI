@@ -122,104 +122,120 @@ class TrainPackageCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      date,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TravelloTheme.caption.copyWith(
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        date,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TravelloTheme.caption.copyWith(
+                                            color: colorScheme(context)
+                                                .onSurfaceVariant),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: roundTrip
+                                            ? colorScheme(context)
+                                                .primaryContainer
+                                            : colorScheme(context)
+                                                .secondaryContainer,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        roundTrip ? 'Round-Trip' : 'One-Way',
+                                        style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w700,
+                                            color: colorScheme(context)
+                                                .onSurface),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Wrap(
+                                        spacing: 4,
+                                        runSpacing: 2,
+                                        children:
+                                            tags.asMap().entries.map((entry) {
+                                          int index = entry.key;
+                                          String tag = entry.value;
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 4),
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    ThemeRadius.xsmall,
+                                                color: index % 2 == 0
+                                                    ? colorScheme(context)
+                                                        .primaryContainer
+                                                    : colorScheme(context)
+                                                        .secondaryContainer),
+                                            child: Text(tag.toCapitalCase(),
+                                                style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: colorScheme(context)
+                                                        .onSurface)),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: BoxDecoration(
+                                          borderRadius: ThemeRadius.xsmall,
                                           color: colorScheme(context)
-                                              .onSurfaceVariant),
+                                              .tertiaryContainer),
+                                      child: Icon(
+                                          CupertinoIcons.arrow_uturn_left,
+                                          color: colorScheme(context).tertiary,
+                                          size: 10),
                                     ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: roundTrip
-                                          ? colorScheme(context)
-                                              .primaryContainer
-                                          : colorScheme(context)
-                                              .secondaryContainer,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      roundTrip ? 'Round-Trip' : 'One-Way',
-                                      style: TextStyle(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w700,
-                                          color:
-                                              colorScheme(context).onSurface),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Wrap(
-                                    spacing: 4,
-                                    children: tags.asMap().entries.map((entry) {
-                                      int index = entry.key;
-                                      String tag = entry.value;
-                                      return Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 4),
-                                        decoration: BoxDecoration(
-                                            borderRadius: ThemeRadius.xsmall,
-                                            color: index % 2 == 0
-                                                ? colorScheme(context)
-                                                    .primaryContainer
-                                                : colorScheme(context)
-                                                    .secondaryContainer),
-                                        child: Text(tag.toCapitalCase(),
-                                            style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w500,
-                                                color: colorScheme(context)
-                                                    .onSurface)),
-                                      );
-                                    }).toList(),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Container(
-                                    padding: const EdgeInsets.all(2),
-                                    decoration: BoxDecoration(
-                                        borderRadius: ThemeRadius.xsmall,
-                                        color: colorScheme(context)
-                                            .tertiaryContainer),
-                                    child: Icon(CupertinoIcons.arrow_uturn_left,
-                                        color: colorScheme(context).tertiary,
-                                        size: 10),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                'Start from',
-                                style: TravelloTheme.caption.copyWith(
-                                    color:
-                                        colorScheme(context).onSurfaceVariant),
-                              ),
-                              Text('Rs.${price.toStringAsFixed(0)}',
-                                  style: TravelloTheme.title2.copyWith(
-                                      color: TravelloTheme.primaryMain,
-                                      fontWeight: FontWeight.bold,
-                                      height: 1.1)),
-                            ],
+                          const SizedBox(width: 8),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(minWidth: 70),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Start from',
+                                  style: TravelloTheme.caption.copyWith(
+                                      color: colorScheme(context)
+                                          .onSurfaceVariant),
+                                ),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                      'Rs.${price.toStringAsFixed(0)}',
+                                      style: TravelloTheme.title2.copyWith(
+                                          color: TravelloTheme.primaryMain,
+                                          fontWeight: FontWeight.bold,
+                                          height: 1.1)),
+                                ),
+                              ],
+                            ),
                           ),
                         ]),
                   ),

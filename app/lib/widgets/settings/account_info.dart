@@ -16,7 +16,6 @@ class _AccountInfoState extends State<AccountInfo> {
   String _userName = '';
   String _userEmail = '';
   String _userPhone = '';
-  bool _isGuest = false;
   bool _isLoading = true;
 
   @override
@@ -26,23 +25,12 @@ class _AccountInfoState extends State<AccountInfo> {
   }
 
   Future<void> _loadCurrentUser() async {
-    final isGuest = await AuthService.isGuestMode();
-    if (isGuest) {
-      final guest = AuthService.getGuestUser();
-      setState(() {
-        _userName = guest['name'];
-        _userEmail = 'guest@example.com';
-        _userPhone = '';
-        _isGuest = true;
-        _isLoading = false;
-      });
-    } else {
-      final user = await AuthService.getCurrentUser();
+    final user = await AuthService.getCurrentUser();
+    if (mounted) {
       setState(() {
         _userName = user?['name'] ?? 'User';
         _userEmail = user?['email'] ?? '';
         _userPhone = user?['phone'] ?? '';
-        _isGuest = false;
         _isLoading = false;
       });
     }
@@ -119,26 +107,13 @@ class _AccountInfoState extends State<AccountInfo> {
                             ),
                           ),
                           const SizedBox(height: 3),
-                          if (_isGuest)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.22),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Text('Guest Account',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 11)),
-                            )
-                          else
-                            Text(
-                              _userEmail,
-                              style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                  fontSize: 13),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          Text(
+                            _userEmail,
+                            style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ],
                       ),
               ),
@@ -178,17 +153,16 @@ class _AccountInfoState extends State<AccountInfo> {
         ),
 
         // ── Action buttons ─────────────────────────────────────────
-        if (!_isGuest) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-                20, 0, 20, 12),
-            child: Column(
-              children: [
-                _ActionButton(
-                  icon: Icons.edit_outlined,
-                  label: 'Edit Profile',
-                  subtitle: 'Update your name, email and phone',
-                  onTap: () async {
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              20, 0, 20, 12),
+          child: Column(
+            children: [
+              _ActionButton(
+                icon: Icons.edit_outlined,
+                label: 'Edit Profile',
+                subtitle: 'Update your name, email and phone',
+                onTap: () async {
                     Get.back();
                     await Get.toNamed(AppLink.editProfile);
                     _loadCurrentUser();
@@ -210,31 +184,6 @@ class _AccountInfoState extends State<AccountInfo> {
               ],
             ),
           ),
-        ] else ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-                20, 0, 20, 16),
-            child: SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: FilledButton.icon(
-                onPressed: () {
-                  Get.back();
-                  Get.toNamed(AppLink.login);
-                },
-                icon: const Icon(Icons.login),
-                label: const Text('Sign In to Your Account',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                style: FilledButton.styleFrom(
-                  backgroundColor: TravelloTheme.primaryMain,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
-          ),
-        ],
         SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
       ],
     );

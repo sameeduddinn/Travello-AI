@@ -9,13 +9,13 @@ class BackIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double buttonSize = isSquare ? 36 : 34;
+    final double buttonSize = isSquare ? 34 : 30;
 
     return SizedBox(
       width: buttonSize,
       height: buttonSize,
       child: IconButton(
-        iconSize: 18,
+        iconSize: 16,
         padding: EdgeInsets.zero,
         constraints:
             BoxConstraints.tightFor(width: buttonSize, height: buttonSize),

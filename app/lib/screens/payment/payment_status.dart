@@ -2141,7 +2141,7 @@ class _PaymentStatusState extends State<PaymentStatus>
       elevation: 0,
       backgroundColor: appBarColor,
       leading: IconButton(
-        onPressed: () => Get.back(),
+        onPressed: () => Get.offAllNamed(AppLink.home),
         icon: const Icon(Icons.arrow_back, size: 24),
         color: Colors.white,
       ),

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
+import 'package:flight_app/utils/search_history_service.dart';
 
 class HotelResultsScreen extends StatefulWidget {
   const HotelResultsScreen({super.key});
@@ -43,6 +44,7 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
   String propertyType = 'Hotel';
   String sortBy = 'recommended';
   bool _isLoading = false;
+  bool _searchSaved = false;
 
   // Active filter count
   int get _activeFilters {
@@ -77,6 +79,31 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
     rooms = args['rooms'] ?? 1;
     guests = args['guests'] ?? 2;
     _fetchHotels();
+  }
+
+  Future<void> _saveCurrentSearch() async {
+    await SearchHistoryService.saveHotelSearch(
+      city,
+      params: {
+        'city': city,
+        'check_in': checkInDate.toString(),
+        'check_out': checkOutDate.toString(),
+        'rooms': rooms,
+        'guests': guests,
+      },
+    );
+    setState(() => _searchSaved = true);
+    Get.snackbar(
+      'Search Saved',
+      'Hotel search saved to your profile',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: TravelloTheme.primaryMain,
+      colorText: Colors.white,
+      icon: const Icon(Icons.bookmark, color: Color(0xFFD4AF37)),
+      margin: const EdgeInsets.all(12),
+      borderRadius: 12,
+      duration: const Duration(seconds: 2),
+    );
   }
 
   // ── Backend fetch with local-data fallback ────────────────────────────────
@@ -164,11 +191,6 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _loadLocalHotels() {
-    hotels = PakistanHotels.getHotels(city);
-    _applyFilters();
   }
 
   void _applyFilters() {
@@ -742,6 +764,14 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
+          IconButton(
+            tooltip: _searchSaved ? 'Search Saved' : 'Save Search',
+            icon: Icon(
+              _searchSaved ? Icons.bookmark : Icons.bookmark_border,
+              color: _searchSaved ? const Color(0xFFD4AF37) : Colors.white,
+            ),
+            onPressed: _searchSaved ? null : _saveCurrentSearch,
+          ),
           Stack(
             children: [
               IconButton(icon: const Icon(Icons.tune), onPressed: _showFilters),

@@ -58,7 +58,7 @@
 
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, status
 
@@ -127,10 +127,63 @@ async def book_train(payload: TrainBookRequest, user: CurrentUser):
         offer = get_train_offer(payload.train_id, passengers=payload.passengers)
 
     if not offer:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Train offer not found. Please search again.",
+        # Fallback path for featured packages (train_id not in cache)
+        if not payload.train_name or payload.total_price_pkr is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Train offer not found. Please search again.",
+            )
+
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        try:
+            dep_at = datetime.fromisoformat(payload.departure_at) if payload.departure_at else now
+        except (ValueError, TypeError):
+            dep_at = now
+        try:
+            arr_at = datetime.fromisoformat(payload.arrival_at) if payload.arrival_at else now
+        except (ValueError, TypeError):
+            arr_at = dep_at
+
+        total_amount = payload.total_price_pkr * payload.passengers
+        raw_payload = {
+            "train_id": payload.train_id,
+            "train_name": payload.train_name,
+            "train_number": payload.train_number or "",
+            "class_code": payload.class_code,
+            "class_name": payload.class_name or payload.class_code,
+            "passengers": payload.passengers,
+            "amenities": [],
+        }
+
+        booking = await create_booking(
+            user_id=user.id,
+            booking_type="train",
+            contact_email=payload.contact_email,
+            contact_phone=payload.contact_phone,
+            total_amount=total_amount,
+            raw_payload=raw_payload,
+            origin=payload.origin or "",
+            destination=payload.destination or "",
+            departure_at=dep_at,
+            arrival_at=arr_at,
         )
+
+        return {
+            "booking_id": booking.booking_id,
+            "booking_uuid": booking.id,
+            "pnr": booking.pnr,
+            "status": booking.status,
+            "train_name": payload.train_name,
+            "train_number": payload.train_number or "",
+            "class": payload.class_name or payload.class_code,
+            "origin": payload.origin or "",
+            "destination": payload.destination or "",
+            "departure_at": dep_at.isoformat(),
+            "arrival_at": arr_at.isoformat(),
+            "total_amount": total_amount,
+            "currency": "PKR",
+            "message": "Train booking created. Proceed to payment to confirm.",
+        }
 
     # Find the requested seat class
     seat_class = next(
@@ -143,8 +196,7 @@ async def book_train(payload: TrainBookRequest, user: CurrentUser):
             detail=f"Seat class '{payload.class_code}' not available on this train.",
         )
 
-    # Fix 7: Reject bookings for already-departed trains
-    if offer.departure_at < datetime.utcnow():
+    if offer.departure_at < datetime.now(timezone.utc).replace(tzinfo=None):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot book a train that has already departed.",

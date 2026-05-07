@@ -21,7 +21,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 1,
     name: 'drive 24/365 eyeballs',
-    thumb: ImgApi.photo[71],
+    thumb: ImgApi.photo[0],
     desc:
         'Vivamus metus arcu, adipiscing molestie, hendrerit at, vulputate vitae, nisl. Aenean lectus. Pellentesque eget nunc. Donec quis orci eget orci vehicula condimentum.',
     price: 540,
@@ -30,7 +30,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 2,
     name: 'monetize B2B schemas',
-    thumb: ImgApi.photo[72],
+    thumb: ImgApi.photo[1],
     desc:
         'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Donec pharetra, magna vestibulum aliquet ultrices, erat tortor sollicitudin mi, sit amet lobortis sapien sapien non mi. Integer ac neque. Duis bibendum.',
     price: 860,
@@ -39,7 +39,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 3,
     name: 'repurpose efficient action-items',
-    thumb: ImgApi.photo[73],
+    thumb: ImgApi.photo[2],
     desc: 'Pellentesque ultrices mattis odio. Donec vitae nisi.',
     price: 850,
     date: '22/03/2024',
@@ -47,7 +47,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 4,
     name: 'e-enable bricks-and-clicks platforms',
-    thumb: ImgApi.photo[74],
+    thumb: ImgApi.photo[3],
     desc:
         'Suspendisse potenti. Cras in purus eu magna vulputate luctus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.',
     price: 500,
@@ -56,7 +56,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 5,
     name: 'engage integrated synergies',
-    thumb: ImgApi.photo[75],
+    thumb: ImgApi.photo[4],
     desc: 'Integer a nibh. In quis justo. Maecenas rhoncus aliquam lacus.',
     price: 210,
     date: '14/07/2024',
@@ -64,7 +64,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 6,
     name: 'optimize robust markets',
-    thumb: ImgApi.photo[76],
+    thumb: ImgApi.photo[5],
     desc: 'Pellentesque eget nunc.',
     price: 430,
     date: '15/01/2025',
@@ -72,7 +72,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 7,
     name: 'exploit holistic channels',
-    thumb: ImgApi.photo[77],
+    thumb: ImgApi.photo[6],
     desc:
         'In hac habitasse platea dictumst. Maecenas ut massa quis augue luctus tincidunt. Nulla mollis molestie lorem.',
     price: 210,
@@ -81,7 +81,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 8,
     name: 'reintermediate compelling e-services',
-    thumb: ImgApi.photo[78],
+    thumb: ImgApi.photo[7],
     desc:
         'Maecenas pulvinar lobortis est. Phasellus sit amet erat. Nulla tempus.',
     price: 80,
@@ -90,7 +90,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 9,
     name: 'engage mission-critical schemas',
-    thumb: ImgApi.photo[79],
+    thumb: ImgApi.photo[8],
     desc: 'Nam nulla.',
     price: 950,
     date: '23/09/2024',
@@ -98,7 +98,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 10,
     name: 'productize end-to-end markets',
-    thumb: ImgApi.photo[80],
+    thumb: ImgApi.photo[9],
     desc:
         'Fusce consequat. Nulla nisl. Nunc nisl. Duis bibendum, felis sed interdum venenatis, turpis enim blandit mi, in porttitor pede justo eu massa.',
     price: 970,
@@ -107,7 +107,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 11,
     name: 'iterate viral web-readiness',
-    thumb: ImgApi.photo[81],
+    thumb: ImgApi.photo[10],
     desc:
         'Donec odio justo, sollicitudin ut, suscipit a, feugiat et, eros. Vestibulum ac est lacinia nisi venenatis tristique.',
     price: 70,
@@ -116,7 +116,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 12,
     name: 'deliver sticky convergence',
-    thumb: ImgApi.photo[82],
+    thumb: ImgApi.photo[11],
     desc: 'Pellentesque at nulla. Suspendisse potenti.',
     price: 60,
     date: '28/11/2024',
@@ -124,7 +124,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 13,
     name: 'engineering advenced platforms',
-    thumb: ImgApi.photo[83],
+    thumb: ImgApi.photo[12],
     desc:
         'Pellentesque ultrices mattis odio. Donec vitae nisi. Nam ultrices, libero non mattis pulvinar, nulla pede ullamcorper augue, a suscipit nulla elit ac nulla.',
     price: 110,
@@ -133,7 +133,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 14,
     name: 'revolutionize web-enabled functionalities',
-    thumb: ImgApi.photo[84],
+    thumb: ImgApi.photo[13],
     desc: 'In blandit ultrices enim.',
     price: 550,
     date: '19/07/2024',
@@ -141,7 +141,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 15,
     name: 'orchestrate one-to-one e-services',
-    thumb: ImgApi.photo[85],
+    thumb: ImgApi.photo[14],
     desc:
         'Donec quis orci eget orci vehicula condimentum. Curabitur in libero ut massa volutpat convallis. Morbi odio odio, elementum eu, interdum eu, tincidunt in, leo. Maecenas pulvinar lobortis est.',
     price: 370,
@@ -150,7 +150,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 16,
     name: 'architect frictionless e-commerce',
-    thumb: ImgApi.photo[90],
+    thumb: ImgApi.photo[15],
     desc:
         'Donec odio justo, sollicitudin ut, suscipit a, feugiat et, eros. Vestibulum ac est lacinia nisi venenatis tristique. Fusce congue, diam id ornare imperdiet, sapien urna pretium nisl, ut volutpat sapien arcu sed augue.',
     price: 570,
@@ -159,7 +159,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 17,
     name: 'utilize robust experiences',
-    thumb: ImgApi.photo[86],
+    thumb: ImgApi.photo[16],
     desc: 'In quis justo. Maecenas rhoncus aliquam lacus.',
     price: 180,
     date: '11/09/2024',
@@ -167,7 +167,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 18,
     name: 'enable integrated partnerships',
-    thumb: ImgApi.photo[87],
+    thumb: ImgApi.photo[17],
     desc:
         'Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Etiam vel augue. Vestibulum rutrum rutrum neque.',
     price: 560,
@@ -176,7 +176,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 19,
     name: 'recontextualize one-to-one communities',
-    thumb: ImgApi.photo[88],
+    thumb: ImgApi.photo[18],
     desc: 'Fusce lacus purus, aliquet at, feugiat non, pretium quis, lectus.',
     price: 420,
     date: '27/10/2024',
@@ -184,7 +184,7 @@ final List<Promotion> promoList = [
   Promotion(
     id: 20,
     name: 'monetize customized portals',
-    thumb: ImgApi.photo[89],
+    thumb: ImgApi.photo[19],
     desc: 'Nulla tempus.',
     price: 130,
     date: '28/03/2024',

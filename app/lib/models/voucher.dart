@@ -23,70 +23,70 @@ final List<Voucher> voucherList = [
     title: 'Up to \$50 Off Flights',
     desc: 'Expires in 3 days | Promo Code: 50DEAL50',
     color: Colors.blue,
-    image: ImgApi.photo[111]
+    image: ImgApi.photo[0]
   ),
   Voucher(
     id: '2',
     title: 'Up to \$10 Off Flights',
     desc: 'Min. spend Rp1,767,000 | Expires in 3 days | Promo Code: AGODADEAL8',
     color: Colors.green,
-    image: ImgApi.photo[112]
+    image: ImgApi.photo[1]
   ),
   Voucher(
     id: '3',
     title: 'Limited Time Price Drop',
     desc: 'Unlock special rates at your dream destination. ',
     color: Colors.red,
-    image: ImgApi.photo[113]
+    image: ImgApi.photo[2]
   ),
   Voucher(
     id: '4',
     title: 'Save On Flight & Save Wildlife',
     desc: 'We\'ll donate \$1 to WWF for every reservation you make!',
     color: Colors.purple,
-    image: ImgApi.photo[114]
+    image: ImgApi.photo[3]
   ),
   Voucher(
     id: '5',
     title: 'Elite Offers - Up to 30% off',
     desc: 'Enjoy travel discounts! Save on participating flight',
     color: Colors.purple,
-    image: ImgApi.photo[115]
+    image: ImgApi.photo[4]
   ),
   Voucher(
     id: '6',
     title: 'Premium Offers - Up to 25% off',
     desc: 'Enjoy travel discounts! Save on participating flight',
     color: Colors.orange,
-    image: ImgApi.photo[116]
+    image: ImgApi.photo[5]
   ),
   Voucher(
     id: '7',
     title: 'Select Offers - Up to 15% off',
     desc: 'Expires in 3 days | Promo Code: 50DEAL50',
     color: Colors.blue,
-    image: ImgApi.photo[117]
+    image: ImgApi.photo[6]
   ),
   Voucher(
     id: '8',
     title: 'Local Deals - Up to 25% off',
     desc: 'Get special rates on local hotels and resorts.',
     color: Colors.blue,
-    image: ImgApi.photo[118]
+    image: ImgApi.photo[7]
   ),
   Voucher(
     id: '9',
     title: 'International Deals - Up to 30%',
     desc: 'Get special rates on international hotels and resorts.',
     color: Colors.blue,
-    image: ImgApi.photo[118]
+    image: ImgApi.photo[7]
   ),
   Voucher(
     id: '10',
     title: 'Continue browsing on our App!',
     desc: 'Visit app to get access to all your deals, offers, and discounts',
     color: Colors.blue,
-    image: ImgApi.photo[118]
+    image: ImgApi.photo[7]
   ),
   Voucher(
     id: '11',

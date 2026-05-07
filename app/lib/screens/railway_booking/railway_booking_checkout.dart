@@ -293,12 +293,23 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
     try {
       final selectedClassForBooking =
           _isRoundTrip ? (_outboundClass ?? _selectedClass) : _selectedClass;
+      final depIso = _departureDate.toIso8601String();
+      final selectedPrice = _train.classPrices[selectedClassForBooking] ?? 0.0;
+
       final booking = await ApiClient.bookTrain(
         trainId: _train.id,
         classCode: _toTrainClassCode(selectedClassForBooking),
         contactEmail: _contactEmail,
         passengers: passengerCount,
         contactPhone: _contactPhone.isNotEmpty ? _contactPhone : null,
+        trainName: _train.trainName,
+        trainNumber: _train.trainNumber,
+        origin: _fromStation,
+        destination: _toStation,
+        departureAt: depIso,
+        arrivalAt: depIso,
+        className: selectedClassForBooking,
+        totalPricePkr: selectedPrice > 0 ? selectedPrice : null,
       );
 
       _backendBookingId =
@@ -2604,7 +2615,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                     children: [
                       _buildPolicySection(
                         'Fare Structure',
-                        'Pakistan Railways ticket pricing includes:\n• Base Fare: Varies by class, route, and distance\n• Reservation Fee: Rs. 0 (included in base fare for online bookings)\n• Service/Convenience Fee: Rs. 100 per booking\n• Payment Gateway Fee: Rs. 24 (JazzCash/Easypaisa) or Rs. 74 (Credit/Debit Card)',
+                        'Pakistan Railways ticket pricing includes:\n• Base Fare: Varies by class, route, and distance\n• Reservation Fee: Rs. 0 (included in base fare for online bookings)\n• Service/Convenience Fee: Rs. 100 per booking\n• Payment Gateway Fee: Rs. 74 (Credit/Debit Card) or Rs. 0 (Bank Transfer)',
                       ),
                       const SizedBox(height: 20),
                       _buildPolicySection(
@@ -2710,7 +2721,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                       const SizedBox(height: 20),
                       _buildPolicySection(
                         'Data Protection & Security',
-                        'We protect your data through:\n• SSL/TLS encryption for all data transmission\n• PCI-DSS compliant payment gateways\n• Secure servers located in Pakistan\n• No sharing with third parties except payment processors (JazzCash, Easypaisa, banks)\n• Data retention as per Pakistan Railways and SBP regulations',
+                        'We protect your data through:\n• SSL/TLS encryption for all data transmission\n• PCI-DSS compliant payment gateways\n• Secure servers located in Pakistan\n• No sharing with third parties except payment processors (banks)\n• Data retention as per Pakistan Railways and SBP regulations',
                       ),
                       const SizedBox(height: 20),
                       _buildPolicySection(
@@ -2720,7 +2731,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
                       const SizedBox(height: 20),
                       _buildPolicySection(
                         'Third-Party Services',
-                        'We may share your information with:\n• Payment Gateways: JazzCash, Easypaisa, bank processors (for payment processing only)\n• SMS/Email Providers: For sending booking confirmations and notifications\n• Analytics Services: For improving user experience (anonymized data only)\n• Pakistan Railways: For ticket verification and compliance',
+                        'We may share your information with:\n• Payment Gateways: Bank processors (for payment processing only)\n• SMS/Email Providers: For sending booking confirmations and notifications\n• Analytics Services: For improving user experience (anonymized data only)\n• Pakistan Railways: For ticket verification and compliance',
                       ),
                     ],
                   ),

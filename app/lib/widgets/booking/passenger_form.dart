@@ -5,12 +5,12 @@ import 'package:flight_app/utils/picker.dart';
 import 'package:flight_app/widgets/booking/passenger_options.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/widgets/app_input/app_input_box.dart';
 import 'package:flight_app/widgets/title/title_action.dart';
 import 'package:flight_app/widgets/title/title_basic.dart';
 import 'package:get/route_manager.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flight_app/utils/auth_service.dart';
 
 class PassengerForm extends StatefulWidget {
   const PassengerForm({ super.key, this.totalPassengers = 1 });
@@ -25,6 +25,9 @@ class _PassengerFormState extends State<PassengerForm> {
   bool _isSame = true;
   List<User> _passenggers = [passengerList[0]];
   String _selectedId = '1';
+  String _contactName = '';
+  String _contactEmail = '';
+  String _contactPhone = '';
 
   void openUserPicker(BuildContext context, int index) {
     openRadioPicker(
@@ -51,12 +54,24 @@ class _PassengerFormState extends State<PassengerForm> {
   @override
   void initState() {
     super.initState();
-    List <User>initPsg = List.generate(widget.totalPassengers - 1, (index) => userInit);
+    List<User> initPsg = List.generate(widget.totalPassengers - 1, (index) => userInit);
     Future.delayed(Durations.short1, () {
       setState(() {
         _passenggers = [userList[0], ...initPsg];
       });
     });
+    _loadContactDetails();
+  }
+
+  Future<void> _loadContactDetails() async {
+    final user = await AuthService.getCurrentUser();
+    if (mounted && user != null) {
+      setState(() {
+        _contactName = user['name'] ?? '';
+        _contactEmail = user['email'] ?? '';
+        _contactPhone = user['phone'] ?? '';
+      });
+    }
   }
 
   @override
@@ -81,17 +96,17 @@ class _PassengerFormState extends State<PassengerForm> {
         child: ListView(shrinkWrap: true, physics: const ClampingScrollPhysics(), children: [
           ListTile(
             title: Text('Name', style: TravelloTheme.paragraph.copyWith(color: colorScheme(context).onSurface)),
-            trailing: Text(userDummy.name, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold, color: colorScheme(context).onSurface)),
+            trailing: Text(_contactName, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold, color: colorScheme(context).onSurface)),
             contentPadding: const EdgeInsets.all(0),
           ),
           ListTile(
             title: Text('Email', style: TravelloTheme.paragraph.copyWith(color: colorScheme(context).onSurface)),
-            trailing: Text(userDummy.email, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold, color: colorScheme(context).onSurface)),
+            trailing: Text(_contactEmail, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold, color: colorScheme(context).onSurface)),
             contentPadding: const EdgeInsets.all(0),
           ),
           ListTile(
             title: Text('Phone', style: TravelloTheme.paragraph.copyWith(color: colorScheme(context).onSurface)),
-            trailing: Text(userDummy.phone, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold, color: colorScheme(context).onSurface)),
+            trailing: Text(_contactPhone, style: TravelloTheme.paragraph.copyWith(fontWeight: FontWeight.bold, color: colorScheme(context).onSurface)),
             contentPadding: const EdgeInsets.all(0),
           ),
         ]),

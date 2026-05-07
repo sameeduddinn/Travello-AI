@@ -100,8 +100,18 @@ class FlightSearchResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 class FlightBookRequest(BaseModel):
-    offer_id:      str   = Field(..., description="Amadeus offer ID from search results")
-    contact_email: str   = Field(..., description="Email for booking confirmation")
-    contact_phone: Optional[str] = None
-    # Passenger info is submitted separately via /passengers endpoint
-    # so we keep this minimal
+    offer_id:        str   = Field(..., description="Amadeus offer ID from search results")
+    contact_email:   str   = Field(..., description="Email for booking confirmation")
+    contact_phone:   Optional[str] = None
+    # Optional fallback fields — used when offer_id is not in cache (e.g. featured packages)
+    origin:          Optional[str]   = None
+    destination:     Optional[str]   = None
+    departure_date:  Optional[str]   = None   # "YYYY-MM-DD"
+    departure_time:  Optional[str]   = None   # "HH:MM"
+    arrival_time:    Optional[str]   = None   # "HH:MM"
+    airline_name:    Optional[str]   = None
+    airline_code:    Optional[str]   = None
+    cabin_class:     Optional[str]   = None
+    total_price_pkr: Optional[float] = None
+    is_refundable:   Optional[bool]  = False
+    duration:        Optional[str]   = None

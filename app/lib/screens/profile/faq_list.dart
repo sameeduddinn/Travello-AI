@@ -1,7 +1,6 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flight_app/utils/auth_service.dart';
-import 'package:flight_app/widgets/app_button/back_icon_button.dart';
 import 'package:flight_app/widgets/search_filters/search_input_btn.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
@@ -26,24 +25,11 @@ class _FaqListState extends State<FaqList> {
   }
 
   Future<void> _loadCurrentUser() async {
-    final isGuest = await AuthService.isGuestMode();
-
-    if (isGuest) {
-      final guestUser = AuthService.getGuestUser();
+    final user = await AuthService.getCurrentUser();
+    if (mounted && user != null) {
       setState(() {
-        _userName = guestUser['name'];
+        _userName = user['name'] ?? 'User';
       });
-    } else {
-      final user = await AuthService.getCurrentUser();
-      if (user != null) {
-        setState(() {
-          _userName = user['name'] ?? 'User';
-        });
-      } else {
-        setState(() {
-          _userName = 'Guest User';
-        });
-      }
     }
   }
 
@@ -60,9 +46,13 @@ class _FaqListState extends State<FaqList> {
       appBar: AppBar(
         forceMaterialTransparency: true,
         backgroundColor: Colors.transparent,
-        leading: BackIconButton(onTap: () {
-          Get.back();
-        }),
+        leadingWidth: 48,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new,
+              size: 18, color: Colors.black87),
+          onPressed: () => Get.back(),
+          padding: const EdgeInsets.only(left: 12),
+        ),
         titleSpacing: 0,
         title: _showSearch
             ? Padding(

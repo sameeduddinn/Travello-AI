@@ -117,7 +117,7 @@ async def send_booking_confirmation_endpoint(
     """
     Send (or resend) the HTML booking confirmation email for a booking.
     Fetches booking data from DB, chooses the correct template
-    (flight / train / hotel), and sends via Gmail SMTP or Resend API.
+    (flight / train / hotel), and sends via Gmail SMTP.
     The booking must belong to the authenticated user.
     """
     # Ownership check — ensure booking belongs to this user
@@ -150,7 +150,7 @@ async def test_email_config(user: CurrentUser):
     """
     user_email = getattr(user, "email", "") or ""
 
-    email_configured = bool(settings.SMTP_USER and settings.SMTP_PASSWORD) or bool(settings.RESEND_API_KEY)
+    email_configured = bool(settings.SMTP_USER and settings.SMTP_PASSWORD) 
     if not user_email:
         return {
             "email_configured": email_configured,

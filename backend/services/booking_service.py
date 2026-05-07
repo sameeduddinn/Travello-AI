@@ -279,10 +279,10 @@ async def get_ticket(booking_uuid: str, user_id: str) -> TicketOut:
 # ---------------------------------------------------------------------------
 
 async def mark_booking_paid(booking_uuid: str, transaction_id: str) -> None:
-    """Update booking status to 'paid' and store the transaction_id."""
+    """Update booking status to 'confirmed' and store the transaction_id."""
     try:
         supabase_admin.table("bookings").update(
-            {"status": "paid", "transaction_id": transaction_id}
+            {"status": "confirmed", "transaction_id": transaction_id}
         ).eq("id", booking_uuid).execute()
     except Exception as exc:
         logger.error("mark_booking_paid error: %s", exc)

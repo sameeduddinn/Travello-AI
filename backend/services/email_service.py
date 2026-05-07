@@ -4,7 +4,7 @@
 #          Called after payment is verified to send a rich HTML email to the
 #          user's contact_email address.
 #
-# Uses core.email.send_email() which talks to the Resend API.
+# Uses core.email.send_email() which sends via Gmail SMTP.
 # =============================================================================
 
 from __future__ import annotations

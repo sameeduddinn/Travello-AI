@@ -279,10 +279,24 @@ class _BookingCheckoutState extends State<BookingCheckout> {
     // with locally generated IDs.
     setState(() => _isCreatingBooking = true);
     try {
+      final depDate = '${_departureDate.year}-'
+          '${_departureDate.month.toString().padLeft(2, '0')}-'
+          '${_departureDate.day.toString().padLeft(2, '0')}';
       final booking = await ApiClient.bookFlight(
         offerId: _flight.id,
         contactEmail: _contactEmail,
         contactPhone: _contactPhone.isNotEmpty ? _contactPhone : null,
+        origin: _fromAirport.code,
+        destination: _toAirport.code,
+        departureDate: depDate,
+        departureTime: _flight.departureTime,
+        arrivalTime: _flight.arrivalTime,
+        airlineName: _flight.airlineName,
+        airlineCode: _flight.airlineCode,
+        cabinClass: _flight.cabinClass,
+        totalPricePkr: _flight.price * (_adults + _children + _infants).clamp(1, 9),
+        isRefundable: _flight.isRefundable,
+        duration: _flight.duration,
       );
       _backendBookingId =
           booking['booking_uuid']?.toString() ?? booking['id']?.toString();

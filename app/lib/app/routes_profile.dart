@@ -1,10 +1,9 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/ui/layouts/general_layout.dart';
-import 'package:flight_app/screens/profile/detail_point.dart';
 import 'package:flight_app/screens/profile/edit_password.dart';
 import 'package:flight_app/screens/profile/edit_profile.dart';
 import 'package:flight_app/screens/profile/profile_main.dart';
-import 'package:flight_app/screens/profile/rewards.dart';
+import 'package:flight_app/screens/profile/saved_searches_screen.dart';
 import 'package:flight_app/screens/profile/faq_list.dart';
 import 'package:flight_app/screens/profile/contact.dart';
 import 'package:flight_app/screens/profile/terms_condition.dart';
@@ -24,14 +23,6 @@ final List<GetPage> routesProfile = [
       page: () => const HomeLayout(content: ProfileMain()),
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: pageTransitionDuration)),
-  GetPage(
-    name: AppLink.reward,
-    page: () => const GeneralLayout(content: Rewards()),
-  ),
-  GetPage(
-    name: AppLink.detailPoint,
-    page: () => const GeneralLayout(content: DetailPoint()),
-  ),
   GetPage(
     name: AppLink.editProfile,
     page: () => const GeneralLayout(content: EditProfile()),
@@ -71,5 +62,11 @@ final List<GetPage> routesProfile = [
   GetPage(
     name: AppLink.blog,
     page: () => const GeneralLayout(content: Blog()),
+  ),
+  GetPage(
+    name: AppLink.savedSearches,
+    page: () => const GeneralLayout(content: SavedSearchesScreen()),
+    transition: Transition.rightToLeft,
+    transitionDuration: const Duration(milliseconds: pageTransitionDuration),
   ),
 ];

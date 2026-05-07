@@ -3,22 +3,26 @@ import 'package:flutter/material.dart';
 class WeatherData {
   final String city;
   final double temperature;
+  final double? feelsLike;
   final String condition;
   final IconData icon;
   final int humidity;
   final double windSpeed;
   final bool travelWarning;
   final String warningMessage;
+  final String source;
 
   WeatherData({
     required this.city,
     required this.temperature,
+    this.feelsLike,
     required this.condition,
     required this.icon,
     required this.humidity,
     required this.windSpeed,
     this.travelWarning = false,
     this.warningMessage = '',
+    this.source = 'static',
   });
 }
 

@@ -35,28 +35,12 @@ class _ProfileMainState extends State<ProfileMain> {
   }
 
   Future<void> _loadCurrentUser() async {
-    // Check if in guest mode
-    final isGuest = await AuthService.isGuestMode();
-
-    if (isGuest) {
-      final guestUser = AuthService.getGuestUser();
+    final user = await AuthService.getCurrentUser();
+    if (mounted) {
       setState(() {
-        _userName = guestUser['name'];
-        _userAvatar = ''; // No avatar for guest
+        _userName = user?['name'] ?? 'User';
+        _userAvatar = (user?['avatar'] ?? '').toString();
       });
-    } else {
-      final user = await AuthService.getCurrentUser();
-      if (user != null) {
-        setState(() {
-          _userName = user['name'] ?? 'User';
-          _userAvatar = (user['avatar'] ?? '').toString();
-        });
-      } else {
-        setState(() {
-          _userName = 'Guest User';
-          _userAvatar = '';
-        });
-      }
     }
   }
 

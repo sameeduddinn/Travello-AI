@@ -245,19 +245,27 @@ class _DSInputFieldState extends State<DSInputField>
                     child: Padding(
                       padding: const EdgeInsets.only(top: 5, left: 4),
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            Icons.error_outline_rounded,
-                            size: 12,
-                            color: Color(0xFFDC2626),
+                          const Padding(
+                            padding: EdgeInsets.only(top: 1),
+                            child: Icon(
+                              Icons.error_outline_rounded,
+                              size: 12,
+                              color: Color(0xFFDC2626),
+                            ),
                           ),
                           const SizedBox(width: 4),
-                          Flexible(
+                          Expanded(
                             child: Text(
                               _errorText!,
+                              maxLines: 3,
+                              softWrap: true,
+                              overflow: TextOverflow.clip,
                               style: TravelloTheme.caption.copyWith(
                                 color: const Color(0xFFDC2626),
                                 fontWeight: FontWeight.w500,
+                                overflow: TextOverflow.clip,
                               ),
                             ),
                           ),

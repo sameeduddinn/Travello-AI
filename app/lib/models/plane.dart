@@ -31,7 +31,7 @@ final List<Plane> planeList = [
     classType: 'Economy',
     description:
         'Standard aircraft for Pakistan domestic flights - used by PIA, Airblue, SereneAir, AirSial. Capacity: 150-180 passengers.',
-    logo: ImgApi.photo[91],
+    logo: ImgApi.photo[0],
   ),
   Plane(
     id: '2',
@@ -40,7 +40,7 @@ final List<Plane> planeList = [
     classType: 'Economy',
     description:
         'Popular narrow-body aircraft for domestic routes - used by PIA, Airblue, SereneAir. Capacity: 150-180 passengers.',
-    logo: ImgApi.photo[92],
+    logo: ImgApi.photo[1],
   ),
   Plane(
     id: '3',
@@ -49,7 +49,7 @@ final List<Plane> planeList = [
     classType: 'Economy',
     description:
         'Turboprop for short routes like Islamabad-Gilgit, Karachi-Gwadar - used by PIA, SereneAir. Capacity: 70 passengers.',
-    logo: ImgApi.photo[93],
+    logo: ImgApi.photo[2],
   ),
   Plane(
     id: '4',
@@ -58,7 +58,7 @@ final List<Plane> planeList = [
     classType: 'Business',
     description:
         'Premium Airbus A320 with business class seating. Most common business class aircraft in Pakistan.',
-    logo: ImgApi.photo[94],
+    logo: ImgApi.photo[3],
   ),
   Plane(
     id: '5',
@@ -67,7 +67,7 @@ final List<Plane> planeList = [
     classType: 'Business',
     description:
         'Business class configured Boeing 737 for premium domestic travel.',
-    logo: ImgApi.photo[95],
+    logo: ImgApi.photo[4],
   ),
   Plane(
     id: '6',
@@ -76,7 +76,7 @@ final List<Plane> planeList = [
     classType: 'Economy',
     description:
         'Economy class Airbus A320 - most common aircraft on Karachi-Lahore, Karachi-Islamabad routes.',
-    logo: ImgApi.photo[96],
+    logo: ImgApi.photo[5],
   ),
   Plane(
     id: '7',
@@ -85,7 +85,7 @@ final List<Plane> planeList = [
     classType: 'Economy',
     description:
         'Economy class Boeing 737 operated by PIA and Airblue on major domestic routes.',
-    logo: ImgApi.photo[97],
+    logo: ImgApi.photo[6],
   ),
   Plane(
     id: '8',
@@ -94,7 +94,7 @@ final List<Plane> planeList = [
     classType: 'Economy',
     description:
         'Regional turboprop aircraft perfect for northern areas and coastal routes (Skardu, Chitral, Gwadar).',
-    logo: ImgApi.photo[98],
+    logo: ImgApi.photo[7],
   ),
   Plane(
     id: '9',
@@ -103,7 +103,7 @@ final List<Plane> planeList = [
     classType: 'First',
     description:
         'Premium economy A320 configuration with extra legroom and amenities.',
-    logo: ImgApi.photo[99],
+    logo: ImgApi.photo[8],
   ),
   Plane(
     id: '10',
@@ -112,6 +112,6 @@ final List<Plane> planeList = [
     classType: 'First',
     description:
         'Premium economy Boeing 737 with enhanced comfort for longer domestic flights.',
-    logo: ImgApi.photo[100],
+    logo: ImgApi.photo[9],
   )
 ];

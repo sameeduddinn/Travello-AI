@@ -5,6 +5,7 @@ import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/app/app_routes.dart';
 import 'package:flight_app/controllers/notification_controller.dart';
+import 'package:flight_app/controllers/city_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
@@ -38,6 +39,7 @@ void main() async {
 
   // Register global controllers
   Get.put(NotificationController(), permanent: true);
+  Get.put(CityController(), permanent: true);
 
   runApp(MainApp());
 }

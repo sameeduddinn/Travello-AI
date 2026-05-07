@@ -171,6 +171,18 @@ class ApiClient {
     required String offerId,
     required String contactEmail,
     String? contactPhone,
+    // Fallback fields for featured packages (no prior /flights/search needed)
+    String? origin,
+    String? destination,
+    String? departureDate,
+    String? departureTime,
+    String? arrivalTime,
+    String? airlineName,
+    String? airlineCode,
+    String? cabinClass,
+    double? totalPricePkr,
+    bool isRefundable = false,
+    String? duration,
   }) async {
     final res = await http
         .post(
@@ -181,6 +193,17 @@ class ApiClient {
             'contact_email': contactEmail,
             if (contactPhone != null && contactPhone.isNotEmpty)
               'contact_phone': contactPhone,
+            if (origin != null) 'origin': origin,
+            if (destination != null) 'destination': destination,
+            if (departureDate != null) 'departure_date': departureDate,
+            if (departureTime != null) 'departure_time': departureTime,
+            if (arrivalTime != null) 'arrival_time': arrivalTime,
+            if (airlineName != null) 'airline_name': airlineName,
+            if (airlineCode != null) 'airline_code': airlineCode,
+            if (cabinClass != null) 'cabin_class': cabinClass,
+            if (totalPricePkr != null) 'total_price_pkr': totalPricePkr,
+            'is_refundable': isRefundable,
+            if (duration != null) 'duration': duration,
           }),
         )
         .timeout(const Duration(seconds: 15));
@@ -197,6 +220,15 @@ class ApiClient {
     required String contactEmail,
     int passengers = 1,
     String? contactPhone,
+    // Fallback fields for featured packages not in backend cache
+    String? trainName,
+    String? trainNumber,
+    String? origin,
+    String? destination,
+    String? departureAt,
+    String? arrivalAt,
+    String? className,
+    double? totalPricePkr,
   }) async {
     final res = await http
         .post(
@@ -209,6 +241,14 @@ class ApiClient {
             'passengers': passengers,
             if (contactPhone != null && contactPhone.isNotEmpty)
               'contact_phone': contactPhone,
+            if (trainName != null) 'train_name': trainName,
+            if (trainNumber != null) 'train_number': trainNumber,
+            if (origin != null) 'origin': origin,
+            if (destination != null) 'destination': destination,
+            if (departureAt != null) 'departure_at': departureAt,
+            if (arrivalAt != null) 'arrival_at': arrivalAt,
+            if (className != null) 'class_name': className,
+            if (totalPricePkr != null) 'total_price_pkr': totalPricePkr,
           }),
         )
         .timeout(const Duration(seconds: 15));
@@ -229,6 +269,11 @@ class ApiClient {
     int guests = 1,
     int rooms = 1,
     String? contactPhone,
+    // Fallback fields for featured packages (no prior /hotels/search needed)
+    String? hotelName,
+    double? starRating,
+    double? pricePerNightPkr,
+    String? roomType,
   }) async {
     final res = await http
         .post(
@@ -245,6 +290,10 @@ class ApiClient {
             'rooms': rooms,
             if (contactPhone != null && contactPhone.isNotEmpty)
               'contact_phone': contactPhone,
+            if (hotelName != null) 'hotel_name': hotelName,
+            if (starRating != null) 'star_rating': starRating,
+            if (pricePerNightPkr != null) 'price_per_night_pkr': pricePerNightPkr,
+            if (roomType != null) 'room_type': roomType,
           }),
         )
         .timeout(const Duration(seconds: 15));
@@ -523,7 +572,7 @@ class ApiClient {
     String? city,
     double? lat,
     double? lng,
-    double radiusKm = 10,
+    double radiusKm = 20,
   }) async {
     double? resolvedLat = lat;
     double? resolvedLng = lng;
@@ -997,6 +1046,17 @@ class ApiClient {
     } catch (_) {
       return false;
     }
+  }
+
+  /// DELETE /auth/account — permanently deletes the user account and all data.
+  static Future<void> deleteAccount() async {
+    final res = await http
+        .delete(
+          Uri.parse('$_baseUrl/auth/account'),
+          headers: _headers,
+        )
+        .timeout(const Duration(seconds: 20));
+    _throwIfError(res, 'Delete account');
   }
 
   static void _throwIfError(http.Response res, String context) {

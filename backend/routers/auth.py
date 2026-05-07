@@ -50,11 +50,15 @@
 # }
 # =============================================================================
 
+import logging
+
 from fastapi import APIRouter, HTTPException, status
 
 from core.auth import CurrentUser
 from core.supabase_client import supabase_admin
 from models.user import MeOut, PreferencesOut, PreferencesUpdate, ProfileOut, ProfileUpdate
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -179,3 +183,46 @@ async def update_preferences(payload: PreferencesUpdate, user: CurrentUser):
     return PreferencesOut.model_validate(
         {**row, "user_id": str(row.get("user_id", user.id))}
     )
+
+
+# ---------------------------------------------------------------------------
+# DELETE /auth/account
+# ---------------------------------------------------------------------------
+
+@router.delete("/account", status_code=status.HTTP_200_OK)
+async def delete_account(user: CurrentUser):
+    """
+    Permanently delete the authenticated user's account and all associated data.
+    Deletes: profiles, user_preferences, bookings, reviews, notifications,
+             wishlist_items, payment_attempts — then removes the Auth user.
+    """
+    uid = user.id
+
+    # Delete user data from all tables (order matters for FK constraints)
+    tables = [
+        "payment_attempts",
+        "notifications",
+        "reviews",
+        "wishlist_items",
+        "bookings",
+        "user_preferences",
+        "profiles",
+    ]
+    for table in tables:
+        try:
+            user_col = "user_id" if table != "profiles" else "id"
+            supabase_admin.table(table).delete().eq(user_col, uid).execute()
+        except Exception as exc:
+            logger.warning("Failed to delete from %s for user %s: %s", table, uid, exc)
+
+    # Delete the Supabase Auth user (requires service role)
+    try:
+        supabase_admin.auth.admin.delete_user(uid)
+    except Exception as exc:
+        logger.error("Failed to delete auth user %s: %s", uid, exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Account data removed but auth deletion failed. Contact support.",
+        )
+
+    return {"message": "Account permanently deleted."}

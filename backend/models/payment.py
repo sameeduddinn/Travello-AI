@@ -28,16 +28,15 @@ class PaymentInitiateRequest(BaseModel):
         json_schema_extra = {
             "example": {
                 "booking_id": "550e8400-e29b-41d4-a716-446655440000",
-                "method": "jazzcash",
+                "method": "card",
                 "amount": 18500.0,
-                "phone": "03001234567",
             }
         }
 
 
 class PaymentInitiateResponse(BaseModel):
     request_id:   str            # UUID of the payment_attempt row
-    otp_required: bool           # True for jazzcash / easypaisa; False for bank transfer
+    otp_required: bool           # Always False — OTP flow removed
     message:      str
     expires_at:   Optional[datetime] = None   # OTP expiry time (if otp_required)
     booking_id:   Optional[str] = None

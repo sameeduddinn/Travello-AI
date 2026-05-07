@@ -1,8 +1,5 @@
-import 'dart:math';
-
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/models/hotel.dart';
-import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
 import 'package:flight_app/utils/wishlist_service.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +21,6 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
   String _selectedFilter = 'All';
   String _userOriginCityName = 'Karachi';
   bool _isLoading = true;
-  bool _isGuestMode = false;
 
   DateTime _checkIn = DateTime.now().add(const Duration(days: 3));
   DateTime _checkOut = DateTime.now().add(const Duration(days: 5));
@@ -45,26 +41,17 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
   }
 
   Future<void> _loadUserCity() async {
-    final isGuest = await AuthService.isGuestMode();
     final cityData = await LocationPreferenceService.getOriginCity();
     if (mounted) {
       setState(() {
-        _isGuestMode = isGuest;
         _userOriginCityName = cityData['cityName']!;
         _isLoading = false;
       });
     }
   }
 
-  /// Hotels matching user's city; guests see a daily-shuffled mix
+  /// Hotels matching user's city
   List<Hotel> get _cityHotels {
-    if (_isGuestMode) {
-      final seed = DateTime.now().day * 31 + DateTime.now().month;
-      final rng = Random(seed);
-      final all = List<Hotel>.from(PakistanHotels.getHotels(''));
-      all.shuffle(rng);
-      return all;
-    }
     final fromCity = PakistanHotels.getHotels(_userOriginCityName);
     // Fallback: if no hotels for city, show all
     return fromCity.isNotEmpty ? fromCity : PakistanHotels.getHotels('');
@@ -85,7 +72,7 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
   }
 
   String get _appBarTitle {
-    if (_isLoading || _isGuestMode) return 'Featured Hotel Packages';
+    if (_isLoading) return 'Featured Hotel Packages';
     return 'Hotels in $_userOriginCityName';
   }
 
@@ -124,9 +111,8 @@ class _HotelPackageDetailState extends State<HotelPackageDetail> {
                   ),
                 ),
 
-                // ── City banner (logged-in users only) ────────────────
-                if (!_isGuestMode)
-                  SliverToBoxAdapter(
+                // ── City banner ───────────────────────────────────────
+                SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                       child: _buildCityBanner(),

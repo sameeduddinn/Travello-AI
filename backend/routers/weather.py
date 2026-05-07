@@ -1,6 +1,6 @@
 # =============================================================================
 # FILE: routers/weather.py
-# PREFIX: /weather
+# /weather
 # Public endpoints — no authentication required.
 # =============================================================================
 
@@ -15,7 +15,7 @@ async def city_weather(city: str):
     """
     Get current weather for a city.
     Uses Open-Meteo (free, no API key). Falls back to defaults if city unknown.
-
+    
     Flutter call:
       GET /weather/Karachi
       GET /weather/Lahore

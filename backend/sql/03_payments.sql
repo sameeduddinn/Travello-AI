@@ -104,3 +104,25 @@ CREATE POLICY "payment_otps_insert_own" ON public.payment_otps
 
 CREATE POLICY "payment_otps_update_own" ON public.payment_otps
     FOR UPDATE USING (auth.uid() = user_id);
+
+-- Step 1: Delete old jazzcash/easypaisa test records
+DELETE FROM public.payment_attempts
+WHERE payment_method IN ('jazzcash', 'easypaisa');
+
+-- Step 2: Drop old constraints
+ALTER TABLE public.payment_attempts
+  DROP CONSTRAINT IF EXISTS payment_attempts_payment_method_check,
+  DROP CONSTRAINT IF EXISTS payment_attempts_status_check;
+
+-- Step 3: Apply new constraints
+ALTER TABLE public.payment_attempts
+  ADD CONSTRAINT payment_attempts_payment_method_check
+    CHECK (payment_method IN ('card', 'bank_transfer')),
+  ADD CONSTRAINT payment_attempts_status_check
+    CHECK (status IN ('pending', 'completed', 'failed'));
+
+-- Step 4: Drop the OTP table
+DROP TABLE IF EXISTS public.payment_otps CASCADE;
+
+ALTER TABLE payment_attempts
+ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();

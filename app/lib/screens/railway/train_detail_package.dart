@@ -16,8 +16,6 @@ import 'package:flight_app/widgets/flight/flight_routes.dart';
 import 'package:flight_app/widgets/flight/flight_routes_horizontal.dart';
 import 'package:flight_app/widgets/railway/train_summary.dart';
 import 'package:flight_app/widgets/railway/train_summary_wide.dart';
-import 'package:flight_app/utils/auth_service.dart';
-import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
 
@@ -70,13 +68,6 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
   }
 
   void _onBookNow() async {
-    // Auth gate at booking intent — browsing train details was free
-    final nav = Navigator.of(context);
-    final isGuest = await AuthService.isGuestMode();
-    if (isGuest && mounted) {
-      AuthGateSheet.show(nav.context, action: 'to book this train');
-      return;
-    }
     final pkg = _pkg;
     final fromStation = _stationByName(pkg?.fromStation ?? 'Karachi');
     final toStation = _stationByName(pkg?.toStation ?? 'Lahore');
@@ -177,6 +168,7 @@ class _TrainDetailPackageState extends State<TrainDetailPackage> {
         shadowColor: TravelloTheme.paperLight,
         scrolledUnderElevation: 1,
         backgroundColor: Colors.transparent,
+        leadingWidth: 48,
         leading: BackIconButton(onTap: () {
           Get.back();
         }),

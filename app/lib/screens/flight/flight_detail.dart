@@ -3,11 +3,9 @@ import 'package:flight_app/models/city.dart';
 import 'package:flight_app/models/flight_route.dart';
 import 'package:flight_app/models/plane.dart';
 import 'package:flight_app/models/trip.dart';
-import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/ui/themes/theme_breakpoints.dart';
 import 'package:flight_app/widgets/alert_info/alert_info.dart';
 import 'package:flight_app/widgets/app_button/back_icon_button.dart';
-import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
 import 'package:flight_app/widgets/decorations/oval_shape.dart';
 import 'package:flight_app/widgets/flight/facilities_slider.dart';
 import 'package:flight_app/widgets/flight/flight_routes.dart';
@@ -186,13 +184,6 @@ class _FlightDetailState extends State<FlightDetail> {
                     height: R.rh(context, 50),
                     child: FilledButton(
                         onPressed: () async {
-                          // Auth gate at booking intent — search was free
-                          final isGuest = await AuthService.isGuestMode();
-                          if (isGuest && context.mounted) {
-                            AuthGateSheet.show(context,
-                                action: 'to book this flight');
-                            return;
-                          }
                           Get.toNamed(AppLink.bookingStep1);
                         },
                         style: ThemeButton.btnBig.merge(ThemeButton.primary),

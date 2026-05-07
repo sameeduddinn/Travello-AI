@@ -195,10 +195,50 @@ async def book_hotel(payload: HotelBookRequest, user: CurrentUser):
             _hotel_cache[h.hotel_id] = (h, ts)
         hotel = next((h for h in refreshed.hotels if h.hotel_id == payload.hotel_id), None)
     if not hotel:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Hotel not found. Please search again.",
+        # Use fallback fields from Flutter for featured-package bookings
+        if not payload.hotel_name or not payload.price_per_night_pkr:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Hotel not found. Please search again.",
+            )
+        nights = (payload.check_out - payload.check_in).days
+        total_amount = round(payload.price_per_night_pkr * nights * payload.rooms, 2)
+        raw_payload = {
+            "hotel_id": payload.hotel_id,
+            "hotel_name": payload.hotel_name,
+            "star_rating": payload.star_rating or 0,
+            "city": payload.city or "",
+            "room_id": payload.room_id,
+            "room_type": payload.room_type or "Standard Room",
+            "price_per_night_pkr": payload.price_per_night_pkr,
+            "nights": nights,
+            "rooms": payload.rooms,
+            "guests": payload.guests,
+        }
+        booking = await create_booking(
+            user_id=user.id,
+            booking_type="hotel",
+            contact_email=payload.contact_email,
+            contact_phone=payload.contact_phone,
+            total_amount=total_amount,
+            raw_payload=raw_payload,
+            hotel_name=payload.hotel_name,
+            check_in=payload.check_in,
+            check_out=payload.check_out,
+            destination=payload.city or "",
         )
+        return {
+            "booking_id": booking.booking_id,
+            "booking_uuid": booking.id,
+            "pnr": booking.pnr,
+            "status": booking.status,
+            "hotel_name": payload.hotel_name,
+            "room_type": payload.room_type or "Standard Room",
+            "check_in": str(payload.check_in),
+            "check_out": str(payload.check_out),
+            "nights": nights,
+            "rooms": payload.rooms,
+        }
 
     # Find the requested room
     room = next((r for r in hotel.rooms if r.room_id == payload.room_id), None)

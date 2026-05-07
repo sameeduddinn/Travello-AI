@@ -59,8 +59,10 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("✅ Supabase configured")
 
-    if settings.RESEND_API_KEY:
-        logger.info("✅ Resend email configured — from: %s", settings.EMAIL_FROM)
+    if settings.SMTP_USER:
+        logger.info("✅ Gmail SMTP configured — from: %s", settings.EMAIL_FROM)
+    else:
+        logger.warning("⚠️  No email backend configured — set SMTP_USER/SMTP_PASSWORD in .env")
 
     logger.info("Startup complete. Ready to accept requests.")
 
@@ -81,8 +83,8 @@ app = FastAPI(
     description=(
         "Travello AI — Pakistan's smart travel booking backend. "
         "Supports flights (Amadeus), trains (Pakistan Railways mock), "
-        "hotels (RapidAPI), bookings, payments (JazzCash/EasyPaisa OTP simulation), "
-        "and booking confirmation emails via Resend."
+        "hotels (RapidAPI), bookings, payments (card & bank transfer), "
+        "and booking confirmation emails via SMTP/Resend."
     ),
     docs_url="/docs",       # Swagger UI
     redoc_url="/redoc",     # ReDoc

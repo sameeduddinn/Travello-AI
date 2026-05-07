@@ -1,7 +1,8 @@
+import 'package:flight_app/controllers/city_controller.dart';
 import 'package:flight_app/models/weather.dart';
 import 'package:flight_app/services/api_client.dart';
 import 'package:flutter/material.dart';
-import 'package:get/route_manager.dart';
+import 'package:get/get.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
 
@@ -42,12 +43,14 @@ WeatherData _fromApi(Map<String, dynamic> map) {
   return WeatherData(
     city: map['city']?.toString() ?? '',
     temperature: (map['temperature'] as num?)?.toDouble() ?? 27.0,
+    feelsLike: (map['feels_like'] as num?)?.toDouble(),
     condition: map['condition']?.toString() ?? 'Pleasant',
     icon: _iconFromName(map['icon']?.toString() ?? 'wb_sunny'),
     humidity: (map['humidity'] as num?)?.toInt() ?? 55,
     windSpeed: (map['wind_speed'] as num?)?.toDouble() ?? 10.0,
     travelWarning: map['travel_warning'] == true,
     warningMessage: map['warning_message']?.toString() ?? '',
+    source: map['source']?.toString() ?? 'live',
   );
 }
 
@@ -65,9 +68,17 @@ class WeatherScreen extends StatefulWidget {
 class _WeatherScreenState extends State<WeatherScreen>
     with SingleTickerProviderStateMixin {
   String _selectedCity = 'Karachi';
-  WeatherData _currentWeather =
-      PakistanWeatherData.getWeatherForCity('Karachi');
+  WeatherData _currentWeather = PakistanWeatherData.getWeatherForCity('Karachi');
   List<WeatherData> _allCities = PakistanWeatherData.getAllCitiesWeather();
+
+  // Restore city from global selection before first build
+  void _syncCityFromController() {
+    final saved = CityController.to.selectedCity.value;
+    if (PakistanWeatherData.getCities().contains(saved)) {
+      _selectedCity = saved;
+      _currentWeather = PakistanWeatherData.getWeatherForCity(saved);
+    }
+  }
   bool _loadingCurrent = false;
   bool _loadingAll = false;
 
@@ -78,6 +89,7 @@ class _WeatherScreenState extends State<WeatherScreen>
   @override
   void initState() {
     super.initState();
+    _syncCityFromController();
 
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
@@ -116,30 +128,45 @@ class _WeatherScreenState extends State<WeatherScreen>
       final cities = data.map(_fromApi).toList();
       setState(() {
         _allCities = cities;
-        // Update selected city weather from bulk fetch
         final match = cities.where((c) => c.city == _selectedCity);
         if (match.isNotEmpty) _currentWeather = match.first;
         _loadingAll = false;
       });
     } else {
       setState(() => _loadingAll = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not load live weather. Showing estimated data.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 
   Future<void> _changeCity(String city) async {
+    CityController.to.setCity(city);
     setState(() {
       _selectedCity = city;
-      // Show static data immediately while fetching
       _currentWeather = PakistanWeatherData.getWeatherForCity(city);
       _loadingCurrent = true;
     });
 
     final data = await ApiClient.getWeather(city);
     if (!mounted) return;
-    setState(() {
-      if (data != null) _currentWeather = _fromApi(data);
-      _loadingCurrent = false;
-    });
+    if (data != null) {
+      setState(() {
+        _currentWeather = _fromApi(data);
+        _loadingCurrent = false;
+      });
+    } else {
+      setState(() => _loadingCurrent = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not load live weather. Showing estimated data.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override
@@ -148,7 +175,10 @@ class _WeatherScreenState extends State<WeatherScreen>
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      body: CustomScrollView(
+      body: RefreshIndicator(
+        color: const Color(0xFFD4AF37),
+        onRefresh: _loadAllCities,
+        child: CustomScrollView(
         slivers: [
           // ── Animated Golden Header ───────────────────────────────────────
           SliverAppBar(
@@ -396,8 +426,16 @@ class _WeatherScreenState extends State<WeatherScreen>
                                           value:
                                               '${_currentWeather.windSpeed.toStringAsFixed(0)} km/h',
                                         ),
+                                        if (_currentWeather.feelsLike != null)
+                                          _WeatherDetail(
+                                            icon: Icons.thermostat,
+                                            label: 'Feels Like',
+                                            value: '${_currentWeather.feelsLike!.toStringAsFixed(0)}°C',
+                                          ),
                                       ],
                                     ),
+                                    const SizedBox(height: 12),
+                                    _LiveBadge(source: _currentWeather.source),
                                   ],
                                 );
                               },
@@ -496,6 +534,50 @@ class _WeatherScreenState extends State<WeatherScreen>
                 }),
                 const SizedBox(height: 16),
               ],
+            ),
+          ),
+        ],
+      ),
+      ),
+    );
+  }
+}
+
+class _LiveBadge extends StatelessWidget {
+  final String source;
+  const _LiveBadge({required this.source});
+
+  @override
+  Widget build(BuildContext context) {
+    final isLive = source == 'google-weather' || source == 'open-meteo';
+    final label = source == 'google-weather'
+        ? 'Live'
+        : source == 'open-meteo'
+            ? 'Live'
+            : 'Estimated';
+    final color = isLive ? Colors.green.shade600 : Colors.grey.shade500;
+    final bgColor = isLive ? Colors.green.shade50 : Colors.grey.shade100;
+    final icon = isLive ? Icons.wifi_rounded : Icons.wifi_off_rounded;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+              letterSpacing: 0.3,
             ),
           ),
         ],

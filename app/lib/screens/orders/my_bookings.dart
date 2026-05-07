@@ -901,6 +901,7 @@ class _MyBookingsState extends State<MyBookings>
     IconData icon;
     switch (normalized) {
       case 'confirmed':
+      case 'paid':
         bgColor = const Color(0xFF10B981).withValues(alpha: 0.15);
         textColor = const Color(0xFF10B981);
         label = 'CONFIRMED';

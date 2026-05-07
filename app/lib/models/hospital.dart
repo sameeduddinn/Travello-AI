@@ -12,6 +12,8 @@ class Hospital {
   final double? lat;
   final double? lng;
   final String? mapsUrl;
+  final double? rating;
+  final int? ratingCount;
 
   Hospital({
     required this.id,
@@ -25,6 +27,8 @@ class Hospital {
     this.lat,
     this.lng,
     this.mapsUrl,
+    this.rating,
+    this.ratingCount,
   });
 }
 

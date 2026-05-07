@@ -1,3 +1,4 @@
+import 'package:flight_app/controllers/city_controller.dart';
 import 'package:flight_app/models/hospital.dart';
 import 'package:flight_app/services/api_client.dart';
 import 'package:flutter/material.dart';
@@ -52,7 +53,7 @@ class _HealthcareScreenState extends State<HealthcareScreen>
     'Kalash Valley':  [35.7000, 71.6000],
   };
 
-  String _selectedCity = 'Karachi';
+  String _selectedCity = 'Karachi'; // overridden in initState from CityController
   List<Hospital> _hospitals = [];
   bool _isLoadingHospitals = false;
   final MapController _mapController = MapController();
@@ -64,6 +65,9 @@ class _HealthcareScreenState extends State<HealthcareScreen>
   @override
   void initState() {
     super.initState();
+    // Restore last city selected anywhere in the app
+    final saved = CityController.to.selectedCity.value;
+    if (_cityCoords.containsKey(saved)) _selectedCity = saved;
     _loadHospitals();
 
     _animationController = AnimationController(
@@ -114,6 +118,8 @@ class _HealthcareScreenState extends State<HealthcareScreen>
                     lat: (m['lat'] as num?)?.toDouble(),
                     lng: (m['lng'] as num?)?.toDouble(),
                     mapsUrl: m['maps_url']?.toString(),
+                    rating: (m['rating'] as num?)?.toDouble(),
+                    ratingCount: (m['rating_count'] as num?)?.toInt(),
                   ))
               .toList();
         });
@@ -132,9 +138,12 @@ class _HealthcareScreenState extends State<HealthcareScreen>
   }
 
   void _changeCity(String city) {
-    setState(() => _selectedCity = city);
+    CityController.to.setCity(city);
     final coords = _cityCoords[city] ?? _cityCoords['Karachi']!;
-    // Move map to the selected city immediately; zoom out slightly to show all markers.
+    setState(() {
+      _selectedCity = city;
+      _hospitals = []; // clear stale markers immediately
+    });
     Future.microtask(() {
       try {
         _mapController.move(LatLng(coords[0], coords[1]), 12.0);
@@ -266,7 +275,11 @@ class _HealthcareScreenState extends State<HealthcareScreen>
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      body: CustomScrollView(
+      body: RefreshIndicator(
+        color: TravelloTheme.primaryMain,
+        onRefresh: _loadHospitals,
+        child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           // ── Animated Golden Header ───────────────────────────────────────
           SliverAppBar(
@@ -560,6 +573,7 @@ class _HealthcareScreenState extends State<HealthcareScreen>
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -660,6 +674,31 @@ class _HospitalCard extends StatelessWidget {
                   ),
                 ],
               ),
+              if (hospital.rating != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.star_rounded, size: 15, color: Colors.amber.shade600),
+                    const SizedBox(width: 3),
+                    Text(
+                      hospital.rating!.toStringAsFixed(1),
+                      style: TravelloTheme.caption.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: Colors.amber.shade800,
+                      ),
+                    ),
+                    if (hospital.ratingCount != null) ...[
+                      const SizedBox(width: 3),
+                      Text(
+                        '(${hospital.ratingCount})',
+                        style: TravelloTheme.caption.copyWith(
+                          color: colorScheme(context).outline,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -699,16 +738,28 @@ class _HospitalCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: onCall,
-                      icon: const Icon(Icons.phone, size: 18),
-                      label: Text(hospital.phone),
+                      onPressed: hospital.phone.isNotEmpty ? onCall : null,
+                      icon: const Icon(Icons.phone, size: 16),
+                      label: Text(
+                        hospital.phone.isNotEmpty ? hospital.phone : 'No number',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  FilledButton.icon(
-                    onPressed: onNavigate,
-                    icon: const Icon(Icons.directions, size: 18),
-                    label: const Text('Navigate'),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: onNavigate,
+                      icon: const Icon(Icons.directions, size: 16),
+                      label: const Text(
+                        'Navigate',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
                   ),
                 ],
               ),

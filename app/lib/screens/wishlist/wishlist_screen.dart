@@ -327,52 +327,52 @@ class _SavedHotelCard extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(14),
           clipBehavior: Clip.hardEdge,
-          child: IntrinsicHeight(
+          child: SizedBox(
+            height: 110,
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Image
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.30,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Positioned.fill(
-                        child: hotel.images.isNotEmpty
-                            ? Image.network(hotel.images.first,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                    color: Colors.grey.shade200,
-                                    child: const Icon(Icons.hotel,
-                                        size: 32, color: Colors.grey)))
-                            : Container(
-                                color: Colors.grey.shade200,
-                                child: const Icon(Icons.hotel,
-                                    size: 32, color: Colors.grey)),
-                      ),
-                      Positioned(
-                        top: 6,
-                        right: 6,
-                        child: GestureDetector(
-                          onTap: onRemove,
-                          child: Container(
-                            padding: const EdgeInsets.all(5),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.92),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.favorite,
-                                size: 14, color: Colors.red),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Image
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.30,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: hotel.images.isNotEmpty
+                          ? Image.network(hotel.images.first,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(Icons.hotel,
+                                      size: 32, color: Colors.grey)))
+                          : Container(
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.hotel,
+                                  size: 32, color: Colors.grey)),
+                    ),
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: GestureDetector(
+                        onTap: onRemove,
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.92),
+                            shape: BoxShape.circle,
                           ),
+                          child: const Icon(Icons.favorite,
+                              size: 14, color: Colors.red),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                // Info
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+              ),
+              // Info
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,

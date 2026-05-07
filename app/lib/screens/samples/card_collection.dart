@@ -4,17 +4,13 @@ import 'package:flight_app/models/booking.dart';
 import 'package:flight_app/models/city.dart';
 import 'package:flight_app/models/plane.dart';
 import 'package:flight_app/widgets/app_button/back_icon_button.dart';
-import 'package:flight_app/widgets/cards/activity_card.dart';
 import 'package:flight_app/widgets/cards/airport_card.dart';
 import 'package:flight_app/widgets/cards/flight_card.dart';
 import 'package:flight_app/widgets/cards/flight_portrait_card.dart';
 import 'package:flight_app/widgets/cards/flight_route_card.dart';
-import 'package:flight_app/widgets/cards/news_card.dart';
 import 'package:flight_app/widgets/cards/pricing_card.dart';
 import 'package:flight_app/widgets/cards/profile_card.dart';
 import 'package:flight_app/widgets/cards/promo_card.dart';
-import 'package:flight_app/widgets/cards/rating_card.dart';
-import 'package:flight_app/widgets/cards/reward_card.dart';
 import 'package:flight_app/widgets/cards/ticket_card.dart';
 import 'package:flight_app/widgets/cards/title_icon_card.dart';
 import 'package:flight_app/widgets/cards/voucher_card.dart';
@@ -39,13 +35,6 @@ class CardCollection extends StatelessWidget {
           }),
         ),
         body: ListView(padding: const EdgeInsets.all(16), children: [
-          const Text('Activty Card', style: TravelloTheme.subtitle2),
-          const ActivityCard(
-              title: 'Sample Activity',
-              time: 'Yesterday',
-              icon: Icons.history,
-              color: Colors.orange),
-          const VSpace(),
           const Text('Airport Card', style: TravelloTheme.subtitle2),
           const AirportCard(
               name: 'Soekarno-Hatta', code: 'JKT', location: 'Jakarta'),
@@ -82,18 +71,6 @@ class CardCollection extends StatelessWidget {
             airport: airportList[0],
           ),
           const VSpace(),
-          const Text('News Card', style: TravelloTheme.subtitle2),
-          Row(
-            children: [
-              SizedBox(
-                  width: 200,
-                  child: NewsCard(
-                      thumb: ImgApi.photo[1],
-                      title: 'News Title',
-                      date: '11 Apr 2026')),
-            ],
-          ),
-          const VSpace(),
           const Text('Pricing Card', style: TravelloTheme.subtitle2),
           const PricingCard(
               mainIcon: Icon(Icons.discount,
@@ -126,30 +103,6 @@ class CardCollection extends StatelessWidget {
               point: 20,
               time: '15 Aug 2025',
               title: 'Lorem ipsum dolor sit amet'),
-          const VSpace(),
-          const Text('Rating Card', style: TravelloTheme.subtitle2),
-          RatingCard(
-              name: 'John Doe',
-              avatar: ImgApi.avatar[8],
-              date: '22 May 2024',
-              description: 'Fusce et sagittis risus, et condimentum libero. ',
-              rating: 4),
-          const VSpace(),
-          const Text('Reward Card', style: TravelloTheme.subtitle2),
-          Row(
-            children: [
-              SizedBox(
-                  height: 250,
-                  width: 200,
-                  child: RewardCard(
-                      image: ImgApi.photo[89],
-                      logo: ImgApi.photo[96],
-                      title: 'Reward Title',
-                      subtitle:
-                          'Fusce et sagittis risus, et condimentum libero.',
-                      point: 200)),
-            ],
-          ),
           const VSpace(),
           const Text('Ticket Card', style: TravelloTheme.subtitle2),
           TicketCard(

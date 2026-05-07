@@ -397,6 +397,7 @@ class _BookingDetailState extends State<BookingDetail> {
 
     switch (status.toLowerCase()) {
       case 'confirmed':
+      case 'paid':
         bgColor = const Color(0xFF10B981);
         label = 'CONFIRMED';
         icon = Icons.check_circle;

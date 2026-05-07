@@ -3,12 +3,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/models/railway_station.dart';
 import 'package:flight_app/utils/format_utils.dart';
-import 'package:flight_app/utils/auth_service.dart';
-import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
 import 'package:flight_app/services/api_client.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
+import 'package:flight_app/utils/search_history_service.dart';
 
 // Train result model
 class TrainResult {
@@ -78,6 +77,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
 
   // Loading state
   bool _isLoading = false;
+  bool _searchSaved = false;
 
   @override
   void initState() {
@@ -109,6 +109,38 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
     _infants = (searchParams['infants'] as int?) ?? 0;
 
     _fetchTrains();
+  }
+
+  Future<void> _saveCurrentSearch() async {
+    final fromStation = searchParams['fromStation'] as RailwayStation?;
+    final toStation = searchParams['toStation'] as RailwayStation?;
+    await SearchHistoryService.saveTrainSearch(
+      fromStation?.name ?? 'Unknown',
+      params: {
+        'from': fromStation?.code ?? '',
+        'to': toStation?.code ?? '',
+        'from_name': fromStation?.name ?? '',
+        'to_name': toStation?.name ?? '',
+        'date': _selectedDate.toString(),
+        'trip_type': searchParams['tripType'] ?? 'One-way',
+        'train_class': _selectedTrainClass,
+        'adults': _adults,
+        'children': _children,
+        'infants': _infants,
+      },
+    );
+    setState(() => _searchSaved = true);
+    Get.snackbar(
+      'Search Saved',
+      'Train search saved to your profile',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: const Color(0xFFD4AF37),
+      colorText: Colors.white,
+      icon: const Icon(Icons.bookmark, color: Colors.white),
+      margin: const EdgeInsets.all(12),
+      borderRadius: 12,
+      duration: const Duration(seconds: 2),
+    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1094,6 +1126,14 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
           },
         ),
         actions: [
+          IconButton(
+            tooltip: _searchSaved ? 'Search Saved' : 'Save Search',
+            icon: Icon(
+              _searchSaved ? Icons.bookmark : Icons.bookmark_border,
+              color: Colors.white,
+            ),
+            onPressed: _searchSaved ? null : _saveCurrentSearch,
+          ),
           IconButton(
             icon: const Icon(CupertinoIcons.slider_horizontal_3,
                 color: Colors.white),
@@ -3453,13 +3493,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
 
   void _handleTrainSelection(TrainResult train, String trainClass) async {
     // Auth gate at Select — industry standard (browsing was free)
-    final nav = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final isGuest = await AuthService.isGuestMode();
-    if (isGuest && mounted) {
-      AuthGateSheet.show(nav.context, action: 'to book this train');
-      return;
-    }
     // Handle round-trip selection
     if (_isRoundTrip && _currentJourneyIndex == 0) {
       // Outbound selected, move to return

@@ -3,7 +3,6 @@ import 'package:flight_app/controllers/notification_controller.dart';
 import 'package:flight_app/utils/custom_tooltip.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/widgets/action_headers/home_action_group.dart';
 import 'package:overlay_tooltip/overlay_tooltip.dart';
 import 'package:flight_app/utils/auth_service.dart';
@@ -38,30 +37,17 @@ class _HomeHeaderState extends State<HomeHeader> {
   }
 
   Future<void> _loadCurrentUser() async {
-    // Check if in guest mode first
-    final isGuest = await AuthService.isGuestMode();
-
-    if (isGuest) {
-      // Show guest user data
-      final guestUser = AuthService.getGuestUser();
-      setState(() {
-        _userName = guestUser['name'];
-        _userAvatar = ''; // No avatar for guest
-        _userCountry = 'Visitor'; // Guest indicator
-      });
-    } else {
-      // Load logged-in user data
-      final user = await AuthService.getCurrentUser();
+    final user = await AuthService.getCurrentUser();
+    if (mounted) {
       if (user != null) {
         setState(() {
           _userName = user['name'] ?? 'User';
-          _userAvatar = userDummy.avatar; // Using default avatar for now
-          _userCountry = 'Pakistan'; // Default country
+          _userAvatar = user['avatar'] ?? '';
+          _userCountry = 'Pakistan';
         });
       } else {
-        // No user logged in, show default
         setState(() {
-          _userName = 'Guest User';
+          _userName = 'User';
           _userAvatar = '';
           _userCountry = 'Visitor';
         });
@@ -74,8 +60,7 @@ class _HomeHeaderState extends State<HomeHeader> {
     final bool hasTooltipScaffold =
         context.findAncestorWidgetOfExactType<OverlayTooltipScaffold>() != null;
 
-    final String avatarUrl =
-        (_userAvatar.isEmpty ? userDummy.avatar : _userAvatar).trim();
+    final String avatarUrl = _userAvatar.trim();
 
     final Widget notificationsButton = Obx(() {
       final ctrl = Get.find<NotificationController>();

@@ -44,14 +44,17 @@ class Settings(BaseSettings):
     RAPIDAPI_KEY: str = ""
     RAPIDAPI_HOST: str = "tripadvisor16.p.rapidapi.com"
 
+    # -------------------------------------------------------------------------
+    # Google Maps Platform (Places API + Weather API + Healthcare nearby search)
+    # -------------------------------------------------------------------------
+    GOOGLE_PLACES_API_KEY: str = ""
+
 
 
     # -------------------------------------------------------------------------
-    # Email — Resend API (primary) OR Gmail SMTP (fallback/alternative)
-    # Set SMTP_USER + SMTP_PASSWORD to use Gmail instead of Resend.
+    # Email — Gmail SMTP
     # -------------------------------------------------------------------------
-    RESEND_API_KEY: str = ""
-    EMAIL_FROM: str = "Travello AI <onboarding@resend.dev>"
+    EMAIL_FROM: str = "Travello AI <travelloo.ai@gmail.com>"
     EMAIL_REPLY_TO: str = "support@travello.ai"
 
     # Gmail SMTP (free, no domain needed, sends to any address)

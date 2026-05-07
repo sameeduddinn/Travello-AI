@@ -68,7 +68,7 @@
 import json
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -159,65 +159,119 @@ async def book_flight(payload: FlightBookRequest, user: CurrentUser):
     Returns the booking_id, PNR, and total amount for the payment screen.
     """
     cached = _offer_cache.get(payload.offer_id)
-    if not cached or time.time() - cached[1] > _CACHE_TTL:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Flight offer expired or not found. Please search again.",
-        )
-    offer = cached[0]
+    offer = cached[0] if (cached is not None and time.time() - cached[1] <= _CACHE_TTL) else None
 
-    # Extract itinerary details for denormalised columns
-    first_itin = offer.itineraries[0] if offer.itineraries else None
-    first_seg = first_itin.segments[0] if first_itin and first_itin.segments else None
-    last_seg = (
-        first_itin.segments[-1]
-        if first_itin and first_itin.segments
-        else None
-    )
-
-    # Fix 7: Reject bookings for already-departed flights
-    if first_seg and first_seg.departure_time < datetime.utcnow():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot book a flight that has already departed.",
+    if offer is not None:
+        first_itin = offer.itineraries[0] if offer.itineraries else None
+        first_seg = first_itin.segments[0] if first_itin and first_itin.segments else None
+        last_seg = (
+            first_itin.segments[-1]
+            if first_itin and first_itin.segments
+            else None
         )
 
-    raw_payload = {
-        "offer_id": offer.offer_id,
-        "itineraries": [
-            {
-                "duration": itin.duration,
-                "segments": [
-                    {
-                        "carrier_code": seg.carrier_code,
-                        "flight_number": seg.flight_number,
-                        "departure_airport": seg.departure_airport,
-                        "arrival_airport": seg.arrival_airport,
-                        "departure_time": seg.departure_time.isoformat(),
-                        "arrival_time": seg.arrival_time.isoformat(),
-                        "duration": seg.duration,
-                        "cabin_class": seg.cabin_class,
-                    }
-                    for seg in itin.segments
-                ],
-            }
-            for itin in offer.itineraries
-        ],
-        "baggage_allowance": offer.baggage_allowance,
-        "is_refundable": offer.is_refundable,
-    }
+        if first_seg and first_seg.departure_time < datetime.now(timezone.utc).replace(tzinfo=None):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot book a flight that has already departed.",
+            )
+
+        raw_payload = {
+            "offer_id": offer.offer_id,
+            "itineraries": [
+                {
+                    "duration": itin.duration,
+                    "segments": [
+                        {
+                            "carrier_code": seg.carrier_code,
+                            "flight_number": seg.flight_number,
+                            "departure_airport": seg.departure_airport,
+                            "arrival_airport": seg.arrival_airport,
+                            "departure_time": seg.departure_time.isoformat(),
+                            "arrival_time": seg.arrival_time.isoformat(),
+                            "duration": seg.duration,
+                            "cabin_class": seg.cabin_class,
+                        }
+                        for seg in itin.segments
+                    ],
+                }
+                for itin in offer.itineraries
+            ],
+            "baggage_allowance": offer.baggage_allowance,
+            "is_refundable": offer.is_refundable,
+        }
+        total_amount = offer.total_price_pkr
+        origin = first_seg.departure_airport if first_seg else None
+        destination = last_seg.arrival_airport if last_seg else None
+        departure_at = first_seg.departure_time if first_seg else None
+        arrival_at = last_seg.arrival_time if last_seg else None
+
+    else:
+        # Offer not in cache — use fallback fields supplied by Flutter for
+        # featured-package bookings that never went through /flights/search.
+        if not payload.origin or not payload.destination or not payload.total_price_pkr:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Flight offer expired or not found. Please search again.",
+            )
+
+        dep_dt: Optional[datetime] = None
+        arr_dt: Optional[datetime] = None
+        if payload.departure_date and payload.departure_time:
+            try:
+                dep_dt = datetime.strptime(
+                    f"{payload.departure_date} {payload.departure_time}", "%Y-%m-%d %H:%M"
+                )
+            except ValueError:
+                pass
+        if payload.departure_date and payload.arrival_time:
+            try:
+                arr_dt = datetime.strptime(
+                    f"{payload.departure_date} {payload.arrival_time}", "%Y-%m-%d %H:%M"
+                )
+            except ValueError:
+                pass
+
+        raw_payload = {
+            "offer_id": payload.offer_id,
+            "itineraries": [
+                {
+                    "duration": payload.duration or "N/A",
+                    "segments": [
+                        {
+                            "carrier_code": payload.airline_code or "N/A",
+                            "flight_number": payload.offer_id,
+                            "departure_airport": payload.origin,
+                            "arrival_airport": payload.destination,
+                            "departure_time": dep_dt.isoformat() if dep_dt else "",
+                            "arrival_time": arr_dt.isoformat() if arr_dt else "",
+                            "duration": payload.duration or "N/A",
+                            "cabin_class": payload.cabin_class or "Economy",
+                        }
+                    ],
+                }
+            ],
+            "baggage_allowance": "7kg carry-on",
+            "is_refundable": payload.is_refundable or False,
+            "airline_name": payload.airline_name,
+        }
+        total_amount = payload.total_price_pkr
+        origin = payload.origin.upper()
+        destination = payload.destination.upper()
+        departure_at = dep_dt
+        arrival_at = arr_dt
 
     booking = await create_booking(
         user_id=user.id,
         booking_type="flight",
         contact_email=payload.contact_email,
         contact_phone=payload.contact_phone,
-        total_amount=offer.total_price_pkr,
+        total_amount=total_amount,
         raw_payload=raw_payload,
-        origin=first_seg.departure_airport if first_seg else None,
-        destination=last_seg.arrival_airport if last_seg else None,
-        departure_at=first_seg.departure_time if first_seg else None,
-        arrival_at=last_seg.arrival_time if last_seg else None,
+        origin=origin,
+        destination=destination,
+        departure_at=departure_at,
+        arrival_at=arrival_at,
     )
 
     return {

@@ -48,7 +48,7 @@ final List<Faq> faqData = [
   ),
   Faq(
     expandedValue:
-        'Travello AI accepts all major credit cards, debit cards, and digital payment methods including JazzCash, Easypaisa, and bank transfers. All payments are processed securely through our encrypted payment gateway with PCI DSS compliance.',
+        'Travello AI accepts all major credit cards, debit cards, All payments are processed securely through our encrypted payment gateway with PCI DSS compliance.',
     headerValue: 'What payment methods are accepted?',
   ),
   Faq(

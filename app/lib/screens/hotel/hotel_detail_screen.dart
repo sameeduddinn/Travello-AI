@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/models/hotel.dart';
 import 'package:flight_app/models/room_type.dart';
-import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -1109,12 +1107,6 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
 
   void _proceedToBooking() async {
     final messenger = ScaffoldMessenger.of(context);
-    // Auth gate at booking intent — browsing hotel details was free
-    final isGuest = await AuthService.isGuestMode();
-    if (isGuest && mounted) {
-      AuthGateSheet.show(context, action: 'to book this hotel');
-      return;
-    }
     if (selectedRoom == null) {
       // Guide user to the Rooms tab instead of just showing a snackbar
       _tabController.animateTo(1);

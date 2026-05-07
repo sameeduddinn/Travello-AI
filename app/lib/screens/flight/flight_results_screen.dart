@@ -5,13 +5,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/constants/image_api.dart';
-import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/utils/no_data.dart';
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/format_utils.dart';
-import 'package:flight_app/widgets/auth/auth_gate_sheet.dart';
 import 'package:flight_app/services/api_client.dart';
+import 'package:flight_app/utils/search_history_service.dart';
 import 'package:intl/intl.dart';
 
 // Flight model for results
@@ -91,6 +90,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
   List<FlightResult> _allFlights = [];
   List<FlightResult> _filteredFlights = [];
   bool _isLoading = false;
+  bool _searchSaved = false;
 
   @override
   void initState() {
@@ -120,6 +120,38 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
     }
 
     _fetchFlights();
+  }
+
+  Future<void> _saveCurrentSearch() async {
+    final fromAirport = searchParams['fromAirport'] as Airport?;
+    final toAirport = searchParams['toAirport'] as Airport?;
+    await SearchHistoryService.saveFlightSearch(
+      fromAirport?.name ?? 'Unknown',
+      params: {
+        'from': fromAirport?.code ?? '',
+        'to': toAirport?.code ?? '',
+        'from_name': fromAirport?.name ?? '',
+        'to_name': toAirport?.name ?? '',
+        'date': searchParams['departureDate']?.toString() ?? '',
+        'trip_type': searchParams['tripType'] ?? 'One-way',
+        'cabin_class': _selectedCabinClass,
+        'adults': _adults,
+        'children': _children,
+        'infants': _infants,
+      },
+    );
+    setState(() => _searchSaved = true);
+    Get.snackbar(
+      'Search Saved',
+      'Flight search saved to your profile',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: const Color(0xFF1A2B4A),
+      colorText: Colors.white,
+      icon: const Icon(Icons.bookmark, color: Color(0xFFD4AF37)),
+      margin: const EdgeInsets.all(12),
+      borderRadius: 12,
+      duration: const Duration(seconds: 2),
+    );
   }
 
   // ── Backend fetch with dummy-data fallback ────────────────────────────────
@@ -710,6 +742,16 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           },
         ),
         actions: [
+          IconButton(
+            tooltip: _searchSaved ? 'Search Saved' : 'Save Search',
+            icon: Icon(
+              _searchSaved ? Icons.bookmark : Icons.bookmark_border,
+              color: _searchSaved
+                  ? const Color(0xFFD4AF37)
+                  : TravelloTheme.primaryMain,
+            ),
+            onPressed: _searchSaved ? null : _saveCurrentSearch,
+          ),
           IconButton(
             icon: const Icon(CupertinoIcons.slider_horizontal_3),
             onPressed: _showFiltersBottomSheet,
@@ -2970,14 +3012,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           ElevatedButton(
                             onPressed: () async {
                               // Auth gate at Select — industry standard (browsing was free)
-                              final nav = Navigator.of(context);
                               final messenger = ScaffoldMessenger.of(context);
-                              final isGuest = await AuthService.isGuestMode();
-                              if (isGuest && mounted) {
-                                AuthGateSheet.show(nav.context,
-                                    action: 'to book this flight');
-                                return;
-                              }
                               // Handle round-trip selection
                               if (_isRoundTrip && _currentJourneyIndex == 0) {
                                 // Outbound selected, move to return

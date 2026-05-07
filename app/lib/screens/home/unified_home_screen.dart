@@ -336,7 +336,11 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       // 📜 MAIN BODY - Scrollable content
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      body: SingleChildScrollView(
+      body: RefreshIndicator(
+        color: TravelloTheme.primaryMain,
+        onRefresh: _loadUserProfile,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           children: [
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -388,6 +392,7 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
 
             SizedBox(height: 80.h), // Bottom nav clearance
           ],
+        ),
         ),
       ),
     );

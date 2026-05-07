@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flight_app/models/chat.dart';
-import 'package:flight_app/constants/app_constants.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 
 class ChatMessage extends StatelessWidget {
@@ -58,9 +57,7 @@ class ChatBuble extends StatelessWidget {
     return [
       CircleAvatar(
         radius: 30,
-        backgroundImage: isMe ?
-          NetworkImage(userDummy.avatar)
-          : NetworkImage(avatar)
+        backgroundImage: NetworkImage(avatar),
       ),
       Expanded(
         child: Padding(padding: const EdgeInsets.symmetric(horizontal: 8),

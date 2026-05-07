@@ -1,9 +1,6 @@
-import 'dart:math';
-
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/constants/image_api.dart';
 import 'package:flight_app/models/train_package.dart';
-import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
 import 'package:flight_app/utils/no_data.dart';
 import 'package:flight_app/utils/wishlist_service.dart';
@@ -28,7 +25,6 @@ class _TrainPackageDetailState extends State<TrainPackageDetail> {
   String _selectedFilter = 'All';
   String _userOriginCityName = 'Karachi';
   bool _isLoading = true;
-  bool _isGuestMode = false;
 
   @override
   void initState() {
@@ -37,11 +33,9 @@ class _TrainPackageDetailState extends State<TrainPackageDetail> {
   }
 
   Future<void> _loadUserOriginCity() async {
-    final isGuest = await AuthService.isGuestMode();
     final cityData = await LocationPreferenceService.getOriginCity();
     if (mounted) {
       setState(() {
-        _isGuestMode = isGuest;
         _userOriginCityName = cityData['cityName']!;
         _isLoading = false;
       });
@@ -50,13 +44,6 @@ class _TrainPackageDetailState extends State<TrainPackageDetail> {
 
   /// Packages filtered by user's selected home city (same logic as train_package_slider)
   List<TrainPackage> get _cityPackages {
-    if (_isGuestMode) {
-      final seed = DateTime.now().day * 31 + DateTime.now().month;
-      final rng = Random(seed);
-      final all = List<TrainPackage>.from(featuredTrainPackages);
-      all.shuffle(rng);
-      return all;
-    }
     final lowerCity = _userOriginCityName.toLowerCase();
     final isRWPZone = lowerCity == 'islamabad' || lowerCity == 'rawalpindi';
     return featuredTrainPackages.where((pkg) {
@@ -82,7 +69,7 @@ class _TrainPackageDetailState extends State<TrainPackageDetail> {
   }
 
   String get _appBarTitle {
-    if (_isLoading || _isGuestMode) return 'Featured Train Packages';
+    if (_isLoading) return 'Featured Train Packages';
     return 'Train Packages from $_userOriginCityName';
   }
 
@@ -141,9 +128,8 @@ class _TrainPackageDetailState extends State<TrainPackageDetail> {
                   ),
                 ),
 
-                // ── City banner (logged-in users only) ────────────────────
-                if (!_isGuestMode)
-                  SliverToBoxAdapter(
+                // ── City banner ───────────────────────────────────────────
+                SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(
                           16, 16, 16, 0),

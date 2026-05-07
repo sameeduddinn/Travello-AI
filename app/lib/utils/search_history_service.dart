@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SearchHistoryService {
   static const String _flightHistoryKey = 'flight_search_history';
   static const String _trainHistoryKey = 'train_search_history';
+  static const String _hotelHistoryKey = 'hotel_search_history';
   static const int _maxHistoryItems = 5;
 
   // Save flight search — also syncs to backend
@@ -35,7 +36,7 @@ class SearchHistoryService {
     String cityName, {
     Map<String, dynamic>? params,
   }) async {
-    await _saveSearch(_flightHistoryKey, cityName);
+    await _saveSearch(_hotelHistoryKey, cityName);
     ApiClient.saveSearch(
       searchType: 'hotel',
       searchParams: params ?? {'city': cityName},
@@ -50,6 +51,11 @@ class SearchHistoryService {
   // Get train search history
   static Future<List<String>> getTrainHistory() async {
     return await _getHistory(_trainHistoryKey);
+  }
+
+  // Get hotel search history
+  static Future<List<String>> getHotelHistory() async {
+    return await _getHistory(_hotelHistoryKey);
   }
 
   // Get current travel mode
@@ -109,9 +115,16 @@ class SearchHistoryService {
     await prefs.remove(_trainHistoryKey);
   }
 
+  // Clear hotel history
+  static Future<void> clearHotelHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_hotelHistoryKey);
+  }
+
   // Clear all history
   static Future<void> clearAllHistory() async {
     await clearFlightHistory();
     await clearTrainHistory();
+    await clearHotelHistory();
   }
 }
