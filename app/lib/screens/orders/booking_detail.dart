@@ -30,6 +30,7 @@ class _BookingDetailState extends State<BookingDetail> {
   Map<String, dynamic> _booking = {};
   bool _downloadingPdf = false;
   bool _cancellingBooking = false;
+  bool _removingBooking = false;
   bool _reviewSubmitted = false;
 
   @override
@@ -111,13 +112,46 @@ class _BookingDetailState extends State<BookingDetail> {
 
   Future<void> _showCancelDialog() async {
     final bookingRef = _booking['pnr'] ?? _booking['bookingId'] ?? '';
+    final status = (_booking['status'] ?? '').toString().toLowerCase();
+    final isConfirmed = status == 'confirmed' || status == 'paid';
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Cancel Booking?'),
-        content: Text(
-          'This action cannot be undone. Your booking'
-          '${bookingRef.isNotEmpty ? ' $bookingRef' : ''} will be cancelled.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your booking${bookingRef.isNotEmpty ? ' $bookingRef' : ''} will be cancelled.',
+            ),
+            if (isConfirmed) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.warning_amber_rounded,
+                        color: Colors.orange.shade700, size: 18),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'This booking is confirmed. Cancellation may be non-refundable depending on the provider\'s policy.',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
         actions: [
           TextButton(
@@ -134,11 +168,12 @@ class _BookingDetailState extends State<BookingDetail> {
     );
     if (confirmed != true) return;
 
-    final bookingUuid = _booking['backendBookingId']?.toString() ??
-        _booking['id']?.toString() ?? '';
+    final bookingUuid =
+        _booking['backendBookingId']?.toString() ?? _booking['id']?.toString() ?? '';
     if (bookingUuid.isEmpty) {
       Get.snackbar('Error', 'Booking ID not found.',
-          backgroundColor: Colors.red, colorText: Colors.white,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
           snackPosition: SnackPosition.TOP);
       return;
     }
@@ -163,6 +198,71 @@ class _BookingDetailState extends State<BookingDetail> {
       }
     } finally {
       if (mounted) setState(() => _cancellingBooking = false);
+    }
+  }
+
+  // ── Remove cancelled booking from history ────────────────────────────────
+
+  Future<void> _showRemoveDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove from History?'),
+        content: const Text(
+          'This will permanently remove this booking from your history. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final bookingUuid =
+        _booking['backendBookingId']?.toString() ?? _booking['id']?.toString() ?? '';
+    if (bookingUuid.isEmpty) {
+      Get.snackbar('Error', 'Booking ID not found.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP);
+      return;
+    }
+
+    setState(() => _removingBooking = true);
+    try {
+      await ApiClient.deleteBooking(bookingUuid);
+      if (mounted) {
+        Get.back();
+        Get.snackbar(
+          'Removed',
+          'Booking has been removed from your history.',
+          backgroundColor: Colors.grey.shade700,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          icon: const Icon(Icons.delete_sweep_rounded, color: Colors.white),
+          margin: const EdgeInsets.all(12),
+          borderRadius: 12,
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _removingBooking = false);
+        Get.snackbar('Error', 'Could not remove booking. Please try again.',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+            margin: const EdgeInsets.all(12),
+            borderRadius: 12);
+      }
     }
   }
 
@@ -2282,7 +2382,8 @@ class _BookingDetailState extends State<BookingDetail> {
     }
 
     final status = (_booking['status'] ?? '').toString().toLowerCase();
-    final canCancel = status != 'cancelled' && status != 'canceled';
+    final isCancelled = status == 'cancelled' || status == 'canceled';
+    final canCancel = !isCancelled;
     final canReview = status == 'paid' || status == 'confirmed';
 
     return SafeArea(
@@ -2331,7 +2432,7 @@ class _BookingDetailState extends State<BookingDetail> {
                       ),
               ),
             ),
-            if (canReview || canCancel) ...[
+            if (canReview || canCancel || isCancelled) ...[
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -2393,6 +2494,41 @@ class _BookingDetailState extends State<BookingDetail> {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.red,
                             side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (isCancelled)
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: OutlinedButton.icon(
+                          onPressed:
+                              _removingBooking ? null : _showRemoveDialog,
+                          icon: _removingBooking
+                              ? const SizedBox(
+                                  height: 14,
+                                  width: 14,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.grey))
+                              : const Icon(Icons.delete_outline_rounded,
+                                  size: 16),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Remove from History',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.grey.shade700,
+                            side: BorderSide(color: Colors.grey.shade400),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),

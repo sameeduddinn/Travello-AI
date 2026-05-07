@@ -231,6 +231,40 @@ async def cancel_booking(booking_uuid: str, user_id: str) -> BookingOut:
 
 
 # ---------------------------------------------------------------------------
+# Delete (remove from history) — cancelled bookings only
+# ---------------------------------------------------------------------------
+
+async def delete_booking(booking_uuid: str, user_id: str) -> None:
+    """Permanently delete a cancelled booking from the user's history."""
+    try:
+        result = (
+            supabase_admin.table("bookings")
+            .select("id, user_id, status")
+            .eq("id", booking_uuid)
+            .eq("user_id", user_id)
+            .single()
+            .execute()
+        )
+    except Exception:
+        raise HTTPException(status_code=404, detail="Booking not found.")
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Booking not found.")
+
+    if result.data.get("status") not in ("cancelled", "refunded"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only cancelled bookings can be removed from history.",
+        )
+
+    try:
+        supabase_admin.table("bookings").delete().eq("id", booking_uuid).eq("user_id", user_id).execute()
+    except Exception as exc:
+        logger.error("delete_booking error: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to remove booking.")
+
+
+# ---------------------------------------------------------------------------
 # Ticket data
 # ---------------------------------------------------------------------------
 

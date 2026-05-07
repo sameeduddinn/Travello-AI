@@ -1204,6 +1204,7 @@ class _BookingPaymentState extends State<BookingPayment>
                               validator: DSValidators.cardExpiry,
                               decoration: InputDecoration(
                                 hintText: 'MM/YY',
+                                errorMaxLines: 2,
                                 hintStyle: TextStyle(
                                   color: Colors.grey.shade400,
                                   fontSize: 15,
@@ -1273,6 +1274,7 @@ class _BookingPaymentState extends State<BookingPayment>
                               validator: DSValidators.cvv,
                               decoration: InputDecoration(
                                 hintText: '•••',
+                                errorMaxLines: 2,
                                 hintStyle: TextStyle(
                                   color: Colors.grey.shade400,
                                   fontSize: 15,

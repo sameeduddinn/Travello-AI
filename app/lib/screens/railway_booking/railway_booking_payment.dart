@@ -1267,6 +1267,7 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                               validator: DSValidators.cardExpiry,
                               decoration: InputDecoration(
                                 hintText: 'MM/YY',
+                                errorMaxLines: 2,
                                 hintStyle: TextStyle(
                                     color: Colors.grey.shade400, fontSize: 15),
                                 filled: true,
@@ -1335,6 +1336,7 @@ class _RailwayBookingPaymentState extends State<RailwayBookingPayment>
                               validator: DSValidators.cvv,
                               decoration: InputDecoration(
                                 hintText: '•••',
+                                errorMaxLines: 2,
                                 hintStyle: TextStyle(
                                     color: Colors.grey.shade400, fontSize: 15),
                                 suffixIcon: Tooltip(

@@ -183,9 +183,34 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
         },
       );
 
-      await TransactionalService.sendBookingConfirmationEmail(
+      final emailSent = await TransactionalService.sendBookingConfirmationEmail(
         bookingData: syncPayload,
       );
+      if (emailSent && contactEmail.isNotEmpty && contactEmail != 'N/A') {
+        Get.snackbar(
+          'Confirmation Email Sent',
+          'Booking confirmation sent to $contactEmail',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade600,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 4),
+          icon: const Icon(Icons.mark_email_read_rounded, color: Colors.white),
+          margin: const EdgeInsets.all(12),
+          borderRadius: 12,
+        );
+      } else {
+        Get.snackbar(
+          'Email Not Sent',
+          'Could not send confirmation email. Check your bookings for details.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.shade600,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 4),
+          icon: const Icon(Icons.email_outlined, color: Colors.white),
+          margin: const EdgeInsets.all(12),
+          borderRadius: 12,
+        );
+      }
     } catch (_) {}
   }
 

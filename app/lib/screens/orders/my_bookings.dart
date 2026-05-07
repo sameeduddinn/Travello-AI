@@ -44,14 +44,6 @@ class _MyBookingsState extends State<MyBookings>
     _loadBookings();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Reload every time this screen becomes visible (handles back-navigation
-    // and GetX route reuse without re-running initState)
-    _loadBookings();
-  }
-
   // ── Helpers for normalizing backend flat fields ──────────────────────────
 
   static String _fmtTime(DateTime dt) => DateFormat('HH:mm').format(dt);
@@ -544,7 +536,10 @@ class _MyBookingsState extends State<MyBookings>
         typeLabel = 'FLIGHT';
     }
     return GestureDetector(
-      onTap: () => Get.toNamed(AppLink.ticketDetail, arguments: booking),
+      onTap: () async {
+        await Get.toNamed(AppLink.ticketDetail, arguments: booking);
+        if (mounted) _loadBookings();
+      },
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

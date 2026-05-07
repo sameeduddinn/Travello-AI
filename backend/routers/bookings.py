@@ -63,6 +63,7 @@ from core.auth import CurrentUser
 from models.booking import BookingListResponse, BookingOut, TicketOut
 from services.booking_service import (
     cancel_booking,
+    delete_booking,
     get_booking,
     get_ticket,
     list_bookings,
@@ -134,6 +135,19 @@ async def cancel_booking_endpoint(booking_id: str, user: CurrentUser):
     Note: Payment refunds are not processed in this demo.
     """
     return await cancel_booking(booking_uuid=booking_id, user_id=user.id)
+
+
+# ---------------------------------------------------------------------------
+# DELETE /bookings/{booking_id}  — remove cancelled booking from history
+# ---------------------------------------------------------------------------
+
+@router.delete("/{booking_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_booking_endpoint(booking_id: str, user: CurrentUser):
+    """
+    Permanently delete a booking from the user's history.
+    Only allowed for bookings with status 'cancelled' or 'refunded'.
+    """
+    await delete_booking(booking_uuid=booking_id, user_id=user.id)
 
 
 # ---------------------------------------------------------------------------

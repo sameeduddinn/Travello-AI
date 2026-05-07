@@ -41,7 +41,6 @@
 # =============================================================================
 
 import logging
-import uuid
 from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, status
@@ -64,7 +63,7 @@ class ReviewRequest(BaseModel):
 # POST /reviews
 # ---------------------------------------------------------------------------
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def submit_review(payload: ReviewRequest, user: CurrentUser) -> dict[str, Any]:
     """
     Submit a review for a completed booking.
@@ -75,7 +74,7 @@ async def submit_review(payload: ReviewRequest, user: CurrentUser) -> dict[str, 
         booking = (
             supabase_admin.table("bookings")
             .select("id, status")
-            .eq("booking_id", payload.booking_id)
+            .eq("id", payload.booking_id)
             .eq("user_id", user.id)
             .single()
             .execute()
@@ -92,17 +91,32 @@ async def submit_review(payload: ReviewRequest, user: CurrentUser) -> dict[str, 
             detail="You can only review a completed booking.",
         )
 
-    review_id = str(uuid.uuid4())
-    row = {
-        "id": review_id,
-        "user_id": user.id,
-        "booking_id": payload.booking_id,
-        "booking_uuid": booking.data["id"],
-        "rating": payload.rating,
-        "comment": payload.comment,
-    }
     try:
-        supabase_admin.table("reviews").upsert(row, on_conflict="booking_id").execute()
+        existing = (
+            supabase_admin.table("reviews")
+            .select("id")
+            .eq("booking_id", payload.booking_id)
+            .eq("user_id", user.id)
+            .execute()
+        )
+    except Exception as exc:
+        logger.error("Failed to check existing review: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to save review.")
+
+    try:
+        if existing.data:
+            review_id = existing.data[0]["id"]
+            supabase_admin.table("reviews").update(
+                {"rating": payload.rating, "comment": payload.comment}
+            ).eq("id", review_id).execute()
+        else:
+            result = supabase_admin.table("reviews").insert({
+                "user_id": user.id,
+                "booking_id": payload.booking_id,
+                "rating": payload.rating,
+                "comment": payload.comment,
+            }).execute()
+            review_id = result.data[0]["id"] if result.data else ""
     except Exception as exc:
         logger.error("Failed to save review: %s", exc)
         raise HTTPException(status_code=500, detail="Failed to save review.")

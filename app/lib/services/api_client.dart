@@ -553,6 +553,17 @@ class ApiClient {
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
+  /// Permanently delete a cancelled booking from history.
+  static Future<void> deleteBooking(String bookingId) async {
+    final res = await http
+        .delete(
+          Uri.parse('$_baseUrl/bookings/$bookingId'),
+          headers: _headers,
+        )
+        .timeout(const Duration(seconds: 15));
+    _throwIfError(res, 'Delete booking');
+  }
+
   /// Get e-ticket data for a booking.
   static Future<Map<String, dynamic>> getTicket(String bookingId) async {
     final res = await http

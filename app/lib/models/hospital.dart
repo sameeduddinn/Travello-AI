@@ -710,7 +710,7 @@ class EmergencyContact {
   static List<EmergencyContact> getContacts() {
     return [
       EmergencyContact(
-        service: 'Emergency (Rescue 1122)',
+        service: 'Emergency Rescue',
         number: '1122',
         icon: Icons.emergency,
       ),
