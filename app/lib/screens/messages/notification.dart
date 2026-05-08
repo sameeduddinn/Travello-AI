@@ -1,6 +1,7 @@
 import 'package:flight_app/controllers/notification_controller.dart';
 import 'package:flight_app/models/notification.dart';
 import 'package:flight_app/utils/support_message_service.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
@@ -21,6 +22,8 @@ class _NotificationState extends State<Notification>
   late List<NotificationModel> _today;
   late List<NotificationModel> _earlier;
   List<SupportMessage> _messages = [];
+  bool _selectionMode = false;
+  final Set<String> _selectedIds = {};
 
   int get _unreadCount =>
       [..._today, ..._earlier].where((n) => !n.isRead).length;
@@ -40,8 +43,19 @@ class _NotificationState extends State<Notification>
   }
 
   Future<void> _loadMessages() async {
-    final msgs = await SupportMessageService.getAll();
-    if (mounted) setState(() => _messages = msgs);
+    // Show cached data instantly, then refresh from backend
+    final cached = await SupportMessageService.getCached();
+    if (mounted) setState(() => _messages = cached);
+
+    final raw = await ApiClient.getSupportMessages();
+    if (raw != null && mounted) {
+      final msgs = raw
+          .map((e) => SupportMessage.fromJson(e))
+          .toList()
+        ..sort((a, b) => b.sentAt.compareTo(a.sentAt));
+      await SupportMessageService.cacheMessages(msgs);
+      if (mounted) setState(() => _messages = msgs);
+    }
   }
 
   @override
@@ -147,6 +161,60 @@ class _NotificationState extends State<Notification>
         children: [
           _buildNotificationsTab(),
           _buildMessagesTab(),
+        ],
+      ),
+    );
+  }
+
+  void _enterSelectionMode() =>
+      setState(() { _selectionMode = true; _selectedIds.clear(); });
+
+  void _exitSelectionMode() =>
+      setState(() { _selectionMode = false; _selectedIds.clear(); });
+
+  void _toggleSelection(String id) => setState(() {
+        if (_selectedIds.contains(id)) {
+          _selectedIds.remove(id);
+        } else {
+          _selectedIds.add(id);
+        }
+      });
+
+  Future<void> _deleteSelected() async {
+    if (_selectedIds.isEmpty) return;
+    final ids = _selectedIds.toList();
+    // Optimistic update
+    setState(() {
+      _messages.removeWhere((m) => ids.contains(m.id));
+      _selectionMode = false;
+      _selectedIds.clear();
+    });
+    await SupportMessageService.cacheMessages(_messages);
+    ApiClient.deleteSupportMessages(ids); // fire-and-forget
+  }
+
+  void _confirmDelete() {
+    final count = _selectedIds.length;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text('Delete $count message${count == 1 ? '' : 's'}?'),
+        content: const Text(
+            'The selected messages will be permanently removed.'),
+        actions: [
+          TextButton(
+              onPressed: () => Get.back(),
+              child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8))),
+            onPressed: () { Get.back(); _deleteSelected(); },
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -330,71 +398,117 @@ class _NotificationState extends State<Notification>
       );
     }
 
+    final selectableCount =
+        _messages.where((m) => m.status != 'pending').length;
+
     return Column(
       children: [
-        // Action bar
+        // ── Action bar ──────────────────────────────────────────────────────
         Container(
           color: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '${_messages.length} message${_messages.length == 1 ? '' : 's'}',
-                style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500),
+              // Left label
+              Expanded(
+                child: Text(
+                  _selectionMode
+                      ? '${_selectedIds.length} selected'
+                      : '${_messages.length} message${_messages.length == 1 ? '' : 's'}',
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500),
+                ),
               ),
-              GestureDetector(
-                onTap: () => showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Clear all messages?'),
-                    content: const Text(
-                        'All support messages will be permanently removed.'),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Get.back(),
-                          child: const Text('Cancel')),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: TravelloTheme.primaryMain),
-                        onPressed: () async {
-                          Get.back();
-                          await SupportMessageService.clearAll();
-                          _loadMessages();
-                        },
-                        child: const Text('Clear All',
-                            style: TextStyle(color: Colors.white)),
+              if (_selectionMode) ...[
+                // Delete button
+                GestureDetector(
+                  onTap: _selectedIds.isEmpty ? null : _confirmDelete,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 150),
+                    opacity: _selectedIds.isEmpty ? 0.35 : 1.0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade200),
                       ),
-                    ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.delete_rounded,
+                              size: 15, color: Colors.red.shade600),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Delete${_selectedIds.isNotEmpty ? ' (${_selectedIds.length})' : ''}',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.red.shade600,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_sweep_outlined,
-                        size: 17, color: Colors.red.shade400),
-                    const SizedBox(width: 4),
-                    Text('Clear all',
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.red.shade400,
-                            fontWeight: FontWeight.w600)),
-                  ],
+                const SizedBox(width: 10),
+                // Cancel button
+                GestureDetector(
+                  onTap: _exitSelectionMode,
+                  child: Text('Cancel',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w600)),
                 ),
-              ),
+              ] else ...[
+                // Select button (only shown when there are deletable messages)
+                if (selectableCount > 0)
+                  GestureDetector(
+                    onTap: _enterSelectionMode,
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.checklist_rounded,
+                            size: 17, color: TravelloTheme.primaryMain),
+                            SizedBox(width: 4),
+                            Text('Select',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: TravelloTheme.primaryMain,
+                                fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+              ],
             ],
           ),
         ),
         Divider(height: 1, color: Colors.grey.shade200),
+        // ── List ────────────────────────────────────────────────────────────
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: _messages.length,
             separatorBuilder: (_, __) =>
                 Divider(height: 1, color: Colors.grey.shade200),
-            itemBuilder: (context, i) => _MessageTile(msg: _messages[i]),
+            itemBuilder: (context, i) {
+              final msg = _messages[i];
+              final isPending = msg.status == 'pending';
+              return _MessageTile(
+                msg: msg,
+                isSelectionMode: _selectionMode,
+                isSelected: _selectedIds.contains(msg.id),
+                isPending: isPending,
+                onTap: _selectionMode
+                    ? (isPending ? null : () => _toggleSelection(msg.id))
+                    : () => Get.toNamed('/support-message-detail',
+                          arguments: msg),
+              );
+            },
           ),
         ),
       ],
@@ -625,7 +739,18 @@ class _NotifTile extends StatelessWidget {
 // ── Support Message Tile ──────────────────────────────────────────────────────
 class _MessageTile extends StatelessWidget {
   final SupportMessage msg;
-  const _MessageTile({required this.msg});
+  final bool isSelectionMode;
+  final bool isSelected;
+  final bool isPending;
+  final VoidCallback? onTap;
+
+  const _MessageTile({
+    required this.msg,
+    this.isSelectionMode = false,
+    this.isSelected = false,
+    this.isPending = false,
+    this.onTap,
+  });
 
   Color get _statusColor {
     switch (msg.status) {
@@ -663,24 +788,76 @@ class _MessageTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      color: cs.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Avatar
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFDF5D8),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.support_agent_rounded,
-                color: TravelloTheme.primaryMain, size: 22),
-          ),
-          const SizedBox(width: 12),
+    final disabled = isSelectionMode && isPending;
+
+    return InkWell(
+      onTap: onTap,
+      child: Opacity(
+        opacity: disabled ? 0.45 : 1.0,
+        child: Container(
+          color: isSelected
+              ? TravelloTheme.primaryMain.withValues(alpha: 0.06)
+              : cs.surface,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Checkbox (selection mode) or Avatar (normal mode)
+              if (isSelectionMode)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12, top: 1),
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Center(
+                      child: isPending
+                          ? Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                    color: Colors.grey.shade300, width: 2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            )
+                          : AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? TravelloTheme.primaryMain
+                                    : Colors.transparent,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? TravelloTheme.primaryMain
+                                      : Colors.grey.shade400,
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: isSelected
+                                  ? const Icon(Icons.check_rounded,
+                                      size: 14, color: Colors.white)
+                                  : null,
+                            ),
+                    ),
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFDF5D8),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.support_agent_rounded,
+                        color: TravelloTheme.primaryMain, size: 22),
+                  ),
+                ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -747,6 +924,8 @@ class _MessageTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

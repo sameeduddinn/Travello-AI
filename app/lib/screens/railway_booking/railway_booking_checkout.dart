@@ -320,15 +320,44 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
         await ApiClient.addPassengers(
           bookingId: _backendBookingId!,
           passengers: _passengers
+              .asMap()
+              .entries
               .map(
-                (p) => {
-                  'title': p['title'] ?? 'Mr',
-                  'first_name': p['firstName'] ?? p['first_name'] ?? '',
-                  'last_name': p['lastName'] ?? p['last_name'] ?? '',
-                  'date_of_birth': p['dateOfBirth'] ?? p['date_of_birth'] ?? '',
-                  'gender': p['gender'] ?? 'male',
-                  'cnic': p['cnic'] ?? p['idNumber'] ?? '',
-                  'passenger_type': _toPassengerType(p),
+                (entry) {
+                  final i = entry.key;
+                  final p = entry.value;
+
+                  String? seatNumber;
+                  if (_isRoundTrip) {
+                    final outSeat = i < _outboundSeatSelections.length
+                        ? _outboundSeatSelections[i]['seatName']?.toString()
+                        : null;
+                    final retSeat = i < _returnSeatSelections.length
+                        ? _returnSeatSelections[i]['seatName']?.toString()
+                        : null;
+                    final parts = [outSeat, retSeat]
+                        .where((s) => s != null && s.isNotEmpty && s != '-')
+                        .toList();
+                    if (parts.isNotEmpty) seatNumber = parts.join(' / ');
+                  } else {
+                    final seat = i < _seatSelections.length
+                        ? _seatSelections[i]['seatName']?.toString()
+                        : null;
+                    if (seat != null && seat.isNotEmpty && seat != '-') {
+                      seatNumber = seat;
+                    }
+                  }
+
+                  return {
+                    'title': p['title'] ?? 'Mr',
+                    'first_name': p['firstName'] ?? p['first_name'] ?? '',
+                    'last_name': p['lastName'] ?? p['last_name'] ?? '',
+                    'date_of_birth': p['dateOfBirth'] ?? p['date_of_birth'] ?? '',
+                    'gender': p['gender'] ?? 'male',
+                    'cnic': p['cnic'] ?? p['idNumber'] ?? '',
+                    'passenger_type': _toPassengerType(p),
+                    if (seatNumber != null) 'seat_number': seatNumber,
+                  };
                 },
               )
               .toList(),

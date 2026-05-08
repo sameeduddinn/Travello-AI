@@ -65,6 +65,7 @@ class AppLink {
   // GENERAL PAGES
   static const notification = '/notification';
   static const messages = '/messages';
+  static const supportMessageDetail = '/support-message-detail';
   static const faq = '/faq';
   static const contact = '/contact';
   static const terms = '/terms-conditions';

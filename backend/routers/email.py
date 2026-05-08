@@ -25,6 +25,7 @@ class ContactSupportRequest(BaseModel):
     subject: str
     description: str
     sender_email: str = ""   # user's own email — used as Reply-To
+    user_id: str = ""        # Supabase user UUID — used to persist in DB
 
 
 # ---------------------------------------------------------------------------
@@ -34,11 +35,52 @@ class ContactSupportRequest(BaseModel):
 @router.post("/contact-support")
 async def contact_support(payload: ContactSupportRequest):
     """
-    Forward a user's support message to travelloo.ai@gmail.com via SMTP.
-    Sets Reply-To to the sender's email so support can reply directly.
+    Save support message to DB, then forward to travelloo.ai@gmail.com.
+    Admin email includes the message ID for use with the reply endpoint.
     """
     reply_to = payload.sender_email.strip() or None
     sender_label = reply_to or "Anonymous user"
+    message_id: str | None = None
+
+    # Persist to DB if user_id provided
+    if payload.user_id.strip():
+        try:
+            result = supabase_admin.table("support_messages").insert({
+                "user_id":     payload.user_id.strip(),
+                "user_email":  payload.sender_email.strip(),
+                "topic":       payload.topic,
+                "subject":     payload.subject,
+                "description": payload.description,
+                "status":      "pending",
+            }).execute()
+            if result.data:
+                message_id = result.data[0].get("id")
+        except Exception as exc:
+            logger.warning("Could not save support message to DB: %s", exc)
+
+    id_section = f"""
+        <div class="label">Message ID</div>
+        <div class="value" style="font-family:monospace;font-size:13px;color:#888;">{message_id}</div>
+    """ if message_id else ""
+
+    reply_link = (
+        f"{settings.BACKEND_BASE_URL.rstrip('/')}/support/reply-form"
+        f"?message_id={message_id}&secret={settings.ADMIN_SECRET_KEY}"
+    ) if message_id and settings.ADMIN_SECRET_KEY else None
+
+    admin_secret_hint = f"""
+        <div style="margin-top:20px;text-align:center;">
+          <a href="{reply_link}"
+             style="display:inline-block;background:#C9A84C;color:#fff;
+                    text-decoration:none;padding:13px 32px;border-radius:10px;
+                    font-size:15px;font-weight:700;letter-spacing:0.3px;">
+            &#128393;&nbsp; Reply in App
+          </a>
+          <p style="font-size:11px;color:#aaa;margin-top:8px;">
+            Click the button above to open the reply form — no API calls needed.
+          </p>
+        </div>
+    """ if reply_link else ""
 
     html = f"""
     <!DOCTYPE html>
@@ -74,17 +116,20 @@ async def contact_support(payload: ContactSupportRequest):
         <div class="badge">&#128394; {payload.topic}</div>
 
         <div class="label">From</div>
-        <div class="value">{ sender_label}</div>
+        <div class="value">{sender_label}</div>
 
         <div class="label">Subject</div>
-        <div class="value">{ payload.subject}</div>
+        <div class="value">{payload.subject}</div>
+
+        {id_section}
 
         <div class="label">Message</div>
-        <div class="msg-box">{ payload.description}</div>
+        <div class="msg-box">{payload.description}</div>
+
+        {admin_secret_hint}
 
         <div class="footer">
-          &copy; Travello AI &mdash; Support Inbox &mdash;
-          Reply directly to this email to respond to the user.
+          &copy; Travello AI &mdash; Support Inbox
         </div>
       </div>
     </body>
@@ -102,7 +147,7 @@ async def contact_support(payload: ContactSupportRequest):
     if not sent:
         logger.warning("Contact-support email not delivered: %s", result)
 
-    return {"sent": sent, "result": result}
+    return {"sent": sent, "message_id": message_id, "result": result}
 
 
 # ---------------------------------------------------------------------------

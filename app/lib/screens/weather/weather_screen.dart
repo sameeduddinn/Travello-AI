@@ -81,6 +81,7 @@ class _WeatherScreenState extends State<WeatherScreen>
   }
   bool _loadingCurrent = false;
   bool _loadingAll = false;
+  bool _allCitiesLoaded = false;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -110,14 +111,36 @@ class _WeatherScreenState extends State<WeatherScreen>
     ));
     _animationController.forward();
 
-    // Load live data after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAllCities());
+    // Load only the selected city on open — all-cities is lazy
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCurrentCity());
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadCurrentCity() async {
+    setState(() => _loadingCurrent = true);
+    final data = await ApiClient.getWeather(_selectedCity);
+    if (!mounted) return;
+    if (data != null) {
+      final weather = _fromApi(data);
+      setState(() {
+        _currentWeather = weather;
+        final idx = _allCities.indexWhere((c) => c.city == _selectedCity);
+        if (idx != -1) _allCities[idx] = weather;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not load live weather. Showing estimated data.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+    setState(() => _loadingCurrent = false);
   }
 
   Future<void> _loadAllCities() async {
@@ -128,6 +151,7 @@ class _WeatherScreenState extends State<WeatherScreen>
       final cities = data.map(_fromApi).toList();
       setState(() {
         _allCities = cities;
+        _allCitiesLoaded = true;
         final match = cities.where((c) => c.city == _selectedCity);
         if (match.isNotEmpty) _currentWeather = match.first;
         _loadingAll = false;
@@ -136,7 +160,7 @@ class _WeatherScreenState extends State<WeatherScreen>
       setState(() => _loadingAll = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Could not load live weather. Showing estimated data.'),
+          content: Text('Could not load live city data. Showing estimated data.'),
           duration: Duration(seconds: 3),
         ),
       );
@@ -148,36 +172,23 @@ class _WeatherScreenState extends State<WeatherScreen>
     setState(() {
       _selectedCity = city;
       _currentWeather = PakistanWeatherData.getWeatherForCity(city);
-      _loadingCurrent = true;
     });
-
-    final data = await ApiClient.getWeather(city);
-    if (!mounted) return;
-    if (data != null) {
-      setState(() {
-        _currentWeather = _fromApi(data);
-        _loadingCurrent = false;
-      });
-    } else {
-      setState(() => _loadingCurrent = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not load live weather. Showing estimated data.'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
+    await _loadCurrentCity();
   }
 
   @override
   Widget build(BuildContext context) {
     final warnings = _allCities.where((w) => w.travelWarning).toList();
 
+    final bool isRefreshing = _loadingAll || _loadingCurrent;
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      body: RefreshIndicator(
+      body: Stack(
+        children: [
+          RefreshIndicator(
         color: const Color(0xFFD4AF37),
-        onRefresh: _loadAllCities,
+        onRefresh: _loadCurrentCity,
         child: CustomScrollView(
         slivers: [
           // ── Animated Golden Header ───────────────────────────────────────
@@ -504,15 +515,15 @@ class _WeatherScreenState extends State<WeatherScreen>
 
                 // All Cities
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 12, 8),
                   child: Row(
                     children: [
                       Text(
                         'All Cities',
                         style: TravelloTheme.title.copyWith(fontSize: 16),
                       ),
-                      if (_loadingAll) ...[
-                        const SizedBox(width: 10),
+                      const Spacer(),
+                      if (_loadingAll)
                         const SizedBox(
                           width: 16,
                           height: 16,
@@ -520,8 +531,35 @@ class _WeatherScreenState extends State<WeatherScreen>
                             strokeWidth: 2,
                             color: Color(0xFFD4AF37),
                           ),
+                        )
+                      else if (!_allCitiesLoaded)
+                        TextButton.icon(
+                          onPressed: _loadAllCities,
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFFD4AF37),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          icon: const Icon(Icons.download_rounded, size: 15),
+                          label: const Text('Load live',
+                              style: TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w600)),
+                        )
+                      else
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle_rounded,
+                                size: 13, color: Colors.green.shade600),
+                            const SizedBox(width: 4),
+                            Text('Live',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.green.shade600,
+                                    fontWeight: FontWeight.w600)),
+                          ],
                         ),
-                      ],
                     ],
                   ),
                 ),
@@ -538,9 +576,37 @@ class _WeatherScreenState extends State<WeatherScreen>
           ),
         ],
       ),
+    ),
+    if (isRefreshing)
+      Positioned.fill(
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.4),
+          child: const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  color: Color(0xFFD4AF37),
+                  strokeWidth: 3,
+                ),
+                SizedBox(height: 14),
+                Text(
+                  'Loading weather...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-    );
-  }
+    ],
+  ),
+);
+}
 }
 
 class _LiveBadge extends StatelessWidget {

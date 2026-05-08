@@ -18,7 +18,15 @@ class CityController extends GetxController {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_prefKey);
-    if (saved != null && saved.isNotEmpty) selectedCity.value = saved;
+    if (saved != null && saved.isNotEmpty) {
+      selectedCity.value = saved;
+    } else {
+      // Fall back to user's home city set in account settings
+      final homeCity = prefs.getString('user_origin_city');
+      if (homeCity != null && homeCity.isNotEmpty) {
+        selectedCity.value = homeCity;
+      }
+    }
   }
 
   void setCity(String city) {

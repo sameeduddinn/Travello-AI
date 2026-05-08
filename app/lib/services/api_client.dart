@@ -1008,12 +1008,13 @@ class ApiClient {
   }
 
   /// Send a contact-support message to travelloo.ai@gmail.com via backend SMTP.
-  /// Fire-and-forget safe — never throws.
+  /// Also persists to DB when userId is provided. Fire-and-forget safe — never throws.
   static Future<bool> sendContactSupport({
     required String topic,
     required String subject,
     required String description,
     String senderEmail = '',
+    String userId = '',
   }) async {
     try {
       final res = await http
@@ -1021,16 +1022,53 @@ class ApiClient {
             Uri.parse('$_baseUrl/email/contact-support'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
-              'topic': topic,
-              'subject': subject,
-              'description': description,
+              'topic':        topic,
+              'subject':      subject,
+              'description':  description,
               'sender_email': senderEmail,
+              'user_id':      userId,
             }),
           )
           .timeout(const Duration(seconds: 15));
       if (res.statusCode < 200 || res.statusCode >= 300) return false;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       return data['sent'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Fetch authenticated user's support messages from backend.
+  static Future<List<Map<String, dynamic>>?> getSupportMessages() async {
+    try {
+      if (_token == null) return null;
+      final res = await http
+          .get(
+            Uri.parse('$_baseUrl/support/messages'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode < 200 || res.statusCode >= 300) return null;
+      final data = jsonDecode(res.body) as List<dynamic>;
+      return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Delete specific support messages by ID (only replied/closed are removed server-side).
+  static Future<bool> deleteSupportMessages(List<String> ids) async {
+    if (ids.isEmpty) return true;
+    try {
+      if (_token == null) return false;
+      final res = await http
+          .delete(
+            Uri.parse('$_baseUrl/support/messages'),
+            headers: _headers,
+            body: jsonEncode({'ids': ids}),
+          )
+          .timeout(const Duration(seconds: 10));
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (_) {
       return false;
     }

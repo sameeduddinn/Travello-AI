@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
@@ -65,6 +66,19 @@ async def lifespan(app: FastAPI):
         logger.warning("⚠️  No email backend configured — set SMTP_USER/SMTP_PASSWORD in .env")
 
     logger.info("Startup complete. Ready to accept requests.")
+
+    # Pre-warm only 4 major cities — all-cities bulk fetch is lazy (on demand).
+    async def _warm_weather_cache():
+        try:
+            from services.weather_service import get_weather
+            major = ["Karachi", "Lahore", "Islamabad", "Rawalpindi"]
+            logger.info("Pre-warming weather cache for %d major cities…", len(major))
+            await asyncio.gather(*[get_weather(c) for c in major])
+            logger.info("✅ Weather cache ready.")
+        except Exception as exc:
+            logger.warning("Weather cache pre-warm failed: %s", exc)
+
+    asyncio.ensure_future(_warm_weather_cache())
 
     yield  # <--- app is running here
 
@@ -167,6 +181,7 @@ from routers import weather as weather_router
 from routers import healthcare as healthcare_router
 from routers import saved_searches as saved_searches_router
 from routers import reviews as reviews_router
+from routers import support as support_router
 
 app.include_router(auth.router)
 app.include_router(flights.router)
@@ -182,6 +197,7 @@ app.include_router(weather_router.router)
 app.include_router(healthcare_router.router)
 app.include_router(saved_searches_router.router)
 app.include_router(reviews_router.router)
+app.include_router(support_router.router)
 
 
 # ---------------------------------------------------------------------------

@@ -45,7 +45,9 @@ class _ProfileMainState extends State<ProfileMain> {
   }
 
   Future<void> _pickAndUploadAvatar() async {
-    final source = await showModalBottomSheet<ImageSource>(
+    final hasAvatar = _userAvatar.isNotEmpty;
+
+    final action = await showModalBottomSheet<String>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -64,7 +66,7 @@ class _ProfileMainState extends State<ProfileMain> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Change Profile Photo',
+            const Text('Profile Photo',
                 style: TextStyle(
                     fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
@@ -72,25 +74,37 @@ class _ProfileMainState extends State<ProfileMain> {
               leading: const Icon(Icons.camera_alt,
                   color: TravelloTheme.primaryMain),
               title: const Text('Take a Photo'),
-              onTap: () => Navigator.pop(_, ImageSource.camera),
+              onTap: () => Navigator.pop(_, 'camera'),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library,
                   color: TravelloTheme.primaryMain),
               title: const Text('Choose from Gallery'),
-              onTap: () => Navigator.pop(_, ImageSource.gallery),
+              onTap: () => Navigator.pop(_, 'gallery'),
             ),
+            if (hasAvatar)
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('Remove Photo',
+                    style: TextStyle(color: Colors.red)),
+                onTap: () => Navigator.pop(_, 'remove'),
+              ),
             const SizedBox(height: 8),
           ],
         ),
       ),
     );
 
-    if (source == null) return;
+    if (action == null) return;
+
+    if (action == 'remove') {
+      await _removeAvatar();
+      return;
+    }
 
     final picker = ImagePicker();
     final picked = await picker.pickImage(
-      source: source,
+      source: action == 'camera' ? ImageSource.camera : ImageSource.gallery,
       maxWidth: 512,
       maxHeight: 512,
       imageQuality: 80,
@@ -103,7 +117,7 @@ class _ProfileMainState extends State<ProfileMain> {
 
       final bytes = await File(picked.path).readAsBytes();
       final ext = picked.path.split('.').last;
-      final path = 'avatars/${user.id}.$ext';
+      final path = '${user.id}/avatar.$ext';
 
       await Supabase.instance.client.storage
           .from('avatars')
@@ -136,6 +150,51 @@ class _ProfileMainState extends State<ProfileMain> {
         Get.snackbar(
           'Upload Failed',
           'Could not update profile photo. Please try again.',
+          backgroundColor: Colors.orange.shade600,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
+      }
+    }
+  }
+
+  Future<void> _removeAvatar() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Delete all files under this user's folder in storage
+      final files = await Supabase.instance.client.storage
+          .from('avatars')
+          .list(path: user.id);
+
+      if (files.isNotEmpty) {
+        final paths = files.map((f) => '${user.id}/${f.name}').toList();
+        await Supabase.instance.client.storage
+            .from('avatars')
+            .remove(paths);
+      }
+
+      // Clear avatar_url in profile
+      await AuthService.updateUserProfile(avatarUrl: '');
+
+      setState(() => _userAvatar = '');
+
+      if (mounted) {
+        Get.snackbar(
+          'Photo Removed',
+          'Your profile photo has been removed.',
+          backgroundColor: Colors.green.shade600,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Get.snackbar(
+          'Remove Failed',
+          'Could not remove profile photo. Please try again.',
           backgroundColor: Colors.orange.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.TOP,

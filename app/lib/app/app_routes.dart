@@ -11,6 +11,7 @@ import 'package:flight_app/screens/intro/intro_screen.dart';
 import 'package:flight_app/screens/intro/launch_splash_screen.dart';
 import 'package:flight_app/screens/intro/start_screen.dart';
 import 'package:flight_app/screens/messages/notification.dart';
+import 'package:flight_app/screens/messages/support_message_detail.dart';
 import 'package:flight_app/screens/mode_selector/travel_mode_selection.dart';
 import 'package:flight_app/screens/home/unified_home_screen.dart';
 import 'package:flight_app/screens/not_found.dart';
@@ -84,6 +85,10 @@ final List<GetPage> appRoutes = [
   GetPage(
     name: AppLink.notification,
     page: () => const GeneralLayout(content: Notification()),
+  ),
+  GetPage(
+    name: AppLink.supportMessageDetail,
+    page: () => const SupportMessageDetail(),
   ),
   GetPage(
     name: AppLink.notFound,

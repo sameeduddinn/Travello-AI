@@ -28,9 +28,13 @@ _OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 # Limit concurrent Open-Meteo requests
 _OPEN_METEO_SEMAPHORE = asyncio.Semaphore(5)
 
-# Shared TTL cache: city -> (result_dict, fetched_at_monotonic)
+# Per-city cache: city -> (result_dict, fetched_at_monotonic) — 5-min TTL
 _CACHE: dict[str, tuple[dict, float]] = {}
 _CACHE_TTL = 300  # 5 minutes
+
+# All-cities bulk cache — 2-hour TTL, shared across all users
+_ALL_CITIES_CACHE: tuple[list, float] | None = None
+_ALL_CITIES_TTL = 7200  # 2 hours
 
 logger = logging.getLogger(__name__)
 
@@ -361,7 +365,19 @@ async def get_weather(city: str) -> dict[str, Any]:
 
 
 async def get_all_cities_weather() -> list[dict[str, Any]]:
-    """Fetch weather for all Pakistani cities in parallel."""
+    """
+    Fetch weather for all Pakistani cities in parallel.
+    Results are cached for 2 hours — shared across all users so the Google
+    Weather API is called at most once per 2-hour window, not once per user.
+    """
+    global _ALL_CITIES_CACHE
+
+    if _ALL_CITIES_CACHE is not None:
+        data, fetched_at = _ALL_CITIES_CACHE
+        if (time.monotonic() - fetched_at) < _ALL_CITIES_TTL:
+            logger.debug("Serving all-cities weather from 2-hour cache.")
+            return data
+
     pk_cities = [
         "Karachi", "Lahore", "Islamabad", "Rawalpindi", "Faisalabad",
         "Multan", "Peshawar", "Quetta", "Sialkot", "Gujranwala",
@@ -374,7 +390,10 @@ async def get_all_cities_weather() -> list[dict[str, Any]]:
         *[get_weather(city) for city in pk_cities],
         return_exceptions=True,
     )
-    return [
+    data = [
         r if isinstance(r, dict) else _default_weather(pk_cities[i])
         for i, r in enumerate(results)
     ]
+    _ALL_CITIES_CACHE = (data, time.monotonic())
+    logger.info("All-cities weather cache refreshed (%d cities).", len(data))
+    return data

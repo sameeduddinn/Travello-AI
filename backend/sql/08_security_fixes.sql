@@ -28,6 +28,30 @@ CREATE INDEX IF NOT EXISTS idx_passengers_booking_id
     ON public.passengers(booking_id);
 
 -- ---------------------------------------------------------------------------
+-- 3. Supabase Storage — avatars bucket policies
+--    Run AFTER creating the 'avatars' bucket in Supabase Dashboard → Storage
+--    Bucket must be set to PUBLIC
+-- ---------------------------------------------------------------------------
+
+-- Allow authenticated users to upload their own avatar
+CREATE POLICY "Users can upload own avatar"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- Allow public to view all avatars (needed for public URL to work)
+CREATE POLICY "Avatars are publicly viewable"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'avatars');
+
+-- Allow users to replace/update their own avatar (upsert: true)
+CREATE POLICY "Users can update own avatar"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- ---------------------------------------------------------------------------
 -- 3. saved_searches table
 -- ---------------------------------------------------------------------------
 -- If table already exists from sql/07 (which used column 'search_params'),

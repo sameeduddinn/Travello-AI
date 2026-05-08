@@ -9,6 +9,7 @@ import 'package:flight_app/widgets/title/title_basic.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:flight_app/utils/location_preference_service.dart';
 import 'package:flight_app/widgets/onboarding/city_selection_sheet.dart';
+import 'package:flight_app/controllers/city_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 
@@ -175,9 +176,10 @@ Future<void> _confirmSignOut() async {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => CitySelectionSheet(
-        onComplete: () {
+        onComplete: () async {
           Navigator.pop(context);
-          _checkAuthStatus();
+          await _checkAuthStatus();
+          CityController.to.setCity(_currentCityName);
           Get.snackbar(
             'Home City Updated',
             'Featured packages will now show from $_currentCityName',

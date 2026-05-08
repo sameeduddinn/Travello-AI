@@ -1,6 +1,5 @@
 import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/services/api_client.dart';
-import 'package:flight_app/utils/support_message_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
@@ -44,19 +43,18 @@ class _MessageFormState extends State<MessageForm> {
     final topic = _selectedTopic!;
     final subject = _subjectCtrl.text.trim();
     final description = _descCtrl.text.trim();
-    final senderEmail =
-        Supabase.instance.client.auth.currentSession?.user.email ?? '';
+    final session   = Supabase.instance.client.auth.currentSession;
+    final senderEmail = session?.user.email ?? '';
+    final userId      = session?.user.id ?? '';
 
-    // Save locally + send email to travelloo.ai@gmail.com in parallel
-    await Future.wait([
-      SupportMessageService.send(
-          topic: topic, subject: subject, description: description),
-      ApiClient.sendContactSupport(
-          topic: topic,
-          subject: subject,
-          description: description,
-          senderEmail: senderEmail),
-    ]);
+    // Persist to DB + email admin — backend handles both in one call
+    await ApiClient.sendContactSupport(
+      topic:       topic,
+      subject:     subject,
+      description: description,
+      senderEmail: senderEmail,
+      userId:      userId,
+    );
 
     setState(() => _isSending = false);
     if (!mounted) return;
