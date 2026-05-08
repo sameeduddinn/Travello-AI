@@ -79,7 +79,7 @@ class Settings(BaseSettings):
     # Set a strong random string in .env — used to protect the support reply endpoint
     ADMIN_SECRET_KEY: str = ""
     # Public base URL of the backend (used to build reply-form links in emails)
-    BACKEND_BASE_URL: str = "http://localhost:8000"
+    BACKEND_BASE_URL: str = "https://travello-ai.onrender.com"
 
     # -------------------------------------------------------------------------
     # OTP settings
