@@ -153,7 +153,7 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
                         ? 'Free cancellation up to 24 hours before check-in'
                         : 'Non-refundable',
                     breakfastIncluded: false,
-                    roomsAvailable: 99,
+                    roomsAvailable: (r['rooms_available'] as num?)?.toInt() ?? 10,
                   ))
               .toList();
           return Hotel(

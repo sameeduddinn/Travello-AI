@@ -131,6 +131,7 @@ class _HotelBookingConfirmationState extends State<HotelBookingConfirmation>
 
       final localBooking = {
         'bookingType': 'hotel',
+        'bookingId': bookingReference,
         'pnr': bookingReference,
         'bookingReference': bookingReference,
         'status': 'confirmed',

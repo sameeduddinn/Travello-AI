@@ -68,10 +68,10 @@
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, status
 
 from core.auth import CurrentUser
 from models.flight import FlightBookRequest, FlightOffer, FlightSearchRequest, FlightSearchResponse
@@ -98,8 +98,7 @@ async def search_flights_endpoint(
 ):
     """
     Search for available flights.
-    Domestic Pakistan routes → seeded mock data (no API quota used).
-    International routes → AviationStack API (if key set) or generated mock.
+    Domestic Pakistan routes → seeded mock data (no external API calls).
     Results cached in memory so GET /flights/{offer_id} can retrieve them.
     """
     offers = await _search_flights(
@@ -112,6 +111,10 @@ async def search_flights_endpoint(
     )
 
     ts = time.time()
+    # Evict expired entries before writing new ones
+    expired = [k for k, (_, t) in _offer_cache.items() if ts - t > _CACHE_TTL]
+    for k in expired:
+        del _offer_cache[k]
     for offer in offers:
         _offer_cache[offer.offer_id] = (offer, ts)
 
@@ -169,12 +172,6 @@ async def book_flight(payload: FlightBookRequest, user: CurrentUser):
             if first_itin and first_itin.segments
             else None
         )
-
-        if first_seg and first_seg.departure_time < datetime.now(timezone.utc).replace(tzinfo=None):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot book a flight that has already departed.",
-            )
 
         raw_payload = {
             "offer_id": offer.offer_id,

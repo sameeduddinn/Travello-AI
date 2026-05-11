@@ -1617,11 +1617,11 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                               width: 56,
                               height: 56,
                               decoration: pw.BoxDecoration(
-                                color: const PdfColor(1.0, 1.0, 1.0, 0.12),
+                                color: const PdfColor(0.18, 0.28, 0.48),
                                 borderRadius: const pw.BorderRadius.all(
                                     pw.Radius.circular(12)),
                                 border: pw.Border.all(
-                                  color: const PdfColor(1.0, 1.0, 1.0, 0.2),
+                                  color: const PdfColor(0.25, 0.38, 0.60),
                                   width: 1,
                                 ),
                               ),
@@ -1655,7 +1655,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                                     padding: const pw.EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 4),
                                     decoration: const pw.BoxDecoration(
-                                      color: PdfColor(1.0, 1.0, 1.0, 0.15),
+                                      color: PdfColor(0.18, 0.28, 0.48),
                                       borderRadius: pw.BorderRadius.all(
                                           pw.Radius.circular(4)),
                                     ),
@@ -1715,7 +1715,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                                   padding: const pw.EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 4),
                                   decoration: const pw.BoxDecoration(
-                                    color: PdfColor(1.0, 1.0, 1.0, 0.12),
+                                    color: PdfColor(0.18, 0.28, 0.48),
                                     borderRadius: pw.BorderRadius.all(
                                         pw.Radius.circular(6)),
                                   ),

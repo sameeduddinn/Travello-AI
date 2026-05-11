@@ -443,7 +443,33 @@ class _BookingPassengersState extends State<BookingPassengers> {
         _emergencyRelationCtrl.text.trim().isNotEmpty;
   }
 
+  bool _hasDuplicateDocuments() {
+    final seen = <String>{};
+    for (final p in _passengers) {
+      final doc = p.nationality == 'Pakistan'
+          ? (p.documentType == 'CNIC'
+              ? p.nationalIdCtrl.text.replaceAll('-', '').trim()
+              : p.documentType == 'B-Form'
+                  ? p.bFormCtrl.text.replaceAll('-', '').trim()
+                  : p.passportNumberCtrl.text.trim())
+          : p.passportNumberCtrl.text.trim();
+      if (doc.isEmpty) continue;
+      if (!seen.add(doc)) return true;
+    }
+    return false;
+  }
+
   Future<void> _submit() async {
+    if (_totalPassengers > 1 && _hasDuplicateDocuments()) {
+      Get.snackbar(
+        'Validation Error',
+        'Each passenger must have a unique CNIC / document number.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
     if (!_formKeys[_totalPassengers].currentState!.validate()) {
       _scrollToFirstContactError();
       return;

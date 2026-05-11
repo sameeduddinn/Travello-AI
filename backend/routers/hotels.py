@@ -76,12 +76,12 @@ import logging
 import time
 from datetime import date
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from core.auth import CurrentUser
-from models.hotel import HotelBookRequest, HotelOffer, HotelSearchRequest, HotelSearchResponse
+from models.hotel import HotelBookRequest, HotelOffer, HotelSearchRequest, HotelSearchResponse, RoomOffer
 from services.booking_service import create_booking
-from services.hotel_service import get_hotel_detail, search_hotels
+from services.hotel_service import fetch_hotel_rooms, get_hotel_detail, search_hotels
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
@@ -124,6 +124,50 @@ async def search_hotels_endpoint(payload: HotelSearchRequest):
         _hotel_cache[hotel.hotel_id] = (hotel, ts)
 
     return response
+
+
+# ---------------------------------------------------------------------------
+# GET /hotels/{hotel_id}/rooms  — real-time room availability
+# ---------------------------------------------------------------------------
+
+@router.get("/{hotel_id}/rooms", response_model=list[RoomOffer])
+async def get_hotel_rooms_endpoint(
+    hotel_id: str,
+    user: CurrentUser,
+    check_in: date = Query(..., description="Check-in date YYYY-MM-DD"),
+    check_out: date = Query(..., description="Check-out date YYYY-MM-DD"),
+    guests: int = Query(1, ge=1, le=10),
+):
+    """
+    Return real-time room availability for a specific hotel and date range.
+    - TripAdvisor-sourced hotels (numeric IDs): calls TripAdvisor getHotelDetails → live rooms.
+    - All other hotels: returns cached rooms enriched with date-seeded availability counts.
+    Used by the Flutter hotel detail screen when a user taps into a hotel.
+    """
+    if check_out <= check_in:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="check_out must be after check_in.",
+        )
+
+    cached = _hotel_cache.get(hotel_id)
+    cached_hotel = cached[0] if cached and time.time() - cached[1] <= _CACHE_TTL else None
+
+    rooms = await fetch_hotel_rooms(
+        hotel_id=hotel_id,
+        check_in=check_in,
+        check_out=check_out,
+        guests=guests,
+        cached_hotel=cached_hotel,
+    )
+
+    if not rooms:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No rooms found for this hotel. Please search again.",
+        )
+
+    return rooms
 
 
 # ---------------------------------------------------------------------------

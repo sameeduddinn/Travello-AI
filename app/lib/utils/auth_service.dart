@@ -123,7 +123,7 @@ class AuthService {
     if (phone != null) payload['phone'] = phone;
     if (avatarUrl != null) payload['avatar_url'] = avatarUrl;
 
-    await _supabase.from('profiles').upsert(payload);
+    await _supabase.from('profiles').upsert(payload, onConflict: 'id');
   }
 
   static Future<bool> registerUser({

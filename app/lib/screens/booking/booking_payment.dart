@@ -353,6 +353,7 @@ class _BookingPaymentState extends State<BookingPayment>
       'outboundSeatSelections': _outboundSeatSelections,
       'returnSeatSelections': _returnSeatSelections,
       'seatTotal': _seatTotal,
+      'backendBookingId': _backendBookingId,
     };
 
     Get.toNamed(AppLink.paymentStatus, arguments: paymentData);

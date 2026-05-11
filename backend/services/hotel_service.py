@@ -657,6 +657,603 @@ def _parse_hotel(prop: dict, check_in: date, check_out: date, city: str) -> Hote
 
 
 # ---------------------------------------------------------------------------
+# Hotels.com Provider (RapidAPI) — hotel search + room availability
+# ---------------------------------------------------------------------------
+
+def _hotels_com_headers() -> dict:
+    return {
+        "X-RapidAPI-Key": settings.RAPIDAPI_KEY,
+        "X-RapidAPI-Host": settings.HOTELS_COM_HOST,
+    }
+
+
+def _hotels_com_is_configured() -> bool:
+    key = (settings.RAPIDAPI_KEY or "").strip()
+    host = (settings.HOTELS_COM_HOST or "").strip()
+    if not key or not host:
+        return False
+    return "your-rapidapi-key" not in key.lower() and not key.startswith("REPLACE_WITH")
+
+
+async def _hotels_com_get_json(endpoint: str, params: dict) -> dict | None:
+    """GET request against Hotels.com Provider host."""
+    url = f"https://{settings.HOTELS_COM_HOST.strip()}{endpoint}"
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.get(url, params=params, headers=_hotels_com_headers())
+        if resp.status_code == 200:
+            return resp.json()
+        logger.warning("Hotels.com %s %s: %s", resp.status_code, endpoint, resp.text[:200])
+        return None
+    except Exception as exc:
+        logger.warning("Hotels.com request error %s: %s", endpoint, exc)
+        return None
+
+
+async def _hotels_com_get_region_id(city: str) -> str | None:
+    """Resolve a city name to a Hotels.com gaiaId (region ID)."""
+    data = await _hotels_com_get_json(
+        "/v2/regions",
+        {"query": city, "locale": "en_US", "domain": "US"},
+    )
+    if not data:
+        logger.warning("Hotels.com: no response from /v2/regions for '%s'", city)
+        return None
+    results = data.get("data", [])
+    if not isinstance(results, list) or not results:
+        logger.warning("Hotels.com: empty region results for '%s'. Response keys: %s", city, list(data.keys()))
+        return None
+    logger.info("Hotels.com: found %d region results for '%s'", len(results), city)
+    for item in results:
+        gaia_id = item.get("gaiaId") or item.get("id")
+        region_type = (item.get("type") or "").upper()
+        country = (item.get("hierarchyInfo") or {}).get("country", {}).get("isoCode2", "")
+        logger.debug("Hotels.com region candidate: gaiaId=%s type=%s country=%s", gaia_id, region_type, country)
+        # Prefer Pakistan results (isoCode2 = PK)
+        if gaia_id and country == "PK":
+            logger.info("Hotels.com: selected region %s (%s) for '%s'", gaia_id, region_type, city)
+            return str(gaia_id)
+    # Fallback: first CITY result regardless of country
+    for item in results:
+        gaia_id = item.get("gaiaId") or item.get("id")
+        region_type = (item.get("type") or "").upper()
+        if gaia_id and region_type == "CITY":
+            logger.info("Hotels.com: fallback region %s (CITY) for '%s'", gaia_id, city)
+            return str(gaia_id)
+    # Last resort: first result
+    gaia_id = results[0].get("gaiaId") or results[0].get("id")
+    if gaia_id:
+        logger.info("Hotels.com: last-resort region %s for '%s'", gaia_id, city)
+        return str(gaia_id)
+    logger.warning("Hotels.com: could not extract gaiaId for '%s'", city)
+    return None
+
+
+async def fetch_hotels_com_hotels(
+    city: str,
+    check_in: date,
+    check_out: date,
+    guests: int,
+    rooms: int,
+) -> list[HotelOffer]:
+    """Search Hotels.com for hotels in a city — returns parsed HotelOffer list."""
+    if not _hotels_com_is_configured():
+        return []
+
+    region_id = await _hotels_com_get_region_id(city)
+    if not region_id:
+        logger.info("Hotels.com: no region ID found for %s", city)
+        return []
+
+    data = await _hotels_com_get_json(
+        "/v2/hotels/search",
+        {
+            "region_id": region_id,
+            "checkin_date": check_in.strftime("%Y-%m-%d"),
+            "checkout_date": check_out.strftime("%Y-%m-%d"),
+            "adults_number": guests,
+            "rooms_number": rooms,
+            "locale": "en_US",
+            "domain": "US",
+            "sort_order": "RECOMMENDED",
+            "currency": "USD",
+        },
+    )
+    if not data:
+        logger.warning("Hotels.com: no response from /v2/hotels/search for region %s", region_id)
+        return []
+
+    # propertySearchListings has full hotel objects; 'properties' only has skeleton placeholders
+    raw_results = (
+        data.get("propertySearchListings") or
+        (data.get("data") or {}).get("propertySearchListings") or
+        []
+    )
+    if not isinstance(raw_results, list) or not raw_results:
+        logger.warning("Hotels.com: could not find results in response. Keys: %s", list(data.keys()))
+        return []
+
+    logger.info("Hotels.com: found %d raw results for %s (all skeleton — API broken)", len(raw_results), city)
+    return []
+
+
+def _parse_hotels_com_hotel(prop: dict, city: str) -> HotelOffer | None:
+    """Parse a single Hotels.com search result into a HotelOffer."""
+    hotel_id = prop.get("id") or prop.get("hotelId")
+    if not hotel_id:
+        logger.debug("Hotels.com: skipping prop with no id, keys=%s", list(prop.keys()))
+        return None
+    hotel_id = f"HC-{hotel_id}"
+
+    # Name — nested under 'name' or 'headingSection'
+    name = (
+        prop.get("name") or
+        (prop.get("headingSection") or {}).get("title") or
+        (prop.get("heading") or {}).get("text") or
+        "Hotel"
+    )
+
+    # Star rating — nested under 'star', 'starRating', or 'star-rating'
+    star_raw = (
+        (prop.get("star") or {}).get("value") or
+        (prop.get("star-rating") or {}).get("ratingValue") or
+        prop.get("starRating") or
+        prop.get("stars") or
+        3
+    )
+    try:
+        star_rating = min(5.0, float(star_raw))
+    except (ValueError, TypeError):
+        star_rating = 3.0
+
+    # Price — 'price.lead.amount' or 'price.options[0].pricePerNightIncludingTaxesAndFees'
+    price_usd = 0.0
+    try:
+        price_block = prop.get("price") or {}
+        lead = price_block.get("lead") or {}
+        options = price_block.get("options") or []
+        price_usd = float(
+            lead.get("amount") or
+            lead.get("formatted", "0").replace("$", "").replace(",", "").strip() or
+            (options[0].get("pricePerNightIncludingTaxesAndFees", {}).get("amount") if options else 0) or
+            price_block.get("value") or
+            0
+        )
+    except (ValueError, TypeError):
+        price_usd = 0.0
+    if price_usd <= 0:
+        price_usd = random.uniform(40, 150)
+    price_pkr = round(price_usd * settings.USD_TO_PKR_RATE, 2)
+
+    # Location
+    coord = prop.get("mapMarker") or prop.get("coordinate") or prop.get("location") or {}
+    lat = coord.get("latLong", {}).get("latitude") or coord.get("lat") or coord.get("latitude")
+    lon = coord.get("latLong", {}).get("longitude") or coord.get("lon") or coord.get("longitude")
+    address = (
+        (prop.get("address") or {}).get("addressLine") or
+        (prop.get("address") or {}).get("streetAddress") or
+        (prop.get("address") or {}).get("cityName") or
+        city
+    )
+
+    # Images — nested under 'propertyImage', 'images', or 'image'
+    images: list[str] = []
+    prop_img = prop.get("propertyImage") or {}
+    if prop_img:
+        img_url = (prop_img.get("image") or {}).get("url") or prop_img.get("url") or ""
+        if img_url:
+            images.append(img_url if img_url.startswith("http") else f"https:{img_url}")
+    if not images:
+        for img_field in ["images", "thumbnailImageUrl", "image"]:
+            raw_imgs = prop.get(img_field)
+            if isinstance(raw_imgs, list):
+                for img in raw_imgs[:4]:
+                    url = (img.get("url") or img.get("baseUri") or img.get("src") or "") if isinstance(img, dict) else str(img)
+                    if url:
+                        images.append(url if url.startswith("http") else f"https:{url}")
+            elif isinstance(raw_imgs, str) and raw_imgs.startswith("http"):
+                images.append(raw_imgs)
+            if images:
+                break
+
+    # Review — 'reviews.score' and 'reviews.total'
+    review_raw = prop.get("reviews") or prop.get("guestReviews") or {}
+    try:
+        review_score = float(review_raw.get("score") or review_raw.get("rating") or (review_raw.get("brands") or {}).get("rating") or 0) or None
+        review_count = int(str(review_raw.get("total") or review_raw.get("count") or 0).replace(",", "").replace("+", "") or 0) or None
+    except (ValueError, TypeError):
+        review_score, review_count = None, None
+
+    amenities = ["Free WiFi", "AC", "Room Service"]
+    if star_rating >= 4:
+        amenities += ["Pool", "Gym", "Restaurant"]
+
+    rooms_list = [
+        RoomOffer(
+            room_id=f"{hotel_id}-STD",
+            room_type="Standard Room",
+            bed_type="Double",
+            price_per_night_pkr=price_pkr,
+            max_guests=2,
+            is_refundable=True,
+            amenities=amenities,
+            rooms_available=10,
+            cancellation_policy="Free cancellation up to 24 hours before check-in",
+        ),
+        RoomOffer(
+            room_id=f"{hotel_id}-DLX",
+            room_type="Deluxe Room",
+            bed_type="King",
+            price_per_night_pkr=round(price_pkr * 1.35, 2),
+            max_guests=3,
+            is_refundable=True,
+            amenities=amenities + ["City View"],
+            rooms_available=6,
+            has_city_view=True,
+            cancellation_policy="Free cancellation up to 24 hours before check-in",
+        ),
+    ]
+
+    return HotelOffer(
+        hotel_id=hotel_id,
+        name=name,
+        star_rating=star_rating,
+        address=address,
+        city=city,
+        latitude=lat,
+        longitude=lon,
+        images=images,
+        amenities=amenities,
+        rooms=rooms_list,
+        review_score=review_score,
+        review_count=review_count,
+    )
+
+
+async def _fetch_hotels_com_rooms(
+    hotel_id: str,
+    check_in: date,
+    check_out: date,
+    guests: int,
+) -> list[RoomOffer]:
+    """
+    Call Hotels.com detail endpoint to get live room availability for specific dates.
+    hotel_id should be the raw Hotels.com ID (without 'HC-' prefix).
+    """
+    data = await _hotels_com_get_json(
+        "/v2/hotels/detail",
+        {
+            "hotel_id": hotel_id,
+            "checkin_date": check_in.strftime("%Y-%m-%d"),
+            "checkout_date": check_out.strftime("%Y-%m-%d"),
+            "adults_number": guests,
+            "locale": "en_US",
+            "domain": "US",
+            "currency": "USD",
+        },
+    )
+    if not data:
+        return []
+
+    # Rooms nested under multiple possible paths
+    body = (data.get("data") or {}).get("body") or data.get("data") or data
+    rooms_raw = (
+        body.get("roomsAndRates", {}).get("rooms") or
+        body.get("rooms") or
+        body.get("roomTypes") or
+        []
+    )
+    if not isinstance(rooms_raw, list) or not rooms_raw:
+        logger.info("Hotels.com detail: no rooms in response for %s", hotel_id)
+        return []
+
+    offers: list[RoomOffer] = []
+    for room in rooms_raw[:8]:
+        # Name
+        name = room.get("name") or room.get("roomName") or room.get("header", {}).get("text") or "Standard Room"
+
+        # Bed type
+        beds = room.get("beds") or room.get("bedTypes") or []
+        if isinstance(beds, list) and beds:
+            first_bed = beds[0]
+            bed = first_bed.get("description") or first_bed.get("type") or "Double" if isinstance(first_bed, dict) else str(first_bed)
+        else:
+            bed = "Double"
+
+        # Price from first rate plan
+        rate_plans = room.get("ratePlans") or room.get("rates") or [{}]
+        first_rate = rate_plans[0] if rate_plans else {}
+        price_info = (
+            (first_rate.get("price") or {}).get("lead") or
+            (first_rate.get("price") or {}).get("current") or
+            first_rate.get("price") or
+            {}
+        )
+        try:
+            price_usd = float(
+                price_info.get("amount") or price_info.get("value") or 0
+            )
+        except (ValueError, TypeError):
+            price_usd = 0.0
+        if price_usd <= 0:
+            price_usd = random.uniform(40, 150)
+        price_pkr = round(price_usd * settings.USD_TO_PKR_RATE, 2)
+
+        # Availability
+        avail_raw = room.get("availableRoomsCount") or room.get("availability") or room.get("remainingCount")
+        try:
+            avail = int(avail_raw) if avail_raw is not None else None
+        except (ValueError, TypeError):
+            avail = None
+        if avail is None:
+            seed = hash(f"HC-{hotel_id}-{name}-{check_in}") % (2 ** 31)
+            avail = random.Random(seed).randint(2, 12)
+
+        # Cancellation
+        cancel_info = first_rate.get("cancellationPolicy") or {}
+        is_refundable = cancel_info.get("type") != "NON_REFUNDABLE" if cancel_info else True
+        cancel_policy = (
+            "Free cancellation up to 24 hours before check-in"
+            if is_refundable else "Non-refundable"
+        )
+
+        # Max occupancy
+        try:
+            max_guests = int(
+                (room.get("maxOccupancy") or {}).get("total") or
+                room.get("maxOccupancy") or 2
+            )
+        except (ValueError, TypeError):
+            max_guests = 2
+
+        # Amenities
+        raw_amenities = room.get("amenities") or []
+        if isinstance(raw_amenities, list):
+            amenities = [a.get("description", a) if isinstance(a, dict) else str(a) for a in raw_amenities[:8]]
+        else:
+            amenities = []
+        if not amenities:
+            amenities = ["WiFi", "AC", "TV"]
+
+        room_id = f"HC-{hotel_id}-{room.get('roomTypeId', room.get('id', len(offers)))}"
+        offers.append(RoomOffer(
+            room_id=room_id,
+            room_type=name,
+            bed_type=bed,
+            price_per_night_pkr=price_pkr,
+            max_guests=max_guests,
+            is_refundable=is_refundable,
+            amenities=amenities,
+            rooms_available=avail,
+            cancellation_policy=cancel_policy,
+            has_city_view="city view" in name.lower(),
+            has_balcony="balcony" in name.lower(),
+            breakfast_included="breakfast" in name.lower(),
+        ))
+
+    logger.info("Hotels.com rooms for hotel %s: %d rooms", hotel_id, len(offers))
+    return offers
+
+
+# ---------------------------------------------------------------------------
+# Real-time room availability
+# ---------------------------------------------------------------------------
+
+async def _fetch_tripadvisor_rooms(
+    hotel_id: str,
+    check_in: date,
+    check_out: date,
+    guests: int,
+) -> list[RoomOffer]:
+    """
+    Call TripAdvisor getHotelDetails with specific dates to get live room offers.
+    Only called for hotels sourced from TripAdvisor (numeric IDs).
+    """
+    try:
+        data = await _rapidapi_get_json(
+            ["/api/v1/hotels/getHotelDetails"],
+            {
+                "id": hotel_id,
+                "checkIn": check_in.strftime("%Y-%m-%d"),
+                "checkOut": check_out.strftime("%Y-%m-%d"),
+                "adults": guests,
+                "currency": "USD",
+            },
+            timeout=20.0,
+        )
+        if not data:
+            return []
+
+        # TripAdvisor response nests data differently across versions
+        inner = data.get("data") or data
+        rooms_raw: list[dict] = (
+            inner.get("rooms") or
+            inner.get("roomTypes") or
+            inner.get("offers") or
+            []
+        )
+        if not isinstance(rooms_raw, list) or not rooms_raw:
+            return []
+
+        offers: list[RoomOffer] = []
+        for room in rooms_raw[:8]:
+            # Price
+            price_info = room.get("priceForDisplay") or room.get("price") or {}
+            if isinstance(price_info, dict):
+                raw_price = price_info.get("amount") or price_info.get("value") or 0
+            elif isinstance(price_info, (int, float)):
+                raw_price = price_info
+            else:
+                raw_price = 0
+            try:
+                price_usd = float(str(raw_price).replace("$", "").replace(",", "").strip() or 0)
+            except (ValueError, TypeError):
+                price_usd = 0.0
+            if price_usd <= 0:
+                price_usd = random.uniform(40, 150)
+            price_pkr = round(price_usd * settings.USD_TO_PKR_RATE, 2)
+
+            # Name
+            name = (
+                room.get("title") or room.get("name") or room.get("roomType") or "Standard Room"
+            )
+
+            # Bed type
+            bed_types = room.get("bedTypes") or []
+            if isinstance(bed_types, list) and bed_types:
+                first = bed_types[0]
+                bed = first.get("description", "Double") if isinstance(first, dict) else str(first)
+            else:
+                bed = room.get("bedType") or "Double"
+
+            # Availability — use real count if present, otherwise seed-deterministic
+            avail_raw = room.get("availableCount") or room.get("availability")
+            try:
+                avail = int(avail_raw) if avail_raw is not None else None
+            except (ValueError, TypeError):
+                avail = None
+            if avail is None:
+                seed = hash(f"{hotel_id}-{room.get('id', name)}-{check_in}") % (2 ** 31)
+                avail = random.Random(seed).randint(2, 12)
+
+            # Amenities
+            raw_amenities = room.get("amenities") or []
+            if isinstance(raw_amenities, list):
+                amenities = [
+                    a.get("name", a) if isinstance(a, dict) else str(a)
+                    for a in raw_amenities[:8]
+                ]
+            else:
+                amenities = []
+            if not amenities:
+                amenities = ["WiFi", "AC", "TV"]
+
+            # Extra detail fields
+            is_refundable = bool(room.get("isRefundable", True))
+            max_guests = 2
+            try:
+                max_guests = int(room.get("maxOccupancy") or room.get("sleepCapacity") or 2)
+            except (ValueError, TypeError):
+                pass
+
+            description = room.get("description") or ""
+            size_raw = room.get("roomSize") or room.get("squareFeet")
+            try:
+                size_sqft = int(size_raw) if size_raw else None
+            except (ValueError, TypeError):
+                size_sqft = None
+            has_city_view = bool(room.get("cityView") or "city view" in name.lower())
+            has_balcony = bool(room.get("balcony") or "balcony" in name.lower())
+            breakfast = bool(room.get("breakfastIncluded") or "breakfast" in name.lower())
+            cancel_policy = room.get("cancellationPolicy") or (
+                "Free cancellation up to 24 hours before check-in" if is_refundable else "Non-refundable"
+            )
+
+            room_id = f"TA-{hotel_id}-{room.get('id', random.randint(1000, 9999))}"
+            offers.append(RoomOffer(
+                room_id=room_id,
+                room_type=name,
+                bed_type=bed,
+                price_per_night_pkr=price_pkr,
+                max_guests=max_guests,
+                is_refundable=is_refundable,
+                amenities=amenities,
+                rooms_available=avail,
+                description=description,
+                size_sqft=size_sqft,
+                has_city_view=has_city_view,
+                has_balcony=has_balcony,
+                breakfast_included=breakfast,
+                cancellation_policy=cancel_policy,
+            ))
+
+        logger.info("TripAdvisor rooms for hotel %s: %d rooms", hotel_id, len(offers))
+        return offers
+
+    except Exception as exc:
+        logger.warning("TripAdvisor room fetch failed for %s: %s", hotel_id, exc)
+        return []
+
+
+def _enrich_rooms_with_availability(
+    rooms: list[RoomOffer],
+    check_in: date,
+    check_out: date,
+) -> list[RoomOffer]:
+    """
+    Add date-seeded deterministic availability counts to cached rooms.
+    Pricier room types get fewer available rooms (realistic).
+    """
+    enriched: list[RoomOffer] = []
+    for room in rooms:
+        seed = hash(f"{room.room_id}-{check_in}-{check_out}") % (2 ** 31)
+        rng = random.Random(seed)
+        name_lower = room.room_type.lower()
+        if "presidential" in name_lower or "penthouse" in name_lower:
+            avail = rng.randint(1, 2)
+        elif "suite" in name_lower or "executive" in name_lower:
+            avail = rng.randint(1, 4)
+        elif "deluxe" in name_lower or "business" in name_lower or "premium" in name_lower:
+            avail = rng.randint(2, 8)
+        else:
+            avail = rng.randint(4, 15)
+
+        enriched.append(RoomOffer(
+            room_id=room.room_id,
+            room_type=room.room_type,
+            bed_type=room.bed_type,
+            price_per_night_pkr=room.price_per_night_pkr,
+            max_guests=room.max_guests,
+            is_refundable=room.is_refundable,
+            amenities=room.amenities,
+            rooms_available=avail,
+            description=room.description,
+            size_sqft=room.size_sqft,
+            has_city_view=room.has_city_view,
+            has_balcony=room.has_balcony,
+            breakfast_included=room.breakfast_included,
+            cancellation_policy=room.cancellation_policy or (
+                "Free cancellation up to 24 hours before check-in"
+                if room.is_refundable else "Non-refundable"
+            ),
+        ))
+    return enriched
+
+
+async def fetch_hotel_rooms(
+    hotel_id: str,
+    check_in: date,
+    check_out: date,
+    guests: int,
+    cached_hotel: "HotelOffer | None" = None,
+) -> list[RoomOffer]:
+    """
+    Public entry point: fetch real-time room availability for one hotel.
+    - HC-{id} hotels (Hotels.com source) → call Hotels.com detail endpoint
+    - Numeric hotels (TripAdvisor source) → call TripAdvisor getHotelDetails
+    - All other sources → enrich cached rooms with deterministic availability
+    """
+    # Hotels.com sourced hotels
+    if hotel_id.startswith("HC-") and _hotels_com_is_configured():
+        raw_id = hotel_id[3:]  # strip "HC-" prefix
+        hc_rooms = await _fetch_hotels_com_rooms(raw_id, check_in, check_out, guests)
+        if hc_rooms:
+            return hc_rooms
+
+    # TripAdvisor sourced hotels (numeric IDs)
+    if hotel_id.isdigit() and _rapidapi_is_configured():
+        ta_rooms = await _fetch_tripadvisor_rooms(hotel_id, check_in, check_out, guests)
+        if ta_rooms:
+            return ta_rooms
+
+    # All other sources — enrich cached rooms with date-seeded availability
+    if cached_hotel and cached_hotel.rooms:
+        return _enrich_rooms_with_availability(cached_hotel.rooms, check_in, check_out)
+
+    return []
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -686,8 +1283,11 @@ async def search_hotels(
     osm_count = 0
     mock_count = 0
 
-    # 1) RapidAPI primary
-    if _rapidapi_is_configured():
+    # Hotels.com Provider disabled — API returns empty skeleton objects (LodgingCard/__typename only)
+    # Re-enable once RapidAPI fixes the response format.
+
+    # 2) TripAdvisor (RapidAPI) supplements if Hotels.com is empty/partial
+    if len(hotels) < _TARGET_RESULT_COUNT and _rapidapi_is_configured():
         geo_id = await _get_geo_id(canonical)
         if geo_id:
             rapid_results = await _search_hotels_tripadvisor(
@@ -697,22 +1297,17 @@ async def search_hotels(
                 guests=guests,
                 rooms=rooms,
             )
-
             parsed_hotels: list[HotelOffer] = []
             for prop in rapid_results:
                 try:
                     parsed_hotels.append(_parse_hotel(prop, check_in, check_out, canonical))
                 except Exception as exc:
                     logger.debug("Skipping malformed RapidAPI hotel payload: %s", exc)
-
             rapid_count = len(parsed_hotels)
             hotels = _merge_hotel_lists(hotels, parsed_hotels, limit=_TARGET_RESULT_COUNT)
+        logger.info("TripAdvisor returned %d hotels for %s", rapid_count, canonical)
 
-        logger.info("RapidAPI returned %d hotels for %s", rapid_count, canonical)
-    else:
-        logger.info("RAPIDAPI_KEY not configured or placeholder detected; skipping RapidAPI.")
-
-    # 2) Google Places supplements if RapidAPI is empty/partial.
+    # 3) Google Places supplements if still not enough
     if len(hotels) < _TARGET_RESULT_COUNT and _google_places_is_configured():
         google_hotels = await _fetch_google_places_hotels(canonical, limit=_TARGET_RESULT_COUNT)
         google_count = len(google_hotels)

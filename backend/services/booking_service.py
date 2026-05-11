@@ -312,12 +312,17 @@ async def get_ticket(booking_uuid: str, user_id: str) -> TicketOut:
 # Mark booking as paid (called from payment service)
 # ---------------------------------------------------------------------------
 
-async def mark_booking_paid(booking_uuid: str, transaction_id: str) -> None:
-    """Update booking status to 'confirmed' and store the transaction_id."""
+async def mark_booking_paid(
+    booking_uuid: str,
+    transaction_id: str,
+    total_amount: float | None = None,
+) -> None:
+    """Update booking status to 'confirmed', store transaction_id, and sync total_amount."""
     try:
-        supabase_admin.table("bookings").update(
-            {"status": "confirmed", "transaction_id": transaction_id}
-        ).eq("id", booking_uuid).execute()
+        payload: dict = {"status": "confirmed", "transaction_id": transaction_id}
+        if total_amount is not None:
+            payload["total_amount"] = total_amount
+        supabase_admin.table("bookings").update(payload).eq("id", booking_uuid).execute()
     except Exception as exc:
         logger.error("mark_booking_paid error: %s", exc)
         raise HTTPException(status_code=500, detail="Failed to update booking status.")

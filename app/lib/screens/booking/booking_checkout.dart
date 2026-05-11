@@ -294,7 +294,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
         airlineName: _flight.airlineName,
         airlineCode: _flight.airlineCode,
         cabinClass: _flight.cabinClass,
-        totalPricePkr: _flight.price * (_adults + _children + _infants).clamp(1, 9),
+        totalPricePkr: _grandTotal,
         isRefundable: _flight.isRefundable,
         duration: _flight.duration,
       );

@@ -294,8 +294,6 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
       final selectedClassForBooking =
           _isRoundTrip ? (_outboundClass ?? _selectedClass) : _selectedClass;
       final depIso = _departureDate.toIso8601String();
-      final selectedPrice = _train.classPrices[selectedClassForBooking] ?? 0.0;
-
       final booking = await ApiClient.bookTrain(
         trainId: _train.id,
         classCode: _toTrainClassCode(selectedClassForBooking),
@@ -309,7 +307,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
         departureAt: depIso,
         arrivalAt: depIso,
         className: selectedClassForBooking,
-        totalPricePkr: selectedPrice > 0 ? selectedPrice : null,
+        totalPricePkr: _grandTotal > 0 ? _grandTotal : null,
       );
 
       _backendBookingId =

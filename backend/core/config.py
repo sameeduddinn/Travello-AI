@@ -32,9 +32,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = ""
 
     # -------------------------------------------------------------------------
-    # AviationStack (real flight schedules — https://aviationstack.com)
-    # Free tier: 100 req/month. Routes are cached 24 h to minimise calls.
-    # Leave blank → rich mock flight data is used.
+    # AviationStack (real domestic flight schedules — https://aviationstack.com)
     # -------------------------------------------------------------------------
     AVIATIONSTACK_KEY: str = ""
 
@@ -43,6 +41,10 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     RAPIDAPI_KEY: str = ""
     RAPIDAPI_HOST: str = "tripadvisor16.p.rapidapi.com"
+
+    # RapidAPI (hotel rooms — Hotels.com Provider)
+    # Same RAPIDAPI_KEY, different host — subscribe at rapidapi.com
+    HOTELS_COM_HOST: str = "hotels-com-provider.p.rapidapi.com"
 
     # -------------------------------------------------------------------------
     # Google Maps Platform (Places API + Weather API + Healthcare nearby search)

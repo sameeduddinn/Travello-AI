@@ -1,11 +1,7 @@
 # =============================================================================
 # FILE: services/flight_service.py
 # PURPOSE: Domestic flight search (Pakistan routes) with seeded mock data.
-#          International fallback via AviationStack or generated mock.
-#
-# Domestic routes: 100% mock — no API calls, no quota.
-# International:   AviationStack /v1/flights (free tier, 100 calls/month).
-#                  Leave AVIATIONSTACK_KEY blank → international mock is used.
+#          AviationStack supplements real domestic flights when available.
 # =============================================================================
 
 from __future__ import annotations
@@ -325,6 +321,21 @@ PAKISTAN_ROUTES: dict[str, dict] = {
 
 
 # ---------------------------------------------------------------------------
+# Cabin class configuration
+# ---------------------------------------------------------------------------
+
+_CABIN_CONFIG: dict[str, dict] = {
+    "ECONOMY":         {"multiplier": 1.0,  "baggage": "23kg", "refundable": False},
+    "PREMIUM_ECONOMY": {"multiplier": 1.6,  "baggage": "30kg", "refundable": True},
+    "BUSINESS":        {"multiplier": 2.8,  "baggage": "40kg", "refundable": True},
+    "FIRST":           {"multiplier": 4.5,  "baggage": "50kg", "refundable": True},
+}
+
+def _cabin_cfg(cabin_class: str) -> dict:
+    return _CABIN_CONFIG.get(cabin_class.upper(), _CABIN_CONFIG["ECONOMY"])
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -337,12 +348,6 @@ def _seeded_int(seed: int, lo: int, hi: int) -> int:
     return random.Random(seed).randint(lo, hi)
 
 
-def _aviationstack_is_configured() -> bool:
-    key = (settings.AVIATIONSTACK_KEY or "").strip()
-    if not key:
-        return False
-    lowered = key.lower()
-    return "your_aviationstack_key" not in lowered and not key.startswith("REPLACE_WITH")
 
 
 def _flight_offer_key(offer: FlightOffer) -> tuple[str, str, str, str, str]:
@@ -401,10 +406,13 @@ def _generate_domestic_offers(
     destination: str,
     travel_date: date,
     adults: int,
+    cabin_class: str = "ECONOMY",
 ) -> list[FlightOffer]:
     """Return deterministic mock offers for a domestic Pakistan route."""
     route_key = f"{origin}-{destination}"
     date_str = travel_date.strftime("%Y%m%d")
+    cabin = cabin_class.upper()
+    cfg = _cabin_cfg(cabin)
 
     route = PAKISTAN_ROUTES.get(route_key)
     reverse = False
@@ -428,10 +436,11 @@ def _generate_domestic_offers(
     offers: list[FlightOffer] = []
     for airline in route["airlines"]:
         for dep_time in dep_times:
-            seed = hash(f"{origin}{destination}{date_str}{airline['code']}{dep_time}") % (2**31)
-            price   = _seeded_int(seed,           route["price_min_pkr"], route["price_max_pkr"])
-            seats   = _seeded_int(seed ^ 0xABCD,  8, 52)
-            flt_num = f"{airline['code']}{_seeded_int(seed ^ 0x1234, 100, 999)}"
+            seed = hash(f"{origin}{destination}{date_str}{airline['code']}{dep_time}{cabin}") % (2**31)
+            base_price = _seeded_int(seed, route["price_min_pkr"], route["price_max_pkr"])
+            price      = round(base_price * cfg["multiplier"])
+            seats      = _seeded_int(seed ^ 0xABCD, 4, 30) if cabin != "ECONOMY" else _seeded_int(seed ^ 0xABCD, 8, 52)
+            flt_num    = f"{airline['code']}{_seeded_int(seed ^ 0x1234, 100, 999)}"
 
             h, m = map(int, dep_time.split(":"))
             dep_dt = datetime(travel_date.year, travel_date.month, travel_date.day, h, m)
@@ -439,7 +448,7 @@ def _generate_domestic_offers(
 
             offer_id = (
                 f"PK-{origin}-{destination}-{airline['code']}"
-                f"-{dep_time.replace(':', '')}-{date_str}"
+                f"-{dep_time.replace(':', '')}-{date_str}-{cabin}"
             )
 
             segment = FlightSegment(
@@ -450,7 +459,7 @@ def _generate_domestic_offers(
                 departure_time=dep_dt,
                 arrival_time=arr_dt,
                 duration=_duration_str(duration_min),
-                cabin_class="ECONOMY",
+                cabin_class=cabin,
                 aircraft_code=airline.get("aircraft"),
             )
             offers.append(
@@ -463,90 +472,11 @@ def _generate_domestic_offers(
                     total_price_pkr=float(price * adults),
                     total_price_usd=round(price * adults / settings.USD_TO_PKR_RATE, 2),
                     seats_available=seats,
-                    is_refundable=False,
-                    baggage_allowance="23kg",
+                    is_refundable=cfg["refundable"],
+                    baggage_allowance=cfg["baggage"],
                 )
             )
     return offers
-
-
-# ---------------------------------------------------------------------------
-# AviationStack (international only)
-# ---------------------------------------------------------------------------
-
-async def _fetch_aviationstack(
-    origin: str, destination: str, date_str: str
-) -> list[FlightOffer]:
-    """Call AviationStack /v1/flights for real schedule data."""
-    if not _aviationstack_is_configured():
-        return []
-    try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(
-                "http://api.aviationstack.com/v1/flights",
-                params={
-                    "access_key": settings.AVIATIONSTACK_KEY,
-                    "dep_iata": origin,
-                    "arr_iata": destination,
-                    "flight_date": date_str,
-                },
-            )
-        if resp.status_code != 200:
-            logger.warning("AviationStack %s: %s", resp.status_code, resp.text[:200])
-            return []
-
-        flights = resp.json().get("data", [])
-        offers: list[FlightOffer] = []
-
-        for f in flights[:10]:
-            dep_info = f.get("departure", {})
-            arr_info = f.get("arrival", {})
-            airline_info = f.get("airline", {})
-            flight_info  = f.get("flight", {})
-
-            dep_str = dep_info.get("scheduled", "")
-            arr_str = arr_info.get("scheduled", "")
-            if not dep_str or not arr_str:
-                continue
-
-            try:
-                dep_dt = datetime.fromisoformat(dep_str.replace("Z", "+00:00")).replace(tzinfo=None)
-                arr_dt = datetime.fromisoformat(arr_str.replace("Z", "+00:00")).replace(tzinfo=None)
-            except ValueError:
-                continue
-
-            dur_min = max(int((arr_dt - dep_dt).total_seconds() / 60), 30)
-            price_pkr = round(random.uniform(25000, 80000))
-
-            segment = FlightSegment(
-                carrier_code=airline_info.get("iata", "XX"),
-                flight_number=flight_info.get("iata", "XX000"),
-                departure_airport=dep_info.get("iata", origin),
-                arrival_airport=arr_info.get("iata", destination),
-                departure_time=dep_dt,
-                arrival_time=arr_dt,
-                duration=_duration_str(dur_min),
-                cabin_class="ECONOMY",
-            )
-            offers.append(
-                FlightOffer(
-                    offer_id=f"AS-{origin}-{destination}-{flight_info.get('iata', 'XX000')}-{date_str}",
-                    itineraries=[FlightItinerary(
-                        duration=_duration_str(dur_min),
-                        segments=[segment],
-                    )],
-                    total_price_pkr=float(price_pkr),
-                    total_price_usd=round(price_pkr / settings.USD_TO_PKR_RATE, 2),
-                    seats_available=random.randint(5, 80),
-                    is_refundable=False,
-                    baggage_allowance="30kg",
-                )
-            )
-        return offers
-
-    except Exception as exc:
-        logger.error("AviationStack error: %s", exc)
-        return []
 
 
 def _generate_domestic_generic_mock(
@@ -554,9 +484,12 @@ def _generate_domestic_generic_mock(
     destination: str,
     travel_date: date,
     adults: int,
+    cabin_class: str = "ECONOMY",
 ) -> list[FlightOffer]:
     """Generate domestic backup offers for unseeded Pakistan routes."""
     date_str = travel_date.strftime("%Y%m%d")
+    cabin = cabin_class.upper()
+    cfg = _cabin_cfg(cabin)
     carriers = [
         {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
@@ -567,11 +500,11 @@ def _generate_domestic_generic_mock(
     offers: list[FlightOffer] = []
     for idx, carrier in enumerate(carriers):
         dep_time = departure_slots[idx % len(departure_slots)]
-        seed = hash(f"DOM-{origin}-{destination}-{date_str}-{carrier['code']}-{dep_time}") % (2**31)
+        seed = hash(f"DOM-{origin}-{destination}-{date_str}-{carrier['code']}-{dep_time}-{cabin}") % (2**31)
         rng = random.Random(seed)
         duration_min = rng.randint(50, 140)
-        base_price = rng.randint(6000, 22000)
-        seats = rng.randint(6, 55)
+        base_price = round(rng.randint(6000, 22000) * cfg["multiplier"])
+        seats = rng.randint(4, 20) if cabin != "ECONOMY" else rng.randint(6, 55)
         flight_number = f"{carrier['code']}{rng.randint(100, 999)}"
 
         h, m = map(int, dep_time.split(":"))
@@ -586,13 +519,13 @@ def _generate_domestic_generic_mock(
             departure_time=dep_dt,
             arrival_time=arr_dt,
             duration=_duration_str(duration_min),
-            cabin_class="ECONOMY",
+            cabin_class=cabin,
             aircraft_code=carrier["aircraft"],
         )
 
         offers.append(
             FlightOffer(
-                offer_id=f"DOM-{origin}-{destination}-{carrier['code']}-{dep_time.replace(':', '')}-{date_str}",
+                offer_id=f"DOM-{origin}-{destination}-{carrier['code']}-{dep_time.replace(':', '')}-{date_str}-{cabin}",
                 itineraries=[FlightItinerary(
                     duration=_duration_str(duration_min),
                     segments=[segment],
@@ -600,85 +533,114 @@ def _generate_domestic_generic_mock(
                 total_price_pkr=float(base_price * adults),
                 total_price_usd=round(base_price * adults / settings.USD_TO_PKR_RATE, 2),
                 seats_available=seats,
-                is_refundable=False,
-                baggage_allowance="20kg",
+                is_refundable=cfg["refundable"],
+                baggage_allowance=cfg["baggage"],
             )
         )
 
     return offers
 
 
+
+
 # ---------------------------------------------------------------------------
-# International mock fallback
+# AviationStack (domestic supplement)
 # ---------------------------------------------------------------------------
 
-_INTL_TEMPLATES: list[dict] = [
-    {"code": "EK", "name": "Emirates",                     "flight": "EK601",  "dest": "DXB", "duration": 165, "price_usd": 320},
-    {"code": "QR", "name": "Qatar Airways",                "flight": "QR631",  "dest": "DOH", "duration": 180, "price_usd": 290},
-    {"code": "EY", "name": "Etihad Airways",               "flight": "EY243",  "dest": "AUH", "duration": 175, "price_usd": 310},
-    {"code": "PK", "name": "Pakistan International Airlines","flight": "PK786", "dest": "LHR", "duration": 420, "price_usd": 680},
-    {"code": "EK", "name": "Emirates",                     "flight": "EK033",  "dest": "JFK", "duration": 840, "price_usd": 1200},
-    {"code": "PK", "name": "Pakistan International Airlines","flight": "PK792", "dest": "BKK", "duration": 330, "price_usd": 450},
-    {"code": "MH", "name": "Malaysia Airlines",            "flight": "MH197",  "dest": "KUL", "duration": 360, "price_usd": 420},
-    {"code": "SQ", "name": "Singapore Airlines",           "flight": "SQ476",  "dest": "SIN", "duration": 390, "price_usd": 500},
-]
+def _aviationstack_is_configured() -> bool:
+    key = (settings.AVIATIONSTACK_KEY or "").strip()
+    if not key:
+        return False
+    lowered = key.lower()
+    return "your_aviationstack_key" not in lowered and not key.startswith("REPLACE_WITH")
 
 
-def _generate_international_mock(
-    origin: str, destination: str, travel_date: date, adults: int
+async def _fetch_aviationstack(
+    origin: str, destination: str, travel_date: date, cabin_class: str = "ECONOMY"
 ) -> list[FlightOffer]:
-    """Generate 4 generic international offers when AviationStack is unavailable."""
-    date_str = travel_date.strftime("%Y%m%d")
+    """Call AviationStack /v1/flights for real-time domestic flight data.
+    Free plan supports real-time flights only — no flight_date param (paid feature).
+    Only called when travel_date is today so results are relevant.
+    """
+    if not _aviationstack_is_configured():
+        return []
 
-    templates = [t for t in _INTL_TEMPLATES if t["dest"] == destination]
-    if not templates:
-        templates = _INTL_TEMPLATES[:]
+    # Free plan = real-time only; skip for future dates
+    if travel_date != date.today():
+        logger.info("AviationStack skipped: free plan only supports today's real-time flights")
+        return []
 
-    # Keep variety even when only one template matches the destination.
-    selector_seed = hash(f"INTL-TEMPLATES-{origin}-{destination}-{date_str}") % (2**31)
-    selector_rng = random.Random(selector_seed)
-    while len(templates) < 4:
-        templates.append(_INTL_TEMPLATES[selector_rng.randrange(len(_INTL_TEMPLATES))])
+    _requested_cabin = cabin_class.upper()
+    cfg = _cabin_cfg(_requested_cabin)
 
-    offers: list[FlightOffer] = []
-    dep_hours = [6, 9, 13, 20]
-
-    for i, tmpl in enumerate(templates[:4]):
-        seed = hash(f"{origin}{destination}{date_str}{i}") % (2**31)
-        rng = random.Random(seed)
-        price_usd = tmpl["price_usd"] * rng.uniform(0.85, 1.20)
-        price_pkr = round(price_usd * settings.USD_TO_PKR_RATE)
-        seats = rng.randint(5, 60)
-        dur = tmpl["duration"]
-        dep_hour = dep_hours[i % 4]
-        dep_dt = datetime(travel_date.year, travel_date.month, travel_date.day, dep_hour, 0)
-        arr_dt = dep_dt + timedelta(minutes=dur)
-
-        segment = FlightSegment(
-            carrier_code=tmpl["code"],
-            flight_number=tmpl["flight"],
-            departure_airport=origin,
-            arrival_airport=destination,
-            departure_time=dep_dt,
-            arrival_time=arr_dt,
-            duration=_duration_str(dur),
-            cabin_class="ECONOMY",
-        )
-        offers.append(
-            FlightOffer(
-                offer_id=f"INTL-{origin}-{destination}-{tmpl['code']}-{dep_hour:02d}00-{date_str}",
-                itineraries=[FlightItinerary(
-                    duration=_duration_str(dur),
-                    segments=[segment],
-                )],
-                total_price_pkr=float(price_pkr * adults),
-                total_price_usd=round(price_usd * adults, 2),
-                seats_available=seats,
-                is_refundable=True,
-                baggage_allowance="30kg",
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(
+                "http://api.aviationstack.com/v1/flights",
+                params={
+                    "access_key": settings.AVIATIONSTACK_KEY,
+                    "dep_iata": origin,
+                    "arr_iata": destination,
+                    # No flight_date — free plan restriction (paid feature only)
+                },
             )
-        )
-    return offers
+        if resp.status_code != 200:
+            logger.warning("AviationStack %s: %s", resp.status_code, resp.text[:200])
+            return []
+
+        flights = resp.json().get("data", [])
+        offers: list[FlightOffer] = []
+
+        for f in flights[:10]:
+            dep_info = f.get("departure", {})
+            arr_info = f.get("arrival", {})
+            airline_info = f.get("airline", {})
+            flight_info = f.get("flight", {})
+
+            dep_str = dep_info.get("scheduled", "")
+            arr_str = arr_info.get("scheduled", "")
+            if not dep_str or not arr_str:
+                continue
+
+            try:
+                dep_dt = datetime.fromisoformat(dep_str.replace("Z", "+00:00")).replace(tzinfo=None)
+                arr_dt = datetime.fromisoformat(arr_str.replace("Z", "+00:00")).replace(tzinfo=None)
+            except ValueError:
+                continue
+
+            dur_min = max(int((arr_dt - dep_dt).total_seconds() / 60), 30)
+            base_price = round(random.uniform(15000, 50000))
+            price_pkr = round(base_price * cfg["multiplier"])
+
+            segment = FlightSegment(
+                carrier_code=airline_info.get("iata", "XX"),
+                flight_number=flight_info.get("iata", "XX000"),
+                departure_airport=dep_info.get("iata", origin),
+                arrival_airport=arr_info.get("iata", destination),
+                departure_time=dep_dt,
+                arrival_time=arr_dt,
+                duration=_duration_str(dur_min),
+                cabin_class=_requested_cabin,
+            )
+            offers.append(
+                FlightOffer(
+                    offer_id=f"AS-{origin}-{destination}-{flight_info.get('iata', 'XX000')}-{travel_date}-{_requested_cabin}",
+                    itineraries=[FlightItinerary(
+                        duration=_duration_str(dur_min),
+                        segments=[segment],
+                    )],
+                    total_price_pkr=float(price_pkr),
+                    total_price_usd=round(price_pkr / settings.USD_TO_PKR_RATE, 2),
+                    seats_available=random.randint(4, 20) if _requested_cabin != "ECONOMY" else random.randint(5, 80),
+                    is_refundable=cfg["refundable"],
+                    baggage_allowance=cfg["baggage"],
+                )
+            )
+        return offers
+
+    except Exception as exc:
+        logger.error("AviationStack error: %s", exc)
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -704,34 +666,25 @@ async def search_flights(
     destination = destination.upper()
 
     offers: list[FlightOffer] = []
-    aviationstack_count = 0
-    now_utc = datetime.utcnow()
-
-    def _is_future_offer(offer: FlightOffer) -> bool:
-        if not offer.itineraries or not offer.itineraries[0].segments:
-            return True
-        return offer.itineraries[0].segments[0].departure_time >= now_utc
-
     is_domestic = origin in PAKISTAN_IATA_CODES and destination in PAKISTAN_IATA_CODES
 
     if is_domestic:
-        domestic_seeded = _generate_domestic_offers(origin, destination, date, adults)
+        domestic_seeded = _generate_domestic_offers(origin, destination, date, adults, cabin_class=cabin_class)
         offers = _merge_flight_offers(offers, domestic_seeded, limit=_TARGET_FLIGHT_RESULT_COUNT)
 
+        aviationstack_count = 0
         if len(offers) < _TARGET_FLIGHT_RESULT_COUNT:
-            aviationstack_offers = await _fetch_aviationstack(origin, destination, str(date))
+            aviationstack_offers = await _fetch_aviationstack(origin, destination, date, cabin_class=cabin_class)
             aviationstack_count = len(aviationstack_offers)
             offers = _merge_flight_offers(offers, aviationstack_offers, limit=_TARGET_FLIGHT_RESULT_COUNT)
 
         domestic_generic_count = 0
         if len(offers) < _TARGET_FLIGHT_RESULT_COUNT:
-            domestic_generic = _generate_domestic_generic_mock(origin, destination, date, adults)
+            domestic_generic = _generate_domestic_generic_mock(origin, destination, date, adults, cabin_class=cabin_class)
             domestic_generic_count = len(domestic_generic)
             offers = _merge_flight_offers(offers, domestic_generic, limit=_TARGET_FLIGHT_RESULT_COUNT)
 
         final_offers = _sort_flight_offers(offers)
-        if date == now_utc.date():
-            final_offers = [o for o in final_offers if _is_future_offer(o)]
         logger.info(
             "Flight search merged (domestic) %s->%s: seeded=%d, aviationstack=%d, generic=%d, final=%d",
             origin,
@@ -743,26 +696,6 @@ async def search_flights(
         )
         return final_offers
 
-    # International path
-    aviationstack_offers = await _fetch_aviationstack(origin, destination, str(date))
-    aviationstack_count = len(aviationstack_offers)
-    offers = _merge_flight_offers(offers, aviationstack_offers, limit=_TARGET_FLIGHT_RESULT_COUNT)
-
-    intl_mock_count = 0
-    if len(offers) < _TARGET_FLIGHT_RESULT_COUNT:
-        intl_mock = _generate_international_mock(origin, destination, date, adults)
-        intl_mock_count = len(intl_mock)
-        offers = _merge_flight_offers(offers, intl_mock, limit=_TARGET_FLIGHT_RESULT_COUNT)
-
-    final_offers = _sort_flight_offers(offers)
-    if date == now_utc.date():
-        final_offers = [o for o in final_offers if _is_future_offer(o)]
-    logger.info(
-        "Flight search merged (international) %s->%s: aviationstack=%d, intl_mock=%d, final=%d",
-        origin,
-        destination,
-        aviationstack_count,
-        intl_mock_count,
-        len(final_offers),
-    )
-    return final_offers
+    # Non-domestic route — return empty (app supports domestic Pakistan routes only)
+    logger.info("Flight search skipped (non-domestic) %s->%s", origin, destination)
+    return []

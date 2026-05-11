@@ -128,9 +128,11 @@ app.add_middleware(
 @app.middleware("http")
 async def add_response_time_header(request: Request, call_next):
     """Attach X-Response-Time header to every response (useful for debugging)."""
+    print(f">>> REQUEST: {request.method} {request.url}", flush=True)
     start = time.perf_counter()
     response = await call_next(request)
     elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
+    print(f">>> RESPONSE: {response.status_code} ({elapsed_ms}ms)", flush=True)
     response.headers["X-Response-Time"] = f"{elapsed_ms}ms"
     return response
 

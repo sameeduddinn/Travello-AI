@@ -173,17 +173,33 @@ class _MyBookingsState extends State<MyBookings>
                 _normalizeBackendBooking(Map<String, dynamic>.from(b as Map)))
             .toList();
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[MyBookings] Backend fetch failed: $e');
       // Backend unreachable or user not logged in — fall through to local
     }
 
     // 2. Merge with local SharedPreferences bookings (always available)
     final local = await BookingService.getAllBookings();
-    final backendIds =
-        bookings.map((b) => b['bookingId']?.toString() ?? '').toSet();
+    // Build a set of all known IDs from backend: booking_id, pnr, and uuid.
+    // This handles legacy local entries saved with pnr or a generated BK... id.
+    final backendMatchSet = <String>{};
+    for (final b in bookings) {
+      final id = b['bookingId']?.toString() ?? '';
+      final pnr = b['pnr']?.toString() ?? '';
+      final uuid = b['id']?.toString() ?? '';
+      if (id.isNotEmpty) backendMatchSet.add(id);
+      if (pnr.isNotEmpty) backendMatchSet.add(pnr);
+      if (uuid.isNotEmpty) backendMatchSet.add(uuid);
+      // Also add the raw booking_id field (TRV-FL-...) if present
+      final rawId = b['booking_id']?.toString() ?? '';
+      if (rawId.isNotEmpty) backendMatchSet.add(rawId);
+    }
     for (final lb in local) {
       final lid = lb['bookingId']?.toString() ?? '';
-      if (!backendIds.contains(lid)) bookings.add(lb);
+      final lpnr = lb['pnr']?.toString() ?? '';
+      final alreadyInBackend = backendMatchSet.contains(lid) ||
+          (lpnr.isNotEmpty && lpnr != 'N/A' && backendMatchSet.contains(lpnr));
+      if (!alreadyInBackend) bookings.add(lb);
     }
 
     setState(() {

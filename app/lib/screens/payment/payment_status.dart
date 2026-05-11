@@ -394,7 +394,12 @@ class _PaymentStatusState extends State<PaymentStatus>
 
     await Future.delayed(const Duration(milliseconds: 500));
 
-    // 💾 Save booking to local storage for "My Bookings" page
+    // 💾 Save booking to local storage — use backend booking_id (TRV-FL-...)
+    // as bookingId so my_bookings.dart dedup correctly matches the backend entry.
+    final backendBookingId = args['backendBookingId']?.toString() ?? '';
+    _bookingData['bookingId'] = backendBookingId.isNotEmpty
+        ? backendBookingId
+        : (_bookingData['pnr']?.toString() ?? 'BK${DateTime.now().millisecondsSinceEpoch}');
     await BookingService.saveBooking(_bookingData);
 
     // ☁️ Sync booking/payment to Supabase and trigger transactional email.
@@ -451,6 +456,7 @@ class _PaymentStatusState extends State<PaymentStatus>
     // 🔔 Push notification for this booking
     _pushBookingNotification(bookingType, args);
 
+    if (!mounted) return;
     setState(() => _isLoading = false);
     _playSuccessAnimations();
   }
@@ -777,7 +783,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                     width: 42,
                     height: 42,
                     decoration: const pw.BoxDecoration(
-                      color: PdfColor(1, 1, 1, 0.12),
+                      color: PdfColor(0.18, 0.28, 0.48),
                       borderRadius: pw.BorderRadius.all(pw.Radius.circular(10)),
                     ),
                     child: pw.Center(
@@ -803,7 +809,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                             padding: const pw.EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
                             decoration: const pw.BoxDecoration(
-                              color: PdfColor(1, 1, 1, 0.15),
+                              color: PdfColor(0.18, 0.28, 0.48),
                               borderRadius:
                                   pw.BorderRadius.all(pw.Radius.circular(4)),
                             ),
@@ -842,7 +848,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                           padding: const pw.EdgeInsets.symmetric(
                               horizontal: 10, vertical: 3),
                           decoration: const pw.BoxDecoration(
-                            color: PdfColor(1, 1, 1, 0.12),
+                            color: PdfColor(0.18, 0.28, 0.48),
                             borderRadius:
                                 pw.BorderRadius.all(pw.Radius.circular(6)),
                           ),

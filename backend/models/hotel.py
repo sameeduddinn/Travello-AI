@@ -39,13 +39,20 @@ class HotelSearchRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 class RoomOffer(BaseModel):
-    room_id:            str
-    room_type:          str              # "Standard", "Deluxe", "Suite"
-    bed_type:           str              # "King", "Twin", "Double"
-    price_per_night_pkr: float
-    max_guests:         int
-    is_refundable:      bool = True
-    amenities:          list[str] = []   # ["WiFi", "TV", "AC", ...]
+    room_id:              str
+    room_type:            str              # "Standard", "Deluxe", "Suite"
+    bed_type:             str              # "King", "Twin", "Double"
+    price_per_night_pkr:  float
+    max_guests:           int
+    is_refundable:        bool = True
+    amenities:            list[str] = []   # ["WiFi", "TV", "AC", ...]
+    rooms_available:      int = 10         # live availability count
+    description:          str = ""
+    size_sqft:            Optional[int] = None
+    has_city_view:        bool = False
+    has_balcony:          bool = False
+    breakfast_included:   bool = False
+    cancellation_policy:  str = ""
 
 
 # ---------------------------------------------------------------------------

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/models/hotel.dart';
 import 'package:flight_app/models/room_type.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -27,8 +28,8 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
   double? finalPriceFromPackage;
   double? discountPct;
 
-  // Sample room types (in a real app, these would come from the hotel data)
   List<RoomType> availableRooms = [];
+  bool _roomsLoading = false;
 
   @override
   void initState() {
@@ -47,12 +48,56 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
     discountPct = (args['discountPct'] as num?)?.toDouble();
 
     _initializeRooms();
+    _fetchLiveRooms();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchLiveRooms() async {
+    if (!mounted) return;
+    setState(() => _roomsLoading = true);
+    try {
+      final raw = await ApiClient.fetchHotelRooms(
+        hotelId: hotel.id,
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        guests: guests,
+      );
+      if (!mounted || raw.isEmpty) return;
+      final liveRooms = raw.map((r) => RoomType(
+            id: r['room_id']?.toString() ?? '${hotel.id}-LIVE',
+            name: r['room_type']?.toString() ?? 'Standard Room',
+            description: r['description']?.toString() ??
+                '${r['room_type']?.toString() ?? 'Room'} at ${hotel.name}',
+            pricePerNight:
+                (r['price_per_night_pkr'] as num?)?.toDouble() ?? hotel.pricePerNight,
+            maxOccupancy: (r['max_guests'] as num?)?.toInt() ?? 2,
+            bedCount: 1,
+            bedType: r['bed_type']?.toString() ?? 'Double',
+            sizeInSqFt: (r['size_sqft'] as num?)?.toDouble() ?? 0,
+            amenities:
+                (r['amenities'] as List?)?.map((a) => a.toString()).toList() ?? [],
+            images: hotel.images,
+            hasCityView: r['has_city_view'] == true,
+            hasBalcony: r['has_balcony'] == true,
+            isRefundable: r['is_refundable'] == true,
+            cancellationPolicy: r['cancellation_policy']?.toString() ??
+                (r['is_refundable'] == true
+                    ? 'Free cancellation up to 24 hours before check-in'
+                    : 'Non-refundable'),
+            breakfastIncluded: r['breakfast_included'] == true,
+            roomsAvailable: (r['rooms_available'] as num?)?.toInt() ?? 5,
+          )).toList();
+      setState(() => availableRooms = liveRooms);
+    } catch (_) {
+      // Silently keep the locally-initialized rooms on any error
+    } finally {
+      if (mounted) setState(() => _roomsLoading = false);
+    }
   }
 
   void _initializeRooms() {
@@ -1505,6 +1550,22 @@ class _HotelDetailScreenState extends State<HotelDetailScreen>
 
   // Rooms Tab
   Widget _buildRoomsTab() {
+    if (_roomsLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 48),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 12),
+              Text('Checking room availability…',
+                  style: TextStyle(color: Colors.grey)),
+            ],
+          ),
+        ),
+      );
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
       child: Column(

@@ -98,6 +98,10 @@ async def search_trains_endpoint(payload: TrainSearchRequest):
 
     # Cache each result by train_id for the /book endpoint
     ts = time.time()
+    # Evict expired entries before writing new ones
+    expired = [k for k, (_, t) in _train_cache.items() if ts - t > _CACHE_TTL]
+    for k in expired:
+        del _train_cache[k]
     for train in response.trains:
         _train_cache[train.train_id] = (train, ts)
 
@@ -194,12 +198,6 @@ async def book_train(payload: TrainBookRequest, user: CurrentUser):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Seat class '{payload.class_code}' not available on this train.",
-        )
-
-    if offer.departure_at < datetime.now(timezone.utc).replace(tzinfo=None):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot book a train that has already departed.",
         )
 
     if seat_class.seats_available < payload.passengers:

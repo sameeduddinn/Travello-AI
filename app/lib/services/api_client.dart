@@ -1,30 +1,15 @@
-// =============================================================================
-// FILE: lib/services/api_client.dart
-// PURPOSE: Centralized HTTP client for all Travello AI backend API calls.
-//
-// SETUP — change _baseUrl before running:
-//   Android emulator → 'http://10.0.2.2:8000'   (maps to your PC's localhost)
-//   iOS simulator    → 'http://127.0.0.1:8000'
-//   Physical device  → 'http://192.168.X.X:8000' (your PC's LAN IP)
-//   After deployment → 'https://travello-backend.onrender.com'
-//
-// Auth: every call sends the Supabase JWT from the current session.
-//       If the user is not logged in the call is skipped and mock data is used.
-// =============================================================================
-
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Override in build commands:
-// flutter run --dart-define=BACKEND_BASE_URL=https://travello-backend.onrender.com
+// flutter run --dart-define=BACKEND_BASE_URL=https://travello-ai.onrender.com
 const String _backendFromDartDefine =
     String.fromEnvironment('BACKEND_BASE_URL', defaultValue: '');
-// Physical device on same WiFi as the dev PC — update if your PC's IP changes
-const String _defaultAndroidBackendUrl = 'http://192.168.0.103:8000';
-const String _defaultDesktopBackendUrl = 'http://127.0.0.1:8000';
-const String _defaultWebBackendUrl = 'https://travello-backend.onrender.com';
+const String _defaultAndroidBackendUrl = 'https://travello-ai.onrender.com';
+const String _defaultDesktopBackendUrl = 'https://travello-ai.onrender.com';
+const String _defaultWebBackendUrl = 'https://travello-ai.onrender.com';
 
 class ApiClient {
   static String get resolvedBaseUrl => _baseUrl;
@@ -162,6 +147,35 @@ class ApiClient {
     _throwIfError(res, 'Hotel search');
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     return List<Map<String, dynamic>>.from(data['hotels'] ?? []);
+  }
+
+  /// Fetch real-time room availability for a specific hotel and date range.
+  /// Returns list of room offer maps with `rooms_available` counts.
+  static Future<List<Map<String, dynamic>>> fetchHotelRooms({
+    required String hotelId,
+    required DateTime checkIn,
+    required DateTime checkOut,
+    int guests = 1,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/hotels/$hotelId/rooms').replace(
+      queryParameters: {
+        'check_in': _fmtDate(checkIn),
+        'check_out': _fmtDate(checkOut),
+        'guests': guests.toString(),
+      },
+    );
+    _logDebug('GET $uri');
+    final res = await http
+        .get(uri, headers: _headers)
+        .timeout(const Duration(seconds: 20));
+    _logDebug('Hotel rooms response: HTTP ${res.statusCode}');
+    if (res.statusCode == 404) return [];
+    _throwIfError(res, 'Hotel rooms');
+    final data = jsonDecode(res.body);
+    if (data is List) {
+      return List<Map<String, dynamic>>.from(data);
+    }
+    return [];
   }
 
   // ── FLIGHT BOOKING ────────────────────────────────────────────────────────
@@ -381,12 +395,14 @@ class ApiClient {
       if (status != null) 'status': status,
       if (bookingType != null) 'booking_type': bookingType,
     };
+    _logDebug('GET $_baseUrl/bookings  token=${_token != null ? "present" : "NULL"}');
     final res = await http
         .get(
           Uri.parse('$_baseUrl/bookings').replace(queryParameters: params),
           headers: _headers,
         )
         .timeout(const Duration(seconds: 15));
+    _logDebug('GET /bookings → HTTP ${res.statusCode}');
     _throwIfError(res, 'Get bookings');
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
@@ -740,6 +756,15 @@ class ApiClient {
     };
   }
 
+  static String _mapTrainClassName(String backendName) {
+    const map = {
+      'Economy': 'Economy (Seat)',
+      'AC Standard': 'AC Lower / Standard (Berth)',
+      'Sleeper': 'Economy (Berth)',
+    };
+    return map[backendName] ?? backendName;
+  }
+
   /// Map a backend TrainOffer JSON → the fields needed to construct TrainResult.
   static Map<String, dynamic> trainResultFromJson(
       Map<String, dynamic> train, int index) {
@@ -752,11 +777,13 @@ class ApiClient {
     final availableClasses = <String>[];
 
     for (final c in classes) {
-      final name = c['class_name']?.toString() ?? '';
+      final rawName = c['class_name']?.toString() ?? '';
       final seats = (c['seats_available'] as num?)?.toInt();
       final price = (c['price_pkr'] as num?)?.toDouble() ?? 0.0;
       final code = c['class_code']?.toString() ?? '';
-      if (name.isNotEmpty) {
+      if (rawName.isNotEmpty) {
+        // Translate backend class names to the names Flutter's UI expects
+        final name = _mapTrainClassName(rawName);
         classSeats[name] = seats;
         classPrices[name] = price;
         if (code.isNotEmpty) {

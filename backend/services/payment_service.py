@@ -252,7 +252,7 @@ async def initiate_payment(
         metadata={"simulated": True},
     )
 
-    await mark_booking_paid(booking_uuid, transaction_id)
+    await mark_booking_paid(booking_uuid, transaction_id, total_amount=amount)
 
     await _create_notification(
         user_id=user_id,

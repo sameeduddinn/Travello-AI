@@ -131,7 +131,9 @@ class _ProfileMainState extends State<ProfileMain> {
       // Add cache-buster so NetworkImage refreshes
       final avatarUrl = '$publicUrl?t=${DateTime.now().millisecondsSinceEpoch}';
 
-      await AuthService.updateUserProfile(avatarUrl: avatarUrl);
+      final saved = await AuthService.updateUserProfile(avatarUrl: avatarUrl);
+
+      if (!saved) throw Exception(AuthService.lastAuthError ?? 'DB save failed');
 
       setState(() => _userAvatar = avatarUrl);
 
@@ -149,7 +151,7 @@ class _ProfileMainState extends State<ProfileMain> {
       if (mounted) {
         Get.snackbar(
           'Upload Failed',
-          'Could not update profile photo. Please try again.',
+          e.toString().replaceFirst('Exception: ', ''),
           backgroundColor: Colors.orange.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.TOP,
