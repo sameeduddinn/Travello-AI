@@ -21,9 +21,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/support", tags=["Support"])
 
 
-# ---------------------------------------------------------------------------
-# GET /support/messages  — authenticated user fetches their own messages
-# ---------------------------------------------------------------------------
+# GET /support/messages  - authenticated user fetches their own messages
 
 @router.get("/messages")
 async def get_support_messages(user: CurrentUser):
@@ -38,10 +36,8 @@ async def get_support_messages(user: CurrentUser):
     return result.data or []
 
 
-# ---------------------------------------------------------------------------
-# DELETE /support/messages  — authenticated user deletes their own messages
+# DELETE /support/messages - authenticated user deletes their own messages
 # Only replied/closed messages can be deleted; pending ones are ignored.
-# ---------------------------------------------------------------------------
 
 @router.delete("/messages")
 async def delete_support_messages(payload: DeleteMessagesRequest, user: CurrentUser):
@@ -56,9 +52,7 @@ async def delete_support_messages(payload: DeleteMessagesRequest, user: CurrentU
     return {"deleted": len(payload.ids)}
 
 
-# ---------------------------------------------------------------------------
-# POST /support/reply  — admin only (protected by ADMIN_SECRET_KEY)
-# ---------------------------------------------------------------------------
+# POST /support/reply - admin only (protected by ADMIN_SECRET_KEY)
 
 class ReplyRequest(BaseModel):
     message_id: str
@@ -120,9 +114,7 @@ async def admin_reply(payload: ReplyRequest):
     return {"success": True, "message_id": payload.message_id}
 
 
-# ---------------------------------------------------------------------------
 # GET /support/reply-form  — admin opens this link from the notification email
-# ---------------------------------------------------------------------------
 
 @router.get("/reply-form", response_class=HTMLResponse)
 async def reply_form(message_id: str, secret: str):
@@ -287,9 +279,7 @@ async def reply_form(message_id: str, secret: str):
     return HTMLResponse(content=html)
 
 
-# ---------------------------------------------------------------------------
-# Email template — reply notification to user
-# ---------------------------------------------------------------------------
+# Email template - reply notification to user
 
 def _build_reply_email(message: dict, reply_text: str) -> str:
     subject   = message.get("subject", "")

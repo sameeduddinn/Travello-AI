@@ -1,44 +1,8 @@
 # =============================================================================
-# FILE: routers/reviews.py
 # PREFIX: /reviews
 # PURPOSE: Post-booking reviews — one review per completed booking.
 # =============================================================================
-#
-# FLUTTER INTEGRATION (Flutter 3.28.3 / Dart 3.10.1)
-# -------------------------------------------------------
-# // POST /reviews  — submit a review
-# Future<Map<String, dynamic>> submitReview({
-#   required String bookingId,
-#   required int rating,   // 1-5
-#   String? comment,
-# }) async {
-#   final res = await http.post(
-#     Uri.parse('$baseUrl/reviews'),
-#     headers: {'Authorization': 'Bearer $_token', 'Content-Type': 'application/json'},
-#     body: jsonEncode({'booking_id': bookingId, 'rating': rating, 'comment': comment}),
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-# }
-#
-# // GET /reviews/booking/{bookingId}
-# Future<Map<String, dynamic>?> getReviewForBooking(String bookingId) async {
-#   final res = await http.get(
-#     Uri.parse('$baseUrl/reviews/booking/$bookingId'),
-#     headers: {'Authorization': 'Bearer $_token'},
-#   );
-#   if (res.statusCode == 404) return null;
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-# }
-#
-# // GET /reviews/my  — list all my reviews
-# Future<List<dynamic>> getMyReviews() async {
-#   final res = await http.get(
-#     Uri.parse('$baseUrl/reviews/my'),
-#     headers: {'Authorization': 'Bearer $_token'},
-#   );
-#   return jsonDecode(res.body) as List<dynamic>;
-# }
-# =============================================================================
+
 
 import logging
 from typing import Any, Optional
@@ -59,9 +23,7 @@ class ReviewRequest(BaseModel):
     comment:    Optional[str] = None
 
 
-# ---------------------------------------------------------------------------
 # POST /reviews
-# ---------------------------------------------------------------------------
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def submit_review(payload: ReviewRequest, user: CurrentUser) -> dict[str, Any]:
@@ -124,9 +86,7 @@ async def submit_review(payload: ReviewRequest, user: CurrentUser) -> dict[str, 
     return {"id": review_id, "message": "Review submitted. Thank you!"}
 
 
-# ---------------------------------------------------------------------------
 # GET /reviews/booking/{booking_id}
-# ---------------------------------------------------------------------------
 
 @router.get("/booking/{booking_id}")
 async def get_review_for_booking(booking_id: str, user: CurrentUser) -> dict[str, Any]:
@@ -149,9 +109,7 @@ async def get_review_for_booking(booking_id: str, user: CurrentUser) -> dict[str
     return result.data
 
 
-# ---------------------------------------------------------------------------
 # GET /reviews/my
-# ---------------------------------------------------------------------------
 
 @router.get("/my")
 async def get_my_reviews(user: CurrentUser) -> list[dict[str, Any]]:

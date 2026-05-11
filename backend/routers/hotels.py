@@ -2,76 +2,6 @@
 # FILE: routers/hotels.py
 # PREFIX: /hotels
 # =============================================================================
-#
-# FLUTTER INTEGRATION (Flutter 3.28.3 / Dart 3.10.1)
-# -------------------------------------------------------
-# // POST /hotels/search
-# Future<Map<String, dynamic>> searchHotels({
-#   required String city,
-#   required String checkIn,   // 'YYYY-MM-DD'
-#   required String checkOut,  // 'YYYY-MM-DD'
-#   int guests = 1,
-#   int rooms = 1,
-# }) async {
-#   final res = await http.post(
-#     Uri.parse('$baseUrl/hotels/search'),
-#     headers: {
-#       'Authorization': 'Bearer $_token',
-#       'Content-Type': 'application/json',
-#     },
-#     body: jsonEncode({
-#       'city': city,
-#       'check_in': checkIn,
-#       'check_out': checkOut,
-#       'guests': guests,
-#       'rooms': rooms,
-#     }),
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-#   // response.hotels → List<HotelOffer>
-# }
-#
-# // GET /hotels/{hotel_id}
-# Future<Map<String, dynamic>> getHotelDetail(String hotelId) async {
-#   final res = await http.get(
-#     Uri.parse('$baseUrl/hotels/$hotelId'),
-#     headers: {'Authorization': 'Bearer $_token'},
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-# }
-#
-# // POST /hotels/book
-# Future<Map<String, dynamic>> bookHotel({
-#   required String hotelId,
-#   required String roomId,
-#   required String checkIn,
-#   required String checkOut,
-#   required String contactEmail,
-#   int guests = 1,
-#   int rooms = 1,
-#   String? contactPhone,
-# }) async {
-#   final res = await http.post(
-#     Uri.parse('$baseUrl/hotels/book'),
-#     headers: {
-#       'Authorization': 'Bearer $_token',
-#       'Content-Type': 'application/json',
-#     },
-#     body: jsonEncode({
-#       'hotel_id': hotelId,
-#       'room_id': roomId,
-#       'check_in': checkIn,
-#       'check_out': checkOut,
-#       'contact_email': contactEmail,
-#       'guests': guests,
-#       'rooms': rooms,
-#       if (contactPhone != null) 'contact_phone': contactPhone,
-#     }),
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-# }
-# =============================================================================
-
 import logging
 import time
 from datetime import date
@@ -126,9 +56,7 @@ async def search_hotels_endpoint(payload: HotelSearchRequest):
     return response
 
 
-# ---------------------------------------------------------------------------
-# GET /hotels/{hotel_id}/rooms  — real-time room availability
-# ---------------------------------------------------------------------------
+# GET /hotels/{hotel_id}/rooms - real-time room availability
 
 @router.get("/{hotel_id}/rooms", response_model=list[RoomOffer])
 async def get_hotel_rooms_endpoint(
@@ -170,9 +98,7 @@ async def get_hotel_rooms_endpoint(
     return rooms
 
 
-# ---------------------------------------------------------------------------
 # GET /hotels/{hotel_id}
-# ---------------------------------------------------------------------------
 
 @router.get("/{hotel_id}", response_model=HotelOffer)
 async def get_hotel_detail_endpoint(hotel_id: str, user: CurrentUser):
@@ -197,9 +123,7 @@ async def get_hotel_detail_endpoint(hotel_id: str, user: CurrentUser):
     return hotel
 
 
-# ---------------------------------------------------------------------------
 # POST /hotels/book
-# ---------------------------------------------------------------------------
 
 @router.post("/book", status_code=status.HTTP_201_CREATED)
 async def book_hotel(payload: HotelBookRequest, user: CurrentUser):

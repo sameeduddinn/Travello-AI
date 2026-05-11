@@ -1,14 +1,6 @@
 # =============================================================================
-# FILE: routers/healthcare.py
 # PREFIX: /healthcare
-# PURPOSE: Healthcare guidance — nearby hospitals, pharmacies, emergency numbers.
-#
-# LOOKUP CHAIN (hospitals & pharmacies):
-#   1. Google Places Nearby Search  — primary (reliable, rich data)
-#   2. OpenStreetMap Overpass       — fallback (if Google fails / quota exceeded)
-#   3. Curated Pakistani mock data  — last resort (always works offline)
-#
-# Both live sources are cached for 10 minutes to minimise API quota usage.
+# PURPOSE: Healthcare guidance - nearby hospitals, pharmacies, emergency numbers.
 # =============================================================================
 
 from __future__ import annotations

@@ -1,5 +1,4 @@
 # =============================================================================
-# FILE: services/booking_service.py
 # PURPOSE: All booking creation, retrieval, and cancellation logic.
 #          Centralises DB operations so routers stay thin.
 #
@@ -26,9 +25,7 @@ from models.booking import BookingOut, PassengerCreate, PassengerOut, TicketOut
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
 # Booking ID generation
-# ---------------------------------------------------------------------------
 
 def _generate_booking_id(booking_type: str) -> str:
     """Generate a human-readable booking reference: TRV-FL-20240417-A1B2C3."""
@@ -55,9 +52,7 @@ def _generate_pnr(booking_type: str, booking_id: str) -> str:
     return f"HT{digest[:6]}"
 
 
-# ---------------------------------------------------------------------------
 # Create booking
-# ---------------------------------------------------------------------------
 
 async def create_booking(
     user_id: str,
@@ -116,9 +111,7 @@ async def create_booking(
     return _row_to_booking_out(data)
 
 
-# ---------------------------------------------------------------------------
 # Get booking(s)
-# ---------------------------------------------------------------------------
 
 async def get_booking(booking_uuid: str, user_id: str) -> BookingOut:
     """Fetch a single booking by UUID, including its passengers."""
@@ -183,9 +176,7 @@ async def list_bookings(
     return bookings, total
 
 
-# ---------------------------------------------------------------------------
 # Cancel booking
-# ---------------------------------------------------------------------------
 
 async def cancel_booking(booking_uuid: str, user_id: str) -> BookingOut:
     """Set booking status to 'cancelled'. Only allowed if not already paid/confirmed."""
@@ -230,9 +221,7 @@ async def cancel_booking(booking_uuid: str, user_id: str) -> BookingOut:
     return _row_to_booking_out(update_result.data[0])
 
 
-# ---------------------------------------------------------------------------
-# Delete (remove from history) — cancelled bookings only
-# ---------------------------------------------------------------------------
+# Delete (remove from history) - cancelled bookings only
 
 async def delete_booking(booking_uuid: str, user_id: str) -> None:
     """Permanently delete a cancelled booking from the user's history."""
@@ -264,9 +253,7 @@ async def delete_booking(booking_uuid: str, user_id: str) -> None:
         raise HTTPException(status_code=500, detail="Failed to remove booking.")
 
 
-# ---------------------------------------------------------------------------
 # Ticket data
-# ---------------------------------------------------------------------------
 
 async def get_ticket(booking_uuid: str, user_id: str) -> TicketOut:
     """Build structured ticket data for Flutter PDF/card rendering."""
@@ -308,9 +295,7 @@ async def get_ticket(booking_uuid: str, user_id: str) -> TicketOut:
     )
 
 
-# ---------------------------------------------------------------------------
 # Mark booking as paid (called from payment service)
-# ---------------------------------------------------------------------------
 
 async def mark_booking_paid(
     booking_uuid: str,
@@ -328,9 +313,7 @@ async def mark_booking_paid(
         raise HTTPException(status_code=500, detail="Failed to update booking status.")
 
 
-# ---------------------------------------------------------------------------
 # Passengers
-# ---------------------------------------------------------------------------
 
 async def add_passengers(
     booking_uuid: str,
@@ -388,9 +371,7 @@ async def delete_passenger(passenger_uuid: str, user_id: str) -> bool:
         raise HTTPException(status_code=500, detail="Failed to delete passenger.")
 
 
-# ---------------------------------------------------------------------------
-# Row → model helpers
-# ---------------------------------------------------------------------------
+# Row -> model helpers
 
 def _row_to_booking_out(row: dict[str, Any]) -> BookingOut:
     def _dt(val: Any) -> datetime | None:

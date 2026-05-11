@@ -1,5 +1,4 @@
 # =============================================================================
-# FILE: services/email_service.py
 # PURPOSE: Booking confirmation email templates and dispatch logic.
 #          Called after payment is verified to send a rich HTML email to the
 #          user's contact_email address.
@@ -19,9 +18,7 @@ from core.supabase_client import supabase_admin
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
 # Fetch booking + passengers for email rendering
-# ---------------------------------------------------------------------------
 
 async def _fetch_booking_data(booking_uuid: str) -> dict[str, Any] | None:
     """Load a booking row with its passengers from Supabase (admin client).
@@ -59,9 +56,7 @@ async def _fetch_booking_data(booking_uuid: str) -> dict[str, Any] | None:
     return booking
 
 
-# ---------------------------------------------------------------------------
 # Template helpers
-# ---------------------------------------------------------------------------
 
 _BRAND_COLOR = "#B09407FF"
 _BRAND_DARK  = "#f9fb87"
@@ -158,9 +153,7 @@ def _passenger_cards_html(passengers: list[dict]) -> str:
     return "".join(cards)
 
 
-# ---------------------------------------------------------------------------
 # Email templates
-# ---------------------------------------------------------------------------
 
 def _flight_email_html(b: dict) -> str:
     pnr = b.get("pnr", "—")
@@ -346,15 +339,12 @@ def _hotel_email_html(b: dict) -> str:
 </div></body></html>"""
 
 
-# ---------------------------------------------------------------------------
 # Public API
-# ---------------------------------------------------------------------------
 
 async def send_booking_confirmation(booking_uuid: str) -> dict:
     """
     Fetch booking from DB and send the appropriate HTML confirmation email.
     Called by POST /email/booking-confirmation and after payment verification.
-    Always returns a dict — never raises.
     """
     booking = await _fetch_booking_data(booking_uuid)
 

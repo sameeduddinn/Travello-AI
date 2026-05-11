@@ -1,14 +1,7 @@
 # =============================================================================
-# FILE: core/database.py
 # PURPOSE: asyncpg connection pool for raw SQL queries.
 #          Used when the supabase-py client is too limiting
 #          (e.g., complex JOINs, transactions, bulk inserts).
-#
-# NOTE: If DATABASE_URL is not set in .env, the pool is skipped and all
-#       database access falls back to supabase-py. For FYP demo this is fine.
-#
-# Usage:
-#   from core.database import get_db_pool, fetch_one, fetch_all, execute
 # =============================================================================
 
 from __future__ import annotations
@@ -23,7 +16,7 @@ from core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Module-level pool — initialised by lifespan in main.py
+# Module-level pool - initialised by lifespan in main.py
 _pool: Pool | None = None
 
 
@@ -67,9 +60,7 @@ def get_db_pool() -> Pool | None:
     return _pool
 
 
-# ---------------------------------------------------------------------------
 # Helper functions — thin wrappers so routers don't import asyncpg directly
-# ---------------------------------------------------------------------------
 
 async def fetch_one(query: str, *args: Any) -> Record | None:
     """Execute query and return the first row, or None."""

@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flight_app/widgets/range_date_picker.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
@@ -265,7 +266,7 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
     if (_recentSearches.length > 5) _recentSearches.removeLast();
   }
 
-  void _search() {
+  Future<void> _search() async {
     if (_selectedCity == null) {
       _showValidationError('Please select a destination');
       return;
@@ -274,6 +275,13 @@ class _HotelSearchScreenState extends State<HotelSearchScreen>
       _showValidationError('Please select check-in and check-out dates');
       return;
     }
+
+    final connectivity = await Connectivity().checkConnectivity();
+    if (connectivity.every((r) => r == ConnectivityResult.none)) {
+      _showValidationError('No internet connection. Please reconnect and try again.');
+      return;
+    }
+
     _saveRecentSearch();
     Get.toNamed('/hotel-results', arguments: {
       'city': _selectedCity,

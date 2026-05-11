@@ -1,5 +1,4 @@
 # =============================================================================
-# FILE: main.py
 # PURPOSE: FastAPI application entry point.
 #          - Registers all routers
 #          - Configures CORS (allow all origins for Flutter dev)
@@ -23,9 +22,9 @@ from fastapi.responses import JSONResponse
 from core.config import settings
 from core.database import close_db_pool, init_db_pool
 
-# ---------------------------------------------------------------------------
+
 # Logging
-# ---------------------------------------------------------------------------
+
 logging.basicConfig(
     level=logging.DEBUG if settings.DEBUG else logging.INFO,
     format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
@@ -39,9 +38,7 @@ for noisy_logger in ("httpcore", "httpx", "hpack"):
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
 # Lifespan — startup / shutdown hooks
-# ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -67,7 +64,7 @@ async def lifespan(app: FastAPI):
 
     logger.info("Startup complete. Ready to accept requests.")
 
-    # Pre-warm only 4 major cities — all-cities bulk fetch is lazy (on demand).
+    # Pre-warm only 4 major cities - all-cities bulk fetch is lazy (on demand).
     async def _warm_weather_cache():
         try:
             from services.weather_service import get_weather
@@ -87,18 +84,15 @@ async def lifespan(app: FastAPI):
     logger.info("Shutdown complete.")
 
 
-# ---------------------------------------------------------------------------
 # App instance
-# ---------------------------------------------------------------------------
-
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description=(
         "Travello AI — Pakistan's smart travel booking backend. "
-        "Supports flights (Amadeus), trains (Pakistan Railways mock), "
-        "hotels (RapidAPI), bookings, payments (card & bank transfer), "
-        "and booking confirmation emails via SMTP/Resend."
+        "Supports flights, trains, "
+        "hotels (RapidAPI), bookings, payments (card), "
+        "and booking confirmation emails via SMTP."
     ),
     docs_url="/docs",       # Swagger UI
     redoc_url="/redoc",     # ReDoc
@@ -107,9 +101,7 @@ app = FastAPI(
 )
 
 
-# ---------------------------------------------------------------------------
 # CORS middleware
-# ---------------------------------------------------------------------------
 
 app.add_middleware(
     CORSMiddleware,
@@ -121,10 +113,7 @@ app.add_middleware(
 )
 
 
-# ---------------------------------------------------------------------------
 # Request timing middleware
-# ---------------------------------------------------------------------------
-
 @app.middleware("http")
 async def add_response_time_header(request: Request, call_next):
     """Attach X-Response-Time header to every response (useful for debugging)."""
@@ -137,9 +126,7 @@ async def add_response_time_header(request: Request, call_next):
     return response
 
 
-# ---------------------------------------------------------------------------
 # Global exception handlers
-# ---------------------------------------------------------------------------
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
@@ -173,9 +160,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
-# ---------------------------------------------------------------------------
 # Routers — import and register
-# ---------------------------------------------------------------------------
 
 from routers import auth, flights, trains, hotels, bookings, payments
 from routers import passengers, wishlist, notifications, email as email_router
@@ -202,9 +187,7 @@ app.include_router(reviews_router.router)
 app.include_router(support_router.router)
 
 
-# ---------------------------------------------------------------------------
 # Health check — no auth required (used by Render.com health checks)
-# ---------------------------------------------------------------------------
 
 @app.get("/health", tags=["Health"], include_in_schema=False)
 async def health_check() -> dict[str, Any]:
@@ -228,9 +211,7 @@ async def root() -> dict[str, str]:
     }
 
 
-# ---------------------------------------------------------------------------
 # Dev entrypoint (python main.py)
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import uvicorn

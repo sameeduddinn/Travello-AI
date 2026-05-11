@@ -2,59 +2,6 @@
 # FILE: routers/trains.py
 # PREFIX: /trains
 # =============================================================================
-#
-# FLUTTER INTEGRATION (Flutter 3.28.3 / Dart 3.10.1)
-# -------------------------------------------------------
-# // POST /trains/search
-# Future<Map<String, dynamic>> searchTrains({
-#   required String origin,      // City name e.g. 'Karachi'
-#   required String destination, // City name e.g. 'Lahore'
-#   required String date,        // 'YYYY-MM-DD'
-#   int passengers = 1,
-# }) async {
-#   final res = await http.post(
-#     Uri.parse('$baseUrl/trains/search'),
-#     headers: {
-#       'Authorization': 'Bearer $_token',
-#       'Content-Type': 'application/json',
-#     },
-#     body: jsonEncode({
-#       'origin': origin,
-#       'destination': destination,
-#       'date': date,
-#       'passengers': passengers,
-#     }),
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-#   // response.trains → List of train offers with classes (EC, AC, ACB, SL)
-# }
-#
-# // POST /trains/book
-# Future<Map<String, dynamic>> bookTrain({
-#   required String trainId,     // train_id from search results
-#   required String classCode,   // 'EC', 'AC', 'ACB', 'SL', 'PAR'
-#   required String contactEmail,
-#   int passengers = 1,
-#   String? contactPhone,
-# }) async {
-#   final res = await http.post(
-#     Uri.parse('$baseUrl/trains/book'),
-#     headers: {
-#       'Authorization': 'Bearer $_token',
-#       'Content-Type': 'application/json',
-#     },
-#     body: jsonEncode({
-#       'train_id': trainId,
-#       'class_code': classCode,
-#       'contact_email': contactEmail,
-#       'passengers': passengers,
-#       if (contactPhone != null) 'contact_phone': contactPhone,
-#     }),
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-#   // response keys: booking_id, pnr, status, total_amount
-# }
-# =============================================================================
 
 import logging
 import time
@@ -75,9 +22,7 @@ _CACHE_TTL = 1800  # 30 minutes
 _train_cache: dict[str, tuple[TrainOffer, float]] = {}
 
 
-# ---------------------------------------------------------------------------
 # POST /trains/search
-# ---------------------------------------------------------------------------
 
 @router.post("/search", response_model=TrainSearchResponse)
 async def search_trains_endpoint(payload: TrainSearchRequest):
@@ -113,9 +58,7 @@ async def search_trains_endpoint(payload: TrainSearchRequest):
     return response
 
 
-# ---------------------------------------------------------------------------
 # POST /trains/book
-# ---------------------------------------------------------------------------
 
 @router.post("/book", status_code=status.HTTP_201_CREATED)
 async def book_train(payload: TrainBookRequest, user: CurrentUser):

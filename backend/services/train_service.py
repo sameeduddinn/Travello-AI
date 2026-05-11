@@ -1,13 +1,9 @@
 # =============================================================================
-# FILE: services/train_service.py
 # PURPOSE: Pakistan Railways mock service.
 #          Uses real train names, station codes, and realistic schedules.
 #          Pakistan Railways has no public API — this is standard FYP practice.
 #
-# Trains included (real Pakistan Railways trains):
-#   Tezgam Express, Karakoram Express, Green Line, Khyber Mail,
-#   Awam Express, Business Express, Islamabad Express, Shalimar Express,
-#   Shah Hussein Express, Sukkur Express, Jaffar Express, Bolan Mail
+
 # =============================================================================
 
 from __future__ import annotations
@@ -19,9 +15,7 @@ from typing import Any
 
 from models.train import SeatClass, TrainOffer, TrainSearchResponse
 
-# ---------------------------------------------------------------------------
-# Station data — IATA-style codes used internally
-# ---------------------------------------------------------------------------
+# Station data - IATA-style codes used internally
 
 STATIONS: dict[str, dict[str, Any]] = {
     "KHI": {"name": "Karachi Cantonment", "city": "Karachi",   "aliases": ["karachi", "khi"]},
@@ -66,13 +60,9 @@ def _resolve_station(city: str) -> str | None:
     return None
 
 
-# ---------------------------------------------------------------------------
 # Train schedule definitions
 # Each train has fixed origin/destination and class pricing
-# ---------------------------------------------------------------------------
 
-# Price per passenger per seat class for the most common routes (in PKR)
-# Intermediate routes are interpolated
 _BASE_PRICES: dict[str, dict[str, float]] = {
     "EC":      {"min": 350,   "max": 1200},   # Economy
     "AC":      {"min": 1200,  "max": 4500},   # AC Standard
@@ -228,9 +218,7 @@ _CLASS_NAMES: dict[str, str] = {
 }
 
 
-# ---------------------------------------------------------------------------
 # Core search logic
-# ---------------------------------------------------------------------------
 
 def _trains_for_route(origin_code: str, dest_code: str) -> list[dict]:
     """Return trains that serve both origin and destination in the correct order."""
@@ -321,9 +309,7 @@ def _build_offer(
     )
 
 
-# ---------------------------------------------------------------------------
 # Public API
-# ---------------------------------------------------------------------------
 
 def search_trains(
     origin: str,

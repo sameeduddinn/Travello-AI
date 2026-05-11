@@ -11,9 +11,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
-# ---------------------------------------------------------------------------
 # Passenger schemas (used by both bookings and /passengers router)
-# ---------------------------------------------------------------------------
 
 class PassengerCreate(BaseModel):
     title:           Optional[str]  = Field(None, pattern="^(Mr|Mrs|Ms|Dr|Prof)$")
@@ -39,9 +37,7 @@ class PassengerOut(PassengerCreate):
         from_attributes = True
 
 
-# ---------------------------------------------------------------------------
 # Booking list / detail
-# ---------------------------------------------------------------------------
 
 class BookingOut(BaseModel):
     id:            str
@@ -78,9 +74,7 @@ class BookingListResponse(BaseModel):
     bookings: list[BookingOut]
 
 
-# ---------------------------------------------------------------------------
 # Ticket (structured for Flutter PDF/card rendering)
-# ---------------------------------------------------------------------------
 
 class TicketOut(BaseModel):
     """

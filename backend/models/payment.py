@@ -1,5 +1,4 @@
 # =============================================================================
-# FILE: models/payment.py
 # PURPOSE: Pydantic schemas for the payments endpoints.
 # =============================================================================
 
@@ -13,9 +12,7 @@ from pydantic import BaseModel, Field
 
 
 
-# ---------------------------------------------------------------------------
 # Initiate payment
-# ---------------------------------------------------------------------------
 
 class PaymentInitiateRequest(BaseModel):
     booking_id: str  = Field(..., description="UUID of the booking to pay for")
@@ -44,9 +41,7 @@ class PaymentInitiateResponse(BaseModel):
     transaction_id: Optional[str] = None
 
 
-# ---------------------------------------------------------------------------
 # Verify OTP
-# ---------------------------------------------------------------------------
 
 class OTPVerifyRequest(BaseModel):
     request_id: str = Field(..., description="request_id from /payments/initiate")
@@ -69,9 +64,7 @@ class OTPVerifyResponse(BaseModel):
     message:        str
 
 
-# ---------------------------------------------------------------------------
 # Payment history (GET /payments/{booking_id})
-# ---------------------------------------------------------------------------
 
 class PaymentAttemptOut(BaseModel):
     id:                 str

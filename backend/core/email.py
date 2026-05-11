@@ -1,11 +1,6 @@
 # =============================================================================
-# FILE: core/email.py
 # PURPOSE: Email sender via Gmail SMTP.
-#
-# Setup:
-#   1. Enable 2-Step Verification on Google Account
-#   2. Google Account → Security → App Passwords → create for "Mail"
-#   3. Add to .env:  SMTP_USER=you@gmail.com  SMTP_PASSWORD=xxxx-xxxx-xxxx-xxxx
+# Setup: Enable 2-Step Verification on Google Account
 # =============================================================================
 
 from __future__ import annotations
@@ -23,9 +18,7 @@ from core.config import settings
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
 # Gmail SMTP backend
-# ---------------------------------------------------------------------------
 
 def _parse_sender_address(from_field: str) -> str:
     """Extract bare email from 'Display Name <email@x.com>' or return as-is."""

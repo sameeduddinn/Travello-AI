@@ -1,5 +1,4 @@
 # =============================================================================
-# FILE: services/flight_service.py
 # PURPOSE: Domestic flight search (Pakistan routes) with seeded mock data.
 #          AviationStack supplements real domestic flights when available.
 # =============================================================================
@@ -18,9 +17,7 @@ from models.flight import FlightItinerary, FlightOffer, FlightSegment
 logger = logging.getLogger(__name__)
 _TARGET_FLIGHT_RESULT_COUNT = 20
 
-# ---------------------------------------------------------------------------
 # Pakistan IATA codes
-# ---------------------------------------------------------------------------
 
 PAKISTAN_IATA_CODES: set[str] = {
     "KHI", "LHE", "ISB", "SKD", "GIL", "PEW",
@@ -38,9 +35,7 @@ IATA_CITIES: dict[str, str] = {
     "BKK": "Bangkok",    "KUL": "Kuala Lumpur", "SIN": "Singapore",
 }
 
-# ---------------------------------------------------------------------------
 # Domestic route catalogue
-# ---------------------------------------------------------------------------
 
 PAKISTAN_ROUTES: dict[str, dict] = {
     "KHI-LHE": {
@@ -320,9 +315,7 @@ PAKISTAN_ROUTES: dict[str, dict] = {
 }
 
 
-# ---------------------------------------------------------------------------
 # Cabin class configuration
-# ---------------------------------------------------------------------------
 
 _CABIN_CONFIG: dict[str, dict] = {
     "ECONOMY":         {"multiplier": 1.0,  "baggage": "23kg", "refundable": False},
@@ -335,9 +328,7 @@ def _cabin_cfg(cabin_class: str) -> dict:
     return _CABIN_CONFIG.get(cabin_class.upper(), _CABIN_CONFIG["ECONOMY"])
 
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def _duration_str(minutes: int) -> str:
     h, m = divmod(minutes, 60)
@@ -397,9 +388,7 @@ def _sort_flight_offers(offers: list[FlightOffer]) -> list[FlightOffer]:
     return sorted(offers, key=lambda o: (_first_departure(o), o.total_price_pkr))
 
 
-# ---------------------------------------------------------------------------
 # Domestic offer generation
-# ---------------------------------------------------------------------------
 
 def _generate_domestic_offers(
     origin: str,
@@ -543,9 +532,7 @@ def _generate_domestic_generic_mock(
 
 
 
-# ---------------------------------------------------------------------------
 # AviationStack (domestic supplement)
-# ---------------------------------------------------------------------------
 
 def _aviationstack_is_configured() -> bool:
     key = (settings.AVIATIONSTACK_KEY or "").strip()
@@ -643,9 +630,7 @@ async def _fetch_aviationstack(
         return []
 
 
-# ---------------------------------------------------------------------------
 # Public API
-# ---------------------------------------------------------------------------
 
 async def search_flights(
     origin: str,

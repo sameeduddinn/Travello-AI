@@ -1,5 +1,4 @@
 # =============================================================================
-# FILE: models/flight.py
 # PURPOSE: Pydantic schemas for flight search, offer detail, and booking.
 # =============================================================================
 
@@ -11,9 +10,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
-# ---------------------------------------------------------------------------
 # Search request
-# ---------------------------------------------------------------------------
 
 class FlightSearchRequest(BaseModel):
     origin:       str = Field(..., min_length=3, max_length=3,
@@ -38,9 +35,7 @@ class FlightSearchRequest(BaseModel):
         }
 
 
-# ---------------------------------------------------------------------------
 # Segment / itinerary building blocks
-# ---------------------------------------------------------------------------
 
 class FlightSegment(BaseModel):
     """One leg of a flight (departure → arrival at one airport)."""
@@ -61,9 +56,7 @@ class FlightItinerary(BaseModel):
     segments:      list[FlightSegment]
 
 
-# ---------------------------------------------------------------------------
 # Offer (search result)
-# ---------------------------------------------------------------------------
 
 class FlightOffer(BaseModel):
     """Single flight offer returned from Amadeus search."""
@@ -95,9 +88,7 @@ class FlightSearchResponse(BaseModel):
     offers:      list[FlightOffer]
 
 
-# ---------------------------------------------------------------------------
 # Booking request
-# ---------------------------------------------------------------------------
 
 class FlightBookRequest(BaseModel):
     offer_id:        str   = Field(..., description="Amadeus offer ID from search results")

@@ -1,8 +1,5 @@
-# =============================================================================
-# FILE: requirements.txt
 # Travello AI Backend — Python 3.11+
 # Install: pip install -r requirements.txt
-# =============================================================================
 
 # ─ Web framework 
 fastapi==0.115.6
@@ -28,9 +25,4 @@ python-dotenv==1.0.1               # load .env in development
 pydantic-settings==2.7.0           # typed settings from env vars
 
 # ─ Serialisation 
-orjson==3.10.12                    # fast JSON — FastAPI picks it up automatically
-
-# ── Dev / testing (not installed in production) ──────────────────────────────
-# pytest==8.3.3
-# pytest-asyncio==0.24.0
-# httpx==0.28.1                    # already above — used for TestClient too
+orjson==3.10.12                    # fast JSON - FastAPI picks it up automatically

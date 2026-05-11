@@ -1,8 +1,7 @@
 # =============================================================================
-# FILE: services/payment_service.py
 # PURPOSE: Card / bank transfer payment flow (instant simulated success).
 #
-# POST /payments/initiate  (method: 'card' | 'bank_transfer')
+# POST /payments/initiate  (method: 'card')
 #   → create payment_attempt row (status='pending')
 #   → mark booking as paid
 #   → create in-app notification
@@ -30,9 +29,7 @@ logger = logging.getLogger(__name__)
 INSTANT_METHODS = {"card", "bank_transfer"}
 
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def _generate_transaction_id(method: str) -> str:
     """Simulate a provider reference number."""
@@ -213,9 +210,7 @@ async def _create_notification(
         logger.warning("Failed to create notification: %s", exc)
 
 
-# ---------------------------------------------------------------------------
 # Initiate payment
-# ---------------------------------------------------------------------------
 
 async def initiate_payment(
     user_id: str,
@@ -278,11 +273,7 @@ async def initiate_payment(
         transaction_id=transaction_id,
     )
 
-
-
-# ---------------------------------------------------------------------------
 # Payment history
-# ---------------------------------------------------------------------------
 
 async def get_payment_history(booking_uuid: str, user_id: str) -> list[PaymentAttemptOut]:
     """Return all payment attempts for a booking."""

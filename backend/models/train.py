@@ -1,5 +1,4 @@
 # =============================================================================
-# FILE: models/train.py
 # PURPOSE: Pydantic schemas for Pakistan Railways train search and booking.
 # =============================================================================
 
@@ -11,9 +10,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-# ---------------------------------------------------------------------------
 # Search request
-# ---------------------------------------------------------------------------
 
 class TrainSearchRequest(BaseModel):
     origin:      str  = Field(..., description="Origin city, e.g. Karachi")
@@ -44,9 +41,7 @@ class SeatClass(BaseModel):
     amenities:       list[str] = []  # e.g. ["Air Conditioning", "Reclining Seats"]
 
 
-# ---------------------------------------------------------------------------
 # Train offer (search result)
-# ---------------------------------------------------------------------------
 
 class TrainOffer(BaseModel):
     train_id:     str    # internal mock ID
@@ -76,9 +71,7 @@ class TrainSearchResponse(BaseModel):
     notes:       Optional[str] = None  # road travel info for bus-only routes
 
 
-# ---------------------------------------------------------------------------
 # Booking request
-# ---------------------------------------------------------------------------
 
 class TrainBookRequest(BaseModel):
     train_id:        str = Field(..., description="train_id from search results")

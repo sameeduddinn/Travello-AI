@@ -2,43 +2,6 @@
 # FILE: routers/wishlist.py
 # PREFIX: /wishlist
 # =============================================================================
-#
-# FLUTTER INTEGRATION (Flutter 3.28.3 / Dart 3.10.1)
-# -------------------------------------------------------
-# // GET /wishlist
-# Future<List<dynamic>> getWishlist() async {
-#   final res = await http.get(
-#     Uri.parse('$baseUrl/wishlist'),
-#     headers: {'Authorization': 'Bearer $_token'},
-#   );
-#   return jsonDecode(res.body) as List<dynamic>;
-#   // Each item: {id, item_type, item_data, created_at}
-# }
-#
-# // POST /wishlist
-# Future<Map<String, dynamic>> addToWishlist({
-#   required String itemType,   // 'flight' | 'train' | 'hotel'
-#   required Map<String, dynamic> itemData,  // the full offer object
-# }) async {
-#   final res = await http.post(
-#     Uri.parse('$baseUrl/wishlist'),
-#     headers: {
-#       'Authorization': 'Bearer $_token',
-#       'Content-Type': 'application/json',
-#     },
-#     body: jsonEncode({'item_type': itemType, 'item_data': itemData}),
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-# }
-#
-# // DELETE /wishlist/{itemId}
-# Future<void> removeFromWishlist(String itemId) async {
-#   await http.delete(
-#     Uri.parse('$baseUrl/wishlist/$itemId'),
-#     headers: {'Authorization': 'Bearer $_token'},
-#   );
-# }
-# =============================================================================
 
 import uuid
 import logging
@@ -69,9 +32,7 @@ class WishlistItemOut(BaseModel):
     created_at: str | None = None
 
 
-# ---------------------------------------------------------------------------
 # GET /wishlist
-# ---------------------------------------------------------------------------
 
 @router.get("", response_model=list[WishlistItemOut])
 async def list_wishlist(user: CurrentUser):
@@ -95,9 +56,7 @@ async def list_wishlist(user: CurrentUser):
     ]
 
 
-# ---------------------------------------------------------------------------
 # POST /wishlist
-# ---------------------------------------------------------------------------
 
 @router.post("", response_model=WishlistItemOut, status_code=status.HTTP_201_CREATED)
 async def add_to_wishlist(payload: WishlistAddRequest, user: CurrentUser):
@@ -130,9 +89,7 @@ async def add_to_wishlist(payload: WishlistAddRequest, user: CurrentUser):
     )
 
 
-# ---------------------------------------------------------------------------
 # DELETE /wishlist/{item_id}
-# ---------------------------------------------------------------------------
 
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_from_wishlist(item_id: str, user: CurrentUser):

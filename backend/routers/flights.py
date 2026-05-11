@@ -1,68 +1,5 @@
 # =============================================================================
-# FILE: routers/flights.py
 # PREFIX: /flights
-# =============================================================================
-#
-# FLUTTER INTEGRATION (Flutter 3.28.3 / Dart 3.10.1)
-# -------------------------------------------------------
-# // POST /flights/search
-# Future<Map<String, dynamic>> searchFlights({
-#   required String origin,       // IATA code e.g. 'KHI'
-#   required String destination,  // IATA code e.g. 'LHE'
-#   required String date,         // 'YYYY-MM-DD'
-#   int adults = 1,
-#   String cabinClass = 'ECONOMY',
-#   String? returnDate,
-# }) async {
-#   final res = await http.post(
-#     Uri.parse('$baseUrl/flights/search'),
-#     headers: {
-#       'Authorization': 'Bearer $_token',
-#       'Content-Type': 'application/json',
-#     },
-#     body: jsonEncode({
-#       'origin': origin,
-#       'destination': destination,
-#       'date': date,
-#       'adults': adults,
-#       'cabin_class': cabinClass,
-#       if (returnDate != null) 'return_date': returnDate,
-#     }),
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-#   // response.offers → List of flight offers
-# }
-#
-# // GET /flights/{offer_id}   (offer_id from search results)
-# Future<Map<String, dynamic>> getFlightDetail(String offerId) async {
-#   final res = await http.get(
-#     Uri.parse('$baseUrl/flights/$offerId'),
-#     headers: {'Authorization': 'Bearer $_token'},
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-# }
-#
-# // POST /flights/book
-# Future<Map<String, dynamic>> bookFlight({
-#   required String offerId,
-#   required String contactEmail,
-#   String? contactPhone,
-# }) async {
-#   final res = await http.post(
-#     Uri.parse('$baseUrl/flights/book'),
-#     headers: {
-#       'Authorization': 'Bearer $_token',
-#       'Content-Type': 'application/json',
-#     },
-#     body: jsonEncode({
-#       'offer_id': offerId,
-#       'contact_email': contactEmail,
-#       if (contactPhone != null) 'contact_phone': contactPhone,
-#     }),
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-#   // response keys: booking_id, pnr, status, total_amount
-# }
 # =============================================================================
 
 import json
@@ -88,9 +25,7 @@ _CACHE_TTL = 1800  # 30 minutes
 _offer_cache: dict[str, tuple[FlightOffer, float]] = {}
 
 
-# ---------------------------------------------------------------------------
 # POST /flights/search
-# ---------------------------------------------------------------------------
 
 @router.post("/search", response_model=FlightSearchResponse)
 async def search_flights_endpoint(
@@ -127,9 +62,7 @@ async def search_flights_endpoint(
     )
 
 
-# ---------------------------------------------------------------------------
 # GET /flights/{offer_id}
-# ---------------------------------------------------------------------------
 
 @router.get("/{offer_id}", response_model=FlightOffer)
 async def get_flight_offer(offer_id: str, user: CurrentUser):
@@ -150,9 +83,7 @@ async def get_flight_offer(offer_id: str, user: CurrentUser):
     return cached[0]
 
 
-# ---------------------------------------------------------------------------
 # POST /flights/book
-# ---------------------------------------------------------------------------
 
 @router.post("/book", status_code=status.HTTP_201_CREATED)
 async def book_flight(payload: FlightBookRequest, user: CurrentUser):
@@ -282,9 +213,7 @@ async def book_flight(payload: FlightBookRequest, user: CurrentUser):
     }
 
 
-# ---------------------------------------------------------------------------
 # GET /flights/deals  — Part 4C: Featured Pakistani route deals
-# ---------------------------------------------------------------------------
 
 @router.get("/deals")
 async def get_flight_deals() -> list[dict[str, Any]]:

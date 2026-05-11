@@ -1,37 +1,6 @@
 # =============================================================================
-# FILE: routers/saved_searches.py
 # PREFIX: /saved-searches
 # PURPOSE: Let users save and retrieve flight/train/hotel search queries.
-# =============================================================================
-#
-# FLUTTER INTEGRATION (Flutter 3.28.3 / Dart 3.10.1)
-# -------------------------------------------------------
-# // POST /saved-searches  — save a search
-# Future<Map<String, dynamic>> saveSearch(Map<String, dynamic> query) async {
-#   final res = await http.post(
-#     Uri.parse('$baseUrl/saved-searches'),
-#     headers: {'Authorization': 'Bearer $_token', 'Content-Type': 'application/json'},
-#     body: jsonEncode(query),
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-# }
-#
-# // GET /saved-searches  — list my saved searches
-# Future<List<dynamic>> getSavedSearches() async {
-#   final res = await http.get(
-#     Uri.parse('$baseUrl/saved-searches'),
-#     headers: {'Authorization': 'Bearer $_token'},
-#   );
-#   return jsonDecode(res.body) as List<dynamic>;
-# }
-#
-# // DELETE /saved-searches/{id}
-# Future<void> deleteSavedSearch(String id) async {
-#   await http.delete(
-#     Uri.parse('$baseUrl/saved-searches/$id'),
-#     headers: {'Authorization': 'Bearer $_token'},
-#   );
-# }
 # =============================================================================
 
 import logging
@@ -53,9 +22,7 @@ class SaveSearchRequest(BaseModel):
     search_params: dict[str, Any]  # free-form query params
 
 
-# ---------------------------------------------------------------------------
 # POST /saved-searches
-# ---------------------------------------------------------------------------
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def save_search(payload: SaveSearchRequest, user: CurrentUser) -> dict[str, Any]:
@@ -75,9 +42,7 @@ async def save_search(payload: SaveSearchRequest, user: CurrentUser) -> dict[str
     return {"id": row["id"], "message": "Search saved."}
 
 
-# ---------------------------------------------------------------------------
 # GET /saved-searches
-# ---------------------------------------------------------------------------
 
 @router.get("/")
 async def list_saved_searches(user: CurrentUser) -> list[dict[str, Any]]:
@@ -98,9 +63,7 @@ async def list_saved_searches(user: CurrentUser) -> list[dict[str, Any]]:
     return result.data or []
 
 
-# ---------------------------------------------------------------------------
 # DELETE /saved-searches/{id}
-# ---------------------------------------------------------------------------
 
 @router.delete("/{search_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_saved_search(search_id: str, user: CurrentUser) -> None:

@@ -2,53 +2,6 @@
 # FILE: routers/auth.py
 # PREFIX: /auth
 # =============================================================================
-#
-# FLUTTER INTEGRATION (Flutter 3.28.3 / Dart 3.10.1)
-# -------------------------------------------------------
-# Add to pubspec.yaml:  http: ^1.2.0
-#
-# import 'dart:convert';
-# import 'package:http/http.dart' as http;
-# import 'package:supabase_flutter/supabase_flutter.dart';
-#
-# const String baseUrl = 'https://your-backend.onrender.com';
-#
-# String get _token =>
-#     Supabase.instance.client.auth.currentSession!.accessToken;
-#
-# // GET /auth/me
-# Future<Map<String, dynamic>> getMe() async {
-#   final res = await http.get(
-#     Uri.parse('$baseUrl/auth/me'),
-#     headers: {'Authorization': 'Bearer $_token'},
-#   );
-#   return jsonDecode(res.body) as Map<String, dynamic>;
-# }
-#
-# // PUT /auth/profile
-# Future<void> updateProfile(Map<String, dynamic> data) async {
-#   await http.put(
-#     Uri.parse('$baseUrl/auth/profile'),
-#     headers: {
-#       'Authorization': 'Bearer $_token',
-#       'Content-Type': 'application/json',
-#     },
-#     body: jsonEncode(data),
-#   );
-# }
-#
-# // PUT /auth/preferences
-# Future<void> updatePreferences(Map<String, dynamic> data) async {
-#   await http.put(
-#     Uri.parse('$baseUrl/auth/preferences'),
-#     headers: {
-#       'Authorization': 'Bearer $_token',
-#       'Content-Type': 'application/json',
-#     },
-#     body: jsonEncode(data),
-#   );
-# }
-# =============================================================================
 
 import logging
 
@@ -63,9 +16,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-# ---------------------------------------------------------------------------
 # GET /auth/me
-# ---------------------------------------------------------------------------
 
 @router.get("/me", response_model=MeOut)
 async def get_me(user: CurrentUser):
@@ -116,9 +67,7 @@ async def get_me(user: CurrentUser):
     )
 
 
-# ---------------------------------------------------------------------------
 # PUT /auth/profile
-# ---------------------------------------------------------------------------
 
 @router.put("/profile", response_model=ProfileOut)
 async def update_profile(payload: ProfileUpdate, user: CurrentUser):
@@ -151,9 +100,7 @@ async def update_profile(payload: ProfileUpdate, user: CurrentUser):
     return ProfileOut.model_validate({**row, "id": str(row.get("id", user.id))})
 
 
-# ---------------------------------------------------------------------------
 # PUT /auth/preferences
-# ---------------------------------------------------------------------------
 
 @router.put("/preferences", response_model=PreferencesOut)
 async def update_preferences(payload: PreferencesUpdate, user: CurrentUser):
@@ -185,9 +132,7 @@ async def update_preferences(payload: PreferencesUpdate, user: CurrentUser):
     )
 
 
-# ---------------------------------------------------------------------------
 # DELETE /auth/account
-# ---------------------------------------------------------------------------
 
 @router.delete("/account", status_code=status.HTTP_200_OK)
 async def delete_account(user: CurrentUser):

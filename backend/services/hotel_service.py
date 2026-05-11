@@ -1,9 +1,8 @@
 # =============================================================================
-# FILE: services/hotel_service.py
 # PURPOSE: Hotel search via RapidAPI Hotels4 endpoint.
 #          Falls back to rich mock data when RAPIDAPI_KEY is not set.
 #          All prices are in PKR.
-#
+
 # RapidAPI Hotels4 free tier: https://rapidapi.com/apidojo/api/hotels4
 #   - 500 requests/month free
 #   - No credit card required for free tier
@@ -32,9 +31,7 @@ RAPIDAPI_BASE = (
 NOMINATIM_BASE = "https://nominatim.openstreetmap.org"
 _TARGET_RESULT_COUNT = 20
 
-# ---------------------------------------------------------------------------
-# City name normalisation — handles typos, aliases, IATA codes
-# ---------------------------------------------------------------------------
+# City name normalisation - handles typos, aliases, IATA codes
 
 CITY_ALIASES: dict[str, str] = {
     "hunza": "Hunza", "karimabad": "Hunza", "aliabad": "Hunza",
@@ -160,9 +157,7 @@ async def _rapidapi_get_json(
     return None
 
 
-# ---------------------------------------------------------------------------
-# Step 1: resolve city → TripAdvisor geoId
-# ---------------------------------------------------------------------------
+# Step 1: resolve city - TripAdvisor geoId
 
 async def _get_geo_id(city: str) -> str | None:
     """Search TripAdvisor for a city and return its geoId."""
@@ -189,9 +184,7 @@ async def _get_geo_id(city: str) -> str | None:
         return None
 
 
-# ---------------------------------------------------------------------------
 # Step 2: search hotels by geoId
-# ---------------------------------------------------------------------------
 
 async def _search_hotels_tripadvisor(
     geo_id: str,
@@ -385,9 +378,7 @@ async def _fetch_nominatim_hotels(canonical_city: str, *, limit: int = 20) -> li
     return offers
 
 
-# ---------------------------------------------------------------------------
-# Google Places API — hotel search
-# ---------------------------------------------------------------------------
+# Google Places API - hotel search
 
 _GOOGLE_PLACES_NEARBY_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 _GOOGLE_PLACES_PHOTO_URL  = "https://maps.googleapis.com/maps/api/place/photo"
@@ -1035,9 +1026,7 @@ async def _fetch_hotels_com_rooms(
     return offers
 
 
-# ---------------------------------------------------------------------------
 # Real-time room availability
-# ---------------------------------------------------------------------------
 
 async def _fetch_tripadvisor_rooms(
     hotel_id: str,
@@ -1253,9 +1242,7 @@ async def fetch_hotel_rooms(
     return []
 
 
-# ---------------------------------------------------------------------------
 # Public API
-# ---------------------------------------------------------------------------
 
 async def search_hotels(
     city: str,

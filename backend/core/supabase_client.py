@@ -2,10 +2,9 @@
 # FILE: core/supabase_client.py
 # PURPOSE: Two Supabase clients:
 #   - supabase_anon    → for public/user-scoped operations (respects RLS)
-#   - supabase_admin   → uses service role key (bypasses RLS) — server-side only
+#   - supabase_admin   → uses service role key (bypasses RLS) - server-side only
 #
-# Usage:
-#   from core.supabase_client import supabase_anon, supabase_admin
+
 #
 # NOTE: Clients are created lazily — the app starts even without Supabase keys
 #       configured, falling back gracefully to mock data in search endpoints.

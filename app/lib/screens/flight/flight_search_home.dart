@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/widgets/range_date_picker.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
@@ -340,7 +341,7 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
     }
   }
 
-  void _searchFlights() {
+  Future<void> _searchFlights() async {
     if (_fromAirport == null || _toAirport == null) {
       _showValidationError('Please select departure and arrival airports');
       return;
@@ -353,6 +354,12 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
 
     if (_tripType == 'Round-trip' && _returnDate == null) {
       _showValidationError('Please select return date');
+      return;
+    }
+
+    final connectivity = await Connectivity().checkConnectivity();
+    if (connectivity.every((r) => r == ConnectivityResult.none)) {
+      _showValidationError('No internet connection. Please reconnect and try again.');
       return;
     }
 

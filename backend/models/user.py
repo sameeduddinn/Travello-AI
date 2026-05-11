@@ -1,5 +1,4 @@
 # =============================================================================
-# FILE: models/user.py
 # PURPOSE: Pydantic schemas for user profile and preferences endpoints.
 # =============================================================================
 
@@ -11,9 +10,7 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 
 
-# ---------------------------------------------------------------------------
 # Profile
-# ---------------------------------------------------------------------------
 
 class ProfileUpdate(BaseModel):
     """PUT /auth/profile — fields the user may update."""
@@ -45,9 +42,7 @@ class ProfileOut(BaseModel):
         from_attributes = True
 
 
-# ---------------------------------------------------------------------------
 # Preferences
-# ---------------------------------------------------------------------------
 
 class PreferencesUpdate(BaseModel):
     """PUT /auth/preferences."""
@@ -69,9 +64,7 @@ class PreferencesOut(BaseModel):
         from_attributes = True
 
 
-# ---------------------------------------------------------------------------
 # Combined /auth/me response
-# ---------------------------------------------------------------------------
 
 class MeOut(BaseModel):
     """GET /auth/me response — profile + preferences."""

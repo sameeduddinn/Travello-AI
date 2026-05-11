@@ -1,14 +1,9 @@
 from __future__ import annotations
 # =============================================================================
-
 # LOOKUP CHAIN per city:
 #   1. Google Weather API  — primary  (accurate, real-time, global coverage)
 #   2. Open-Meteo          — fallback (free, no key, WMO-code based)
 #   3. Static default      — last resort (always returns something)
-#
-# Both live sources share the same 5-minute TTL city-level cache so that
-# pull-to-refresh on the home/weather screens never hits the APIs twice
-# within the TTL window.
 # =============================================================================
 
 import asyncio

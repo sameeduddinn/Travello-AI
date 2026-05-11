@@ -1,5 +1,4 @@
 # =============================================================================
-# FILE: models/hotel.py
 # PURPOSE: Pydantic schemas for hotel search, detail, and booking.
 # =============================================================================
 
@@ -11,9 +10,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
-# ---------------------------------------------------------------------------
 # Search request
-# ---------------------------------------------------------------------------
 
 class HotelSearchRequest(BaseModel):
     city:      str  = Field(..., description="City name, e.g. Lahore")
@@ -34,9 +31,7 @@ class HotelSearchRequest(BaseModel):
         }
 
 
-# ---------------------------------------------------------------------------
 # Room offer within a hotel
-# ---------------------------------------------------------------------------
 
 class RoomOffer(BaseModel):
     room_id:              str
@@ -55,9 +50,7 @@ class RoomOffer(BaseModel):
     cancellation_policy:  str = ""
 
 
-# ---------------------------------------------------------------------------
 # Hotel offer (search result)
-# ---------------------------------------------------------------------------
 
 class HotelOffer(BaseModel):
     hotel_id:    str
@@ -73,7 +66,7 @@ class HotelOffer(BaseModel):
     review_score: Optional[float] = None  # out of 10
     review_count: Optional[int]   = None
 
-    # Convenience — cheapest room per night
+    # Convenience - cheapest room per night
     @property
     def min_price_per_night_pkr(self) -> float:
         if not self.rooms:
@@ -90,9 +83,7 @@ class HotelSearchResponse(BaseModel):
     hotels:    list[HotelOffer]
 
 
-# ---------------------------------------------------------------------------
 # Booking request
-# ---------------------------------------------------------------------------
 
 class HotelBookRequest(BaseModel):
     hotel_id:            str  = Field(..., description="hotel_id from search results")

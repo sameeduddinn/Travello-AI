@@ -24,13 +24,11 @@ class ContactSupportRequest(BaseModel):
     topic: str
     subject: str
     description: str
-    sender_email: str = ""   # user's own email — used as Reply-To
-    user_id: str = ""        # Supabase user UUID — used to persist in DB
+    sender_email: str = ""   # user's own email - used as Reply-To
+    user_id: str = ""        # Supabase user UUID - used to persist in DB
 
 
-# ---------------------------------------------------------------------------
 # POST /email/contact-support
-# ---------------------------------------------------------------------------
 
 @router.post("/contact-support")
 async def contact_support(payload: ContactSupportRequest):
@@ -150,9 +148,7 @@ async def contact_support(payload: ContactSupportRequest):
     return {"sent": sent, "message_id": message_id, "result": result}
 
 
-# ---------------------------------------------------------------------------
 # POST /email/booking-confirmation
-# ---------------------------------------------------------------------------
 
 @router.post("/booking-confirmation")
 async def send_booking_confirmation_endpoint(
@@ -160,7 +156,7 @@ async def send_booking_confirmation_endpoint(
     user: CurrentUser,
 ):
     """
-    Send (or resend) the HTML booking confirmation email for a booking.
+    Send  the HTML booking confirmation email for a booking.
     Fetches booking data from DB, chooses the correct template
     (flight / train / hotel), and sends via Gmail SMTP.
     The booking must belong to the authenticated user.
@@ -182,53 +178,3 @@ async def send_booking_confirmation_endpoint(
 
     return await send_booking_confirmation(booking_uuid=payload.booking_id)
 
-
-# ---------------------------------------------------------------------------
-# GET /email/test
-# ---------------------------------------------------------------------------
-
-@router.get("/test")
-async def test_email_config(user: CurrentUser):
-    """
-    Test email configuration — sends a test email to the authenticated user.
-    Useful for verifying the Resend API key is working before demo.
-    """
-    user_email = getattr(user, "email", "") or ""
-
-    email_configured = bool(settings.SMTP_USER and settings.SMTP_PASSWORD) 
-    if not user_email:
-        return {
-            "email_configured": email_configured,
-            "error": "No email found for current user",
-        }
-
-    result = await send_email(
-        to=user_email,
-        subject="Travello AI — Email Test",
-        html="""
-        <!DOCTYPE html>
-        <html>
-        <body style="font-family:Arial,sans-serif;padding:20px">
-          <h2 style="color:#1a73e8">Email is working!</h2>
-          <p>Your Travello AI email system is configured correctly.</p>
-          <p>Booking confirmation emails will be delivered to this address after payment.</p>
-          <p style="color:#888;font-size:12px;margin-top:24px">
-            Travello AI &mdash; Pakistan&apos;s Smart Travel App
-          </p>
-        </body>
-        </html>
-        """,
-    )
-
-    status_value = (
-        "sent"
-        if result.get("id") not in ("skipped", "failed", "disabled", None)
-        else result.get("reason", "unknown")
-    )
-    return {
-        "email_configured": email_configured,
-        "sent_to": user_email,
-        "result": result,
-        "from_address": settings.EMAIL_FROM,
-        "status": status_value,
-    }

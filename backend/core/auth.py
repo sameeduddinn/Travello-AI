@@ -2,18 +2,6 @@
 # FILE: core/auth.py
 # PURPOSE: FastAPI dependency that verifies Supabase JWTs on every protected
 #          route and returns the authenticated user's ID + email.
-#
-# How Supabase JWTs work:
-#   - The Flutter app calls supabase.auth.signIn(...) and gets an access_token.
-#   - Flutter sends: Authorization: Bearer <access_token> on every API call.
-#   - We verify the token signature using SUPABASE_JWT_SECRET (HS256).
-#   - The token payload contains: sub (user UUID), email, role, exp, etc.
-#
-# Usage in any router:
-#   from core.auth import get_current_user, CurrentUser
-#   @router.get("/me")
-#   async def me(user: CurrentUser = Depends(get_current_user)):
-#       return {"user_id": user.id}
 # =============================================================================
 
 from __future__ import annotations
@@ -51,7 +39,7 @@ _bearer_scheme = HTTPBearer(auto_error=True)
 @dataclass
 class AuthUser:
     """Minimal user info extracted from a verified Supabase JWT."""
-    id: str          # UUID string — matches auth.users.id in Supabase
+    id: str          # UUID string - matches auth.users.id in Supabase
     email: str | None
     phone: str | None
     role: str        # 'authenticated' for normal users
@@ -61,7 +49,7 @@ async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(_bearer_scheme)],
 ) -> AuthUser:
     """
-    FastAPI dependency — verify Bearer JWT and return AuthUser.
+    FastAPI dependency - verify Bearer JWT and return AuthUser.
 
     Raises HTTP 401 if:
       - Token is missing / malformed
@@ -76,18 +64,13 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    # ── Debug bypass ──────────────────────────────────────────────────────────
-    # When DEBUG=True and SUPABASE_JWT_SECRET is not yet configured, decode
-    # without signature verification so local dev/testing works out of the box.
+    # - Debug bypass
     # NEVER leave this enabled in production (set DEBUG=False in .env).
-    # ─────────────────────────────────────────────────────────────────────────
     _jwt_secret = settings.SUPABASE_JWT_SECRET
 
     try:
         if settings.DEBUG:
-            # In DEBUG/dev mode: decode without signature or expiry verification.
-            # The user_id is still read from the token payload so bookings are
-            # associated with the correct Supabase user. Disable in production.
+   
             payload = jwt.decode(
                 token,
                 options={"verify_signature": False, "verify_aud": False, "verify_exp": False},
