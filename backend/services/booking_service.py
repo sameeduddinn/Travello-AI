@@ -21,6 +21,7 @@ from postgrest.types import CountMethod
 
 from core.supabase_client import supabase_admin
 from models.booking import BookingOut, PassengerCreate, PassengerOut, TicketOut
+from services.email_service import send_cancellation_email
 
 logger = logging.getLogger(__name__)
 
@@ -218,7 +219,14 @@ async def cancel_booking(booking_uuid: str, user_id: str) -> BookingOut:
     if not update_result.data:
         raise HTTPException(status_code=500, detail="Cancellation failed.")
 
-    return _row_to_booking_out(update_result.data[0])
+    cancelled = _row_to_booking_out(update_result.data[0])
+
+    try:
+        await send_cancellation_email(booking_uuid)
+    except Exception as exc:
+        logger.warning("Cancellation email failed for %s: %s", booking_uuid, exc)
+
+    return cancelled
 
 
 # Delete (remove from history) - cancelled bookings only

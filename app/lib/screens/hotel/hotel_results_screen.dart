@@ -1077,10 +1077,14 @@ class _HotelResultsScreenState extends State<HotelResultsScreen> {
                       Icon(Icons.location_on,
                           size: 13, color: Colors.grey.shade500),
                       const SizedBox(width: 3),
-                      Text(
-                          '${hotel.distanceFromCenter.toStringAsFixed(1)} km from city centre',
+                      Expanded(
+                        child: Text(
+                          hotel.address,
                           style: TextStyle(
-                              fontSize: 12, color: Colors.grey.shade600)),
+                              fontSize: 12, color: Colors.grey.shade600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),

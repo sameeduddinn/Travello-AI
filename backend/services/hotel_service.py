@@ -29,7 +29,7 @@ RAPIDAPI_BASE = (
     else f"https://{settings.RAPIDAPI_HOST.strip()}"
 )
 NOMINATIM_BASE = "https://nominatim.openstreetmap.org"
-_TARGET_RESULT_COUNT = 20
+_MIN_FALLBACK_COUNT = 5  # only call next source if current total is below this
 
 # City name normalisation - handles typos, aliases, IATA codes
 
@@ -108,9 +108,11 @@ def _merge_hotel_lists(
     base: list[HotelOffer],
     incoming: list[HotelOffer],
     *,
-    limit: int,
+    limit: int | None = None,
 ) -> list[HotelOffer]:
-    """Merge hotels by source priority order with de-duplication and enrichment."""
+    """Merge hotels by source priority order with de-duplication and enrichment.
+    If limit is None, all incoming hotels are merged without a cap.
+    """
     merged = list(base)
     key_to_index: dict[tuple[str, str, float | None, float | None], int] = {
         _hotel_merge_key(h): idx for idx, h in enumerate(merged)
@@ -125,7 +127,7 @@ def _merge_hotel_lists(
 
         merged.append(hotel)
         key_to_index[key] = len(merged) - 1
-        if len(merged) >= limit:
+        if limit is not None and len(merged) >= limit:
             break
 
     return merged
@@ -1273,8 +1275,8 @@ async def search_hotels(
     # Hotels.com Provider disabled — API returns empty skeleton objects (LodgingCard/__typename only)
     # Re-enable once RapidAPI fixes the response format.
 
-    # 2) TripAdvisor (RapidAPI) supplements if Hotels.com is empty/partial
-    if len(hotels) < _TARGET_RESULT_COUNT and _rapidapi_is_configured():
+    # 2) TripAdvisor (RapidAPI) — always run if configured; no cap on results
+    if _rapidapi_is_configured():
         geo_id = await _get_geo_id(canonical)
         if geo_id:
             rapid_results = await _search_hotels_tripadvisor(
@@ -1291,47 +1293,47 @@ async def search_hotels(
                 except Exception as exc:
                     logger.debug("Skipping malformed RapidAPI hotel payload: %s", exc)
             rapid_count = len(parsed_hotels)
-            hotels = _merge_hotel_lists(hotels, parsed_hotels, limit=_TARGET_RESULT_COUNT)
+            hotels = _merge_hotel_lists(hotels, parsed_hotels)
         logger.info("TripAdvisor returned %d hotels for %s", rapid_count, canonical)
 
-    # 3) Google Places supplements if still not enough
-    if len(hotels) < _TARGET_RESULT_COUNT and _google_places_is_configured():
-        google_hotels = await _fetch_google_places_hotels(canonical, limit=_TARGET_RESULT_COUNT)
+    # 3) Google Places — only if TripAdvisor returned too few results
+    if len(hotels) < _MIN_FALLBACK_COUNT and _google_places_is_configured():
+        google_hotels = await _fetch_google_places_hotels(canonical, limit=50)
         google_count = len(google_hotels)
-        hotels = _merge_hotel_lists(hotels, google_hotels, limit=_TARGET_RESULT_COUNT)
+        hotels = _merge_hotel_lists(hotels, google_hotels)
 
-    # 3) Nominatim supplements remaining gaps.
-    if len(hotels) < _TARGET_RESULT_COUNT:
-        nominatim_hotels = await _fetch_nominatim_hotels(canonical, limit=_TARGET_RESULT_COUNT)
+    # 4) Nominatim — only if still too few results
+    if len(hotels) < _MIN_FALLBACK_COUNT:
+        nominatim_hotels = await _fetch_nominatim_hotels(canonical, limit=50)
         nominatim_count = len(nominatim_hotels)
-        hotels = _merge_hotel_lists(hotels, nominatim_hotels, limit=_TARGET_RESULT_COUNT)
+        hotels = _merge_hotel_lists(hotels, nominatim_hotels)
 
-    # 3) OSM supplements remaining gaps.
-    if len(hotels) < _TARGET_RESULT_COUNT:
+    # 5) OSM — only if still too few results
+    if len(hotels) < _MIN_FALLBACK_COUNT:
         osm_hotels = await _fetch_overpass_hotels(canonical)
         osm_count = len(osm_hotels)
-        hotels = _merge_hotel_lists(hotels, osm_hotels, limit=_TARGET_RESULT_COUNT)
+        hotels = _merge_hotel_lists(hotels, osm_hotels)
 
-    # 4) Mock fills any remaining gap.
-    if len(hotels) < _TARGET_RESULT_COUNT:
+    # 6) Mock — last resort if all APIs failed
+    if len(hotels) < _MIN_FALLBACK_COUNT:
         mock_hotels = _mock_hotels(city, check_in, check_out, guests, rooms)
         mock_count = len(mock_hotels)
-        hotels = _merge_hotel_lists(hotels, mock_hotels, limit=_TARGET_RESULT_COUNT)
+        hotels = _merge_hotel_lists(hotels, mock_hotels)
 
-    # Drop hotels with no images — Nominatim/OSM results without TripAdvisor
-    # enrichment have images=[] and show blank cards + crash the detail screen.
-    hotels = [h for h in hotels if h.images]
-
-    # 5) If the image filter depleted results (e.g. RapidAPI quota hit and all
-    #    Nominatim hotels had no images), backfill with mock data which always
-    #    carries curated Unsplash images.
-    if len(hotels) < _TARGET_RESULT_COUNT:
-        additional_mock = _mock_hotels(city, check_in, check_out, guests, rooms)
-        mock_count += len(additional_mock)
-        hotels = _merge_hotel_lists(hotels, additional_mock, limit=_TARGET_RESULT_COUNT)
+    # Assign placeholder image to any hotel missing photos
+    _PLACEHOLDER_IMAGES = [
+        "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
+        "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80",
+        "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80",
+        "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80",
+        "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=800&q=80",
+    ]
+    for h in hotels:
+        if not h.images:
+            h.images = [_PLACEHOLDER_IMAGES[abs(hash(h.hotel_id)) % len(_PLACEHOLDER_IMAGES)]]
 
     logger.info(
-        "Hotel search merged for %s: rapid=%d, google=%d, nominatim=%d, osm=%d, mock=%d, final=%d (after image filter)",
+        "Hotel search merged for %s: rapid=%d, google=%d, nominatim=%d, osm=%d, mock=%d, final=%d",
         city,
         rapid_count,
         google_count,

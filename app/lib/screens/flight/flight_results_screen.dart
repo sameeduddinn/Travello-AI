@@ -205,7 +205,16 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
           );
         }).toList();
 
-        if (_allFlights.isEmpty) _loadDummyFlights();
+        if (_allFlights.isEmpty) {
+          _loadDummyFlights(); // also resets _priceRange
+        } else {
+          // Reset price range to cover actual API flight prices
+          final prices = _allFlights.map((f) => f.price).toList();
+          _priceRange = RangeValues(
+            prices.reduce((a, b) => a < b ? a : b),
+            prices.reduce((a, b) => a > b ? a : b),
+          );
+        }
       }
     } catch (e, st) {
       // Keep fallback behavior, but log enough context to debug connectivity.

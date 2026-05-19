@@ -94,6 +94,9 @@ _BASE_STYLE = """
   .status-badge { display: inline-block; background: #34a853; color: #fff;
                   font-size: 12px; font-weight: 700; padding: 4px 12px;
                   border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
+  .status-badge-cancelled { display: inline-block; background: #d93025; color: #fff;
+                  font-size: 12px; font-weight: 700; padding: 4px 12px;
+                  border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
   .amount-total { font-size: 28px; font-weight: 800; color: #1a73e8; }
   .footer { background: #f8f9fa; padding: 24px 40px; text-align: center;
             color: #888; font-size: 12px; border-top: 1px solid #eee; }
@@ -381,6 +384,247 @@ async def send_booking_confirmation(booking_uuid: str) -> dict:
     )
 
     sent = result.get("id") not in ("disabled", "failed", "skipped", None)
+    return {
+        "sent": sent,
+        "to": contact_email,
+        "subject": subject,
+        "resend_id": result.get("id"),
+        "reason": result.get("reason"),
+    }
+
+
+# Cancellation email templates
+
+_CANCEL_HEADER_STYLE = (
+    "background: linear-gradient(135deg, #d93025 0%, #9b1c13 100%);"
+)
+
+def _flight_cancel_email_html(b: dict) -> str:
+    pnr = b.get("pnr", "—")
+    origin = b.get("origin", "—")
+    destination = b.get("destination", "—")
+    dep = _fmt_dt(b.get("departure_at"))
+    amount = _fmt_amount(b.get("total_amount", 0), b.get("currency", "PKR"))
+    booking_id = b.get("booking_id", "—")
+    passengers = b.get("passengers", [])
+
+    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8">{_BASE_STYLE}</head>
+<body><div class="wrapper">
+  <div class="header" style="{_CANCEL_HEADER_STYLE}padding:32px 40px">
+    <h1>✈ Flight Booking Cancelled</h1>
+    <p>Your booking has been cancelled as requested.</p>
+  </div>
+  <div class="body">
+    <div style="text-align:center;margin-bottom:20px">
+      <span class="status-badge-cancelled">Cancelled</span>
+    </div>
+    <div class="pnr-box" style="background:#fde8e7;border-color:#d93025">
+      <div class="pnr-label">Booking Reference / PNR</div>
+      <div class="pnr-value" style="color:#d93025">{pnr}</div>
+      <div style="font-size:12px;color:#555;margin-top:6px">{booking_id}</div>
+    </div>
+    <div class="section">
+      <div class="section-title" style="color:#d93025;border-color:#fde8e7">Flight Details</div>
+      <div class="info-row"><span class="label">Route:</span>
+        <span class="value">{origin} → {destination}</span></div>
+      <div class="info-row"><span class="label">Departure:</span>
+        <span class="value">{dep}</span></div>
+    </div>
+    <div class="section">
+      <div class="section-title" style="color:#d93025;border-color:#fde8e7">Passengers</div>
+      {_passenger_cards_html(passengers)}
+    </div>
+    <div class="section">
+      <div class="section-title" style="color:#d93025;border-color:#fde8e7">Amount</div>
+      <div style="text-align:right;margin-top:8px">
+        <span class="amount-total" style="color:#d93025">{amount}</span>
+        <div style="font-size:12px;color:#d93025;margin-top:4px">Booking Cancelled</div>
+      </div>
+    </div>
+    <div style="background:#fff8e1;border-left:4px solid #f9a825;padding:14px 18px;border-radius:6px;font-size:13px;color:#555;margin-top:8px">
+      If you paid for this booking, please allow 5–7 business days for any refund to reflect in your account.
+      For assistance, contact <a href="mailto:support@travello.ai" style="color:#1a73e8">support@travello.ai</a>.
+    </div>
+  </div>
+  <div class="footer">
+    <p>Thank you for using <strong>Travello AI</strong></p>
+    <p style="margin-top:8px">Contact us at
+       <a href="mailto:support@travello.ai">support@travello.ai</a></p>
+    <p style="margin-top:8px;color:#ccc">&copy; 2024 Travello AI</p>
+  </div>
+</div></body></html>"""
+
+
+def _train_cancel_email_html(b: dict) -> str:
+    pnr = b.get("pnr", "—")
+    origin = b.get("origin", "—")
+    destination = b.get("destination", "—")
+    dep = _fmt_dt(b.get("departure_at"))
+    amount = _fmt_amount(b.get("total_amount", 0), b.get("currency", "PKR"))
+    booking_id = b.get("booking_id", "—")
+    passengers = b.get("passengers", [])
+    raw = b.get("raw_payload") or {}
+    train_name = raw.get("train_name", "Pakistan Railways Train")
+    train_number = raw.get("train_number", "")
+
+    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8">{_BASE_STYLE}</head>
+<body><div class="wrapper">
+  <div class="header" style="{_CANCEL_HEADER_STYLE}padding:32px 40px">
+    <h1>🚂 Train Booking Cancelled</h1>
+    <p>Your train ticket has been cancelled.</p>
+  </div>
+  <div class="body">
+    <div style="text-align:center;margin-bottom:20px">
+      <span class="status-badge-cancelled">Cancelled</span>
+    </div>
+    <div class="pnr-box" style="background:#fde8e7;border-color:#d93025">
+      <div class="pnr-label">PNR / Booking Reference</div>
+      <div class="pnr-value" style="color:#d93025">{pnr}</div>
+      <div style="font-size:12px;color:#555;margin-top:6px">{booking_id}</div>
+    </div>
+    <div class="section">
+      <div class="section-title" style="color:#d93025;border-color:#fde8e7">Train Details</div>
+      <div class="info-row"><span class="label">Train:</span>
+        <span class="value">{train_name} ({train_number})</span></div>
+      <div class="info-row"><span class="label">Route:</span>
+        <span class="value">{origin} → {destination}</span></div>
+      <div class="info-row"><span class="label">Departure:</span>
+        <span class="value">{dep}</span></div>
+    </div>
+    <div class="section">
+      <div class="section-title" style="color:#d93025;border-color:#fde8e7">Passengers</div>
+      {_passenger_cards_html(passengers)}
+    </div>
+    <div class="section">
+      <div class="section-title" style="color:#d93025;border-color:#fde8e7">Amount</div>
+      <div style="text-align:right;margin-top:8px">
+        <span class="amount-total" style="color:#d93025">{amount}</span>
+        <div style="font-size:12px;color:#d93025;margin-top:4px">Booking Cancelled</div>
+      </div>
+    </div>
+    <div style="background:#fff8e1;border-left:4px solid #f9a825;padding:14px 18px;border-radius:6px;font-size:13px;color:#555;margin-top:8px">
+      If you paid for this booking, please allow 5–7 business days for any refund to reflect in your account.
+      For assistance, contact <a href="mailto:support@travello.ai" style="color:#1a73e8">support@travello.ai</a>.
+    </div>
+  </div>
+  <div class="footer">
+    <p>Thank you for using <strong>Travello AI</strong></p>
+    <p style="margin-top:8px">Contact: <a href="mailto:support@travello.ai">support@travello.ai</a></p>
+    <p style="margin-top:8px;color:#ccc">&copy; 2024 Travello AI</p>
+  </div>
+</div></body></html>"""
+
+
+def _hotel_cancel_email_html(b: dict) -> str:
+    pnr = b.get("pnr", "—")
+    hotel_name = b.get("hotel_name", "—")
+    check_in  = _fmt_date(b.get("check_in"))
+    check_out = _fmt_date(b.get("check_out"))
+    amount = _fmt_amount(b.get("total_amount", 0), b.get("currency", "PKR"))
+    booking_id = b.get("booking_id", "—")
+    raw = b.get("raw_payload") or {}
+    city = raw.get("city", b.get("destination", "—"))
+
+    nights_str = "—"
+    try:
+        from datetime import date
+        ci = date.fromisoformat(str(b.get("check_in", ""))[:10])
+        co = date.fromisoformat(str(b.get("check_out", ""))[:10])
+        nights_str = str((co - ci).days)
+    except Exception:
+        pass
+
+    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8">{_BASE_STYLE}</head>
+<body><div class="wrapper">
+  <div class="header" style="{_CANCEL_HEADER_STYLE}padding:32px 40px">
+    <h1>🏨 Hotel Booking Cancelled</h1>
+    <p>Your hotel reservation has been cancelled.</p>
+  </div>
+  <div class="body">
+    <div style="text-align:center;margin-bottom:20px">
+      <span class="status-badge-cancelled">Cancelled</span>
+    </div>
+    <div class="pnr-box" style="background:#fde8e7;border-color:#d93025">
+      <div class="pnr-label">Reservation Number</div>
+      <div class="pnr-value" style="color:#d93025">{pnr}</div>
+      <div style="font-size:12px;color:#555;margin-top:6px">{booking_id}</div>
+    </div>
+    <div class="section">
+      <div class="section-title" style="color:#d93025;border-color:#fde8e7">Reservation Details</div>
+      <div class="info-row"><span class="label">Hotel:</span>
+        <span class="value">{hotel_name}</span></div>
+      <div class="info-row"><span class="label">City:</span>
+        <span class="value">{city}</span></div>
+      <div class="info-row"><span class="label">Check-in:</span>
+        <span class="value">{check_in}</span></div>
+      <div class="info-row"><span class="label">Check-out:</span>
+        <span class="value">{check_out}</span></div>
+      <div class="info-row"><span class="label">Nights:</span>
+        <span class="value">{nights_str}</span></div>
+    </div>
+    <div class="section">
+      <div class="section-title" style="color:#d93025;border-color:#fde8e7">Amount</div>
+      <div style="text-align:right;margin-top:8px">
+        <span class="amount-total" style="color:#d93025">{amount}</span>
+        <div style="font-size:12px;color:#d93025;margin-top:4px">Booking Cancelled</div>
+      </div>
+    </div>
+    <div style="background:#fff8e1;border-left:4px solid #f9a825;padding:14px 18px;border-radius:6px;font-size:13px;color:#555;margin-top:8px">
+      If you paid for this booking, please allow 5–7 business days for any refund to reflect in your account.
+      For assistance, contact <a href="mailto:support@travello.ai" style="color:#1a73e8">support@travello.ai</a>.
+    </div>
+  </div>
+  <div class="footer">
+    <p>Thank you for using <strong>Travello AI</strong></p>
+    <p style="margin-top:8px">Contact: <a href="mailto:support@travello.ai">support@travello.ai</a></p>
+    <p style="margin-top:8px;color:#ccc">&copy; 2024 Travello AI</p>
+  </div>
+</div></body></html>"""
+
+
+async def send_cancellation_email(booking_uuid: str) -> dict:
+    """
+    Fetch booking from DB and send a cancellation HTML email to the user.
+    Called after cancel_booking() successfully updates the status.
+    """
+    booking = await _fetch_booking_data(booking_uuid)
+
+    if booking is None:
+        logger.error("send_cancellation_email: booking %s not found", booking_uuid)
+        return {"sent": False, "reason": "booking_not_found"}
+
+    booking_type = booking.get("booking_type", "flight")
+    contact_email = booking.get("contact_email")
+    booking_ref = booking.get("booking_id", booking_uuid)
+
+    if not contact_email:
+        logger.error("Booking %s has no contact email for cancellation notice", booking_uuid)
+        return {"sent": False, "reason": "no_contact_email"}
+
+    if booking_type == "flight":
+        html = _flight_cancel_email_html(booking)
+        subject = f"✈ Flight Booking Cancelled — {booking_ref}"
+    elif booking_type == "train":
+        html = _train_cancel_email_html(booking)
+        subject = f"🚂 Train Booking Cancelled — {booking_ref}"
+    elif booking_type == "hotel":
+        html = _hotel_cancel_email_html(booking)
+        subject = f"🏨 Hotel Reservation Cancelled — {booking_ref}"
+    else:
+        html = _flight_cancel_email_html(booking)
+        subject = f"Booking Cancelled — {booking_ref}"
+
+    result = await send_email(
+        to=contact_email,
+        subject=subject,
+        html=html,
+    )
+
+    sent = result.get("id") not in ("disabled", "failed", "skipped", None)
+    logger.info(
+        "Cancellation email for booking %s: sent=%s to=%s",
+        booking_uuid, sent, contact_email,
+    )
     return {
         "sent": sent,
         "to": contact_email,

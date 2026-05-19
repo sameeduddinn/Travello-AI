@@ -654,14 +654,23 @@ async def search_flights(
     is_domestic = origin in PAKISTAN_IATA_CODES and destination in PAKISTAN_IATA_CODES
 
     if is_domestic:
-        domestic_seeded = _generate_domestic_offers(origin, destination, date, adults, cabin_class=cabin_class)
-        offers = _merge_flight_offers(offers, domestic_seeded, limit=_TARGET_FLIGHT_RESULT_COUNT)
+        # AviationStack first — real-time flights for today (returns [] for future dates)
+        aviationstack_offers = await _fetch_aviationstack(origin, destination, date, cabin_class=cabin_class)
+        aviationstack_count = len(aviationstack_offers)
 
-        aviationstack_count = 0
-        if len(offers) < _TARGET_FLIGHT_RESULT_COUNT:
-            aviationstack_offers = await _fetch_aviationstack(origin, destination, date, cabin_class=cabin_class)
-            aviationstack_count = len(aviationstack_offers)
-            offers = _merge_flight_offers(offers, aviationstack_offers, limit=_TARGET_FLIGHT_RESULT_COUNT)
+        if aviationstack_count > 0:
+            # Real flights available — show only AviationStack data, no mock mixing
+            final_offers = _sort_flight_offers(aviationstack_offers)
+            logger.info(
+                "Flight search (domestic) %s->%s: aviationstack=%d real flights",
+                origin, destination, aviationstack_count,
+            )
+            return final_offers
+
+        # AviationStack unavailable or future date — fall back to seeded mock
+        domestic_seeded = _generate_domestic_offers(origin, destination, date, adults, cabin_class=cabin_class)
+        domestic_seeded_count = len(domestic_seeded)
+        offers = _merge_flight_offers(offers, domestic_seeded, limit=_TARGET_FLIGHT_RESULT_COUNT)
 
         domestic_generic_count = 0
         if len(offers) < _TARGET_FLIGHT_RESULT_COUNT:
@@ -671,13 +680,8 @@ async def search_flights(
 
         final_offers = _sort_flight_offers(offers)
         logger.info(
-            "Flight search merged (domestic) %s->%s: seeded=%d, aviationstack=%d, generic=%d, final=%d",
-            origin,
-            destination,
-            len(domestic_seeded),
-            aviationstack_count,
-            domestic_generic_count,
-            len(final_offers),
+            "Flight search fallback (domestic) %s->%s: seeded=%d, generic=%d, final=%d",
+            origin, destination, domestic_seeded_count, domestic_generic_count, len(final_offers),
         )
         return final_offers
 

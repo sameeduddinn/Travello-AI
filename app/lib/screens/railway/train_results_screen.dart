@@ -187,6 +187,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
           if (mounted) setState(() {});
         } else {
           _allTrains = backendTrains;
+          _resetPriceRangeForSelectedClass();
           if (mounted) setState(() {});
           _applyFiltersAndSort();
         }
@@ -746,7 +747,8 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
       _classNameMap[_selectedTrainClass] ?? _selectedTrainClass;
 
   void _applyFiltersAndSort() {
-    final cls = _backendClassName;
+    // Use Flutter UI name — classPrices/availableClasses keys are already mapped via _mapTrainClassName
+    final cls = _selectedTrainClass;
     setState(() {
       _trains = _allTrains.where((train) {
         if (train.availableClasses.isEmpty ||
