@@ -551,6 +551,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                           style: const TextStyle(color: Colors.black),
                           keyboardType: TextInputType.number,
                           inputFormatters: [_CnicFormatter()],
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           decoration: InputDecoration(
                             labelText: 'CNIC Number *',
                             hintText: 'XXXXX-XXXXXXX-X',
@@ -577,6 +578,12 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                             final raw = v.replaceAll('-', '');
                             if (raw.length != 13) {
                               return 'Enter valid 13-digit CNIC';
+                            }
+                            for (final c in _extraDocCtrls) {
+                              final other = c.text.replaceAll('-', '');
+                              if (other.isNotEmpty && other == raw) {
+                                return 'CNIC must be unique';
+                              }
                             }
                             return null;
                           },
@@ -787,6 +794,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                         TextFormField(
                           controller: _emailCtrl,
                           keyboardType: TextInputType.emailAddress,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           style: const TextStyle(color: Colors.black),
                           decoration: InputDecoration(
                             labelText: 'Email Address *',
@@ -923,6 +931,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                             style: const TextStyle(color: Colors.black),
                             keyboardType: TextInputType.number,
                             inputFormatters: [_CnicFormatter()],
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
                             validator: (v) {
                               if (v == null || v.isEmpty) {
                                 return 'CNIC / B-Form is required';
