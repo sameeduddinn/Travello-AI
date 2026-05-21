@@ -101,6 +101,8 @@ async def book_train(payload: TrainBookRequest, user: CurrentUser):
             "passengers": payload.passengers,
             "amenities": [],
         }
+        if payload.facilities:
+            raw_payload.update(payload.facilities)
 
         booking = await create_booking(
             user_id=user.id,
@@ -163,6 +165,8 @@ async def book_train(payload: TrainBookRequest, user: CurrentUser):
         "passengers": payload.passengers,
         "amenities": seat_class.amenities,
     }
+    if payload.facilities:
+        raw_payload.update(payload.facilities)
 
     booking = await create_booking(
         user_id=user.id,

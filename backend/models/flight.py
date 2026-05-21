@@ -106,3 +106,4 @@ class FlightBookRequest(BaseModel):
     total_price_pkr: Optional[float] = None
     is_refundable:   Optional[bool]  = False
     duration:        Optional[str]   = None
+    facilities:      Optional[dict]  = None  # car transfer selections from facilities screen

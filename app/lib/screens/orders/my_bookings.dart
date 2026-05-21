@@ -59,6 +59,37 @@ class _MyBookingsState extends State<MyBookings>
 
   /// Builds the nested detail map expected by the booking card widgets,
   /// converting flat backend fields (origin, departure_at, hotel_name, etc.)
+  static Map<String, dynamic> _normalizeCarBooking(Map<String, dynamic> m) {
+    final driver = (m['drivers'] as Map?)?.cast<String, dynamic>() ?? {};
+    return {
+      'bookingId': m['id'] ?? '',
+      'bookingType': 'car',
+      'status': m['status'] ?? 'confirmed',
+      'bookingDate': m['created_at'] ?? '',
+      'pnr': m['verification_code'] ?? '',
+      'total': (m['total_amount'] as num?)?.toDouble() ?? 0.0,
+      'passengerCount': 1,
+      'carDetails': {
+        'pickup': m['pickup_location'] ?? '',
+        'dropoff': m['dropoff_location'] ?? '',
+        'vehicleType': m['vehicle_type'] ?? '',
+        'pickupDatetime': m['pickup_datetime'] ?? '',
+        'transferType': m['transfer_type'] ?? 'standalone',
+        'verificationCode': m['verification_code'] ?? '',
+        'driver': {
+          'name': driver['name'] ?? '—',
+          'phone': driver['phone'] ?? '—',
+          'vehicleMake': driver['vehicle_make'] ?? '',
+          'vehicleModel': driver['vehicle_model'] ?? '',
+          'vehiclePlate': driver['vehicle_plate'] ?? '',
+          'vehicleColor': driver['vehicle_color'] ?? '',
+          'rating': driver['rating'],
+        },
+      },
+      ...m,
+    };
+  }
+
   static Map<String, dynamic> _normalizeBackendBooking(
       Map<String, dynamic> m) {
     final bookingType = (m['booking_type'] ?? 'flight') as String;
@@ -178,7 +209,17 @@ class _MyBookingsState extends State<MyBookings>
       // Backend unreachable or user not logged in — fall through to local
     }
 
-    // 2. Merge with local SharedPreferences bookings (always available)
+    // 2. Fetch car bookings from backend
+    try {
+      final carList = await ApiClient.getCarBookings();
+      for (final c in carList) {
+        bookings.add(_normalizeCarBooking(c));
+      }
+    } catch (e) {
+      debugPrint('[MyBookings] Car bookings fetch failed: $e');
+    }
+
+    // 3. Merge with local SharedPreferences bookings (always available)
     final local = await BookingService.getAllBookings();
     // Build a set of all known IDs from backend: booking_id, pnr, and uuid.
     // This handles legacy local entries saved with pnr or a generated BK... id.
@@ -260,6 +301,10 @@ class _MyBookingsState extends State<MyBookings>
         final h = b['hotelDetails'] as Map<String, dynamic>?;
         if (h == null) return null;
         return _parseDate(h['checkIn']?.toString());
+      } else if (type == 'car') {
+        final c = b['carDetails'] as Map<String, dynamic>?;
+        if (c == null) return null;
+        return _parseDt(c['pickupDatetime']?.toString());
       } else {
         final details =
             type == 'train' ? b['trainDetails'] : b['flightDetails'];
@@ -430,15 +475,20 @@ class _MyBookingsState extends State<MyBookings>
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Row(children: [
-              _buildTypeChip('All', Icons.list_alt),
-              const SizedBox(width: 8),
-              _buildTypeChip('Train', Icons.train),
-              const SizedBox(width: 8),
-              _buildTypeChip('Flight', Icons.flight),
-              const SizedBox(width: 8),
-              _buildTypeChip('Hotel', Icons.hotel),
-            ]),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                _buildTypeChip('All', Icons.list_alt),
+                const SizedBox(width: 8),
+                _buildTypeChip('Train', Icons.train),
+                const SizedBox(width: 8),
+                _buildTypeChip('Flight', Icons.flight),
+                const SizedBox(width: 8),
+                _buildTypeChip('Hotel', Icons.hotel),
+                const SizedBox(width: 8),
+                _buildTypeChip('Car', Icons.directions_car),
+              ]),
+            ),
             const SizedBox(height: 12),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -460,7 +510,8 @@ class _MyBookingsState extends State<MyBookings>
 
   Widget _buildTypeChip(String label, IconData icon) {
     final isSelected = _selectedType == label;
-    return Expanded(
+    return SizedBox(
+      width: 68,
       child: GestureDetector(
         onTap: () => setState(() {
           _selectedType = label;
@@ -545,6 +596,12 @@ class _MyBookingsState extends State<MyBookings>
         typeIcon = Icons.hotel;
         typeLabel = 'HOTEL';
         break;
+      case 'car':
+        headerBg = const Color(0xFFEFF8FF);
+        accentColor = const Color(0xFF1565C0);
+        typeIcon = Icons.directions_car;
+        typeLabel = 'CAR';
+        break;
       default:
         headerBg = const Color(0xFFEFF6FF);
         accentColor = const Color(0xFF3B82F6);
@@ -615,6 +672,8 @@ class _MyBookingsState extends State<MyBookings>
                 _buildTrainJourneyDetails(booking)
               else if (bookingType == 'hotel')
                 _buildHotelDetails(booking)
+              else if (bookingType == 'car')
+                _buildCarDetails(booking)
               else
                 _buildFlightJourneyDetails(booking),
               const SizedBox(height: 12),
@@ -628,7 +687,9 @@ class _MyBookingsState extends State<MyBookings>
                         size: 15, color: Colors.grey.shade500),
                     const SizedBox(width: 4),
                     Text(
-                      '${booking['passengerCount'] ?? 1} ${bookingType == 'hotel' ? (((booking['passengerCount'] ?? 1) > 1) ? 'Guests' : 'Guest') : (((booking['passengerCount'] ?? 1) > 1) ? 'Passengers' : 'Passenger')}',
+                      bookingType == 'car'
+                          ? '1 Driver'
+                          : '${booking['passengerCount'] ?? 1} ${bookingType == 'hotel' ? (((booking['passengerCount'] ?? 1) > 1) ? 'Guests' : 'Guest') : (((booking['passengerCount'] ?? 1) > 1) ? 'Passengers' : 'Passenger')}',
                       style: TravelloTheme.caption
                           .copyWith(color: Colors.grey.shade500),
                     ),
@@ -903,6 +964,117 @@ class _MyBookingsState extends State<MyBookings>
     ]);
   }
 
+  Widget _buildCarDetails(Map<String, dynamic> booking) {
+    final c = booking['carDetails'] as Map<String, dynamic>?;
+    if (c == null) return const SizedBox();
+    final driver = (c['driver'] as Map?)?.cast<String, dynamic>() ?? {};
+    const accent = Color(0xFF1565C0);
+    final pickup = c['pickup'] as String? ?? '—';
+    final dropoff = c['dropoff'] as String? ?? '—';
+    final vehicleType = c['vehicleType'] as String? ?? '—';
+    final driverName = driver['name'] as String? ?? '—';
+    final code = c['verificationCode'] as String? ?? '——';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Route row
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('PICKUP',
+                      style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey.shade500,
+                          letterSpacing: 0.8)),
+                  const SizedBox(height: 2),
+                  Text(pickup,
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w700),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                children: [
+                  Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                          color: accent, shape: BoxShape.circle)),
+                  Container(width: 2, height: 20, color: accent),
+                  const Icon(Icons.directions_car, size: 16, color: accent),
+                  Container(width: 2, height: 20, color: accent),
+                  Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                          color: accent, shape: BoxShape.circle)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('DROPOFF',
+                      style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey.shade500,
+                          letterSpacing: 0.8)),
+                  const SizedBox(height: 2),
+                  Text(dropoff,
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w700),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        // Driver + code row
+        Row(
+          children: [
+            Icon(Icons.person, size: 14, color: Colors.grey.shade500),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text('$driverName · $vehicleType',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis),
+            ),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6)),
+              child: Text('Code: $code',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: accent,
+                      letterSpacing: 2)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildStatusBadge(String status) {
     final normalized =
         status.toLowerCase() == 'canceled' ? 'cancelled' : status.toLowerCase();
@@ -966,7 +1138,9 @@ class _MyBookingsState extends State<MyBookings>
                     ? Icons.hotel_outlined
                     : _selectedType == 'Train'
                         ? Icons.train_outlined
-                        : Icons.airplane_ticket_outlined,
+                        : _selectedType == 'Car'
+                            ? Icons.directions_car_outlined
+                            : Icons.airplane_ticket_outlined,
                 size: 64,
                 color: _gold,
               ),

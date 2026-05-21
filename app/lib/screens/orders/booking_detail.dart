@@ -53,6 +53,11 @@ class _BookingDetailState extends State<BookingDetail> {
     final bookingType = _booking['bookingType'] ?? 'flight';
     final isTrainBooking = bookingType == 'train';
     final isHotelBooking = bookingType == 'hotel';
+    final isCarBooking = bookingType == 'car';
+
+    if (isCarBooking) {
+      return _buildCarDetailScaffold();
+    }
 
     return Scaffold(
       backgroundColor: TravelloTheme.paperLightContainerLowest,
@@ -105,6 +110,304 @@ class _BookingDetailState extends State<BookingDetail> {
         ),
       ),
       bottomNavigationBar: _buildBottomBar(),
+    );
+  }
+
+  // ── Car booking detail scaffold ──────────────────────────────────────────
+
+  Widget _buildCarDetailScaffold() {
+    final c = (_booking['carDetails'] as Map?)?.cast<String, dynamic>() ?? {};
+    final driver = (c['driver'] as Map?)?.cast<String, dynamic>() ?? {};
+    final status = (_booking['status'] ?? 'confirmed').toString();
+    const accent = Color(0xFF1565C0);
+
+    final pickup = c['pickup'] as String? ?? '—';
+    final dropoff = c['dropoff'] as String? ?? '—';
+    final vehicleType = c['vehicleType'] as String? ?? '—';
+    final pickupDt = c['pickupDatetime'] as String? ?? '';
+    final code = c['verificationCode'] as String? ?? '——';
+    final amount = (_booking['total'] as num?)?.toDouble() ?? 0.0;
+
+    String formattedDt = pickupDt;
+    try {
+      if (pickupDt.isNotEmpty) {
+        final dt = DateTime.parse(pickupDt).toLocal();
+        formattedDt = DateFormat('d MMM yyyy  •  HH:mm').format(dt);
+      }
+    } catch (_) {}
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF0F4FF),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: accent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          onPressed: () => Get.back(),
+        ),
+        title: Text(
+          'Car Booking Details',
+          style: TravelloTheme.subtitle
+              .copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // ── Status + Code header ──────────────────────────────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1565C0), Color(0xFF1976D2)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.directions_car,
+                        color: Colors.white, size: 36),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    status == 'confirmed' ? 'Booking Confirmed' : status.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'VERIFICATION CODE',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    code,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 48,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Share this code with your driver to verify identity',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 11,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── Route card ──────────────────────────────────────────────
+            _carSection(
+              title: 'Trip Route',
+              icon: Icons.route,
+              child: Column(
+                children: [
+                  _carRow(Icons.location_on, 'Pickup', pickup, Colors.green.shade600),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 24),
+                    child: Column(
+                      children: List.generate(
+                        3,
+                        (_) => Container(
+                          width: 2,
+                          height: 6,
+                          margin: const EdgeInsets.symmetric(vertical: 1),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(1),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _carRow(Icons.location_on, 'Dropoff', dropoff, Colors.red.shade600),
+                  if (formattedDt.isNotEmpty) ...[
+                    const Divider(height: 20),
+                    _carRow(Icons.schedule, 'Pickup Time', formattedDt, accent),
+                  ],
+                  const Divider(height: 20),
+                  _carRow(Icons.directions_car, 'Vehicle', vehicleType, accent),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Driver card ──────────────────────────────────────────────
+            _carSection(
+              title: 'Driver Details',
+              icon: Icons.person,
+              child: Column(
+                children: [
+                  _carRow(Icons.person, 'Name', driver['name'] as String? ?? '—', accent),
+                  const Divider(height: 16),
+                  _carRow(Icons.phone, 'Phone', driver['phone'] as String? ?? '—', accent),
+                  const Divider(height: 16),
+                  _carRow(
+                    Icons.directions_car,
+                    'Vehicle',
+                    '${driver['vehicleColor'] ?? ''} ${driver['vehicleMake'] ?? ''} ${driver['vehicleModel'] ?? ''}'.trim(),
+                    accent,
+                  ),
+                  const Divider(height: 16),
+                  _carRow(Icons.confirmation_number, 'Plate', driver['vehiclePlate'] as String? ?? '—', accent),
+                  if ((driver['rating'] as num?) != null) ...[
+                    const Divider(height: 16),
+                    _carRow(Icons.star_rounded, 'Rating',
+                        '${(driver['rating'] as num).toStringAsFixed(1)} ★',
+                        Colors.amber.shade700),
+                  ],
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Payment card ─────────────────────────────────────────────
+            _carSection(
+              title: 'Payment',
+              icon: Icons.payments_outlined,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Total Fare',
+                      style: TextStyle(
+                          fontSize: 14, color: Colors.grey.shade600)),
+                  Text(
+                    'PKR ${amount.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1565C0),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 80),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.fromLTRB(
+            16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SizedBox(
+          height: 50,
+          child: ElevatedButton.icon(
+            onPressed: () => Get.back(),
+            icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+            label: const Text('Done',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: accent,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _carSection(
+      {required String title,
+      required IconData icon,
+      required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(icon, size: 16, color: const Color(0xFF1565C0)),
+            const SizedBox(width: 8),
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1565C0))),
+          ]),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _carRow(IconData icon, String label, String value, Color iconColor) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: iconColor),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 72,
+          child: Text(label,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade600)),
+        ),
+        Expanded(
+          child: Text(value,
+              style: const TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w600)),
+        ),
+      ],
     );
   }
 

@@ -128,6 +128,8 @@ async def book_flight(payload: FlightBookRequest, user: CurrentUser):
             "baggage_allowance": offer.baggage_allowance,
             "is_refundable": offer.is_refundable,
         }
+        if payload.facilities:
+            raw_payload.update(payload.facilities)
         total_amount = offer.total_price_pkr
         origin = first_seg.departure_airport if first_seg else None
         destination = last_seg.arrival_airport if last_seg else None
@@ -183,6 +185,8 @@ async def book_flight(payload: FlightBookRequest, user: CurrentUser):
             "is_refundable": payload.is_refundable or False,
             "airline_name": payload.airline_name,
         }
+        if payload.facilities:
+            raw_payload.update(payload.facilities)
         total_amount = payload.total_price_pkr
         origin = payload.origin.upper()
         destination = payload.destination.upper()

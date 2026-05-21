@@ -5,6 +5,7 @@ import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/widgets/settings/setting_list.dart';
 import 'package:flight_app/widgets/profile/profile_banner_header.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flight_app/utils/auth_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:get/get.dart';
@@ -20,6 +21,7 @@ class ProfileMain extends StatefulWidget {
 class _ProfileMainState extends State<ProfileMain> {
   String _userName = 'User';
   String _userAvatar = '';
+  bool _isRemoving = false;
 
   @override
   void initState() {
@@ -36,7 +38,7 @@ class _ProfileMainState extends State<ProfileMain> {
 
   Future<void> _loadCurrentUser() async {
     final user = await AuthService.getCurrentUser();
-    if (mounted) {
+    if (mounted && !_isRemoving) {
       setState(() {
         _userName = user?['name'] ?? 'User';
         _userAvatar = (user?['avatar'] ?? '').toString();
@@ -116,8 +118,19 @@ class _ProfileMainState extends State<ProfileMain> {
       if (user == null) return;
 
       final bytes = await File(picked.path).readAsBytes();
-      final ext = picked.path.split('.').last;
+      final ext = picked.path.split('.').last.toLowerCase();
       final path = '${user.id}/avatar.$ext';
+
+      // Delete any existing avatar files (different extension won't upsert-overwrite)
+      try {
+        final existing = await Supabase.instance.client.storage
+            .from('avatars')
+            .list(path: user.id);
+        if (existing.isNotEmpty) {
+          final oldPaths = existing.map((f) => '${user.id}/${f.name}').toList();
+          await Supabase.instance.client.storage.from('avatars').remove(oldPaths);
+        }
+      } catch (_) {}
 
       await Supabase.instance.client.storage
           .from('avatars')
@@ -161,38 +174,17 @@ class _ProfileMainState extends State<ProfileMain> {
   }
 
   Future<void> _removeAvatar() async {
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return;
+    final oldAvatar = _userAvatar;
 
-      // Delete all files under this user's folder in storage
-      final files = await Supabase.instance.client.storage
-          .from('avatars')
-          .list(path: user.id);
+    // Immediately clear UI — guard prevents any background _loadCurrentUser from overwriting
+    _isRemoving = true;
+    setState(() => _userAvatar = '');
 
-      if (files.isNotEmpty) {
-        final paths = files.map((f) => '${user.id}/${f.name}').toList();
-        await Supabase.instance.client.storage
-            .from('avatars')
-            .remove(paths);
-      }
+    final removed = await ApiClient.removeAvatar();
 
-      // Clear avatar_url in profile
-      await AuthService.updateUserProfile(avatarUrl: '');
-
-      setState(() => _userAvatar = '');
-
-      if (mounted) {
-        Get.snackbar(
-          'Photo Removed',
-          'Your profile photo has been removed.',
-          backgroundColor: Colors.green.shade600,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
-          duration: const Duration(seconds: 2),
-        );
-      }
-    } catch (e) {
+    if (!removed) {
+      _isRemoving = false;
+      setState(() => _userAvatar = oldAvatar); // restore on failure
       if (mounted) {
         Get.snackbar(
           'Remove Failed',
@@ -202,6 +194,21 @@ class _ProfileMainState extends State<ProfileMain> {
           snackPosition: SnackPosition.TOP,
         );
       }
+      return;
+    }
+
+    await AuthService.updateUserProfile(avatarUrl: '');
+    _isRemoving = false;
+
+    if (mounted) {
+      Get.snackbar(
+        'Photo Removed',
+        'Your profile photo has been removed.',
+        backgroundColor: Colors.green.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 2),
+      );
     }
   }
 

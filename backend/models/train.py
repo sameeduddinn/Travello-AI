@@ -89,3 +89,4 @@ class TrainBookRequest(BaseModel):
     arrival_at:      Optional[str] = None  # ISO datetime string
     class_name:      Optional[str] = None
     total_price_pkr: Optional[float] = None
+    facilities:      Optional[dict] = None  # car transfer selections from facilities screen

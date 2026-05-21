@@ -52,6 +52,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
   bool _transferAdded = false;
   String _transferVehicleType = 'Sedan';
   double _transferFee = 0.0;
+  Map<String, dynamic> _facilities = {};
 
   // Round trip support
   bool _isRoundTrip = false;
@@ -120,9 +121,23 @@ class _BookingCheckoutState extends State<BookingCheckout> {
     }
     _seatTotal = (args['seatTotal'] as double?) ?? 0.0;
 
-    // Ground Transfer
+    // Ground Transfer — read all fields so they flow into raw_payload
     _transferAdded = args['transferAdded'] as bool? ?? false;
     _transferVehicleType = args['transferVehicleType'] as String? ?? 'Sedan';
+    _facilities = {
+      'transferAdded': _transferAdded,
+      'transferVehicleType': _transferVehicleType,
+      'transferPickupLocation': args['transferPickupLocation'] as String? ?? '',
+      'arrivalTransferAdded': args['arrivalTransferAdded'] as bool? ?? false,
+      'arrivalTransferVehicleType': args['arrivalTransferVehicleType'] as String? ?? 'Sedan',
+      'arrivalTransferPickupLocation': args['arrivalTransferPickupLocation'] as String? ?? '',
+      'returnTransferAdded': args['returnTransferAdded'] as bool? ?? false,
+      'returnTransferVehicleType': args['returnTransferVehicleType'] as String? ?? 'Sedan',
+      'returnTransferPickupLocation': args['returnTransferPickupLocation'] as String? ?? '',
+      'finalArrivalTransferAdded': args['finalArrivalTransferAdded'] as bool? ?? false,
+      'finalArrivalTransferVehicleType': args['finalArrivalTransferVehicleType'] as String? ?? 'Sedan',
+      'finalArrivalTransferPickupLocation': args['finalArrivalTransferPickupLocation'] as String? ?? '',
+    };
     _transferFee = _transferAdded
         ? (const {
               'Sedan': 800.0,
@@ -297,6 +312,7 @@ class _BookingCheckoutState extends State<BookingCheckout> {
         totalPricePkr: _grandTotal,
         isRefundable: _flight.isRefundable,
         duration: _flight.duration,
+        facilities: _facilities.isNotEmpty ? _facilities : null,
       );
       _backendBookingId =
           booking['booking_uuid']?.toString() ?? booking['id']?.toString();

@@ -50,6 +50,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
   bool _transferAdded = false;
   String _transferVehicleType = 'Sedan';
   double _transferFee = 0.0;
+  Map<String, dynamic> _facilities = {};
 
   bool _agreedToTerms = false;
   bool _showTermsError = false;
@@ -119,9 +120,23 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
     }
     _seatTotal = args['seatTotal'] as double? ?? 0.0;
 
-    // Ground Transfer
+    // Ground Transfer — read all fields so they flow into raw_payload
     _transferAdded = args['transferAdded'] as bool? ?? false;
     _transferVehicleType = args['transferVehicleType'] as String? ?? 'Sedan';
+    _facilities = {
+      'transferAdded': _transferAdded,
+      'transferVehicleType': _transferVehicleType,
+      'transferPickupLocation': args['transferPickupLocation'] as String? ?? '',
+      'arrivalTransferAdded': args['arrivalTransferAdded'] as bool? ?? false,
+      'arrivalTransferVehicleType': args['arrivalTransferVehicleType'] as String? ?? 'Sedan',
+      'arrivalTransferPickupLocation': args['arrivalTransferPickupLocation'] as String? ?? '',
+      'returnTransferAdded': args['returnTransferAdded'] as bool? ?? false,
+      'returnTransferVehicleType': args['returnTransferVehicleType'] as String? ?? 'Sedan',
+      'returnTransferPickupLocation': args['returnTransferPickupLocation'] as String? ?? '',
+      'finalArrivalTransferAdded': args['finalArrivalTransferAdded'] as bool? ?? false,
+      'finalArrivalTransferVehicleType': args['finalArrivalTransferVehicleType'] as String? ?? 'Sedan',
+      'finalArrivalTransferPickupLocation': args['finalArrivalTransferPickupLocation'] as String? ?? '',
+    };
     _transferFee = _transferAdded
         ? (const {
               'Sedan': 800.0,
@@ -308,6 +323,7 @@ class _RailwayBookingCheckoutState extends State<RailwayBookingCheckout> {
         arrivalAt: depIso,
         className: selectedClassForBooking,
         totalPricePkr: _grandTotal > 0 ? _grandTotal : null,
+        facilities: _facilities.isNotEmpty ? _facilities : null,
       );
 
       _backendBookingId =

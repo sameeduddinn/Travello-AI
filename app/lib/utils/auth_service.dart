@@ -92,9 +92,8 @@ class AuthService {
         .trim();
     final phone =
         (profile?['phone'] ?? metadata['phone'] ?? '').toString().trim();
-    final avatar = (profile?['avatar_url'] ?? metadata['avatar_url'] ?? '')
-        .toString()
-        .trim();
+    // Use profiles table only — auth metadata is cached and may be stale after removal
+    final avatar = (profile?['avatar_url'] ?? '').toString().trim();
 
     return {
       'id': user.id,

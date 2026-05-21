@@ -600,10 +600,10 @@ async def _fetch_aviationstack(
             price_pkr = round(base_price * cfg["multiplier"])
 
             segment = FlightSegment(
-                carrier_code=airline_info.get("iata", "XX"),
-                flight_number=flight_info.get("iata", "XX000"),
-                departure_airport=dep_info.get("iata", origin),
-                arrival_airport=arr_info.get("iata", destination),
+                carrier_code=airline_info.get("iata") or "XX",
+                flight_number=flight_info.get("iata") or "XX000",
+                departure_airport=dep_info.get("iata") or origin,
+                arrival_airport=arr_info.get("iata") or destination,
                 departure_time=dep_dt,
                 arrival_time=arr_dt,
                 duration=_duration_str(dur_min),
@@ -611,7 +611,7 @@ async def _fetch_aviationstack(
             )
             offers.append(
                 FlightOffer(
-                    offer_id=f"AS-{origin}-{destination}-{flight_info.get('iata', 'XX000')}-{travel_date}-{_requested_cabin}",
+                    offer_id=f"AS-{origin}-{destination}-{flight_info.get('iata') or 'XX000'}-{travel_date}-{_requested_cabin}",
                     itineraries=[FlightItinerary(
                         duration=_duration_str(dur_min),
                         segments=[segment],

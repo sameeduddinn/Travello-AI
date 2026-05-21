@@ -42,6 +42,19 @@ class HeroSection extends StatelessWidget {
           ],
           'accentColor': TravelloTheme.primaryMain,
         };
+      case 'car':
+        return {
+          'image': 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&q=80',
+          'isNetwork': true,
+          'title': 'Book a Driver, Anytime',
+          'subtitle': 'Professional drivers across Pakistan',
+          'cta': 'Fill Form Below',
+          'gradient': [
+            const Color(0xFF0A0E1A).withValues(alpha: 0.72),
+            const Color(0xFF1A2340).withValues(alpha: 0.45),
+          ],
+          'accentColor': TravelloTheme.primaryMain,
+        };
       case 'flight':
       default:
         return {

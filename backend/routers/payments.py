@@ -12,6 +12,7 @@ from services.payment_service import (
     get_payment_history,
     initiate_payment,
 )
+from services.car_service import book_car_transfers
 from services.email_service import send_booking_confirmation
 
 logger = logging.getLogger(__name__)
@@ -46,9 +47,10 @@ async def initiate_payment_endpoint(
         email_override=payload.email,
     )
 
-    # Bank transfer payment: booking is already paid — send confirmation in background
+    # Booking paid — send confirmation and assign car drivers in background
     if not result.otp_required:
         background_tasks.add_task(send_booking_confirmation, payload.booking_id)
+        background_tasks.add_task(book_car_transfers, payload.booking_id)
 
     return result
 

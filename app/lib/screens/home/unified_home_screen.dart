@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:flight_app/components/home/service_tabs.dart';
 import 'package:flight_app/components/home/hero_section.dart';
+import 'package:flight_app/components/home/car_booking_form.dart';
 import 'package:flight_app/widgets/home/quick_access_features.dart';
 import 'package:flight_app/widgets/home/dynamic_destination_cards.dart';
 import 'package:flight_app/widgets/home/package_list_slider.dart';
@@ -96,6 +97,9 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
         break;
       case 'hotel':
         Get.toNamed(AppLink.hotelSearch);
+        break;
+      case 'car':
+        // Car tab has an inline booking form — no navigation needed
         break;
     }
   }
@@ -409,6 +413,8 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
         return _buildTrainContent();
       case 'hotel':
         return _buildHotelContent();
+      case 'car':
+        return _buildCarContent();
       default:
         return _buildFlightContent();
     }
@@ -486,6 +492,77 @@ class _UnifiedHomeScreenState extends State<UnifiedHomeScreen> {
                 Get.toNamed(AppLink.hotelSearch, arguments: {'city': city}),
           ),
         ),
+        SizedBox(height: 24.h),
+      ],
+    );
+  }
+
+  /// 🚗 Car-specific content — inline booking form
+  Widget _buildCarContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const CarBookingForm(),
+        SizedBox(height: 24.h),
+
+        // Why use Travello AI drivers
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: 16.w),
+          padding: EdgeInsets.all(18.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Why choose Travello AI Drivers?',
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey.shade900,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              ...[
+                ('Verified & insured drivers nationwide', Icons.verified_user_rounded),
+                ('4-digit code confirms driver identity', Icons.security_rounded),
+                ('Sedan, SUV & Van options available', Icons.directions_car_rounded),
+                ('Available across all major cities', Icons.location_on_rounded),
+              ].map((item) => Padding(
+                padding: EdgeInsets.only(bottom: 10.h),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: TravelloTheme.primaryMain.withValues(alpha: 0.10),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(item.$2, size: 16, color: TravelloTheme.primaryMain),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Text(
+                        item.$1,
+                        style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade700),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+            ],
+          ),
+        ),
+
         SizedBox(height: 24.h),
       ],
     );

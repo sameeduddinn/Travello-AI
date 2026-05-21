@@ -197,6 +197,7 @@ class ApiClient {
     double? totalPricePkr,
     bool isRefundable = false,
     String? duration,
+    Map<String, dynamic>? facilities,
   }) async {
     final res = await http
         .post(
@@ -218,6 +219,8 @@ class ApiClient {
             if (totalPricePkr != null) 'total_price_pkr': totalPricePkr,
             'is_refundable': isRefundable,
             if (duration != null) 'duration': duration,
+            if (facilities != null && facilities.isNotEmpty)
+              'facilities': facilities,
           }),
         )
         .timeout(const Duration(seconds: 15));
@@ -243,6 +246,7 @@ class ApiClient {
     String? arrivalAt,
     String? className,
     double? totalPricePkr,
+    Map<String, dynamic>? facilities,
   }) async {
     final res = await http
         .post(
@@ -263,6 +267,8 @@ class ApiClient {
             if (arrivalAt != null) 'arrival_at': arrivalAt,
             if (className != null) 'class_name': className,
             if (totalPricePkr != null) 'total_price_pkr': totalPricePkr,
+            if (facilities != null && facilities.isNotEmpty)
+              'facilities': facilities,
           }),
         )
         .timeout(const Duration(seconds: 15));
@@ -1121,6 +1127,65 @@ class ApiClient {
       return res.statusCode >= 200 && res.statusCode < 300;
     } catch (_) {
       return false;
+    }
+  }
+
+  /// DELETE /auth/avatar — removes avatar from Supabase storage (via service role) and clears avatar_url.
+  static Future<bool> removeAvatar() async {
+    try {
+      final res = await http
+          .delete(
+            Uri.parse('$_baseUrl/auth/avatar'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 15));
+      return res.statusCode >= 200 && res.statusCode < 300;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// POST /cars/book — book a standalone driver (Car tab on home screen).
+  /// Returns booking confirmation with driver info and verification code.
+  static Future<Map<String, dynamic>> bookCar({
+    required String pickupLocation,
+    required String dropoffLocation,
+    required String vehicleType,
+    required String pickupDatetime,
+    String? contactEmail,
+  }) async {
+    final res = await http
+        .post(
+          Uri.parse('$_baseUrl/cars/book'),
+          headers: _headers,
+          body: jsonEncode({
+            'pickup_location': pickupLocation,
+            'dropoff_location': dropoffLocation,
+            'vehicle_type': vehicleType,
+            'pickup_datetime': pickupDatetime,
+            if (contactEmail != null) 'contact_email': contactEmail,
+          }),
+        )
+        .timeout(const Duration(seconds: 30));
+    _throwIfError(res, 'Book car');
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
+  /// GET /cars/bookings — fetch all car bookings for the logged-in user.
+  static Future<List<Map<String, dynamic>>> getCarBookings() async {
+    if (_token == null) return [];
+    try {
+      final res = await http
+          .get(Uri.parse('$_baseUrl/cars/bookings'), headers: _headers)
+          .timeout(const Duration(seconds: 20));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final raw = data['bookings'] as List<dynamic>? ?? [];
+        return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
     }
   }
 

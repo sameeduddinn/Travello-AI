@@ -632,3 +632,400 @@ async def send_cancellation_email(booking_uuid: str) -> dict:
         "resend_id": result.get("id"),
         "reason": result.get("reason"),
     }
+
+
+# =============================================================================
+# Car transfer / driver assignment email
+# =============================================================================
+
+_TRANSFER_LABELS = {
+    "departure":        "Departure Transfer — Your Location → Airport",
+    "arrival":          "Arrival Transfer — Airport → Your Destination",
+    "return_departure": "Return Transfer — Your Location → Airport",
+    "return_arrival":   "Final Arrival Transfer — Airport → Your Home",
+    "standalone":       "On-Demand Driver Booking",
+}
+
+
+def _car_booking_email_html(
+    driver: dict,
+    transfer_type: str,
+    pickup_location: str,
+    verification_code: str,
+    booking: dict,
+) -> str:
+    transfer_label = _TRANSFER_LABELS.get(transfer_type, transfer_type.replace("_", " ").title())
+    booking_ref    = booking.get("booking_id", "—")
+    origin         = booking.get("origin", "—")
+    destination    = booking.get("destination", "—")
+
+    driver_name    = driver.get("name", "—")
+    driver_phone   = driver.get("phone", "—")
+    vehicle_make   = driver.get("vehicle_make", "")
+    vehicle_model  = driver.get("vehicle_model", "")
+    vehicle_plate  = driver.get("vehicle_plate", "—")
+    vehicle_color  = driver.get("vehicle_color", "—")
+    rating         = driver.get("rating", "—")
+    vehicle_full   = f"{vehicle_make} {vehicle_model}".strip() or driver.get("vehicle_type", "—")
+
+    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8">{_BASE_STYLE}
+<style>
+  .verify-box {{
+    background: #1a73e8; border-radius: 12px; text-align: center;
+    padding: 24px 20px; margin: 20px 0;
+  }}
+  .verify-box .v-label {{
+    font-size: 12px; color: rgba(255,255,255,0.85); text-transform: uppercase;
+    letter-spacing: 2px;
+  }}
+  .verify-box .v-code {{
+    font-size: 52px; font-weight: 900; color: #fff; letter-spacing: 14px;
+    font-family: monospace; margin-top: 6px;
+  }}
+  .verify-box .v-note {{
+    font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 8px;
+  }}
+  .driver-card {{
+    background: #f8f9fa; border-radius: 10px; padding: 16px 20px;
+    border-left: 4px solid #1a73e8; margin-bottom: 12px;
+  }}
+</style>
+</head>
+<body><div class="wrapper">
+  <div class="header">
+    <h1>🚗 Driver Assigned</h1>
+    <p>{transfer_label}</p>
+  </div>
+  <div class="body">
+
+    <div class="section">
+      <div class="section-title">Trip Reference</div>
+      <div class="info-row">
+        <span class="label">Booking Ref: </span>
+        <span class="value">{booking_ref}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Route: </span>
+        <span class="value">{origin} → {destination}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Pickup Location: </span>
+        <span class="value">{pickup_location}</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Your Driver</div>
+      <div class="driver-card">
+        <div style="font-size:16px;font-weight:700;color:#222">{driver_name}</div>
+        <div style="font-size:13px;color:#555;margin-top:4px">📞 {driver_phone}</div>
+        <div style="font-size:13px;color:#555;margin-top:4px">
+          🚘 {vehicle_full} &nbsp;|&nbsp; {vehicle_color} &nbsp;|&nbsp;
+          <strong>{vehicle_plate}</strong>
+        </div>
+        <div style="font-size:13px;color:#f9a825;margin-top:4px">
+          ★ {rating} &nbsp;<span style="color:#888">rating</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verify-box">
+      <div class="v-label">Verification Code</div>
+      <div class="v-code">{verification_code}</div>
+      <div class="v-note">
+        Show this code to your driver before boarding.<br>
+        Your driver has the same code — always verify before getting in.
+      </div>
+    </div>
+
+    <div style="background:#fff8e1;border-left:4px solid #f9a825;
+                padding:14px 18px;border-radius:6px;font-size:13px;color:#555">
+      <strong>How it works:</strong> Ask your driver for the 4-digit code above.
+      If the code does not match, do not board and contact us at
+      <a href="mailto:support@travello.ai" style="color:#1a73e8">support@travello.ai</a>.
+    </div>
+
+  </div>
+  <div class="footer">
+    <p>Thank you for choosing <strong>Travello AI</strong></p>
+    <p style="margin-top:8px">Contact: <a href="mailto:support@travello.ai">support@travello.ai</a></p>
+    <p style="margin-top:8px;color:#ccc">&copy; 2024 Travello AI</p>
+  </div>
+</div></body></html>"""
+
+
+async def send_car_booking_email(
+    contact_email: str,
+    driver: dict,
+    transfer_type: str,
+    pickup_location: str,
+    verification_code: str,
+    booking: dict,
+) -> dict:
+    """Send a driver assignment email for one car transfer leg."""
+    transfer_label = _TRANSFER_LABELS.get(transfer_type, transfer_type.replace("_", " ").title())
+    booking_ref    = booking.get("booking_id", "")
+    subject        = f"🚗 Driver Assigned — {transfer_label} ({booking_ref})"
+
+    html = _car_booking_email_html(
+        driver=driver,
+        transfer_type=transfer_type,
+        pickup_location=pickup_location,
+        verification_code=verification_code,
+        booking=booking,
+    )
+
+    result = await send_email(to=contact_email, subject=subject, html=html)
+    sent   = result.get("id") not in ("disabled", "failed", "skipped", None)
+    logger.info(
+        "Car booking email: sent=%s to=%s transfer=%s code=%s",
+        sent, contact_email, transfer_type, verification_code,
+    )
+    return {"sent": sent, "to": contact_email, "subject": subject}
+
+
+# =============================================================================
+# Internal admin notification — sent to Travello AI on every car booking
+# =============================================================================
+
+_INTERNAL_EMAIL = "travelloo.ai@gmail.com"
+
+
+async def send_internal_car_notification(
+    user_email: str,
+    driver: dict,
+    transfer_type: str,
+    pickup_location: str,
+    dropoff_location: str | None,
+    vehicle_type: str,
+    verification_code: str,
+    booking_id: str,
+    pickup_datetime: str | None = None,
+    total_amount: int = 0,
+) -> None:
+    """
+    Fire-and-forget internal email to Travello AI with full car booking details.
+    Never raises — all errors are logged.
+    """
+    transfer_label = _TRANSFER_LABELS.get(transfer_type, transfer_type.replace("_", " ").title())
+    subject = f"🚗 New Car Booking — {user_email} — {vehicle_type} ({transfer_label})"
+
+    driver_name   = driver.get("name", "—")
+    driver_phone  = driver.get("phone", "—")
+    vehicle_full  = f"{driver.get('vehicle_color', '')} {driver.get('vehicle_make', '')} {driver.get('vehicle_model', '')}".strip()
+    vehicle_plate = driver.get("vehicle_plate", "—")
+    rating        = driver.get("rating", "—")
+    dropoff_row   = f"<tr><td style='padding:6px 12px;color:#555;font-weight:600'>Dropoff</td><td style='padding:6px 12px'>{dropoff_location}</td></tr>" if dropoff_location else ""
+    datetime_row  = f"<tr><td style='padding:6px 12px;color:#555;font-weight:600'>Pickup Time</td><td style='padding:6px 12px'>{pickup_datetime}</td></tr>" if pickup_datetime else ""
+    amount_row    = f"<tr><td style='padding:6px 12px;color:#555;font-weight:600'>Fare</td><td style='padding:6px 12px'>PKR {total_amount:,}</td></tr>" if total_amount else ""
+
+    html = f"""<!DOCTYPE html><html><body style="margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5">
+<div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+  <div style="background:#1a237e;padding:20px 24px">
+    <h2 style="margin:0;color:#fff;font-size:18px">🚗 New Car Booking — Internal Notification</h2>
+    <p style="margin:6px 0 0;color:rgba(255,255,255,.75);font-size:13px">{transfer_label}</p>
+  </div>
+  <div style="padding:24px">
+
+    <h3 style="margin:0 0 12px;font-size:14px;color:#333;text-transform:uppercase;letter-spacing:.8px">Booking Info</h3>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <tr style="background:#f9f9f9"><td style="padding:6px 12px;color:#555;font-weight:600">Booking ID</td><td style="padding:6px 12px;font-family:monospace">{booking_id}</td></tr>
+      <tr><td style="padding:6px 12px;color:#555;font-weight:600">User Email</td><td style="padding:6px 12px">{user_email}</td></tr>
+      <tr style="background:#f9f9f9"><td style="padding:6px 12px;color:#555;font-weight:600">Type</td><td style="padding:6px 12px">{transfer_label}</td></tr>
+      <tr><td style="padding:6px 12px;color:#555;font-weight:600">Pickup</td><td style="padding:6px 12px">{pickup_location}</td></tr>
+      {dropoff_row}
+      {datetime_row}
+      {amount_row}
+    </table>
+
+    <h3 style="margin:0 0 12px;font-size:14px;color:#333;text-transform:uppercase;letter-spacing:.8px">Driver Info</h3>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <tr style="background:#f9f9f9"><td style="padding:6px 12px;color:#555;font-weight:600">Name</td><td style="padding:6px 12px">{driver_name}</td></tr>
+      <tr><td style="padding:6px 12px;color:#555;font-weight:600">Phone</td><td style="padding:6px 12px">{driver_phone}</td></tr>
+      <tr style="background:#f9f9f9"><td style="padding:6px 12px;color:#555;font-weight:600">Vehicle</td><td style="padding:6px 12px">{vehicle_full} ({vehicle_type})</td></tr>
+      <tr><td style="padding:6px 12px;color:#555;font-weight:600">Plate</td><td style="padding:6px 12px;font-weight:700">{vehicle_plate}</td></tr>
+      <tr style="background:#f9f9f9"><td style="padding:6px 12px;color:#555;font-weight:600">Rating</td><td style="padding:6px 12px">★ {rating}</td></tr>
+    </table>
+
+    <div style="background:#1565c0;border-radius:8px;padding:16px 20px;text-align:center">
+      <p style="margin:0;color:rgba(255,255,255,.8);font-size:11px;letter-spacing:1.5px;text-transform:uppercase">Verification Code</p>
+      <p style="margin:8px 0 4px;color:#fff;font-size:40px;font-weight:800;letter-spacing:10px;font-family:monospace">{verification_code}</p>
+    </div>
+
+  </div>
+  <div style="background:#f5f5f5;padding:14px 24px;font-size:11px;color:#999;text-align:center">
+    Travello AI · Internal Notification · Do not reply
+  </div>
+</div>
+</body></html>"""
+
+    try:
+        await send_email(to=_INTERNAL_EMAIL, subject=subject, html=html)
+        logger.info("Internal car notification sent: booking=%s user=%s", booking_id, user_email)
+    except Exception as exc:
+        logger.warning("Internal car notification failed: booking=%s error=%s", booking_id, exc)
+
+
+async def send_consolidated_car_booking_email(
+    contact_email: str,
+    legs: list[dict],
+    booking: dict,
+) -> dict:
+    """
+    Send ONE email to the user covering all their car transfer legs for a booking.
+    Each leg dict: transfer_type, vehicle_type, pickup_location, driver, code.
+    """
+    booking_ref = booking.get("booking_id", "—")
+    origin      = booking.get("origin", "—")
+    destination = booking.get("destination", "—")
+    leg_count   = len(legs)
+    subject     = f"🚗 Your Car Transfers Confirmed — {leg_count} Driver(s) Assigned ({booking_ref})"
+
+    def _leg_block(leg: dict, index: int) -> str:
+        transfer_label = _TRANSFER_LABELS.get(leg["transfer_type"], leg["transfer_type"].replace("_", " ").title())
+        d = leg["driver"]
+        vehicle_full = f"{d.get('vehicle_color', '')} {d.get('vehicle_make', '')} {d.get('vehicle_model', '')}".strip() or "—"
+        return f"""
+    <div style="margin-bottom:28px;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden">
+      <!-- Leg header -->
+      <div style="background:#1565c0;padding:12px 18px">
+        <p style="margin:0;color:#fff;font-size:13px;font-weight:700;letter-spacing:.5px">
+          Transfer {index} of {leg_count} &nbsp;·&nbsp; {transfer_label}
+        </p>
+        <p style="margin:4px 0 0;color:rgba(255,255,255,.75);font-size:12px">
+          📍 {leg["pickup_location"]}
+        </p>
+      </div>
+      <!-- Verification code -->
+      <div style="background:#e3f0ff;padding:14px 18px;text-align:center;border-bottom:1px solid #e0e0e0">
+        <p style="margin:0;color:#1565c0;font-size:11px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase">Verification Code</p>
+        <p style="margin:8px 0 4px;color:#1565c0;font-size:46px;font-weight:800;letter-spacing:12px;font-family:monospace;line-height:1">{leg["code"]}</p>
+        <p style="margin:4px 0 0;font-size:11px;color:#555">Show this code to your driver before boarding</p>
+      </div>
+      <!-- Driver details -->
+      <div style="padding:14px 18px">
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="padding:5px 8px;color:#555;font-weight:600;width:38%;font-size:13px">Driver</td><td style="padding:5px 8px;font-size:13px">{d.get("name", "—")}</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:5px 8px;color:#555;font-weight:600;font-size:13px">Phone</td><td style="padding:5px 8px;font-size:13px">📞 {d.get("phone", "—")}</td></tr>
+          <tr><td style="padding:5px 8px;color:#555;font-weight:600;font-size:13px">Vehicle</td><td style="padding:5px 8px;font-size:13px">🚘 {vehicle_full} ({leg["vehicle_type"]})</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:5px 8px;color:#555;font-weight:600;font-size:13px">Plate No.</td><td style="padding:5px 8px;font-size:13px;font-weight:700">{d.get("vehicle_plate", "—")}</td></tr>
+          <tr><td style="padding:5px 8px;color:#555;font-weight:600;font-size:13px">Rating</td><td style="padding:5px 8px;font-size:13px;color:#f9a825">★ {d.get("rating", "—")}</td></tr>
+        </table>
+      </div>
+    </div>"""
+
+    legs_html = "".join(_leg_block(leg, i + 1) for i, leg in enumerate(legs))
+
+    html = f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f0f4f8;font-family:Arial,sans-serif">
+<div style="max-width:600px;margin:30px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.10)">
+
+  <!-- Header -->
+  <div style="background:linear-gradient(135deg,#1a237e,#1565c0);padding:28px 28px 22px">
+    <p style="margin:0;font-size:28px">🚗</p>
+    <h1 style="margin:8px 0 4px;color:#fff;font-size:22px;font-weight:800">Your Drivers Are Ready!</h1>
+    <p style="margin:0;color:rgba(255,255,255,.80);font-size:13px">
+      {leg_count} car transfer(s) confirmed &nbsp;·&nbsp; {origin} → {destination}
+    </p>
+  </div>
+
+  <!-- Booking ref -->
+  <div style="background:#f9f9f9;padding:12px 28px;border-bottom:1px solid #eee">
+    <p style="margin:0;font-size:12px;color:#888">Booking Reference</p>
+    <p style="margin:2px 0 0;font-size:14px;font-weight:700;font-family:monospace;color:#333">{booking_ref}</p>
+  </div>
+
+  <!-- Transfer legs -->
+  <div style="padding:24px 28px">
+    <p style="margin:0 0 20px;font-size:14px;color:#555">
+      Below are your assigned drivers for each transfer leg.
+      <strong>Always verify the 4-digit code before getting in the vehicle.</strong>
+    </p>
+    {legs_html}
+  </div>
+
+  <!-- Safety note -->
+  <div style="margin:0 28px 24px;background:#fff8e1;border-left:4px solid #f9a825;padding:14px 18px;border-radius:6px;font-size:13px;color:#555">
+    <strong>🔒 Safety Tip:</strong> Ask your driver to confirm the same 4-digit code shown above.
+    If codes don't match, do not board and contact us at
+    <a href="mailto:support@travello.ai" style="color:#1a73e8">support@travello.ai</a>.
+  </div>
+
+  <!-- Footer -->
+  <div style="background:#f5f5f5;padding:16px 28px;text-align:center;font-size:12px;color:#999">
+    <p style="margin:0">Thank you for choosing <strong style="color:#1565c0">Travello AI</strong></p>
+    <p style="margin:6px 0 0">&copy; 2024 Travello AI · <a href="mailto:support@travello.ai" style="color:#1a73e8">support@travello.ai</a></p>
+  </div>
+
+</div>
+</body></html>"""
+
+    result = await send_email(to=contact_email, subject=subject, html=html)
+    sent   = result.get("id") not in ("disabled", "failed", "skipped", None)
+    logger.info(
+        "Consolidated car email: sent=%s to=%s legs=%d ref=%s",
+        sent, contact_email, leg_count, booking_ref,
+    )
+    return {"sent": sent, "to": contact_email, "subject": subject}
+
+
+async def send_internal_car_booking_summary(
+    user_email: str,
+    booking_ref: str,
+    booking_route: str,
+    legs: list[dict],
+) -> None:
+    """
+    One consolidated internal email to Travello AI after a travel booking
+    with car transfers. Covers all legs (up to 4) in a single email.
+    Each leg dict: transfer_type, vehicle_type, pickup_location, driver, code.
+    Never raises.
+    """
+    leg_count = len(legs)
+    subject   = f"🚗 {leg_count} Car Transfer(s) Booked — {user_email} — Ref: {booking_ref}"
+
+    def _leg_html(leg: dict) -> str:
+        transfer_label = _TRANSFER_LABELS.get(leg["transfer_type"], leg["transfer_type"].replace("_", " ").title())
+        d = leg["driver"]
+        vehicle_full = f"{d.get('vehicle_color', '')} {d.get('vehicle_make', '')} {d.get('vehicle_model', '')}".strip()
+        return f"""
+        <div style="border:1px solid #e0e0e0;border-radius:8px;padding:16px;margin-bottom:16px">
+          <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#1a237e;text-transform:uppercase;letter-spacing:.6px">{transfer_label}</p>
+          <table style="width:100%;border-collapse:collapse">
+            <tr><td style="padding:4px 10px;color:#555;font-weight:600;width:40%">Pickup</td><td style="padding:4px 10px">{leg["pickup_location"]}</td></tr>
+            <tr style="background:#f9f9f9"><td style="padding:4px 10px;color:#555;font-weight:600">Vehicle</td><td style="padding:4px 10px">{leg["vehicle_type"]} — {vehicle_full}</td></tr>
+            <tr><td style="padding:4px 10px;color:#555;font-weight:600">Plate</td><td style="padding:4px 10px;font-weight:700">{d.get("vehicle_plate", "—")}</td></tr>
+            <tr style="background:#f9f9f9"><td style="padding:4px 10px;color:#555;font-weight:600">Driver</td><td style="padding:4px 10px">{d.get("name", "—")} · {d.get("phone", "—")} · ★ {d.get("rating", "—")}</td></tr>
+            <tr><td style="padding:4px 10px;color:#555;font-weight:600">Code</td><td style="padding:4px 10px;font-size:20px;font-weight:800;font-family:monospace;letter-spacing:6px;color:#1565c0">{leg["code"]}</td></tr>
+          </table>
+        </div>"""
+
+    legs_html = "".join(_leg_html(leg) for leg in legs)
+
+    html = f"""<!DOCTYPE html><html><body style="margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5">
+<div style="max-width:640px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+  <div style="background:#1a237e;padding:20px 24px">
+    <h2 style="margin:0;color:#fff;font-size:18px">🚗 Car Transfers Summary — Internal</h2>
+    <p style="margin:6px 0 0;color:rgba(255,255,255,.75);font-size:13px">{leg_count} transfer(s) confirmed for this booking</p>
+  </div>
+  <div style="padding:24px">
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <tr><td style="padding:6px 12px;color:#555;font-weight:600;width:35%">Booking Ref</td><td style="padding:6px 12px;font-family:monospace">{booking_ref}</td></tr>
+      <tr style="background:#f9f9f9"><td style="padding:6px 12px;color:#555;font-weight:600">Route</td><td style="padding:6px 12px">{booking_route}</td></tr>
+      <tr><td style="padding:6px 12px;color:#555;font-weight:600">User</td><td style="padding:6px 12px">{user_email}</td></tr>
+    </table>
+    <h3 style="margin:0 0 14px;font-size:14px;color:#333;text-transform:uppercase;letter-spacing:.8px">Transfer Legs</h3>
+    {legs_html}
+  </div>
+  <div style="background:#f5f5f5;padding:14px 24px;font-size:11px;color:#999;text-align:center">
+    Travello AI · Internal Notification · Do not reply
+  </div>
+</div>
+</body></html>"""
+
+    try:
+        await send_email(to=_INTERNAL_EMAIL, subject=subject, html=html)
+        logger.info("Internal car summary sent: ref=%s legs=%d user=%s", booking_ref, leg_count, user_email)
+    except Exception as exc:
+        logger.warning("Internal car summary failed: ref=%s error=%s", booking_ref, exc)

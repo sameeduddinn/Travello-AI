@@ -132,6 +132,42 @@ async def update_preferences(payload: PreferencesUpdate, user: CurrentUser):
     )
 
 
+# DELETE /auth/avatar
+
+@router.delete("/avatar", status_code=status.HTTP_200_OK)
+async def remove_avatar(user: CurrentUser):
+    """
+    Delete the user's avatar file(s) from Supabase storage using the service role
+    (bypasses RLS) and clear avatar_url in the profiles table.
+    """
+    uid = user.id
+
+    # List all files under the user's folder in the avatars bucket
+    try:
+        files = supabase_admin.storage.from_("avatars").list(path=uid)
+    except Exception as exc:
+        logger.warning("Could not list avatar files for user %s: %s", uid, exc)
+        files = []
+
+    if files:
+        paths = [f"{uid}/{f['name']}" for f in files if f.get("name")]
+        if paths:
+            try:
+                supabase_admin.storage.from_("avatars").remove(paths)
+                logger.info("Removed avatar files for user %s: %s", uid, paths)
+            except Exception as exc:
+                logger.warning("Could not remove avatar files for user %s: %s", uid, exc)
+
+    # Clear avatar_url in profile row
+    try:
+        supabase_admin.table("profiles").update({"avatar_url": None}).eq("id", uid).execute()
+    except Exception as exc:
+        logger.error("Could not clear avatar_url for user %s: %s", uid, exc)
+        raise HTTPException(status_code=500, detail="Failed to clear avatar in profile.")
+
+    return {"removed": True}
+
+
 # DELETE /auth/account
 
 @router.delete("/account", status_code=status.HTTP_200_OK)

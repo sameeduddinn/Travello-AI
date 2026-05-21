@@ -44,6 +44,11 @@ class _ServiceTabsState extends State<ServiceTabs>
       'label': 'Hotels',
       'icon': CupertinoIcons.building_2_fill,
     },
+    {
+      'id': 'car',
+      'label': 'Car',
+      'icon': CupertinoIcons.car_detailed,
+    },
   ];
 
   @override
@@ -70,7 +75,7 @@ class _ServiceTabsState extends State<ServiceTabs>
     return LayoutBuilder(
       builder: (context, constraints) {
         // Exact 1/3 of the widget's own width — no phantom padding deductions
-        final tabWidth = constraints.maxWidth / 3;
+        final tabWidth = constraints.maxWidth / 4;
         return _buildTabContent(context, tabWidth);
       },
     );
