@@ -364,7 +364,11 @@ CREATE POLICY "ai_feedback_delete_own" ON public.ai_feedback
 -- =============================================================================
 DROP VIEW IF EXISTS public.ai_conversation_summary;
 
-CREATE VIEW public.ai_conversation_summary AS
+-- security_invoker = true → the view runs with the QUERYING user's privileges,
+-- so RLS on ai_conversations/ai_messages is enforced. Without this, the view
+-- defaults to SECURITY DEFINER and bypasses RLS (CRITICAL data-leak risk).
+CREATE VIEW public.ai_conversation_summary
+WITH (security_invoker = true) AS
 SELECT
     c.id,
     c.user_id,
@@ -391,7 +395,10 @@ GROUP BY c.id, c.user_id, c.title, c.is_active, c.created_at, c.updated_at;
 -- =============================================================================
 DROP VIEW IF EXISTS public.agent_task_summary;
 
-CREATE VIEW public.agent_task_summary AS
+-- security_invoker = true → enforces RLS on agent_tasks/agent_actions for the
+-- querying user instead of bypassing it via the default SECURITY DEFINER behaviour.
+CREATE VIEW public.agent_task_summary
+WITH (security_invoker = true) AS
 SELECT
     t.id,
     t.user_id,
