@@ -1676,6 +1676,21 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
 
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
+
+    // Require a logged-in session before hitting the authenticated agent endpoint,
+    // so the user sees a clear prompt instead of a generic connection error.
+    if (!ApiClient.isLoggedIn) {
+      setState(() {
+        _messages.add(ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            message: 'Please log in to chat with the travel assistant.',
+            isUser: false,
+            timestamp: DateTime.now()));
+      });
+      _scrollToBottom();
+      return;
+    }
+
     setState(() {
       _messages.add(ChatMessage(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -2127,6 +2142,16 @@ class _CardPaymentSheetState extends State<_CardPaymentSheet> {
     try {
       final data = widget.bookingData;
       final amount = (data['total_price_pkr'] as num?)?.toDouble() ?? 0.0;
+
+      // Guard: never create a booking with a missing/zero price.
+      if (amount <= 0) {
+        setState(() {
+          _processing = false;
+          _errorMsg = 'This option has no confirmed price yet. Please ask the '
+              'assistant to show the exact fare before booking.';
+        });
+        return;
+      }
 
       // Step 1: Create booking via agent endpoint
       final booking = await ApiClient.agentBook(

@@ -33,6 +33,23 @@ class LLMError(RuntimeError):
 GeminiError = LLMError
 
 
+def _strip_code_fences(raw: str) -> str:
+    """
+    Remove a leading ```json / ``` fence and trailing ``` from an LLM response.
+    Uses exact prefix removal (NOT str.lstrip, which strips any chars in the set —
+    e.g. lstrip("```json") would also eat a leading 'n' or 's' from real content).
+    """
+    s = raw.strip()
+    if s.startswith("```"):
+        s = s[3:]                       # drop the opening ```
+        if s[:4].lower() == "json":     # drop an optional 'json' language tag
+            s = s[4:]
+        s = s.lstrip()                  # drop any whitespace/newline after the fence
+    if s.endswith("```"):
+        s = s[:-3]
+    return s.strip()
+
+
 # ── Message format helpers ────────────────────────────────────────────────────
 
 def _extract_system(messages: list[dict]) -> tuple[str, list[dict]]:
@@ -235,8 +252,7 @@ async def generate_json(
                 return json.loads(raw)
             except json.JSONDecodeError:
                 # Groq json_mode occasionally wraps output in markdown fences — strip them
-                cleaned = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
-                return json.loads(cleaned)
+                return json.loads(_strip_code_fences(raw))
         except LLMError as exc:
             logger.warning("Groq JSON failed (%s), falling back to Gemini", exc)
 

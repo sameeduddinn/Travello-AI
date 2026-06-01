@@ -3,10 +3,11 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timezone
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from core.auth import CurrentUser
 from core.supabase_client import supabase_admin
@@ -29,7 +30,7 @@ class ChatRequest(BaseModel):
 
 
 class AgentBookRequest(BaseModel):
-    booking_type: str          # flight | train | hotel
+    booking_type: Literal["flight", "train", "hotel"]
     conversation_id: str
     origin: str | None = None
     destination: str | None = None
@@ -40,8 +41,8 @@ class AgentBookRequest(BaseModel):
     train_name: str | None = None       # e.g. "Tezgam Express"
     check_in: str | None = None
     check_out: str | None = None
-    travelers: int = 1
-    total_amount: float = 0.0
+    travelers: int = Field(1, ge=1, le=9)
+    total_amount: float = Field(..., gt=0)   # required + must be positive
     hotel_name: str | None = None
     passenger_name: str | None = None
     description: str = "Agent-initiated booking"
@@ -217,6 +218,17 @@ async def agent_book(payload: AgentBookRequest, user: CurrentUser):
     POST /payments/initiate to complete payment.
     """
     from datetime import datetime as dt
+
+    # Verify the conversation belongs to this user before creating a booking.
+    # supabase_admin bypasses RLS, so ownership MUST be enforced here.
+    conv = await asyncio.to_thread(
+        _verify_conversation_owner, payload.conversation_id, user.id
+    )
+    if not conv.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found.",
+        )
 
     def _parse_date(s: str | None):
         if not s:

@@ -50,6 +50,11 @@ class ApiClient {
   static String? get _token =>
       Supabase.instance.client.auth.currentSession?.accessToken;
 
+  /// True when there is a valid logged-in session. Callers should check this
+  /// before hitting authenticated endpoints (e.g. the AI agent) so the user
+  /// gets a clear "please log in" message instead of a generic backend error.
+  static bool get isLoggedIn => _token != null;
+
   static Map<String, String> get _headers => {
         'Content-Type': 'application/json',
         if (_token != null) 'Authorization': 'Bearer $_token',

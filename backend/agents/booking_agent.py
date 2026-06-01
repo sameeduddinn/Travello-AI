@@ -187,11 +187,15 @@ async def execute_booking(
     check_out: date | None = None,
 ) -> dict[str, Any]:
     """
-    Create a booking and send the confirmation email.
+    DEPRECATED / UNUSED — do not call in the current flow.
 
-    *** CALLER CONTRACT: only call this after the user typed CONFIRM. ***
-    Email-send failure is logged but does NOT roll back the booking — the
-    user still owns a valid PNR and can resend the email later.
+    The live booking flow is: agent shows a payment_choice summary →
+    Flutter calls POST /agent/book (creates a PENDING booking) → POST /payments/
+    initiate completes payment and sends the confirmation email. This function
+    instead creates a booking AND emails immediately (pre-payment), which would
+    confirm an unpaid booking. Kept only for reference; no caller invokes it.
+
+    Email-send failure is logged but does NOT roll back the booking.
     """
     booking = await create_booking(
         user_id=user_id,

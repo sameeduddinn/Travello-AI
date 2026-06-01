@@ -552,10 +552,12 @@ async def process_message(
 
 # Agentic orchestrator (Tier 2) — native tool-calling loop
 
-# Keep this small: every step re-sends the full tool schema (~2k tokens), and
-# Groq's free tier is 12k tokens/minute. 2 steps covers the vast majority of
-# queries (1 round of tools + synthesis) while staying under the TPM ceiling.
-_MAX_TOOL_STEPS = 2
+# Balance: every step re-sends the full tool schema (~2k tokens) and Groq's free
+# tier is 12k tokens/minute. 3 steps lets trip planning gather across rounds
+# (e.g. transport, then weather+hotels, then synthesis) while staying under the
+# TPM ceiling. The model can also batch multiple tool calls in a single step,
+# so 3 steps covers far more than 3 tools.
+_MAX_TOOL_STEPS = 3
 
 
 async def _synthesize_from_tools(
