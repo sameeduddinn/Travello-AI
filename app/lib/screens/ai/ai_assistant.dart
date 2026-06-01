@@ -1,7 +1,11 @@
 ﻿import 'package:flight_app/models/ai_chat.dart';
+import 'package:flight_app/services/api_client.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Send button with hover scale effect
@@ -713,6 +717,12 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _isTyping = false;
+  bool _isLoadingHistory = false;
+  String? _conversationId;
+  String? _pendingAction;
+  Map<String, dynamic>? _pendingBookingData;
+
+  static const _kConvIdKey = 'ai_conversation_id';
 
   // ── Saved Trips state ──────────────────────────────────────────────────────
   final List<_TripItinerary> _savedTrips = [
@@ -765,13 +775,265 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       parent: _entryController,
       curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic),
     ));
-    _messages.add(ChatMessage(
-      id: '1',
-      message:
-          "Hello! 👋 I'm your AI Travel Assistant for Pakistan. How can I help you plan your journey today?",
-      isUser: false,
-      timestamp: DateTime.now(),
-    ));
+    _loadConversationState();
+  }
+
+  // ── Conversation persistence ───────────────────────────────────────────────
+
+  Future<void> _loadConversationState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedId = prefs.getString(_kConvIdKey);
+
+    if (savedId == null) {
+      _addWelcomeMessage();
+      return;
+    }
+
+    setState(() => _isLoadingHistory = true);
+    try {
+      final msgs = await ApiClient.getAgentMessages(savedId);
+      if (!mounted) return;
+      if (msgs.isEmpty) {
+        _addWelcomeMessage();
+      } else {
+        setState(() {
+          _conversationId = savedId;
+          for (final m in msgs) {
+            final role = m['role'] as String? ?? 'assistant';
+            final content = m['content'] as String? ?? '';
+            if (content.isEmpty) continue;
+            _messages.add(ChatMessage(
+              id: m['id'] as String? ?? DateTime.now().millisecondsSinceEpoch.toString(),
+              message: content,
+              isUser: role == 'user',
+              timestamp: DateTime.tryParse(m['created_at'] as String? ?? '') ?? DateTime.now(),
+            ));
+          }
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      }
+    } catch (_) {
+      if (mounted) _addWelcomeMessage();
+    } finally {
+      if (mounted) setState(() => _isLoadingHistory = false);
+    }
+  }
+
+  void _addWelcomeMessage() {
+    if (_messages.isNotEmpty) return;
+    setState(() {
+      _messages.add(ChatMessage(
+        id: '1',
+        message: "Hello! 👋 I'm your AI Travel Assistant for Pakistan. How can I help you plan your journey today?",
+        isUser: false,
+        timestamp: DateTime.now(),
+      ));
+    });
+    _fetchAndShowProactiveAlert();
+  }
+
+  Future<void> _fetchAndShowProactiveAlert() async {
+    try {
+      final alert = await ApiClient.getProactiveAlert();
+      if (!mounted || alert == null) return;
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      setState(() {
+        _messages.add(ChatMessage(
+          id: 'alert_${DateTime.now().millisecondsSinceEpoch}',
+          message: alert,
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
+    } catch (_) {}
+  }
+
+  Future<void> _saveConversationId(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kConvIdKey, id);
+  }
+
+  Future<void> _startNewChat() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kConvIdKey);
+    setState(() {
+      _conversationId = null;
+      _messages.clear();
+    });
+    _addWelcomeMessage();
+  }
+
+  // ── Payment choice handlers ────────────────────────────────────────────────
+
+  void _clearPendingAction() => setState(() {
+        _pendingAction = null;
+        _pendingBookingData = null;
+      });
+
+  void _showCardPaymentSheet() {
+    if (_pendingBookingData == null || _conversationId == null) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CardPaymentSheet(
+        bookingData: _pendingBookingData!,
+        conversationId: _conversationId!,
+        onSuccess: (pnr, amount) {
+          _clearPendingAction();
+          setState(() {
+            _messages.add(ChatMessage(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              message: '✅ **Booking Confirmed!**\n\n'
+                  '**PNR:** $pnr\n'
+                  '**Amount Paid:** PKR ${amount.toStringAsFixed(0)}\n\n'
+                  'A confirmation email has been sent to you. '
+                  'You can view your booking in **My Bookings**.',
+              isUser: false,
+              timestamp: DateTime.now(),
+            ));
+          });
+          _scrollToBottom();
+        },
+        onCancel: _clearPendingAction,
+      ),
+    );
+  }
+
+  void _navigateToManualPayment() {
+    final data = _pendingBookingData;
+    _clearPendingAction();
+    final type = data?['booking_type'] as String? ?? 'flight';
+    setState(() {
+      _messages.add(ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        message: 'No problem! Go to the **${type[0].toUpperCase()}${type.substring(1)}s** tab, '
+            'select your option, and complete payment securely. '
+            'Your booking details are saved above for reference. 🎯',
+        isUser: false,
+        timestamp: DateTime.now(),
+      ));
+    });
+    _scrollToBottom();
+  }
+
+  Widget _buildPaymentButtons() {
+    const gold = Color(0xFFD4AF37);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey.shade100)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Choose payment method:',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade500,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _showCardPaymentSheet,
+                  icon: const Icon(Icons.credit_card_rounded,
+                      size: 18, color: Colors.white),
+                  label: const Text(
+                    'Pay with Card',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: gold,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _navigateToManualPayment,
+                  icon: Icon(Icons.open_in_new_rounded,
+                      size: 18, color: Colors.grey.shade700),
+                  label: Text(
+                    'Pay Manually',
+                    style: TextStyle(
+                        color: Colors.grey.shade800,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    side: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showConversationsSheet() async {
+    List<Map<String, dynamic>> conversations = [];
+    try {
+      conversations = await ApiClient.getAgentConversations();
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _ConversationsSheet(
+        conversations: conversations,
+        currentId: _conversationId,
+        onSelect: (id) async {
+          Navigator.pop(context);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_kConvIdKey, id);
+          setState(() {
+            _conversationId = null;
+            _messages.clear();
+          });
+          await _loadConversationState();
+        },
+        onDelete: (id) async {
+          await ApiClient.deleteAgentConversation(id);
+          if (id == _conversationId) await _startNewChat();
+        },
+        onNewChat: () {
+          Navigator.pop(context);
+          _startNewChat();
+        },
+      ),
+    );
   }
 
   @override
@@ -934,11 +1196,24 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                         ),
                       ),
                     ),
+                    // History + New Chat buttons
+                    IconButton(
+                      tooltip: 'Conversation History',
+                      icon: const Icon(Icons.history_rounded,
+                          color: Colors.white70, size: 22),
+                      onPressed: _showConversationsSheet,
+                    ),
+                    IconButton(
+                      tooltip: 'New Chat',
+                      icon: const Icon(Icons.add_comment_outlined,
+                          color: Colors.white70, size: 22),
+                      onPressed: _startNewChat,
+                    ),
                   ],
-                ),
-              ),
-            ),
-          ),
+                ),   // Row
+              ),     // Padding
+            ),       // SafeArea
+          ),         // Container
           // ── TabBar ───────────────────────────────────────────────────────
           Container(
             decoration: BoxDecoration(
@@ -998,6 +1273,12 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     final showSuggestions = _messages.length == 1 && !_isTyping;
     return Column(
       children: [
+        if (_isLoadingHistory)
+          const LinearProgressIndicator(
+            minHeight: 2,
+            backgroundColor: Colors.transparent,
+            color: Color(0xFFD4AF37),
+          ),
         Expanded(
           child: ListView.builder(
             controller: _scrollController,
@@ -1019,7 +1300,8 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             },
           ),
         ),
-        _buildInputField(),
+        if (_pendingAction == 'payment_choice') _buildPaymentButtons(),
+        if (_pendingAction != 'payment_choice') _buildInputField(),
       ],
     );
   }
@@ -1080,14 +1362,49 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                   ),
                 ],
               ),
-              child: Text(message.message,
-                  style: TravelloTheme.paragraph.copyWith(
-                    color: message.isUser
-                        ? Colors.white
-                        : TravelloTheme.textPrimary,
-                    fontSize: isFirst ? 14.5 : 14,
-                    height: 1.5,
-                  )),
+              child: message.isUser
+                  ? Text(
+                      message.message,
+                      style: TravelloTheme.paragraph.copyWith(
+                        color: Colors.white,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    )
+                  : MarkdownBody(
+                      data: message.message,
+                      styleSheet: MarkdownStyleSheet(
+                        p: TravelloTheme.paragraph.copyWith(
+                          color: TravelloTheme.textPrimary,
+                          fontSize: isFirst ? 14.5 : 14,
+                          height: 1.5,
+                        ),
+                        strong: TravelloTheme.paragraph.copyWith(
+                          color: TravelloTheme.textPrimary,
+                          fontSize: isFirst ? 14.5 : 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        em: TravelloTheme.paragraph.copyWith(
+                          color: TravelloTheme.textPrimary,
+                          fontSize: 14,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        listBullet: TravelloTheme.paragraph.copyWith(
+                          color: TravelloTheme.textPrimary,
+                          fontSize: 14,
+                        ),
+                        blockquotePadding: const EdgeInsets.only(left: 8),
+                        blockquoteDecoration: const BoxDecoration(
+                          border: Border(
+                            left: BorderSide(
+                              color: Color(0xFFD4AF37),
+                              width: 3,
+                            ),
+                          ),
+                        ),
+                      ),
+                      shrinkWrap: true,
+                    ),
             ),
           ),
           if (message.isUser) ...[
@@ -1345,7 +1662,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
               Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: _SendButton(
-                  onPressed: () => _sendMessage(_messageController.text),
+                  onPressed: () => _sendMessage(_messageController.text.trim()),
                   backgroundColor: const Color(0xFFD4AF37),
                   iconColor: Colors.white,
                 ),
@@ -1357,7 +1674,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     );
   }
 
-  void _sendMessage(String text) {
+  Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
     setState(() {
       _messages.add(ChatMessage(
@@ -1369,18 +1686,42 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     });
     _messageController.clear();
     _scrollToBottom();
-    Future.delayed(const Duration(milliseconds: 1500), () {
+
+    try {
+      final result = await ApiClient.agentChat(
+        message: text,
+        conversationId: _conversationId,
+      );
       if (!mounted) return;
+      final newConvId = result['conversation_id'] as String?;
+      if (newConvId != null && newConvId != _conversationId) {
+        _conversationId = newConvId;
+        _saveConversationId(newConvId);
+      }
       setState(() {
+        _pendingAction = result['action'] as String?;
+        _pendingBookingData = result['booking_data'] != null
+            ? Map<String, dynamic>.from(result['booking_data'] as Map)
+            : null;
         _messages.add(ChatMessage(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
-            message: AIAssistantData.getAIResponse(text),
+            message: result['response'] as String? ?? 'Sorry, I could not process that.',
             isUser: false,
             timestamp: DateTime.now()));
         _isTyping = false;
       });
-      _scrollToBottom();
-    });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            message: 'Something went wrong. Please check your connection and try again.',
+            isUser: false,
+            timestamp: DateTime.now()));
+        _isTyping = false;
+      });
+    }
+    _scrollToBottom();
   }
 
   void _scrollToBottom() {
@@ -1719,5 +2060,596 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       ),
     );
   }
+}
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Card payment bottom sheet
+// ─────────────────────────────────────────────────────────────────────────────
+class _CardPaymentSheet extends StatefulWidget {
+  final Map<String, dynamic> bookingData;
+  final String conversationId;
+  final void Function(String pnr, double amount) onSuccess;
+  final VoidCallback onCancel;
+
+  const _CardPaymentSheet({
+    required this.bookingData,
+    required this.conversationId,
+    required this.onSuccess,
+    required this.onCancel,
+  });
+
+  @override
+  State<_CardPaymentSheet> createState() => _CardPaymentSheetState();
+}
+
+class _CardPaymentSheetState extends State<_CardPaymentSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _cardCtrl = TextEditingController();
+  final _expiryCtrl = TextEditingController();
+  final _cvvCtrl = TextEditingController();
+  bool _processing = false;
+  String? _errorMsg;
+
+  static const _gold = Color(0xFFD4AF37);
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _cardCtrl.dispose();
+    _expiryCtrl.dispose();
+    _cvvCtrl.dispose();
+    super.dispose();
+  }
+
+  String _formatCardNumber(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    final buffer = StringBuffer();
+    for (int i = 0; i < digits.length && i < 16; i++) {
+      if (i > 0 && i % 4 == 0) buffer.write(' ');
+      buffer.write(digits[i]);
+    }
+    return buffer.toString();
+  }
+
+  String _formatExpiry(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length >= 2) {
+      return '${digits.substring(0, 2)}/${digits.substring(2).padRight(0)}';
+    }
+    return digits;
+  }
+
+  Future<void> _processPayment() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() { _processing = true; _errorMsg = null; });
+
+    try {
+      final data = widget.bookingData;
+      final amount = (data['total_price_pkr'] as num?)?.toDouble() ?? 0.0;
+
+      // Step 1: Create booking via agent endpoint
+      final booking = await ApiClient.agentBook(
+        bookingType: data['booking_type'] as String? ?? 'flight',
+        conversationId: widget.conversationId,
+        origin: data['origin'] as String?,
+        destination: data['destination'] as String?,
+        travelDate: data['travel_date'] as String?,
+        departureTime: data['departure_time'] as String?,
+        arrivalTime: data['arrival_time'] as String?,
+        flightNumber: data['flight_number'] as String?,
+        trainName: data['train_name'] as String?,
+        checkIn: data['check_in'] as String?,
+        checkOut: data['check_out'] as String?,
+        travelers: (data['travelers'] as num?)?.toInt() ?? 1,
+        totalAmount: amount,
+        hotelName: data['hotel_name'] as String?,
+        passengerName: _nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim() : null,
+        description: data['selected_option'] as String? ?? 'Agent booking',
+      );
+
+      final bookingId = booking['booking_id'] as String;
+      final pnr = booking['pnr'] as String;
+
+      // Step 2: Initiate card payment (instant confirmation)
+      await ApiClient.initiatePayment(
+        bookingId: bookingId,
+        method: 'card',
+        amount: amount,
+      );
+
+      if (mounted) Navigator.pop(context);
+      widget.onSuccess(pnr, amount);
+    } catch (e) {
+      setState(() {
+        _errorMsg = e.toString().replaceFirst('Exception: ', '');
+        _processing = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final amount = (widget.bookingData['total_price_pkr'] as num?)?.toInt() ?? 0;
+    final fmt = NumberFormat('#,##0', 'en_US');
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+          20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: _gold.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.credit_card_rounded,
+                        color: _gold, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Card Payment',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w800)),
+                      Text('Total: PKR ${fmt.format(amount)}',
+                          style: const TextStyle(
+                              fontSize: 13,
+                              color: _gold,
+                              fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // Cardholder name
+              _CardField(
+                controller: _nameCtrl,
+                label: 'Cardholder Name',
+                hint: 'As printed on card',
+                icon: Icons.person_outline_rounded,
+                keyboardType: TextInputType.name,
+                validator: (v) =>
+                    (v == null || v.trim().length < 2) ? 'Enter cardholder name' : null,
+              ),
+              const SizedBox(height: 14),
+
+              // Card number
+              _CardField(
+                controller: _cardCtrl,
+                label: 'Card Number',
+                hint: '1234 5678 9012 3456',
+                icon: Icons.credit_card_rounded,
+                keyboardType: TextInputType.number,
+                maxLength: 19,
+                onChanged: (v) {
+                  final formatted = _formatCardNumber(v);
+                  if (formatted != v) {
+                    _cardCtrl.value = TextEditingValue(
+                      text: formatted,
+                      selection: TextSelection.collapsed(offset: formatted.length),
+                    );
+                  }
+                },
+                validator: (v) {
+                  final digits = (v ?? '').replaceAll(' ', '');
+                  return digits.length < 16 ? 'Enter 16-digit card number' : null;
+                },
+              ),
+              const SizedBox(height: 14),
+
+              // Expiry + CVV row
+              Row(
+                children: [
+                  Expanded(
+                    child: _CardField(
+                      controller: _expiryCtrl,
+                      label: 'Expiry',
+                      hint: 'MM/YY',
+                      icon: Icons.calendar_month_outlined,
+                      keyboardType: TextInputType.number,
+                      maxLength: 5,
+                      onChanged: (v) {
+                        final formatted = _formatExpiry(v);
+                        if (formatted != v) {
+                          _expiryCtrl.value = TextEditingValue(
+                            text: formatted,
+                            selection: TextSelection.collapsed(
+                                offset: formatted.length),
+                          );
+                        }
+                      },
+                      validator: (v) {
+                        final parts = (v ?? '').split('/');
+                        if (parts.length != 2 || parts[0].length != 2 ||
+                            parts[1].length != 2) {
+                          return 'Invalid date';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _CardField(
+                      controller: _cvvCtrl,
+                      label: 'CVV',
+                      hint: '•••',
+                      icon: Icons.lock_outline_rounded,
+                      keyboardType: TextInputType.number,
+                      maxLength: 3,
+                      obscureText: true,
+                      validator: (v) =>
+                          ((v ?? '').length < 3) ? 'Enter 3-digit CVV' : null,
+                    ),
+                  ),
+                ],
+              ),
+
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline_rounded,
+                          color: Colors.red.shade600, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(_errorMsg!,
+                            style: TextStyle(
+                                color: Colors.red.shade700, fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 22),
+
+              // Pay button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: _processing ? null : _processPayment,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _gold,
+                    disabledBackgroundColor: _gold.withValues(alpha: 0.5),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    elevation: 2,
+                  ),
+                  child: _processing
+                      ? const SizedBox(
+                          width: 22, height: 22,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2.5),
+                        )
+                      : Text(
+                          amount > 0
+                              ? 'Pay PKR ${fmt.format(amount)}'
+                              : 'Confirm Booking',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Cancel
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    widget.onCancel();
+                  },
+                  child: Text('Cancel',
+                      style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ),
+
+              // Security note
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lock_rounded,
+                        size: 12, color: Colors.grey.shade400),
+                    const SizedBox(width: 4),
+                    Text('Secured by 256-bit encryption',
+                        style: TextStyle(
+                            fontSize: 11, color: Colors.grey.shade400)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Card form field helper ────────────────────────────────────────────────────
+class _CardField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final IconData icon;
+  final TextInputType keyboardType;
+  final int? maxLength;
+  final bool obscureText;
+  final String? Function(String?)? validator;
+  final void Function(String)? onChanged;
+
+  const _CardField({
+    required this.controller,
+    required this.label,
+    required this.hint,
+    required this.icon,
+    required this.keyboardType,
+    this.maxLength,
+    this.obscureText = false,
+    this.validator,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600)),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          maxLength: maxLength,
+          onChanged: onChanged,
+          validator: validator,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+            prefixIcon: Icon(icon, size: 18, color: const Color(0xFFD4AF37)),
+            counterText: '',
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 13, horizontal: 12),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Color(0xFFD4AF37), width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.red.shade300),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Past conversations bottom sheet
+// ─────────────────────────────────────────────────────────────────────────────
+class _ConversationsSheet extends StatefulWidget {
+  final List<Map<String, dynamic>> conversations;
+  final String? currentId;
+  final void Function(String id) onSelect;
+  final void Function(String id) onDelete;
+  final VoidCallback onNewChat;
+
+  const _ConversationsSheet({
+    required this.conversations,
+    required this.currentId,
+    required this.onSelect,
+    required this.onDelete,
+    required this.onNewChat,
+  });
+
+  @override
+  State<_ConversationsSheet> createState() => _ConversationsSheetState();
+}
+
+class _ConversationsSheetState extends State<_ConversationsSheet> {
+  late List<Map<String, dynamic>> _convs;
+
+  @override
+  void initState() {
+    super.initState();
+    _convs = List.from(widget.conversations);
+  }
+
+  String _fmtDate(String? raw) {
+    if (raw == null) return '';
+    try {
+      final dt = DateTime.parse(raw).toLocal();
+      return DateFormat('d MMM  HH:mm').format(dt);
+    } catch (_) {
+      return '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const gold = Color(0xFFD4AF37);
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+          16, 12, 16, MediaQuery.of(context).padding.bottom + 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            width: 40, height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Header
+          Row(
+            children: [
+              const Icon(Icons.history_rounded, color: gold, size: 20),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text('Conversation History',
+                    style: TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700)),
+              ),
+              TextButton.icon(
+                onPressed: widget.onNewChat,
+                icon: const Icon(Icons.add, size: 16, color: gold),
+                label: const Text('New Chat',
+                    style: TextStyle(color: gold, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (_convs.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Column(
+                children: [
+                  Icon(Icons.chat_bubble_outline_rounded,
+                      size: 48, color: Colors.grey.shade300),
+                  const SizedBox(height: 12),
+                  Text('No past conversations',
+                      style: TextStyle(
+                          color: Colors.grey.shade500, fontSize: 14)),
+                ],
+              ),
+            )
+          else
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: _convs.length,
+                separatorBuilder: (_, __) =>
+                    Divider(height: 1, color: Colors.grey.shade100),
+                itemBuilder: (_, i) {
+                  final c = _convs[i];
+                  final id = c['id'] as String? ?? '';
+                  final title = c['title'] as String? ?? 'Conversation';
+                  final date = _fmtDate(c['updated_at'] as String?);
+                  final isCurrent = id == widget.currentId;
+
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 4, vertical: 2),
+                    leading: Container(
+                      width: 38, height: 38,
+                      decoration: BoxDecoration(
+                        color: isCurrent
+                            ? gold.withValues(alpha: 0.15)
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.chat_bubble_rounded,
+                        size: 18,
+                        color: isCurrent ? gold : Colors.grey.shade400,
+                      ),
+                    ),
+                    title: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isCurrent
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: date.isNotEmpty
+                        ? Text(date,
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade400))
+                        : null,
+                    trailing: isCurrent
+                        ? const Icon(Icons.check_circle_rounded,
+                            color: gold, size: 18)
+                        : IconButton(
+                            icon: Icon(Icons.delete_outline_rounded,
+                                size: 18, color: Colors.red.shade300),
+                            onPressed: () {
+                              widget.onDelete(id);
+                              setState(() => _convs.removeAt(i));
+                            },
+                          ),
+                    onTap: isCurrent ? null : () => widget.onSelect(id),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }

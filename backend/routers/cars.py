@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, HTTPException, status
@@ -77,8 +78,8 @@ async def book_car(payload: CarBookRequest, user: CurrentUser):
 @router.get("/bookings", status_code=status.HTTP_200_OK)
 async def list_car_bookings(user: CurrentUser):
     """Return all car bookings for the authenticated user, newest first, with driver info."""
-    try:
-        result = (
+    def _query():
+        return (
             supabase_admin
             .table("car_bookings")
             .select("*, drivers(*)")
@@ -86,6 +87,8 @@ async def list_car_bookings(user: CurrentUser):
             .order("created_at", desc=True)
             .execute()
         )
+    try:
+        result = await asyncio.to_thread(_query)
         return {"bookings": result.data or []}
     except Exception as exc:
         logger.error("list_car_bookings error user=%s: %s", user.id, exc)

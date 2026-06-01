@@ -26,3 +26,9 @@ pydantic-settings==2.7.0           # typed settings from env vars
 
 # ─ Serialisation 
 orjson==3.10.12                    # fast JSON - FastAPI picks it up automatically
+
+# Google Gemini (new SDK — replaces deprecated google-generativeai)
+google-genai>=2.0.0
+
+# Groq (free LLM API — Llama 3.3 70B, no billing required)
+groq>=0.13.0

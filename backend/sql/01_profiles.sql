@@ -46,14 +46,20 @@ CREATE POLICY "profiles_update_own" ON public.profiles
 -- Stores per-user app preferences
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS public.user_preferences (
-    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
-    origin_city TEXT DEFAULT 'Karachi',
-    currency    TEXT DEFAULT 'PKR',
-    theme       TEXT DEFAULT 'light' CHECK (theme IN ('light', 'dark', 'system')),
-    language    TEXT DEFAULT 'en',
-    created_at  TIMESTAMPTZ DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ DEFAULT NOW()
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id             UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
+    origin_city         TEXT DEFAULT 'Karachi',
+    currency            TEXT DEFAULT 'PKR',
+    theme               TEXT DEFAULT 'light' CHECK (theme IN ('light', 'dark', 'system')),
+    language            TEXT DEFAULT 'en',
+    -- AI agent preference learning columns (populated by memory_agent.py)
+    preferred_class     TEXT,                           -- Economy | Business | First
+    travel_style        TEXT,                           -- budget | standard | luxury
+    companion_type      TEXT,                           -- solo | couple | family | group
+    budget_style        TEXT,                           -- budget | standard | luxury
+    past_destinations   JSONB DEFAULT '[]'::JSONB,      -- ["Lahore", "Hunza", ...]
+    created_at          TIMESTAMPTZ DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;

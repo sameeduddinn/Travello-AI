@@ -37,6 +37,13 @@ class Settings(BaseSettings):
 
     # Google Maps Platform (Places API + Weather API + Healthcare nearby search)
     GOOGLE_PLACES_API_KEY: str = ""
+    
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+
+    # Groq (completely free — sign up at console.groq.com)
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
 
 
 

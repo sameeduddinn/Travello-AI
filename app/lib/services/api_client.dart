@@ -1171,6 +1171,23 @@ class ApiClient {
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
+  /// GET /agent/proactive-alert — personalized trip alert if user has an
+  /// upcoming booking within the next 7 days. Returns null if nothing upcoming.
+  static Future<String?> getProactiveAlert() async {
+    if (_token == null) return null;
+    try {
+      final res = await http
+          .get(Uri.parse('$_baseUrl/agent/proactive-alert'), headers: _headers)
+          .timeout(const Duration(seconds: 15));
+      if (res.statusCode != 200) return null;
+      final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+      final alert = data['alert'];
+      return alert is String && alert.isNotEmpty ? alert : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// GET /cars/bookings — fetch all car bookings for the logged-in user.
   static Future<List<Map<String, dynamic>>> getCarBookings() async {
     if (_token == null) return [];
@@ -1198,6 +1215,131 @@ class ApiClient {
         )
         .timeout(const Duration(seconds: 20));
     _throwIfError(res, 'Delete account');
+  }
+
+  // ── AI AGENT ───────────────────────────────────────────────────────────────
+
+  /// POST /agent/book — create a booking from AI agent conversation context.
+  /// Returns booking_id (UUID), pnr, total_amount, status.
+  /// Flutter then calls initiatePayment() with the returned booking_id.
+  static Future<Map<String, dynamic>> agentBook({
+    required String bookingType,
+    required String conversationId,
+    String? origin,
+    String? destination,
+    String? travelDate,
+    String? departureTime,
+    String? arrivalTime,
+    String? flightNumber,
+    String? trainName,
+    String? checkIn,
+    String? checkOut,
+    int travelers = 1,
+    double totalAmount = 0.0,
+    String? hotelName,
+    String? passengerName,
+    String description = 'Agent-initiated booking',
+  }) async {
+    final res = await http
+        .post(
+          Uri.parse('$_baseUrl/agent/book'),
+          headers: _headers,
+          body: jsonEncode({
+            'booking_type': bookingType,
+            'conversation_id': conversationId,
+            if (origin != null) 'origin': origin,
+            if (destination != null) 'destination': destination,
+            if (travelDate != null) 'travel_date': travelDate,
+            if (departureTime != null) 'departure_time': departureTime,
+            if (arrivalTime != null) 'arrival_time': arrivalTime,
+            if (flightNumber != null) 'flight_number': flightNumber,
+            if (trainName != null) 'train_name': trainName,
+            if (checkIn != null) 'check_in': checkIn,
+            if (checkOut != null) 'check_out': checkOut,
+            'travelers': travelers,
+            'total_amount': totalAmount,
+            if (hotelName != null) 'hotel_name': hotelName,
+            if (passengerName != null) 'passenger_name': passengerName,
+            'description': description,
+          }),
+        )
+        .timeout(const Duration(seconds: 30));
+    _throwIfError(res, 'Agent book');
+    return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+  }
+
+  /// Send a message to the multi-agent backend. Returns the assistant's reply
+  /// and the conversation_id to pass on subsequent turns.
+  static Future<Map<String, dynamic>> agentChat({
+    required String message,
+    String? conversationId,
+  }) async {
+    _logDebug('POST $_baseUrl/agent/chat');
+    final res = await http
+        .post(
+          Uri.parse('$_baseUrl/agent/chat'),
+          headers: _headers,
+          body: jsonEncode({
+            'message': message,
+            if (conversationId != null) 'conversation_id': conversationId,
+          }),
+        )
+        .timeout(const Duration(seconds: 60)); // agents can take a few seconds
+    _throwIfError(res, 'Agent chat');
+    return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+  }
+
+  /// List all active conversations for the current user.
+  static Future<List<Map<String, dynamic>>> getAgentConversations() async {
+    if (_token == null) return [];
+    try {
+      final res = await http
+          .get(Uri.parse('$_baseUrl/agent/conversations'), headers: _headers)
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode < 200 || res.statusCode >= 300) return [];
+      final data = jsonDecode(res.body);
+      if (data is List) {
+        return data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Fetch all messages in a conversation (oldest first).
+  static Future<List<Map<String, dynamic>>> getAgentMessages(
+      String conversationId) async {
+    if (_token == null) return [];
+    try {
+      final res = await http
+          .get(
+            Uri.parse('$_baseUrl/agent/conversations/$conversationId/messages'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode < 200 || res.statusCode >= 300) return [];
+      final data = jsonDecode(utf8.decode(res.bodyBytes));
+      if (data is List) {
+        return data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Soft-delete a conversation (sets is_active = false on the backend).
+  static Future<void> deleteAgentConversation(String conversationId) async {
+    if (_token == null) return;
+    try {
+      await http
+          .delete(
+            Uri.parse('$_baseUrl/agent/conversations/$conversationId'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {}
   }
 
   static void _throwIfError(http.Response res, String context) {
