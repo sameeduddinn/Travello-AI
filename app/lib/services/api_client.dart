@@ -1243,6 +1243,15 @@ class ApiClient {
     double totalAmount = 0.0,
     String? hotelName,
     String? passengerName,
+    String? contactPhone,
+    int? adults,
+    int? children,
+    int? infants,
+    int? rooms,
+    String? cabinClass,
+    String? trainClass,
+    String? roomType,
+    Map<String, dynamic>? facilities,
     String description = 'Agent-initiated booking',
   }) async {
     final res = await http
@@ -1265,6 +1274,15 @@ class ApiClient {
             'total_amount': totalAmount,
             if (hotelName != null) 'hotel_name': hotelName,
             if (passengerName != null) 'passenger_name': passengerName,
+            if (contactPhone != null) 'contact_phone': contactPhone,
+            if (adults != null) 'adults': adults,
+            if (children != null) 'children': children,
+            if (infants != null) 'infants': infants,
+            if (rooms != null) 'rooms': rooms,
+            if (cabinClass != null) 'cabin_class': cabinClass,
+            if (trainClass != null) 'train_class': trainClass,
+            if (roomType != null) 'room_type': roomType,
+            if (facilities != null) 'facilities': facilities,
             'description': description,
           }),
         )
@@ -1302,7 +1320,7 @@ class ApiClient {
           .get(Uri.parse('$_baseUrl/agent/conversations'), headers: _headers)
           .timeout(const Duration(seconds: 10));
       if (res.statusCode < 200 || res.statusCode >= 300) return [];
-      final data = jsonDecode(res.body);
+      final data = jsonDecode(utf8.decode(res.bodyBytes));
       if (data is List) {
         return data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
       }
@@ -1350,7 +1368,21 @@ class ApiClient {
   static void _throwIfError(http.Response res, String context) {
     if (res.statusCode < 200 || res.statusCode >= 300) {
       _logDebug('$context failed with HTTP ${res.statusCode}: ${res.body}');
-      throw Exception('$context failed: HTTP ${res.statusCode} — ${res.body}');
+      throw ApiException(res.statusCode, '$context failed: HTTP ${res.statusCode} — ${res.body}');
     }
   }
+}
+
+/// Thrown by [ApiClient._throwIfError] instead of a plain [Exception] so callers
+/// that care (e.g. the AI chat screen) can branch on the HTTP status code —
+/// a 429 daily-limit response and a 504 timeout need different user-facing
+/// messages, not the same generic "something went wrong".
+class ApiException implements Exception {
+  final int statusCode;
+  final String message;
+
+  ApiException(this.statusCode, this.message);
+
+  @override
+  String toString() => message;
 }

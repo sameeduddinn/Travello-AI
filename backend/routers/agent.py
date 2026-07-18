@@ -21,6 +21,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/agent", tags=["AI Agent"])
 
+# Groq's free tier is a tight 12k tokens/minute shared across classification,
+# extraction, tool-calling, and synthesis in a single turn. An unbounded paste
+# from the user could burn most of that budget by itself, so truncate rather
+# than reject — the user still gets an answer, just to a shortened message.
+_MAX_MESSAGE_CHARS = 2000
+
 
 # Pydantic models
 
@@ -41,10 +47,29 @@ class AgentBookRequest(BaseModel):
     train_name: str | None = None       # e.g. "Tezgam Express"
     check_in: str | None = None
     check_out: str | None = None
-    travelers: int = Field(1, ge=1, le=9)
+    # Upper bound is a loose sanity cap only — the authoritative party-size gate
+    # (flights ≤9, trains ≤6, hotels ≤10 guests) runs upstream in prepare_booking
+    # before this endpoint is ever called. 10 accommodates a full hotel party.
+    travelers: int = Field(1, ge=1, le=10)
     total_amount: float = Field(..., gt=0)   # required + must be positive
     hotel_name: str | None = None
     passenger_name: str | None = None
+    contact_phone: str | None = None
+    # Traveler breakdown (flights/trains) and rooms (hotels). `travelers` is already
+    # code-derived and verified upstream; these are stored on the booking for display
+    # parity with the manual forms, not re-validated here.
+    adults: int | None = None
+    children: int | None = None
+    infants: int | None = None
+    rooms: int | None = None
+    # Class / room labels — display only. The price is already server-verified.
+    cabin_class: str | None = None      # flights, e.g. "Economy"
+    train_class: str | None = None      # trains, e.g. "AC Standard"
+    room_type: str | None = None        # hotels, e.g. "Standard Room"
+    # Optional airport/station car transfer, keyed with the SAME names the manual
+    # booking forms use (transferAdded / transferVehicleType / transferPickupLocation)
+    # so the existing post-payment book_car_transfers task picks it up unchanged.
+    facilities: dict | None = None
     description: str = "Agent-initiated booking"
 
 
@@ -126,6 +151,13 @@ async def chat(request: ChatRequest, user: CurrentUser):
     Send a message to the AI agent and receive a response.
     Enforces a daily limit of 50 user messages per account.
     """
+    if len(request.message) > _MAX_MESSAGE_CHARS:
+        logger.warning(
+            "Truncating oversized agent message for user=%s (%d chars)",
+            user.id, len(request.message),
+        )
+        request.message = request.message[:_MAX_MESSAGE_CHARS]
+
     # Rate-limit check
     today_midnight = (
         datetime.now(timezone.utc)
@@ -289,12 +321,27 @@ async def agent_book(payload: AgentBookRequest, user: CurrentUser):
         "flight_number": payload.flight_number,
         "train_name": payload.train_name,
         "passenger_name": passenger_name,
+        # Traveler breakdown + class/room labels — display parity with manual bookings.
+        "adults": payload.adults,
+        "children": payload.children,
+        "infants": payload.infants,
+        "rooms": payload.rooms,
+        "cabin_class": payload.cabin_class,
+        "train_class": payload.train_class,
+        "room_type": payload.room_type,
     }
+
+    # Airport/station car transfer legs — merged with the SAME key names the manual
+    # forms use, so the existing post-payment book_car_transfers background task
+    # (services/car_service.py) confirms the driver and emails the user, no changes.
+    if payload.facilities:
+        raw_payload.update(payload.facilities)
 
     booking = await create_booking(
         user_id=user.id,
         booking_type=payload.booking_type,
         contact_email=contact_email,
+        contact_phone=payload.contact_phone,
         total_amount=payload.total_amount,
         raw_payload=raw_payload,
         origin=payload.origin,

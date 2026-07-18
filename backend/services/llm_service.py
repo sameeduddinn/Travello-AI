@@ -8,8 +8,8 @@ from __future__ import annotations
 #       LLMError  — raised on unrecoverable failures
 #
 #   Provider priority:
-#       1. Groq   (llama-3.3-70b-versatile)  — primary (free, fast)
-#       2. Gemini (gemini-2.5-flash)         — fallback if Groq quota/timeout
+#       1. Groq   (settings.GROQ_MODEL)       — primary (free, fast, cheap on quota)
+#       2. Gemini (settings.GEMINI_MODEL)     — fallback if Groq quota/timeout
 #
 #   To switch to Gemini-primary: swap the try-order in generate_text / generate_json.
 # =============================================================================
@@ -81,7 +81,11 @@ def _get_groq_client():
         return None
     try:
         from groq import AsyncGroq
-        _groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+        # max_retries=0: on a free-tier TPM 429, Groq returns a large `retry-after`
+        # (~55s) and the SDK would otherwise sleep+retry internally, blowing past the
+        # 60s request cap and hanging the chat UI. Fail fast instead and let the
+        # orchestrator degrade gracefully (generate_with_tools -> quota_exhausted).
+        _groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY, max_retries=0)
         logger.info("Groq client ready — model=%s", settings.GROQ_MODEL)
         return _groq_client
     except Exception as exc:
@@ -271,11 +275,15 @@ async def generate_json(
 
 # Llama-on-Groq occasionally emits a malformed tool call as TEXT instead of a
 # structured call, e.g.  <function=search_flights{"city": "Lahore"}</function>
+# or, with a closing '>' on the opening tag, <function=search_flights>{"city": "Lahore"}</function>
 # Groq then rejects the request with a 400 'tool_use_failed'. We salvage the
 # intended call(s) from that error payload so a stochastic formatting slip
-# doesn't break the turn.
+# doesn't break the turn. The optional '>' must be matched — otherwise a
+# refusal or answer the model already generated correctly, with only this
+# trailing malformed call attached, is thrown away and the turn silently
+# falls back to the legacy pipeline for an unrelated formatting reason.
 _MALFORMED_FUNC_RE = re.compile(
-    r"<function=([a-zA-Z0-9_]+)\s*(\{.*?\})\s*</function>", re.DOTALL
+    r"<function=([a-zA-Z0-9_]+)\s*>?\s*(\{.*?\})\s*</function>", re.DOTALL
 )
 
 
@@ -299,6 +307,18 @@ class _SalvagedMessage:
         self.tool_calls = tool_calls
 
 
+# Llama sometimes emits bare integer arithmetic as a JSON value
+# (e.g. "total_price_pkr":5848*8), which no JSON parser accepts. Only the
+# narrow digits*digits form is repaired — anything else still fails parsing.
+_JSON_INT_MULT_RE = re.compile(r"(?<=[:\s\[,])(\d+)\s*\*\s*(\d+)(?=\s*[,\}\]])")
+
+
+def _repair_json_arithmetic(args: str) -> str:
+    return _JSON_INT_MULT_RE.sub(
+        lambda m: str(int(m.group(1)) * int(m.group(2))), args
+    )
+
+
 def _salvage_tool_calls(text: str | None) -> list | None:
     """Extract well-formed tool calls from a malformed <function=...> blob."""
     if not text:
@@ -309,7 +329,12 @@ def _salvage_tool_calls(text: str | None) -> list | None:
         try:
             json.loads(args)  # only accept valid JSON args
         except json.JSONDecodeError:
-            continue
+            repaired = _repair_json_arithmetic(args)
+            try:
+                json.loads(repaired)
+            except json.JSONDecodeError:
+                continue
+            args = repaired
         calls.append(_SalvagedToolCall(f"call_salvaged_{i}", name, args))
     return calls or None
 

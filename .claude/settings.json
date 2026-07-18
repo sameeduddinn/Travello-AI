@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dart analyze *)",
+      "Bash(python \"C:/Users/Hp-21/AppData/Local/Temp/claude/d--FYP--Final-Year-Project--Travello-AI-Project/d49010cc-a9ad-4a1a-b95a-db126d65124c/scratchpad/test_phase3_car_gate.py\")",
+      "WebSearch",
+      "WebFetch(domain:console.groq.com)",
+      "WebFetch(domain:groq.com)"
+    ]
+  }
+}

@@ -5,16 +5,17 @@ from __future__ import annotations
 #   - extract_booking_from_history : uses Gemini to pull booking intent from chat
 #   - format_booking_summary       : formats summary + payment choice prompt
 #   - present_booking_summary      : Gemini-formatted summary
-#   - execute_booking              : creates booking + fires confirmation email
 #   - handle_cancellation          : cancels booking + friendly message
+#
+# NOTE: the live booking flow is agent summary -> POST /agent/book (pending) ->
+# POST /payments/initiate (pays + emails). There is intentionally NO function
+# here that creates a booking and emails before payment.
 # =============================================================================
 
 import logging
-from datetime import date, datetime
 from typing import Any
 
-from services.booking_service import create_booking, cancel_booking
-from services.email_service import send_booking_confirmation
+from services.booking_service import cancel_booking
 from services.llm_service import generate_text, generate_json, GeminiError
 from prompts.booking import BOOKING_SYSTEM, BOOKING_CONFIRMATION_PROMPT
 
@@ -61,7 +62,7 @@ async def extract_booking_from_history(
 ) -> dict | None:
     """
     Use Gemini to extract what the user wants to book from conversation context.
-    Returns a structured dict or None if intent is unclear (confidence < 0.5).
+    Returns a structured dict or None if intent is unclear (confidence < 0.45).
     """
     history_text = "\n".join(
         f"{m['role'].upper()}: {str(m.get('content', ''))[:600]}"
@@ -119,16 +120,62 @@ def format_booking_summary(booking_data: dict) -> str:
     else:
         lines.append(f"🧳  **Trip:** {option}")
 
-    lines.append(f"👥  **Passengers:** {booking_data.get('travelers', 1)}")
+    if bt == "hotel":
+        guests = booking_data.get("guests") or booking_data.get("travelers", 1)
+        rooms = booking_data.get("rooms", 1)
+        lines.append(f"👥  **Guests:** {guests}  ·  **Rooms:** {rooms}")
+        if booking_data.get("room_type"):
+            lines.append(f"🛏️  **Room type:** {booking_data['room_type']}")
+    else:
+        adults = booking_data.get("adults")
+        if adults:
+            parts = [f"{adults} adult(s)"]
+            if booking_data.get("children"):
+                parts.append(f"{booking_data['children']} child(ren)")
+            if booking_data.get("infants"):
+                parts.append(f"{booking_data['infants']} infant(s)")
+            lines.append(f"👥  **Passengers:** {', '.join(parts)}")
+        else:
+            lines.append(f"👥  **Passengers:** {booking_data.get('travelers', 1)}")
+
+    if booking_data.get("transfer_vehicle_type"):
+        pickup = booking_data.get("transfer_pickup_location") or "pickup to be confirmed"
+        lines.append(f"🚗  **Car transfer:** {booking_data['transfer_vehicle_type']} — {pickup}")
 
     if price:
         lines.append(f"\n💰  **Total: PKR {int(price):,}**")
     else:
         lines.append("\n💰  **Total: As quoted above**")
 
-    lines.append("\n\nHow would you like to pay?")
+    lines.append("\n\nNext, tap **Add Passenger Details** to fill in traveler information "
+                 "on a secure form — then choose how to pay:")
     lines.append("• **Pay with Card** — Proceed to the secure in-app payment screen")
     lines.append("• **Pay Later** — Save this booking and pay when you're ready")
+
+    return "\n".join(lines)
+
+
+def format_car_booking_summary(car_data: dict) -> str:
+    """
+    Build the standalone-car summary that precedes the single confirm button the
+    Flutter app renders (action: car_booking_choice). Unlike the flight/train/
+    hotel summary there is no payment step — the driver is assigned instantly on
+    the user's confirm tap, matching the manual Car-tab flow.
+    """
+    vehicle = car_data.get("vehicle_type", "Car")
+    price = car_data.get("price_pkr")
+
+    lines = ["**Car Booking Summary**\n"]
+    lines.append(f"🚗  **Vehicle:** {vehicle}")
+    lines.append(f"📍  **Pickup:** {car_data.get('pickup_location', '—')}")
+    lines.append(f"🏁  **Drop-off:** {car_data.get('dropoff_location', '—')}")
+    if car_data.get("pickup_datetime"):
+        lines.append(f"🕒  **Pickup time:** {car_data['pickup_datetime']}")
+    if price:
+        lines.append(f"\n💰  **Fare: PKR {int(price):,}**  (paid to the driver — no card needed)")
+
+    lines.append("\n\nTap **Confirm Car Booking** to assign a driver — you'll get the "
+                 "driver's details and a verification code right after.")
 
     return "\n".join(lines)
 
@@ -170,62 +217,6 @@ async def present_booking_summary(booking_details: dict[str, Any]) -> str:
     except Exception as exc:
         logger.warning("booking_agent summary unexpected error: %s", exc)
         return _fallback_summary(booking_details, payment_question)
-
-
-async def execute_booking(
-    user_id: str,
-    booking_type: str,             # 'flight' | 'train' | 'hotel'
-    contact_email: str,
-    total_amount: float,
-    raw_payload: dict,
-    origin: str | None = None,
-    destination: str | None = None,
-    departure_at: datetime | None = None,
-    arrival_at: datetime | None = None,
-    hotel_name: str | None = None,
-    check_in: date | None = None,
-    check_out: date | None = None,
-) -> dict[str, Any]:
-    """
-    DEPRECATED / UNUSED — do not call in the current flow.
-
-    The live booking flow is: agent shows a payment_choice summary →
-    Flutter calls POST /agent/book (creates a PENDING booking) → POST /payments/
-    initiate completes payment and sends the confirmation email. This function
-    instead creates a booking AND emails immediately (pre-payment), which would
-    confirm an unpaid booking. Kept only for reference; no caller invokes it.
-
-    Email-send failure is logged but does NOT roll back the booking.
-    """
-    booking = await create_booking(
-        user_id=user_id,
-        booking_type=booking_type,
-        contact_email=contact_email,
-        total_amount=total_amount,
-        raw_payload=raw_payload,
-        origin=origin,
-        destination=destination,
-        departure_at=departure_at,
-        arrival_at=arrival_at,
-        hotel_name=hotel_name,
-        check_in=check_in,
-        check_out=check_out,
-    )
-
-    try:
-        await send_booking_confirmation(booking.id)
-    except Exception as exc:
-        logger.warning(
-            "Booking %s created but confirmation email failed: %s",
-            booking.booking_id, exc,
-        )
-
-    return {
-        "pnr": booking.pnr,
-        "booking_id": booking.booking_id,
-        "status": booking.status,
-        "total_amount": booking.total_amount,
-    }
 
 
 async def handle_cancellation(booking_uuid: str, user_id: str) -> str:

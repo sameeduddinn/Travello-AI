@@ -12,6 +12,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flight_app/utils/responsive_helper.dart';
+import 'package:flight_app/widgets/payment/complete_payment_sheet.dart';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  🎫 PROFESSIONAL BOOKING DETAIL PAGE
@@ -2524,28 +2525,74 @@ class _BookingDetailState extends State<BookingDetail> {
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(9.6),
-            decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green.shade200),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.check_circle,
-                    color: Colors.green.shade700, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Payment successful via ${_booking['paymentMethod'] ?? 'Card'}',
-                    style: TravelloTheme.caption.copyWith(
-                      color: Colors.green.shade700,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+          _buildPaymentStatusBanner(),
+        ],
+      ),
+    );
+  }
+
+  /// Payment status line — reflects the real booking status instead of always
+  /// claiming success. A pending (Pay-Later) booking shows an amber "amount due"
+  /// prompt; paid/confirmed shows the green success line; cancelled shows red.
+  Widget _buildPaymentStatusBanner() {
+    final status = (_booking['status'] ?? 'confirmed').toString().toLowerCase();
+    final isPaid = status == 'paid' || status == 'confirmed';
+    final isCancelled = status == 'cancelled' || status == 'canceled';
+    final total = (_booking['total'] as num?)?.toDouble() ?? 0.0;
+
+    if (isCancelled) {
+      return _paymentBanner(
+        bg: Colors.red.shade50,
+        border: Colors.red.shade200,
+        fg: Colors.red.shade700,
+        icon: Icons.cancel_outlined,
+        text: 'This booking was cancelled.',
+      );
+    }
+    if (isPaid) {
+      return _paymentBanner(
+        bg: Colors.green.shade50,
+        border: Colors.green.shade200,
+        fg: Colors.green.shade700,
+        icon: Icons.check_circle,
+        text: 'Payment successful via ${_booking['paymentMethod'] ?? 'Card'}',
+      );
+    }
+    return _paymentBanner(
+      bg: Colors.amber.shade50,
+      border: Colors.amber.shade200,
+      fg: Colors.amber.shade900,
+      icon: Icons.access_time_rounded,
+      text: 'Payment pending — PKR ${total.toStringAsFixed(0)} due. '
+          'Tap "Complete Payment" below to confirm this booking.',
+    );
+  }
+
+  Widget _paymentBanner({
+    required Color bg,
+    required Color border,
+    required Color fg,
+    required IconData icon,
+    required String text,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(9.6),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: fg, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TravelloTheme.caption.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -2661,6 +2708,50 @@ class _BookingDetailState extends State<BookingDetail> {
     );
   }
 
+  /// Opens the card sheet for a pending (Pay-Later) booking and, on success,
+  /// flips this screen to the confirmed state. Reuses the existing
+  /// `/payments/initiate` flow on the booking UUID — no re-booking.
+  Future<void> _completePayment() async {
+    final bookingId = (_booking['id'] ?? '').toString();
+    final total = (_booking['total'] as num?)?.toDouble() ?? 0.0;
+    if (bookingId.isEmpty || total <= 0) {
+      Get.snackbar(
+        'Payment unavailable',
+        'This booking is missing the details needed to take a payment.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade700,
+        colorText: Colors.white,
+      );
+      return;
+    }
+    final email =
+        (_booking['contact_email'] ?? _booking['contactEmail'] ?? '').toString();
+
+    await showCompletePaymentSheet(
+      context: context,
+      bookingId: bookingId,
+      amount: total,
+      email: email.isNotEmpty ? email : null,
+      onSuccess: (pnr, amount) {
+        if (!mounted) return;
+        setState(() {
+          _booking = {
+            ..._booking,
+            'status': 'confirmed',
+            if (pnr.isNotEmpty) 'pnr': pnr,
+          };
+        });
+        Get.snackbar(
+          'Payment successful',
+          'Your booking is now confirmed.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green.shade700,
+          colorText: Colors.white,
+        );
+      },
+    );
+  }
+
   Widget _buildBottomBar() {
     final bookingType = _booking['bookingType'] ?? 'flight';
     final isTrainBooking = bookingType == 'train';
@@ -2686,6 +2777,7 @@ class _BookingDetailState extends State<BookingDetail> {
 
     final status = (_booking['status'] ?? '').toString().toLowerCase();
     final isCancelled = status == 'cancelled' || status == 'canceled';
+    final isPending = status == 'pending';
     final canCancel = !isCancelled;
     final canReview = status == 'paid' || status == 'confirmed';
 
@@ -2705,6 +2797,32 @@ class _BookingDetailState extends State<BookingDetail> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (isPending) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: FilledButton.icon(
+                  onPressed: _completePayment,
+                  icon: const Icon(Icons.credit_card_rounded, size: 18),
+                  label: Text(
+                    'COMPLETE PAYMENT · PKR ${((_booking['total'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFD4AF37),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             SizedBox(
               width: double.infinity,
               height: 50,

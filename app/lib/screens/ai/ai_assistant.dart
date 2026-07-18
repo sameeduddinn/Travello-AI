@@ -1,9 +1,19 @@
-﻿import 'package:flight_app/models/ai_chat.dart';
+﻿import 'dart:async';
+
+import 'package:flight_app/app/app_link.dart';
+import 'package:flight_app/models/ai_chat.dart';
+import 'package:flight_app/models/airport.dart';
+import 'package:flight_app/models/hotel.dart' show Hotel;
+import 'package:flight_app/screens/flight/flight_results_screen.dart'
+    show FlightResult;
+import 'package:flight_app/screens/railway/train_results_screen.dart'
+    show TrainResult;
 import 'package:flight_app/services/api_client.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:get/get.dart' show Get, GetNavigation;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -721,6 +731,14 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
   String? _conversationId;
   String? _pendingAction;
   Map<String, dynamic>? _pendingBookingData;
+  bool _savingForLater = false;
+  bool _confirmingCar = false;
+
+  // Passenger details collected via the native form (agent mode). Payment is
+  // hard-gated on this being non-null — chat never collects identity fields.
+  List<Map<String, dynamic>>? _agentPassengers;
+  Map<String, dynamic>? _agentContact;
+  bool _collectingPassengers = false;
 
   static const _kConvIdKey = 'ai_conversation_id';
 
@@ -870,6 +888,8 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
   void _clearPendingAction() => setState(() {
         _pendingAction = null;
         _pendingBookingData = null;
+        _agentPassengers = null;
+        _agentContact = null;
       });
 
   void _showCardPaymentSheet() {
@@ -881,6 +901,8 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       builder: (_) => _CardPaymentSheet(
         bookingData: _pendingBookingData!,
         conversationId: _conversationId!,
+        passengers: _agentPassengers,
+        contact: _agentContact,
         onSuccess: (pnr, amount) {
           _clearPendingAction();
           setState(() {
@@ -902,21 +924,335 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     );
   }
 
-  void _navigateToManualPayment() {
+  Future<void> _saveBookingForLater() async {
     final data = _pendingBookingData;
-    _clearPendingAction();
-    final type = data?['booking_type'] as String? ?? 'flight';
+    if (data == null || _conversationId == null || _savingForLater) return;
+
+    final amount = (data['total_price_pkr'] as num?)?.toDouble() ?? 0.0;
+    if (amount <= 0) {
+      setState(() {
+        _messages.add(ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          message: "This option doesn't have a confirmed price yet, so I can't "
+              'save it. Ask me to show the exact fare first, then try again.',
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
+      return;
+    }
+
+    setState(() => _savingForLater = true);
+    try {
+      final booking = await ApiClient.agentBook(
+        bookingType: data['booking_type'] as String? ?? 'flight',
+        conversationId: _conversationId!,
+        origin: data['origin'] as String?,
+        destination: data['destination'] as String?,
+        travelDate: data['travel_date'] as String?,
+        departureTime: data['departure_time'] as String?,
+        arrivalTime: data['arrival_time'] as String?,
+        flightNumber: data['flight_number'] as String?,
+        trainName: data['train_name'] as String?,
+        checkIn: data['check_in'] as String?,
+        checkOut: data['check_out'] as String?,
+        travelers: (data['travelers'] as num?)?.toInt() ?? 1,
+        totalAmount: amount,
+        hotelName: data['hotel_name'] as String?,
+        passengerName: _agentContact?['contactName'] as String?,
+        contactPhone: _agentContact?['contactPhone'] as String?,
+        adults: (data['adults'] as num?)?.toInt(),
+        children: (data['children'] as num?)?.toInt(),
+        infants: (data['infants'] as num?)?.toInt(),
+        rooms: (data['rooms'] as num?)?.toInt(),
+        cabinClass: data['cabin_class'] as String?,
+        trainClass: data['train_class'] as String?,
+        roomType: data['room_type'] as String?,
+        facilities: _agentTransferFacilities(data),
+        description: data['selected_option'] as String? ?? 'Agent booking',
+      );
+      final pnr = booking['pnr'] as String? ?? '';
+
+      // Persist the passengers collected via the native form onto the pending
+      // booking, so a saved-for-later booking carries real traveler rows too.
+      final bookingId = booking['booking_id'] as String?;
+      if (bookingId != null &&
+          _agentPassengers != null &&
+          _agentPassengers!.isNotEmpty) {
+        await ApiClient.addPassengers(
+          bookingId: bookingId,
+          passengers: _agentPassengers!,
+        );
+      }
+      if (!mounted) return;
+      _clearPendingAction();
+      setState(() {
+        _savingForLater = false;
+        _messages.add(ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          message: '📌 **Booking Saved!**\n\n'
+              '**PNR:** $pnr\n'
+              '**Amount Due:** PKR ${amount.toStringAsFixed(0)}\n\n'
+              "It's saved as pending — you can pay anytime from **My Bookings**.",
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _savingForLater = false;
+        _messages.add(ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          message: "I couldn't save that booking (${e.toString().replaceFirst('Exception: ', '')}). "
+              'Please try again.',
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
+    }
+  }
+
+  // ── Agent-mode passenger collection (native form handoff) ──────────────────
+  //
+  // Identity fields (CNIC, passport, DOB, emergency contact) are never typed
+  // into chat. The same validated native forms the manual flow uses are opened
+  // with agentMode: true, and hand their data back here via Get.back(result:).
+
+  Widget _buildAddPassengerBar() {
+    const gold = Color(0xFFD4AF37);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey.shade100)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Step 1 of 2 — traveler information:',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade500,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _collectingPassengers ? null : _openPassengerForm,
+              icon: _collectingPassengers
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.person_add_alt_1_rounded,
+                      size: 18, color: Colors.white),
+              label: const Text(
+                'Add Passenger Details',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: gold,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                elevation: 2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openPassengerForm() async {
+    final data = _pendingBookingData;
+    if (data == null || _collectingPassengers) return;
+    final type = data['booking_type'] as String? ?? 'flight';
+
+    setState(() => _collectingPassengers = true);
+    dynamic result;
+    try {
+      switch (type) {
+        case 'train':
+          result = await Get.toNamed('/train-passengers',
+              arguments: _trainFormArgs(data));
+          break;
+        case 'hotel':
+          result = await Get.toNamed(AppLink.hotelGuestForm,
+              arguments: _hotelFormArgs(data));
+          break;
+        default:
+          result = await Get.toNamed(AppLink.bookingStep1,
+              arguments: _flightFormArgs(data));
+      }
+    } finally {
+      if (mounted) setState(() => _collectingPassengers = false);
+    }
+
+    if (!mounted || result is! Map) return;
+    final res = Map<String, dynamic>.from(result);
+    final passengers = List<Map<String, dynamic>>.from(
+      (res['passengers'] as List? ?? const [])
+          .map((p) => Map<String, dynamic>.from(p as Map)),
+    );
+    if (passengers.isEmpty) return;
+
     setState(() {
+      _agentPassengers = passengers;
+      _agentContact = {
+        for (final k in [
+          'contactName',
+          'contactEmail',
+          'contactPhone',
+          'emergencyName',
+          'emergencyEmail',
+          'emergencyPhone',
+          'emergencyRelation',
+        ])
+          if ((res[k] as String?)?.isNotEmpty ?? false) k: res[k],
+      };
       _messages.add(ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        message: 'No problem! Go to the **${type[0].toUpperCase()}${type.substring(1)}s** tab, '
-            'select your option, and complete payment securely. '
-            'Your booking details are saved above for reference. 🎯',
+        message: '✅ Passenger details saved for '
+            '${passengers.length} traveler(s). Now choose how you\'d like to pay.',
         isUser: false,
         timestamp: DateTime.now(),
       ));
     });
     _scrollToBottom();
+  }
+
+  int _countOf(Map<String, dynamic> data, String key, int fallback) =>
+      (data[key] as num?)?.toInt() ?? fallback;
+
+  Map<String, dynamic> _flightFormArgs(Map<String, dynamic> data) {
+    Airport lookup(String city, String fallbackCode) => airportList.firstWhere(
+          (a) =>
+              a.location.toLowerCase() == city.toLowerCase() ||
+              a.code.toLowerCase() == city.toLowerCase(),
+          orElse: () =>
+              Airport(id: '0', code: fallbackCode, name: city, location: city),
+        );
+    final flight = FlightResult(
+      id: (data['flight_number'] as String?) ?? 'AGENT',
+      airlineName: (data['airline_or_train_name'] as String?) ??
+          (data['selected_option'] as String?) ??
+          'Selected Flight',
+      airlineCode: '',
+      airlineLogo: '',
+      departureTime: (data['departure_time'] as String?) ?? '--:--',
+      arrivalTime: (data['arrival_time'] as String?) ?? '--:--',
+      duration: '--',
+      stops: 0,
+      stopCities: const [],
+      price: ((data['total_price_pkr'] as num?) ?? 0).toDouble(),
+      isRefundable: false,
+      cabinClass: (data['cabin_class'] as String?) ?? 'Economy',
+      flightNumber: data['flight_number'] as String?,
+    );
+    return {
+      'agentMode': true,
+      'flight': flight,
+      'searchParams': {
+        'fromAirport': lookup((data['origin'] as String?) ?? '', 'DEP'),
+        'toAirport': lookup((data['destination'] as String?) ?? '', 'ARR'),
+        'departureDate':
+            DateTime.tryParse((data['travel_date'] as String?) ?? '') ??
+                DateTime.now(),
+        'adults': _countOf(data, 'adults', 1),
+        'children': _countOf(data, 'children', 0),
+        'infants': _countOf(data, 'infants', 0),
+      },
+    };
+  }
+
+  Map<String, dynamic> _trainFormArgs(Map<String, dynamic> data) {
+    final cls = (data['train_class'] as String?) ?? 'Economy';
+    final train = TrainResult(
+      id: 'AGENT',
+      trainName: (data['train_name'] as String?) ??
+          (data['airline_or_train_name'] as String?) ??
+          'Selected Train',
+      trainNumber: '',
+      departureTime: (data['departure_time'] as String?) ?? '--:--',
+      arrivalTime: (data['arrival_time'] as String?) ?? '--:--',
+      duration: '--',
+      classSeats: {cls: null},
+      classPrices: {cls: ((data['total_price_pkr'] as num?) ?? 0).toDouble()},
+      availableClasses: [cls],
+    );
+    return {
+      'agentMode': true,
+      'train': train,
+      'selectedClass': cls,
+      'searchParams': {
+        'adults': _countOf(data, 'adults', 1),
+        'children': _countOf(data, 'children', 0),
+        'infants': _countOf(data, 'infants', 0),
+        'departureDate':
+            DateTime.tryParse((data['travel_date'] as String?) ?? '') ??
+                DateTime.now(),
+      },
+    };
+  }
+
+  Map<String, dynamic> _hotelFormArgs(Map<String, dynamic> data) {
+    final total = ((data['total_price_pkr'] as num?) ?? 0).toDouble();
+    final rooms = _countOf(data, 'rooms', 1);
+    final checkIn = DateTime.tryParse((data['check_in'] as String?) ?? '');
+    final checkOut = DateTime.tryParse((data['check_out'] as String?) ?? '');
+    final nights = (checkIn != null && checkOut != null)
+        ? checkOut.difference(checkIn).inDays.clamp(1, 365)
+        : 1;
+    final hotel = Hotel(
+      id: 'AGENT',
+      name: (data['hotel_name'] as String?) ?? 'Selected Hotel',
+      address: (data['destination'] as String?) ?? '',
+      city: (data['destination'] as String?) ?? '',
+      rating: 0,
+      totalReviews: 0,
+      images: const [],
+      amenities: const [],
+      pricePerNight: rooms > 0 ? total / (nights * rooms) : total,
+      category: '',
+      isRefundable: false,
+      hasBreakfast: false,
+      hasFreeWifi: false,
+      hasParking: false,
+      hasPool: false,
+      description: '',
+      distanceFromCenter: 0,
+    );
+    return {
+      'agentMode': true,
+      'hotel': hotel,
+      'checkInDate': checkIn,
+      'checkOutDate': checkOut,
+      'rooms': rooms,
+      'guests': _countOf(data, 'guests', 1),
+      'totalPrice': total,
+    };
   }
 
   Widget _buildPaymentButtons() {
@@ -952,7 +1288,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: _showCardPaymentSheet,
+                  onPressed: _savingForLater ? null : _showCardPaymentSheet,
                   icon: const Icon(Icons.credit_card_rounded,
                       size: 18, color: Colors.white),
                   label: const Text(
@@ -974,11 +1310,18 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _navigateToManualPayment,
-                  icon: Icon(Icons.open_in_new_rounded,
-                      size: 18, color: Colors.grey.shade700),
+                  onPressed: _savingForLater ? null : _saveBookingForLater,
+                  icon: _savingForLater
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.grey.shade700),
+                        )
+                      : Icon(Icons.bookmark_added_outlined,
+                          size: 18, color: Colors.grey.shade700),
                   label: Text(
-                    'Pay Manually',
+                    _savingForLater ? 'Saving...' : 'Pay Later',
                     style: TextStyle(
                         color: Colors.grey.shade800,
                         fontWeight: FontWeight.w600,
@@ -991,6 +1334,176 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                         borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Standalone car booking (Phase 3) ───────────────────────────────────────
+  //
+  // The backend gate has already validated the request and returned
+  // action == 'car_booking_choice' with booking_data. This is the single
+  // human tap that commits it: no committing tool ever ran in the agent loop.
+  // A standalone car has NO card step — the fare is paid to the driver — so
+  // this calls ApiClient.bookCar directly (unlike the flight/train/hotel path).
+
+  Future<void> _confirmCarBooking() async {
+    final data = _pendingBookingData;
+    if (data == null || _confirmingCar) return;
+
+    final pickup = (data['pickup_location'] as String?)?.trim() ?? '';
+    final dropoff = (data['dropoff_location'] as String?)?.trim() ?? '';
+    final vehicle = (data['vehicle_type'] as String?)?.trim() ?? '';
+    final pickupDt = (data['pickup_datetime'] as String?)?.trim() ?? '';
+    if (pickup.isEmpty ||
+        dropoff.isEmpty ||
+        vehicle.isEmpty ||
+        pickupDt.isEmpty) {
+      setState(() {
+        _messages.add(ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          message: "I'm missing some ride details. Please tell me the pickup, "
+              'drop-off, vehicle and time again.',
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
+      return;
+    }
+
+    setState(() => _confirmingCar = true);
+    try {
+      // contactEmail omitted — the backend falls back to the account email.
+      final res = await ApiClient.bookCar(
+        pickupLocation: pickup,
+        dropoffLocation: dropoff,
+        vehicleType: vehicle,
+        pickupDatetime: pickupDt,
+      );
+      if (!mounted) return;
+      final driver = (res['driver'] as Map?)?.cast<String, dynamic>() ?? {};
+      final driverName = (driver['name'] as String?) ?? 'your driver';
+      final driverPhone = (driver['phone'] as String?) ?? '';
+      final plate = (driver['vehicle_plate'] as String?) ?? '';
+      final code = (res['verification_code'] as String?) ?? '';
+      final fare = (res['total_amount'] as num?)?.toStringAsFixed(0) ?? '';
+
+      _clearPendingAction();
+      setState(() {
+        _confirmingCar = false;
+        _messages.add(ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          message: '✅ **Car Booked!**\n\n'
+              '**Driver:** $driverName${driverPhone.isNotEmpty ? ' · $driverPhone' : ''}\n'
+              '**Vehicle:** $vehicle${plate.isNotEmpty ? ' · $plate' : ''}\n'
+              '**Verification code:** $code\n'
+              '**Fare:** PKR $fare (paid to the driver)\n\n'
+              'Show the code to your driver at pickup. You can see this ride any '
+              'time under **My Bookings → Car**.',
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
+    } catch (e) {
+      if (!mounted) return;
+      // Keep the confirm bar so the user can retry (e.g. no driver available yet).
+      setState(() {
+        _confirmingCar = false;
+        _messages.add(ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          message: "I couldn't book that ride "
+              '(${e.toString().replaceFirst('Exception: ', '')}). '
+              'Please try again in a moment.',
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
+    }
+  }
+
+  Widget _buildCarConfirmBar() {
+    const gold = Color(0xFFD4AF37);
+    final fare = (_pendingBookingData?['price_pkr'] as num?)?.toStringAsFixed(0);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey.shade100)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            fare != null
+                ? 'Confirm your ride · PKR $fare (paid to driver)'
+                : 'Confirm your ride',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade500,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _confirmingCar ? null : _confirmCarBooking,
+                  icon: _confirmingCar
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.directions_car_rounded,
+                          size: 18, color: Colors.white),
+                  label: Text(
+                    _confirmingCar ? 'Booking...' : 'Confirm Car Booking',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: gold,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton(
+                onPressed: _confirmingCar ? null : _clearPendingAction,
+                style: OutlinedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+                  side: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text('Cancel',
+                    style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13)),
               ),
             ],
           ),
@@ -1300,8 +1813,14 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             },
           ),
         ),
-        if (_pendingAction == 'payment_choice') _buildPaymentButtons(),
-        if (_pendingAction != 'payment_choice') _buildInputField(),
+        if (_pendingAction == 'payment_choice')
+          _agentPassengers == null
+              ? _buildAddPassengerBar()
+              : _buildPaymentButtons()
+        else if (_pendingAction == 'car_booking_choice')
+          _buildCarConfirmBar()
+        else
+          _buildInputField(),
       ],
     );
   }
@@ -1725,6 +2244,26 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             timestamp: DateTime.now()));
         _isTyping = false;
       });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            message: _messageForApiException(e),
+            isUser: false,
+            timestamp: DateTime.now()));
+        _isTyping = false;
+      });
+    } on TimeoutException catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            message: 'The assistant is taking longer than usual to respond. Please try again in a moment.',
+            isUser: false,
+            timestamp: DateTime.now()));
+        _isTyping = false;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -1737,6 +2276,20 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       });
     }
     _scrollToBottom();
+  }
+
+  /// Maps a backend HTTP failure to a message that tells the user what
+  /// actually happened (daily limit vs. server timeout) instead of a single
+  /// generic "something went wrong" for every case.
+  String _messageForApiException(ApiException e) {
+    switch (e.statusCode) {
+      case 429:
+        return "You've reached today's message limit (50). Please try again tomorrow.";
+      case 504:
+        return 'The assistant is taking longer than usual to respond. Please try again in a moment.';
+      default:
+        return 'Something went wrong. Please check your connection and try again.';
+    }
   }
 
   void _scrollToBottom() {
@@ -2080,17 +2633,42 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
 // ─────────────────────────────────────────────────────────────────────────────
 // Card payment bottom sheet
 // ─────────────────────────────────────────────────────────────────────────────
+/// Builds the /agent/book `facilities` map from a verified booking_data's
+/// transfer fields, using the SAME key names the manual booking forms use
+/// (transferAdded / transferVehicleType / transferPickupLocation) so the
+/// backend's post-payment book_car_transfers task confirms the driver exactly
+/// as it does for a manual booking. Returns null when no transfer was accepted.
+Map<String, dynamic>? _agentTransferFacilities(Map<String, dynamic> data) {
+  final vehicle = (data['transfer_vehicle_type'] as String?)?.trim();
+  final pickup = (data['transfer_pickup_location'] as String?)?.trim();
+  if (vehicle == null || vehicle.isEmpty || pickup == null || pickup.isEmpty) {
+    return null;
+  }
+  return {
+    'transferAdded': true,
+    'transferVehicleType': vehicle,
+    'transferPickupLocation': pickup,
+  };
+}
+
 class _CardPaymentSheet extends StatefulWidget {
   final Map<String, dynamic> bookingData;
   final String conversationId;
   final void Function(String pnr, double amount) onSuccess;
   final VoidCallback onCancel;
+  // Passengers + contact collected via the native form (agentMode handoff).
+  // Attached to the booking before payment, mirroring the manual flow's
+  // create -> POST /passengers -> POST /payments sequence.
+  final List<Map<String, dynamic>>? passengers;
+  final Map<String, dynamic>? contact;
 
   const _CardPaymentSheet({
     required this.bookingData,
     required this.conversationId,
     required this.onSuccess,
     required this.onCancel,
+    this.passengers,
+    this.contact,
   });
 
   @override
@@ -2153,6 +2731,7 @@ class _CardPaymentSheetState extends State<_CardPaymentSheet> {
         return;
       }
 
+      final contactName = (widget.contact?['contactName'] as String?)?.trim();
       // Step 1: Create booking via agent endpoint
       final booking = await ApiClient.agentBook(
         bookingType: data['booking_type'] as String? ?? 'flight',
@@ -2169,14 +2748,34 @@ class _CardPaymentSheetState extends State<_CardPaymentSheet> {
         travelers: (data['travelers'] as num?)?.toInt() ?? 1,
         totalAmount: amount,
         hotelName: data['hotel_name'] as String?,
-        passengerName: _nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim() : null,
+        passengerName: (contactName != null && contactName.isNotEmpty)
+            ? contactName
+            : (_nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim() : null),
+        contactPhone: widget.contact?['contactPhone'] as String?,
+        adults: (data['adults'] as num?)?.toInt(),
+        children: (data['children'] as num?)?.toInt(),
+        infants: (data['infants'] as num?)?.toInt(),
+        rooms: (data['rooms'] as num?)?.toInt(),
+        cabinClass: data['cabin_class'] as String?,
+        trainClass: data['train_class'] as String?,
+        roomType: data['room_type'] as String?,
+        facilities: _agentTransferFacilities(data),
         description: data['selected_option'] as String? ?? 'Agent booking',
       );
 
       final bookingId = booking['booking_id'] as String;
       final pnr = booking['pnr'] as String;
 
-      // Step 2: Initiate card payment (instant confirmation)
+      // Step 2: Attach the passengers collected via the native form, before
+      // payment — same order as the manual flow (create -> /passengers -> pay).
+      if (widget.passengers != null && widget.passengers!.isNotEmpty) {
+        await ApiClient.addPassengers(
+          bookingId: bookingId,
+          passengers: widget.passengers!,
+        );
+      }
+
+      // Step 3: Initiate card payment (instant confirmation)
       await ApiClient.initiatePayment(
         bookingId: bookingId,
         method: 'card',

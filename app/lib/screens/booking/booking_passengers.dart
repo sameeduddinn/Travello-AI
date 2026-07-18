@@ -125,10 +125,17 @@ class _BookingPassengersState extends State<BookingPassengers> {
   // Per-passenger field holders
   late List<_PassengerData> _passengers;
 
+  // Agent chat flow — submit returns data to the conversation via Get.back
+  bool _agentMode = false;
+
   @override
   void initState() {
     super.initState();
     final args = Get.arguments as Map<String, dynamic>? ?? {};
+
+    // Agent chat flow: on submit, return the data to the conversation
+    // instead of continuing into the manual facilities/checkout chain.
+    _agentMode = args['agentMode'] as bool? ?? false;
 
     // Round trip detection
     _isRoundTrip = args['isRoundTrip'] as bool? ?? false;
@@ -525,6 +532,23 @@ class _BookingPassengersState extends State<BookingPassengers> {
             'emergencyRelation': _emergencyRelationCtrl.text.trim(),
           }));
     } catch (_) {}
+
+    if (_agentMode) {
+      Get.back(result: {
+        'passengers': passengersData,
+        'adults': _adults,
+        'children': _children,
+        'infants': _infants,
+        'contactName': _contactNameCtrl.text.trim(),
+        'contactEmail': _contactEmailCtrl.text.trim(),
+        'contactPhone': _contactPhoneCtrl.text.trim(),
+        'emergencyName': _emergencyNameCtrl.text.trim(),
+        'emergencyEmail': _emergencyEmailCtrl.text.trim(),
+        'emergencyPhone': _emergencyPhoneCtrl.text.trim(),
+        'emergencyRelation': _emergencyRelationCtrl.text.trim(),
+      });
+      return;
+    }
 
     Get.toNamed(AppLink.bookingStep2, arguments: {
       'flight': _flight,

@@ -703,7 +703,39 @@ class _MyBookingsState extends State<MyBookings>
               ),
             ]),
           ),
+          if (_normalizedStatus(booking) == 'pending') _buildPendingPayStrip(),
         ]),
+      ),
+    );
+  }
+
+  /// Footer strip on a pending (Pay-Later) booking card, signalling that the
+  /// booking can be paid. Tapping the card opens Booking Detail, which carries
+  /// the "Complete Payment" action.
+  Widget _buildPendingPayStrip() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: _goldLight,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+        border: Border(top: BorderSide(color: _gold.withValues(alpha: 0.3))),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.access_time_rounded, size: 15, color: _goldDark),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'Payment pending — tap to complete',
+              style: TravelloTheme.caption.copyWith(
+                color: _goldDark,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const Icon(Icons.arrow_forward_ios, size: 12, color: _goldDark),
+        ],
       ),
     );
   }

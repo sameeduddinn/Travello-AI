@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
     # Groq (completely free — sign up at console.groq.com)
+    # Default is the demo/production model. 8B (llama-3.1-8b-instant) is cheaper for local
+    # dev but follows instructions less reliably — it invents traveler counts for vague
+    # group requests instead of asking (see .env comment / CHANGELOG_agent_hardening.md).
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
 

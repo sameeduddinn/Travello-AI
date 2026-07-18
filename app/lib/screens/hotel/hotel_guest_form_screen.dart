@@ -33,6 +33,9 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
   final _cnicCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+
+  // Agent chat flow — submit returns data to the conversation via Get.back
+  bool _agentMode = false;
   String _gender = 'Male';
   bool _cnicVerified = false;
   bool _saveGuestDetails = false;
@@ -55,6 +58,9 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
     super.initState();
     // BUG 9 FIX: null-safe argument reading with sensible fallbacks
     final args = Get.arguments as Map? ?? {};
+    // Agent chat flow: on submit, return the data to the conversation
+    // instead of continuing into the manual checkout chain.
+    _agentMode = args['agentMode'] as bool? ?? false;
     final hotelArg = args['hotel'];
     if (hotelArg == null || hotelArg is! Hotel) {
       WidgetsBinding.instance.addPostFrameCallback((_) => Get.back());
@@ -311,6 +317,19 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
     ];
 
     await _saveGuestData();
+
+    if (_agentMode) {
+      Get.back(result: {
+        'passengers': guestsData,
+        'guests': guests,
+        'rooms': rooms,
+        'contactName':
+            '${_firstNameCtrl.text.trim()} ${_lastNameCtrl.text.trim()}'.trim(),
+        'contactEmail': _emailCtrl.text.trim(),
+        'contactPhone': _phoneCtrl.text.trim(),
+      });
+      return;
+    }
 
     Get.toNamed('/hotel-checkout', arguments: {
       'hotel': hotel,
@@ -979,6 +998,9 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                   ],
 
                   // ── Add Extras ─────────────────────────────────────────────
+                  // Hidden in agent mode: the agent's price is server-verified
+                  // without extras, so offering them here would desync totals.
+                  if (!_agentMode) ...[
                   const Text('Add extras',
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -1044,6 +1066,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                         setState(() => _addLateCheckout = !_addLateCheckout),
                   ),
                   const SizedBox(height: 16),
+                  ],
 
                   // ── House Rules ─────────────────────────────────────────────
                   Container(

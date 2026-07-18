@@ -46,13 +46,27 @@ from agents.booking_agent import (
     present_booking_summary,
     extract_booking_from_history,
     format_booking_summary,
+    format_car_booking_summary,
 )
 from agents.recommendation_agent import get_recommendations
 from agents.healthcare_agent import get_safety_briefing
 
-from services.llm_service import generate_text, generate_with_tools, GeminiError
-from agents.agent_tools import TOOL_SCHEMAS, execute_tool
+from services.llm_service import generate_text, generate_with_tools, GeminiError, LLMError
+from agents.agent_tools import (
+    TOOL_SCHEMAS,
+    execute_tool,
+    get_missing_booking_fields,
+    get_booking_count_error,
+    get_booking_date_error,
+    apply_traveler_totals,
+    reprice_booking,
+    missing_fields_result,
+    offer_not_found_result,
+    get_car_booking_error,
+    build_car_booking_data,
+)
 from prompts.master_agent import MASTER_SYSTEM, MASTER_AGENTIC_SYSTEM
+from prompts.knowledge import get_relevant_facts, EMERGENCY_NUMBERS
 from core.supabase_client import supabase_admin
 from core.config import settings
 
@@ -199,13 +213,17 @@ def _format_memory(memory: dict, profile: dict) -> str:
         parts.append(f"User's name: {name}")
 
     if memory:
+        # NOTE: past_destinations is deliberately NOT injected. It is user-level
+        # (spans every conversation), and surfacing an earlier chat's destination
+        # here made the model invent demo searches to a place the user never named
+        # in the current chat — a cross-conversation bleed. Home city + stable
+        # preferences are safe to personalise with; a prior destination is not.
         parts.append(
             f"Travel preferences: home city={memory.get('origin_city')}, "
             f"preferred class={memory.get('preferred_class')}, "
             f"travel style={memory.get('travel_style')}, "
             f"companion type={memory.get('companion_type')}, "
-            f"budget style={memory.get('budget_style')}, "
-            f"past destinations={memory.get('past_destinations')}"
+            f"budget style={memory.get('budget_style')}"
         )
 
     return " | ".join(parts) if parts else ""
@@ -501,10 +519,12 @@ async def process_message(
     )
 
     # Step 7 — final synthesis via Gemini
+    facts = get_relevant_facts(user_message)
     user_turn_content = (
         f"{user_message}\n\n"
         f"Context from agents:\n{combined_context or '(no agent results)'}\n\n"
         f"User memory: {memory_context or '(no saved preferences)'}"
+        + (f"\n\nGrounded facts — use these, don't contradict them:\n{facts}" if facts else "")
     )
     full_messages: list[dict[str, str]] = [{"role": "system", "content": MASTER_SYSTEM}]
     full_messages.extend(history)
@@ -559,6 +579,18 @@ async def process_message(
 # so 3 steps covers far more than 3 tools.
 _MAX_TOOL_STEPS = 3
 
+# Shown when the LLM provider is momentarily rate-limited (free-tier TPM 429).
+# Deliberately transient and reassuring — this is a per-minute wall, not a failure.
+_RATE_LIMIT_MESSAGE = (
+    "I'm getting a burst of requests right now and hit a brief rate limit. "
+    "Please try again in a minute — nothing was lost, your trip details are safe."
+)
+
+
+def _is_rate_limit_error(exc: Exception) -> bool:
+    """True for the Groq/Gemini quota (429) signal raised by llm_service."""
+    return isinstance(exc, LLMError) and "quota_exhausted" in str(exc)
+
 
 async def _synthesize_from_tools(
     system_prompt: str,
@@ -608,6 +640,24 @@ def _safe_args(raw: str | None) -> dict:
         return {}
 
 
+def _append_emergency_numbers(tool_result_json: str) -> str:
+    """
+    Backstop for find_healthcare calls the keyword matcher didn't anticipate
+    (e.g. "I feel dizzy" with no explicit hospital/emergency wording). Adds the
+    curated emergency-numbers fact directly onto the tool result so the model
+    has it exactly when reasoning about a healthcare answer. Never raises —
+    falls back to the original content if it isn't valid JSON.
+    """
+    try:
+        data = json.loads(tool_result_json)
+        if isinstance(data, dict):
+            data["emergency_numbers"] = EMERGENCY_NUMBERS
+            return json.dumps(data)
+    except (json.JSONDecodeError, TypeError):
+        pass
+    return tool_result_json
+
+
 def _absorb_learned(learned: dict, args: dict) -> None:
     """Accumulate preference signals from tool-call args (for memory learning + title)."""
     if not args:
@@ -623,6 +673,12 @@ def _absorb_learned(learned: dict, args: dict) -> None:
     if pax and not learned.get("travelers"):
         try:
             learned["travelers"] = int(pax)
+        except (ValueError, TypeError):
+            pass
+    budget = args.get("max_budget_pkr")
+    if budget and not learned.get("budget_pkr"):
+        try:
+            learned["budget_pkr"] = float(budget)
         except (ValueError, TypeError):
             pass
 
@@ -669,11 +725,21 @@ async def process_message_agentic(
         memory=memory_context or "(no saved preferences yet)",
     )
 
+    # Grounded static facts (visa/baggage/rail-class/emergency) — only added
+    # for turns where they're actually relevant, to stay within Groq's TPM budget.
+    facts = get_relevant_facts(user_message)
+    if facts:
+        system_prompt += (
+            "\n\n## Grounded facts for this turn — use these, don't contradict them\n"
+            f"{facts}"
+        )
+
     messages: list[dict] = [{"role": "system", "content": system_prompt}]
     messages.extend(history)
     messages.append({"role": "user", "content": user_message})
 
     booking_data: dict | None = None
+    car_booking_data: dict | None = None
     final_text: str = ""
     tools_used: list[str] = []
     learned: dict = {}
@@ -690,17 +756,63 @@ async def process_message_agentic(
                 final_text = (msg.content or "").strip()
                 break
 
-            # prepare_booking short-circuit — capture the chosen option, stop looping
-            for tc in tool_calls:
-                if tc.function.name == "prepare_booking":
-                    bd = _safe_args(tc.function.arguments)
-                    if _booking_data_is_valid(bd):
-                        booking_data = bd
-                        break
-            if booking_data:
+            # prepare_booking — deterministic gate + server-side repricing.
+            # The model's own judgment on "do I have enough info", whether the
+            # date makes sense, and its own total_price_pkr are never trusted:
+            # required fields are checked in code (get_missing_booking_fields),
+            # travel_date/check_in/check_out are rejected outright if they've
+            # already passed (get_booking_date_error — same hard-rejection gate
+            # applied to search_flights/search_trains/search_hotels down in
+            # execute_tool), and the price is always re-derived from the same
+            # search executor that produced the original offer (reprice_booking)
+            # — a prompt-injected or hallucinated price can never reach a
+            # payment screen. A call that fails any check gets a structured
+            # error back so the model asks or re-searches instead of the turn
+            # silently proceeding on partial, stale, or invented data.
+            booking_calls = [tc for tc in tool_calls if tc.function.name == "prepare_booking"]
+            booking_gate_results: dict[str, dict] = {}
+            for tc in booking_calls:
+                bd = _safe_args(tc.function.arguments)
+                missing = get_missing_booking_fields(bd)
+                if missing:
+                    booking_gate_results[tc.id] = missing_fields_result(missing)
+                    continue
+                count_error = get_booking_count_error(bd)
+                if count_error:
+                    booking_gate_results[tc.id] = count_error
+                    continue
+                date_error = get_booking_date_error(bd)
+                if date_error:
+                    booking_gate_results[tc.id] = date_error
+                    continue
+                bd = apply_traveler_totals(bd)
+                verified = await reprice_booking(bd)
+                if verified:
+                    booking_data = verified
+                    break
+                booking_gate_results[tc.id] = offer_not_found_result()
+
+            # book_car — standalone within-city ride. Same posture as
+            # prepare_booking: the model NEVER commits it. The gate validates the
+            # four fields deterministically (vehicle enum, non-empty locations,
+            # a future pickup time); on success we prepare a car_booking_choice
+            # the app confirms with a single tap, and the driver is assigned only
+            # then. A failed gate is fed back so the model asks instead of guessing.
+            car_calls = [tc for tc in tool_calls if tc.function.name == "book_car"]
+            car_gate_results: dict[str, dict] = {}
+            for tc in car_calls:
+                ca = _safe_args(tc.function.arguments)
+                car_error = get_car_booking_error(ca)
+                if car_error:
+                    car_gate_results[tc.id] = car_error
+                    continue
+                car_booking_data = build_car_booking_data(ca)
                 break
 
-            # Append the assistant tool-call turn, then run the tools in parallel
+            if booking_data or car_booking_data:
+                break
+
+            # Append the assistant tool-call turn, then run the non-booking tools in parallel
             messages.append({
                 "role": "assistant",
                 "content": msg.content or None,
@@ -718,16 +830,45 @@ async def process_message_agentic(
             })
 
             call_args = [_safe_args(tc.function.arguments) for tc in tool_calls]
+            other_calls = [
+                (tc, args) for tc, args in zip(tool_calls, call_args)
+                if tc.function.name not in ("prepare_booking", "book_car")
+            ]
             results = await asyncio.gather(
-                *[execute_tool(tc.function.name, args) for tc, args in zip(tool_calls, call_args)],
+                *[execute_tool(tc.function.name, args) for tc, args in other_calls],
                 return_exceptions=True,
             )
-            for tc, args, res in zip(tool_calls, call_args, results):
+            for (tc, args), res in zip(other_calls, results):
                 tools_used.append(tc.function.name)
                 _absorb_learned(learned, args)
                 content = res if isinstance(res, str) else json.dumps({"error": str(res)})
+                # Backstop: if find_healthcare was called from phrasing the keyword
+                # matcher above didn't catch (e.g. "I feel dizzy"), still ground the
+                # answer in the real emergency numbers rather than the model's memory.
+                if tc.function.name == "find_healthcare" and EMERGENCY_NUMBERS not in system_prompt:
+                    content = _append_emergency_numbers(content)
                 gathered.append((tc.function.name, content))
                 messages.append({"role": "tool", "tool_call_id": tc.id, "content": content})
+
+            for tc in booking_calls:
+                result = booking_gate_results.get(tc.id, offer_not_found_result())
+                messages.append({
+                    "role": "tool", "tool_call_id": tc.id,
+                    "content": json.dumps(result),
+                })
+
+            # Reached only when no car booking was prepared (all car_calls, if any,
+            # failed the gate) — feed each error back so the next turn asks/corrects.
+            for tc in car_calls:
+                result = car_gate_results.get(tc.id) or {
+                    "error": "car_booking_incomplete",
+                    "instruction": "Ask the user for the pickup address, drop-off address, "
+                                   "vehicle type (Sedan/SUV/Van) and pickup date & time.",
+                }
+                messages.append({
+                    "role": "tool", "tool_call_id": tc.id,
+                    "content": json.dumps(result),
+                })
 
         # Loop ended with tools called but no final prose → synthesize one answer.
         if not final_text and not booking_data:
@@ -748,8 +889,14 @@ async def process_message_agentic(
         if gathered:
             final_text = await _synthesize_from_tools(system_prompt, history, user_message, gathered)
         if not final_text:
-            # Nothing gathered → safe to try the legacy pipeline as a last resort.
-            return await process_message(user_id, conversation_id, user_message)
+            if _is_rate_limit_error(exc):
+                # Per-minute rate limit with nothing gathered: re-running the legacy
+                # pipeline just hits the same 429 and double-spends the budget. Fail
+                # fast with an honest, transient message instead of hanging to 504.
+                final_text = _RATE_LIMIT_MESSAGE
+            else:
+                # Nothing gathered → safe to try the legacy pipeline as a last resort.
+                return await process_message(user_id, conversation_id, user_message)
 
     # Booking path → payment_choice (same contract the Flutter app already handles)
     if booking_data:
@@ -765,6 +912,22 @@ async def process_message_agentic(
             "conversation_id": conversation_id,
             "action": "payment_choice",
             "booking_data": booking_data,
+        }
+
+    # Standalone car path → car_booking_choice (single confirm tap, no payment)
+    if car_booking_data:
+        summary = format_car_booking_summary(car_booking_data)
+        await asyncio.gather(
+            save_message(conversation_id, user_id, "user", user_message, message_type="text"),
+            save_message(conversation_id, user_id, "assistant", summary,
+                         model_used=settings.GROQ_MODEL, message_type="text"),
+        )
+        asyncio.ensure_future(_log_task(user_id, conversation_id, "booking", user_message, car_booking_data))
+        return {
+            "response": summary,
+            "conversation_id": conversation_id,
+            "action": "car_booking_choice",
+            "booking_data": car_booking_data,
         }
 
     if not final_text:
