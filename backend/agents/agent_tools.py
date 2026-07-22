@@ -450,6 +450,75 @@ _BOOKING_DATE_FIELDS: dict[str, list[str]] = {
 }
 
 
+# ── Date provenance ───────────────────────────────────────────────────────────
+#
+# find_missing_date_error catches an OMITTED date; find_past_date_error catches a
+# PAST one. Neither can catch the real-world failure: the model, faced with a
+# REQUIRED travel_date, invents one — almost always today — rather than stopping
+# to ask. Today is present and not-past, so it sails through both gates and the
+# user is shown "flights on <today>" for a trip whose date they never gave.
+#
+# The only signal that separates an invented date from a real one is provenance:
+# did the USER actually mention a date anywhere in the conversation? A value like
+# "2026-07-22" carries no such fingerprint; the user's own words do. This matcher
+# is deliberately GENEROUS — any temporal token counts as "date given", so a user
+# who did say when never gets re-asked. It fires only when there is NO temporal
+# signal at all, which is exactly the "book me a flight to Skardu" case.
+_TEMPORAL_RE = re.compile(
+    r"\b\d{4}-\d{1,2}-\d{1,2}\b"                    # 2026-07-22
+    r"|\b\d{1,2}[/.\-]\d{1,2}(?:[/.\-]\d{2,4})?\b"  # 22/7 , 22-07-2026 , 22.07
+    r"|\b\d{1,2}(?:st|nd|rd|th)\b"                  # 22nd, 3rd
+    r"|\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?"
+    r"|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b"
+    r"|\b(?:mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:r(?:s(?:day)?)?)?"
+    r"|fri(?:day)?|sat(?:urday)?|sun(?:day)?)\b"    # weekday (exact-bounded: not "money"/"sunny")
+    r"|\b(?:today|tonight|tomorrow|tmrw|tmr|yesterday)\b"
+    r"|\b(?:this|next|coming|upcoming|following)\s+(?:week|month|weekend|day)\b"
+    r"|\b(?:week|weeks|month|months|weekend)\b"     # vague-but-present ("next month") → passes
+    r"|\bin\s+\d{1,2}\s+days?\b",
+    re.IGNORECASE,
+)
+
+
+def user_supplied_date_signal(texts: list[str]) -> bool:
+    """True if ANY of the user's messages carries a date the model could have
+    used — an explicit date, a month/weekday/ordinal, or a relative phrase.
+    Scans the whole conversation, not just this turn, because the date may have
+    been given a turn before the search is finally run."""
+    for t in texts:
+        if not isinstance(t, str) or not t.strip():
+            continue
+        if _parse_relative_date(t) or _TEMPORAL_RE.search(t):
+            return True
+    return False
+
+
+def date_provenance_error(name: str, *, has_user_date: bool) -> dict | None:
+    """
+    Block a date-bearing search when the user never gave a date. Returns a
+    structured clarify result the model gets back in place of search results,
+    so its next turn asks instead of presenting an invented date as fact.
+    Non-search tools (no date field) always pass.
+    """
+    if has_user_date:
+        return None
+    date_fields = _TOOL_DATE_FIELDS.get(name)
+    if not date_fields:
+        return None
+    label = _DATE_FIELD_LABELS.get(date_fields[0], date_fields[0])
+    return {
+        "error": "date_not_provided",
+        "field": date_fields[0],
+        "instruction": (
+            f"The user has not given a travel date anywhere in this conversation — "
+            f"not this message, not an earlier one. Do NOT search with today's date "
+            f"or any assumed date, and do NOT state a date as if they chose it. Ask "
+            f"for their {label} (with anything else still missing) in ONE short, warm "
+            f"question, then search once they answer."
+        ),
+    }
+
+
 def get_booking_date_error(booking_data: dict) -> dict | None:
     """
     Deterministic date-sanity gate for prepare_booking — same role as
@@ -732,18 +801,29 @@ def check_budget_feasibility(
 
     Returns the numbers plus a ready-to-read `verdict` string.
     """
+    # Every argument here can arrive non-numeric — the counts come from model
+    # tool-call args and the prices from serialized results — so each coercion is
+    # guarded. An unparseable value degrades to a sane default rather than raising:
+    # this function only produces an advisory verdict string, and a crash would
+    # abort the whole tool loop for a number that was never going to be shown.
+    def _money(v) -> float:
+        try:
+            return max(float(v or 0), 0.0)
+        except (TypeError, ValueError):
+            return 0.0
+
     try:
         budget_val = float(budget_pkr)
     except (TypeError, ValueError):
         budget_val = 0.0
 
-    travelers = max(int(travelers or 1), 1)
-    rooms = max(int(rooms or 1), 1)
-    nights = max(int(nights or 0), 0)
+    travelers = max(_as_count(travelers, default=1) or 1, 1)
+    rooms = max(_as_count(rooms, default=1) or 1, 1)
+    nights = max(_as_count(nights, default=0) or 0, 0)
 
-    flights_total = max(float(flight_pkr or 0), 0.0) * travelers
-    hotel_total = max(float(hotel_per_night_pkr or 0), 0.0) * nights * rooms
-    transfer_total = max(float(transfer_pkr or 0), 0.0)
+    flights_total = _money(flight_pkr) * travelers
+    hotel_total = _money(hotel_per_night_pkr) * nights * rooms
+    transfer_total = _money(transfer_pkr)
     total = flights_total + hotel_total + transfer_total
 
     gap = round(total - budget_val)          # positive => over budget
@@ -819,7 +899,7 @@ async def _exec_flights(args: dict) -> dict:
     if not d_iata:
         return _no_airport_error(dest)
     d = _to_date(args.get("travel_date"))
-    pax = int(args.get("passengers") or 1)
+    pax = _as_count(args.get("passengers"), default=1) or 1
     cabin = (args.get("cabin_class") or "ECONOMY").upper()
     offers = await search_flights(o_iata, d_iata, d, pax, cabin_class=cabin)
     if not offers:
@@ -837,7 +917,7 @@ async def _exec_trains(args: dict) -> dict:
     origin = (args.get("origin_city") or "").strip()
     dest = (args.get("destination_city") or "").strip()
     d = _to_date(args.get("travel_date"))
-    pax = int(args.get("passengers") or 1)
+    pax = _as_count(args.get("passengers"), default=1) or 1
     resp = await asyncio.to_thread(search_trains, origin, dest, d, pax)
     result = _serialize_trains(resp)
     result["search_date"] = d.isoformat()
@@ -854,8 +934,8 @@ async def _exec_hotels(args: dict) -> dict:
     co = _to_date(args.get("check_out"), default_days=10)
     if co <= ci:
         co = ci + timedelta(days=2)
-    guests = int(args.get("guests") or 2)
-    rooms = int(args.get("rooms") or 1)
+    guests = _as_count(args.get("guests"), default=2) or 2
+    rooms = _as_count(args.get("rooms"), default=1) or 1
     resp = await search_hotels(city, ci, co, guests, rooms)
     hotels = _serialize_hotels(resp)
     hotels, note = _filter_by_budget(hotels, "price_per_night_pkr", args.get("max_budget_pkr"))

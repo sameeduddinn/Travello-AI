@@ -69,6 +69,8 @@ from agents.agent_tools import (
     get_car_booking_error,
     build_car_booking_data,
     check_budget_feasibility,
+    date_provenance_error,
+    user_supplied_date_signal,
 )
 from prompts.master_agent import MASTER_SYSTEM, MASTER_AGENTIC_SYSTEM
 from prompts.knowledge import get_relevant_facts, EMERGENCY_NUMBERS
@@ -870,6 +872,20 @@ def _redact_tool_names(text: str) -> str:
     return text
 
 
+async def _dispatch_tool(name: str, args: dict, *, has_user_date: bool) -> str:
+    """
+    execute_tool with the date-provenance gate in front. A search that needs a
+    date is blocked when the user never gave one — the model gets a clarify
+    result back and asks instead of searching on an invented date. Every other
+    tool passes straight through unchanged.
+    """
+    gate = date_provenance_error(name, has_user_date=has_user_date)
+    if gate:
+        logger.info("date-provenance gate blocked %s — no user-supplied date this conversation", name)
+        return json.dumps(gate)
+    return await execute_tool(name, args)
+
+
 async def process_message_agentic(
     user_id: str,
     conversation_id: str,
@@ -919,6 +935,14 @@ async def process_message_agentic(
     tools_used: list[str] = []
     learned: dict = {}
     gathered: list[tuple[str, str]] = []  # (tool_name, result_json) — real data we collected
+
+    # Did the user ever actually give a date? Computed once over the whole
+    # conversation (this message + earlier user turns). The model tends to invent
+    # a travel_date rather than ask; an invented "today" passes the missing/past
+    # gates, so provenance is the only thing that catches it — see date_provenance_error.
+    user_dates_known = user_supplied_date_signal(
+        [user_message, *(m.get("content", "") for m in history if m.get("role") == "user")]
+    )
 
     started = time.monotonic()
     try:
@@ -1032,7 +1056,8 @@ async def process_message_agentic(
                 if tc.function.name not in ("prepare_booking", "book_car")
             ]
             results = await asyncio.gather(
-                *[execute_tool(tc.function.name, args) for tc, args in other_calls],
+                *[_dispatch_tool(tc.function.name, args, has_user_date=user_dates_known)
+                  for tc, args in other_calls],
                 return_exceptions=True,
             )
             for (tc, args), res in zip(other_calls, results):
