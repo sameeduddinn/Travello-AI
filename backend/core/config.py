@@ -48,6 +48,17 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
 
+    # OpenRouter — OpenAI-compatible fallback used ONLY when Groq is rate-limited
+    # (free-tier 12k TPM). A second, independent budget so a tool-using turn can
+    # complete instead of showing the "try again in a minute" message. Free key at
+    # openrouter.ai. Leave blank to disable the fallback (Groq-only behaviour).
+    OPENROUTER_API_KEY: str = ""
+    # Comma-separated, tried in order; a model that is rate-limited upstream (429) is
+    # skipped and the next is tried. Both defaults were verified free + tool-capable +
+    # actually available (the llama-3.3-70b:free variant is NOT — it is permanently
+    # rate-limited via its upstream provider, so do not use it here).
+    OPENROUTER_MODEL: str = "openai/gpt-oss-20b:free,nvidia/nemotron-3-super-120b-a12b:free"
+
 
 
     # Email — Gmail SMTP

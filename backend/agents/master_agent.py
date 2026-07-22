@@ -18,6 +18,7 @@ import asyncio
 import json
 import logging
 import re
+import time
 import uuid
 from datetime import date as date_type, datetime, timedelta, timezone
 
@@ -26,6 +27,7 @@ from agents.memory_agent import (
     get_user_profile,
     get_conversation_history,
     save_message,
+    save_turn,
     save_user_memory,
     start_new_conversation,  # re-exported for callers (router uses this)
 )
@@ -51,6 +53,7 @@ from agents.booking_agent import (
 from agents.recommendation_agent import get_recommendations
 from agents.healthcare_agent import get_safety_briefing
 
+from core.pk_time import pk_today
 from services.llm_service import generate_text, generate_with_tools, GeminiError, LLMError
 from agents.agent_tools import (
     TOOL_SCHEMAS,
@@ -58,12 +61,14 @@ from agents.agent_tools import (
     get_missing_booking_fields,
     get_booking_count_error,
     get_booking_date_error,
+    get_transfer_error,
     apply_traveler_totals,
     reprice_booking,
     missing_fields_result,
     offer_not_found_result,
     get_car_booking_error,
     build_car_booking_data,
+    check_budget_feasibility,
 )
 from prompts.master_agent import MASTER_SYSTEM, MASTER_AGENTIC_SYSTEM
 from prompts.knowledge import get_relevant_facts, EMERGENCY_NUMBERS
@@ -447,10 +452,9 @@ async def process_message(
         # Otherwise fall through so we search real options instead of faking one.
         if booking_data and _booking_data_is_valid(booking_data):
             summary = format_booking_summary(booking_data)
-            await asyncio.gather(
-                save_message(conversation_id, user_id, "user", user_message, message_type="text"),
-                save_message(conversation_id, user_id, "assistant", summary,
-                             model_used=settings.GROQ_MODEL, message_type="text"),
+            await save_turn(
+                conversation_id, user_id, user_message, summary,
+                model_used=settings.GROQ_MODEL,
             )
             asyncio.ensure_future(
                 _log_task(user_id, conversation_id, "booking", user_message, booking_data)
@@ -481,7 +485,7 @@ async def process_message(
         return {"response": question, "conversation_id": conversation_id}
 
     # Step 5 — compute fallback dates BEFORE routing
-    today          = date_type.today()
+    today          = pk_today()
     travel_date    = extracted.get("travel_date")
     check_in       = extracted.get("check_in")
     check_out      = extracted.get("check_out")
@@ -546,13 +550,13 @@ async def process_message(
             # Safe fallback — never expose raw agent context to the user
             final_response = "I'm having trouble connecting right now. Please try again in a moment."
 
-    # Step 8 — persist both messages
-    await asyncio.gather(
-        save_message(conversation_id, user_id, "user", user_message, message_type="text"),
-        save_message(
-            conversation_id, user_id, "assistant", final_response,
-            model_used=settings.GROQ_MODEL, message_type="text",
-        ),
+    # Backstop: strip any internal tool name the model leaked into user-facing prose.
+    final_response = _redact_tool_names(final_response)
+
+    # Step 8 — persist both messages (ordered so replay stays user-then-assistant)
+    await save_turn(
+        conversation_id, user_id, user_message, final_response,
+        model_used=settings.GROQ_MODEL,
     )
 
     # Step 9 — fire-and-forget background tasks (must never block or crash)
@@ -579,6 +583,25 @@ async def process_message(
 # so 3 steps covers far more than 3 tools.
 _MAX_TOOL_STEPS = 3
 
+# routers/agent.py wraps a chat turn in asyncio.wait_for(timeout=60). That cancel
+# is total: the flights and hotels already fetched, the salvage paths below, even
+# save_turn — all discarded, and the user is re-asked questions they just answered.
+# Every recovery path in this function is worthless if the turn never reaches it.
+# So the loop keeps its own tighter clock: stop STARTING new tool steps at the soft
+# deadline and spend what's left writing an answer from what we already gathered.
+# 52s leaves the router ~8s of headroom to serialise and respond.
+_TURN_BUDGET = 52.0
+_TURN_SOFT_DEADLINE = 32.0
+
+
+def _time_left(started: float, floor: float = 6.0) -> float:
+    """
+    Seconds still safe to spend before the router cancels the turn. Floored rather
+    than clamped to zero — a doomed-but-quick attempt still beats returning nothing,
+    and the floor is small enough that overshooting stays inside the router's margin.
+    """
+    return max(_TURN_BUDGET - (time.monotonic() - started), floor)
+
 # Shown when the LLM provider is momentarily rate-limited (free-tier TPM 429).
 # Deliberately transient and reassuring — this is a per-minute wall, not a failure.
 _RATE_LIMIT_MESSAGE = (
@@ -590,6 +613,93 @@ _RATE_LIMIT_MESSAGE = (
 def _is_rate_limit_error(exc: Exception) -> bool:
     """True for the Groq/Gemini quota (429) signal raised by llm_service."""
     return isinstance(exc, LLMError) and "quota_exhausted" in str(exc)
+
+
+# Shown when our OWN turn-clock (not a provider) cut a call short. Distinct wording
+# from _RATE_LIMIT_MESSAGE because the cause here is genuinely unknown — a slow or
+# unresponsive fallback provider, not necessarily Groq's per-minute wall — and this
+# fires only when generate_with_tools itself hung, so nothing was gathered to answer
+# from either.
+_TIMEOUT_MESSAGE = (
+    "That's taking longer than it should on my end. Nothing was lost — please try "
+    "again in a moment."
+)
+
+
+def _is_turn_timeout(exc: Exception) -> bool:
+    """
+    True when it was OUR _time_left() wait_for that ended the call, not a provider
+    error. By construction the timeout passed to that wait_for was whatever was left
+    of the turn budget — so if it fires, the budget is gone. Falling back to the
+    legacy process_message() pipeline at that point hands the router's absolute 60s
+    wall a second call with no realistic chance to finish, which is exactly the
+    504-with-nothing-recovered failure this function exists to avoid.
+    """
+    return isinstance(exc, asyncio.TimeoutError)
+
+
+def _budget_verdict_note(other_calls: list, results: list) -> str | None:
+    """
+    Deterministic whole-trip budget verdict, computed from the prices the search
+    tools ACTUALLY returned this turn.
+
+    The model is not trusted to do this arithmetic. Left to itself it reframed a
+    whole-package budget as a per-night hotel ceiling, reported only that hotels
+    were over, and never noticed the flight alone was ~50x the stated budget.
+    The numbers here come from the tool results, so the verdict can't be wrong or
+    quietly skipped. Returns None when there's no budget or nothing priced.
+    """
+    budget = None
+    flight_pkr = hotel_per_night = 0.0
+    travelers = rooms = 1
+    nights = 0
+
+    for (tc, args), res in zip(other_calls, results):
+        if not isinstance(res, str):
+            continue
+        if args.get("max_budget_pkr") is not None and budget is None:
+            try:
+                budget = float(args["max_budget_pkr"])
+            except (TypeError, ValueError):
+                pass
+        try:
+            data = json.loads(res)
+        except (json.JSONDecodeError, TypeError):
+            continue
+        name = tc.function.name
+        if name == "search_flights" and data.get("flights"):
+            prices = [f.get("price_pkr") or 0 for f in data["flights"]]
+            prices = [p for p in prices if p > 0]
+            if prices:
+                flight_pkr = min(prices)
+                travelers = max(int(data.get("passengers") or 1), 1)
+        elif name == "search_hotels" and data.get("hotels"):
+            prices = [h.get("price_per_night_pkr") or 0 for h in data["hotels"]]
+            prices = [p for p in prices if p > 0]
+            if prices:
+                hotel_per_night = min(prices)
+                nights = max(int(data.get("nights") or 1), 1)
+                rooms = max(int(args.get("rooms") or 1), 1)
+
+    if budget is None or budget <= 0 or (flight_pkr <= 0 and hotel_per_night <= 0):
+        return None
+
+    verdict = check_budget_feasibility(
+        budget,
+        flight_pkr=flight_pkr,
+        travelers=travelers,
+        hotel_per_night_pkr=hotel_per_night,
+        nights=nights,
+        rooms=rooms,
+    )
+    return (
+        "BUDGET CHECK (computed from the real prices above — state this verdict "
+        "plainly to the user before offering options, and never contradict it): "
+        f"{verdict['verdict']} Cheapest flight PKR {round(flight_pkr):,} x {travelers} "
+        f"traveler(s); cheapest hotel PKR {round(hotel_per_night):,}/night x {nights} "
+        f"night(s) x {rooms} room(s). If it does not fit, say so directly and offer to "
+        "trim the trip — do NOT proceed as though the budget works."
+    )
 
 
 async def _synthesize_from_tools(
@@ -628,6 +738,29 @@ async def _synthesize_from_tools(
         return (await generate_text(synth_messages, temperature=0.4, max_output_tokens=1200)).strip()
     except Exception as exc:
         logger.warning("_synthesize_from_tools failed: %s", exc)
+        return ""
+
+
+async def _synthesize_bounded(
+    started: float,
+    system_prompt: str,
+    history: list[dict],
+    user_message: str,
+    gathered: list[tuple[str, str]],
+) -> str:
+    """
+    _synthesize_from_tools under the turn clock. This is the LAST thing that runs
+    before we hand an answer back, so it is exactly where an over-running provider
+    turns a recoverable turn into a 504 that throws the gathered data away.
+    Returns "" on timeout, which the caller already handles.
+    """
+    try:
+        return await asyncio.wait_for(
+            _synthesize_from_tools(system_prompt, history, user_message, gathered),
+            timeout=_time_left(started),
+        )
+    except Exception as exc:
+        logger.warning("bounded synthesis gave up (%s)", exc)
         return ""
 
 
@@ -698,6 +831,45 @@ def _derive_query_type(tools_used: list[str]) -> str:
     return "general"
 
 
+# User-facing text must never leak internal tool/field names. The free-tier model
+# occasionally narrates "I'll call prepare_booking" despite the system-prompt rule,
+# so this is a deterministic backstop: any leaked tool name is rewritten into plain
+# words before the reply is ever shown or saved.
+_TOOL_PHRASES: dict[str, str] = {
+    "search_flights": "search for flights",
+    "search_trains": "search for trains",
+    "search_hotels": "search for hotels",
+    "get_weather": "check the weather",
+    "find_healthcare": "find healthcare nearby",
+    "prepare_booking": "prepare your booking",
+    "book_car": "arrange your car",
+}
+
+# "I'll call prepare_booking" / "run the search_flights tool" → drop the leading
+# verb (+ optional article/quotes/trailing 'tool|function|…') so the sentence reads
+# naturally once the tool name is swapped for its human phrase.
+_TOOL_VERB_RE = re.compile(
+    r"\b(?:call|calls|calling|use|uses|using|invoke|invoking|run|running|"
+    r"trigger|triggering|execute|executing)\s+(?:the\s+)?[`'\"]?"
+    r"(" + "|".join(re.escape(t) for t in _TOOL_PHRASES) + r")"
+    r"[`'\"]?(?:\s+(?:tool|function|api|endpoint))?",
+    re.IGNORECASE,
+)
+_TOOL_NAME_RE = re.compile(
+    r"[`'\"]?\b(" + "|".join(re.escape(t) for t in _TOOL_PHRASES) + r")\b[`'\"]?",
+    re.IGNORECASE,
+)
+
+
+def _redact_tool_names(text: str) -> str:
+    """Rewrite any internal tool name the model leaked into a human phrase."""
+    if not text:
+        return text
+    text = _TOOL_VERB_RE.sub(lambda m: _TOOL_PHRASES[m.group(1).lower()], text)
+    text = _TOOL_NAME_RE.sub(lambda m: _TOOL_PHRASES[m.group(1).lower()], text)
+    return text
+
+
 async def process_message_agentic(
     user_id: str,
     conversation_id: str,
@@ -717,7 +889,10 @@ async def process_message_agentic(
         get_conversation_history(conversation_id, limit=20),
     )
     memory_context = _format_memory(memory, profile)
-    today = date_type.today()
+    # PK date, not the host's. On a UTC server this line is what tells a
+    # 2am Karachi user it is still yesterday, so their "tomorrow" books a
+    # day early. Pakistan is UTC+5 — see core/pk_time.
+    today = pk_today()
 
     system_prompt = MASTER_AGENTIC_SYSTEM.format(
         today=today.isoformat(),
@@ -745,10 +920,25 @@ async def process_message_agentic(
     learned: dict = {}
     gathered: list[tuple[str, str]] = []  # (tool_name, result_json) — real data we collected
 
+    started = time.monotonic()
     try:
-        for _ in range(_MAX_TOOL_STEPS):
-            msg = await generate_with_tools(
-                messages, tools=TOOL_SCHEMAS, temperature=0.4, max_output_tokens=1200,
+        for step in range(_MAX_TOOL_STEPS):
+            # Never skip the FIRST call — a slow warm-up must still produce a turn.
+            if step and time.monotonic() - started > _TURN_SOFT_DEADLINE:
+                logger.warning(
+                    "agentic loop out of time after %d step(s) — answering from gathered data",
+                    step,
+                )
+                break
+            # Bounded like the post-loop synthesis call below: Groq failing fast into
+            # OpenRouter is exactly the case that produced a 60.7s 504 with nothing
+            # logged in between — this is the call that was in flight when it happened,
+            # and it was the one call in this function still missing a timeout.
+            msg = await asyncio.wait_for(
+                generate_with_tools(
+                    messages, tools=TOOL_SCHEMAS, temperature=0.4, max_output_tokens=1200,
+                ),
+                timeout=_time_left(started),
             )
             tool_calls = getattr(msg, "tool_calls", None)
 
@@ -784,6 +974,13 @@ async def process_message_agentic(
                 date_error = get_booking_date_error(bd)
                 if date_error:
                     booking_gate_results[tc.id] = date_error
+                    continue
+                # The transfer pickup address is dispatched to a real driver
+                # after payment, so it gets the same hard gate as the date and
+                # party size — a placeholder must never reach car_bookings.
+                transfer_error = get_transfer_error(bd)
+                if transfer_error:
+                    booking_gate_results[tc.id] = transfer_error
                     continue
                 bd = apply_traveler_totals(bd)
                 verified = await reprice_booking(bd)
@@ -850,6 +1047,14 @@ async def process_message_agentic(
                 gathered.append((tc.function.name, content))
                 messages.append({"role": "tool", "tool_call_id": tc.id, "content": content})
 
+            # Ground the affordability claim in code, not model arithmetic — same
+            # posture as reprice_booking. Appended after the tool results so the
+            # model sees the verdict before it writes the answer.
+            budget_note = _budget_verdict_note(other_calls, results)
+            if budget_note:
+                gathered.append(("budget_check", budget_note))
+                messages.append({"role": "system", "content": budget_note})
+
             for tc in booking_calls:
                 result = booking_gate_results.get(tc.id, offer_not_found_result())
                 messages.append({
@@ -873,27 +1078,42 @@ async def process_message_agentic(
         # Loop ended with tools called but no final prose → synthesize one answer.
         if not final_text and not booking_data:
             try:
-                msg = await generate_with_tools(messages, tools=None, temperature=0.5, max_output_tokens=1200)
+                # Bounded: a fallback provider that queues rather than 429s can sit
+                # here for its full 35s budget, which on a late turn is exactly what
+                # pushes us past the router's cancel and loses the whole answer.
+                msg = await asyncio.wait_for(
+                    generate_with_tools(messages, tools=None, temperature=0.5, max_output_tokens=1200),
+                    timeout=_time_left(started),
+                )
                 final_text = (getattr(msg, "content", "") or "").strip()
             except Exception as exc:
                 # Out of tool-call budget — synthesize from the data we ALREADY have,
                 # via generate_text (Groq->Gemini failover). Never re-run the pipeline
                 # from scratch (that double-spends quota and risks hallucinating).
                 logger.warning("final tool-synthesis failed (%s) — synthesizing from gathered data", exc)
-                final_text = await _synthesize_from_tools(system_prompt, history, user_message, gathered)
+                final_text = await _synthesize_bounded(
+                    started, system_prompt, history, user_message, gathered
+                )
 
     except Exception as exc:
         # The loop broke (e.g. quota). If we already gathered real tool data, answer
         # from it — do NOT re-run the pipeline (it hallucinated under quota stress).
         logger.warning("agentic loop failed (%s)", exc)
         if gathered:
-            final_text = await _synthesize_from_tools(system_prompt, history, user_message, gathered)
+            final_text = await _synthesize_bounded(
+                started, system_prompt, history, user_message, gathered
+            )
         if not final_text:
             if _is_rate_limit_error(exc):
                 # Per-minute rate limit with nothing gathered: re-running the legacy
                 # pipeline just hits the same 429 and double-spends the budget. Fail
                 # fast with an honest, transient message instead of hanging to 504.
                 final_text = _RATE_LIMIT_MESSAGE
+            elif _is_turn_timeout(exc):
+                # Our own budget is spent, not just Groq's per-minute wall — the
+                # legacy pipeline would only get a few seconds against the router's
+                # absolute 60s cutoff before losing everything the same way again.
+                final_text = _TIMEOUT_MESSAGE
             else:
                 # Nothing gathered → safe to try the legacy pipeline as a last resort.
                 return await process_message(user_id, conversation_id, user_message)
@@ -901,10 +1121,9 @@ async def process_message_agentic(
     # Booking path → payment_choice (same contract the Flutter app already handles)
     if booking_data:
         summary = format_booking_summary(booking_data)
-        await asyncio.gather(
-            save_message(conversation_id, user_id, "user", user_message, message_type="text"),
-            save_message(conversation_id, user_id, "assistant", summary,
-                         model_used=settings.GROQ_MODEL, message_type="text"),
+        await save_turn(
+            conversation_id, user_id, user_message, summary,
+            model_used=settings.GROQ_MODEL,
         )
         asyncio.ensure_future(_log_task(user_id, conversation_id, "booking", user_message, booking_data))
         return {
@@ -917,10 +1136,9 @@ async def process_message_agentic(
     # Standalone car path → car_booking_choice (single confirm tap, no payment)
     if car_booking_data:
         summary = format_car_booking_summary(car_booking_data)
-        await asyncio.gather(
-            save_message(conversation_id, user_id, "user", user_message, message_type="text"),
-            save_message(conversation_id, user_id, "assistant", summary,
-                         model_used=settings.GROQ_MODEL, message_type="text"),
+        await save_turn(
+            conversation_id, user_id, user_message, summary,
+            model_used=settings.GROQ_MODEL,
         )
         asyncio.ensure_future(_log_task(user_id, conversation_id, "booking", user_message, car_booking_data))
         return {
@@ -933,11 +1151,13 @@ async def process_message_agentic(
     if not final_text:
         final_text = "I'm having trouble responding right now. Could you rephrase that?"
 
-    # Persist both messages
-    await asyncio.gather(
-        save_message(conversation_id, user_id, "user", user_message, message_type="text"),
-        save_message(conversation_id, user_id, "assistant", final_text,
-                     model_used=settings.GROQ_MODEL, message_type="text"),
+    # Backstop: strip any internal tool name the model leaked into user-facing prose.
+    final_text = _redact_tool_names(final_text)
+
+    # Persist both messages (ordered so replay stays user-then-assistant)
+    await save_turn(
+        conversation_id, user_id, user_message, final_text,
+        model_used=settings.GROQ_MODEL,
     )
 
     # Fire-and-forget: learn preferences, set a meaningful title, log the task

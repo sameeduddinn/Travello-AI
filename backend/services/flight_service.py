@@ -9,6 +9,8 @@ import logging
 import random
 from datetime import date, datetime, timedelta
 
+from core.pk_time import pk_now, pk_today
+
 import httpx
 
 from core.config import settings
@@ -533,6 +535,25 @@ def _generate_domestic_generic_mock(
 
 
 # AviationStack (domestic supplement)
+#
+# /v1/flights is a flight-STATUS endpoint — the feed behind airport arrival
+# boards — not a fare product. It returns no price field on any plan, and its
+# "real-time" window includes flights that already departed or landed. So it is
+# used for one thing only: real schedules (carrier, flight number, times) for
+# today. Fares here are simulated exactly like the seeded mock's, because there
+# is no real fare to be had. Two consequences enforced below:
+#   - rows that are not for the requested date, or already flown, are dropped;
+#   - the price is seeded, so the quote survives to reprice_booking unchanged.
+
+# Flights that can no longer be boarded. AviationStack keeps returning them
+# because a status board is supposed to show them; a booking table is not.
+_AS_UNBOOKABLE_STATUSES = {"landed", "cancelled", "diverted", "incident"}
+
+# Same band as _generate_domestic_offers, deliberately. These offers now sit in
+# ONE table beside seeded mock rows, so a different range would make every real
+# flight the most expensive option on screen purely as an artifact of its source.
+_AS_PRICE_RANGE = (6000, 22000)
+
 
 def _aviationstack_is_configured() -> bool:
     key = (settings.AVIATIONSTACK_KEY or "").strip()
@@ -543,7 +564,7 @@ def _aviationstack_is_configured() -> bool:
 
 
 async def _fetch_aviationstack(
-    origin: str, destination: str, travel_date: date, cabin_class: str = "ECONOMY"
+    origin: str, destination: str, travel_date: date, adults: int = 1, cabin_class: str = "ECONOMY"
 ) -> list[FlightOffer]:
     """Call AviationStack /v1/flights for real-time domestic flight data.
     Free plan supports real-time flights only — no flight_date param (paid feature).
@@ -553,7 +574,7 @@ async def _fetch_aviationstack(
         return []
 
     # Free plan = real-time only; skip for future dates
-    if travel_date != date.today():
+    if travel_date != pk_today():
         logger.info("AviationStack skipped: free plan only supports today's real-time flights")
         return []
 
@@ -578,11 +599,19 @@ async def _fetch_aviationstack(
         flights = resp.json().get("data", [])
         offers: list[FlightOffer] = []
 
+        skipped_stale = 0
+        skipped_flown = 0
+
         for f in flights[:10]:
             dep_info = f.get("departure", {})
             arr_info = f.get("arrival", {})
             airline_info = f.get("airline", {})
             flight_info = f.get("flight", {})
+
+            # Already departed/cancelled — a status board shows these, we must not.
+            if (f.get("flight_status") or "").lower() in _AS_UNBOOKABLE_STATUSES:
+                skipped_flown += 1
+                continue
 
             dep_str = dep_info.get("scheduled", "")
             arr_str = arr_info.get("scheduled", "")
@@ -590,18 +619,40 @@ async def _fetch_aviationstack(
                 continue
 
             try:
+                # AviationStack reports scheduled times in the AIRPORT's local
+                # zone despite the +00:00 suffix, so dropping the offset yields
+                # local wall-clock — which is what travel_date is in, and what
+                # every naive datetime downstream expects.
                 dep_dt = datetime.fromisoformat(dep_str.replace("Z", "+00:00")).replace(tzinfo=None)
                 arr_dt = datetime.fromisoformat(arr_str.replace("Z", "+00:00")).replace(tzinfo=None)
             except ValueError:
                 continue
 
+            # The free plan has no flight_date param, so one response mixes
+            # several days. Filter here or yesterday's flight becomes bookable.
+            if dep_dt.date() != travel_date:
+                skipped_stale += 1
+                continue
+
+            flight_no = flight_info.get("iata") or "XX000"
             dur_min = max(int((arr_dt - dep_dt).total_seconds() / 60), 30)
-            base_price = round(random.uniform(15000, 50000))
-            price_pkr = round(base_price * cfg["multiplier"])
+
+            # Seeded on the flight's own identity, so a second search — and the
+            # reprice at booking time — reproduces this exact fare. The old
+            # random.uniform() re-rolled every call, quoting one price and
+            # charging another.
+            rng = random.Random(f"AS-{origin}-{destination}-{flight_no}-{dep_dt.isoformat()}-{_requested_cabin}")
+            # Per-person first, then scaled — matching _generate_domestic_offers.
+            # Seeding the PER-PERSON fare keeps it identical whatever the party
+            # size, so the same flight doesn't change ticket price when a second
+            # passenger is added; only the total moves.
+            per_person = round(rng.randint(*_AS_PRICE_RANGE) * cfg["multiplier"])
+            price_pkr = per_person * max(adults, 1)
+            seats = rng.randint(4, 20) if _requested_cabin != "ECONOMY" else rng.randint(6, 55)
 
             segment = FlightSegment(
                 carrier_code=airline_info.get("iata") or "XX",
-                flight_number=flight_info.get("iata") or "XX000",
+                flight_number=flight_no,
                 departure_airport=dep_info.get("iata") or origin,
                 arrival_airport=arr_info.get("iata") or destination,
                 departure_time=dep_dt,
@@ -611,17 +662,27 @@ async def _fetch_aviationstack(
             )
             offers.append(
                 FlightOffer(
-                    offer_id=f"AS-{origin}-{destination}-{flight_info.get('iata') or 'XX000'}-{travel_date}-{_requested_cabin}",
+                    # Departure time included: the same flight number runs daily
+                    # and appeared 3x in one response, collapsing to ONE id. That
+                    # collided in the router's offer cache and made repricing pick
+                    # an arbitrary row.
+                    offer_id=f"AS-{origin}-{destination}-{flight_no}-{dep_dt.strftime('%Y%m%d-%H%M')}-{_requested_cabin}",
                     itineraries=[FlightItinerary(
                         duration=_duration_str(dur_min),
                         segments=[segment],
                     )],
                     total_price_pkr=float(price_pkr),
                     total_price_usd=round(price_pkr / settings.USD_TO_PKR_RATE, 2),
-                    seats_available=random.randint(4, 20) if _requested_cabin != "ECONOMY" else random.randint(5, 80),
+                    seats_available=seats,
                     is_refundable=cfg["refundable"],
                     baggage_allowance=cfg["baggage"],
                 )
+            )
+
+        if skipped_stale or skipped_flown:
+            logger.info(
+                "AviationStack %s->%s: kept %d, dropped %d wrong-date, %d already-flown",
+                origin, destination, len(offers), skipped_stale, skipped_flown,
             )
         return offers
 
@@ -654,20 +715,15 @@ async def search_flights(
     is_domestic = origin in PAKISTAN_IATA_CODES and destination in PAKISTAN_IATA_CODES
 
     if is_domestic:
-        # AviationStack first — real-time flights for today (returns [] for future dates)
-        aviationstack_offers = await _fetch_aviationstack(origin, destination, date, cabin_class=cabin_class)
+        # AviationStack supplements rather than replaces. It returns real
+        # schedules but only for today, and after dropping wrong-date and
+        # already-flown rows that can be a single flight — which used to be the
+        # WHOLE result set, because this branch returned early and discarded the
+        # mock. Merging keeps the real flight and fills the table around it.
+        aviationstack_offers = await _fetch_aviationstack(origin, destination, date, adults, cabin_class=cabin_class)
         aviationstack_count = len(aviationstack_offers)
+        offers = _merge_flight_offers(offers, aviationstack_offers, limit=_TARGET_FLIGHT_RESULT_COUNT)
 
-        if aviationstack_count > 0:
-            # Real flights available — show only AviationStack data, no mock mixing
-            final_offers = _sort_flight_offers(aviationstack_offers)
-            logger.info(
-                "Flight search (domestic) %s->%s: aviationstack=%d real flights",
-                origin, destination, aviationstack_count,
-            )
-            return final_offers
-
-        # AviationStack unavailable or future date — fall back to seeded mock
         domestic_seeded = _generate_domestic_offers(origin, destination, date, adults, cabin_class=cabin_class)
         domestic_seeded_count = len(domestic_seeded)
         offers = _merge_flight_offers(offers, domestic_seeded, limit=_TARGET_FLIGHT_RESULT_COUNT)
@@ -680,8 +736,9 @@ async def search_flights(
 
         final_offers = _sort_flight_offers(offers)
         logger.info(
-            "Flight search fallback (domestic) %s->%s: seeded=%d, generic=%d, final=%d",
-            origin, destination, domestic_seeded_count, domestic_generic_count, len(final_offers),
+            "Flight search (domestic) %s->%s: aviationstack=%d, seeded=%d, generic=%d, final=%d",
+            origin, destination, aviationstack_count, domestic_seeded_count,
+            domestic_generic_count, len(final_offers),
         )
         return final_offers
 

@@ -18,9 +18,11 @@ import logging
 import re
 from datetime import date, datetime, timedelta
 
+from core.pk_time import pk_now, pk_today
+
 from services.flight_service import search_flights
 from services.train_service import search_trains
-from services.hotel_service import search_hotels
+from services.hotel_service import search_hotels, CITY_ALIASES
 from services.weather_service import get_weather
 from agents.clarification_agent import CITY_TO_IATA, _parse_relative_date
 
@@ -103,7 +105,19 @@ TOOL_SCHEMAS: list[dict] = [
                     "city": {"type": "string", "description": "City to find hotels in"},
                     "check_in": {"type": "string", "description": "Check-in date as YYYY-MM-DD"},
                     "check_out": {"type": "string", "description": "Check-out date as YYYY-MM-DD"},
-                    "guests": {"type": "integer", "description": "Number of guests (default 2)"},
+                    # NOT "(default 2)". That wording read as permission to fill in 2
+                    # and move on — which is what happened, for a user whose saved
+                    # profile said solo. Searching with 2 is harmless, but the model
+                    # then carries that 2 into prepare_booking, where it lands on the
+                    # summary card and in the hotel record as the party size.
+                    "guests": {
+                        "type": "integer",
+                        "description": (
+                            "Number of guests staying. Pass a number the user actually "
+                            "gave you; if they haven't said, omit it rather than assuming "
+                            "a party size — and ask them before booking."
+                        ),
+                    },
                     "rooms": {"type": "integer", "description": "Number of rooms (default 1)"},
                     "max_budget_pkr": {
                         "type": "number",
@@ -290,6 +304,18 @@ TOOL_SCHEMAS: list[dict] = [
                         ),
                     },
                     "selected_option": {"type": "string", "description": "Short human label of the chosen option"},
+                    "next_step": {
+                        "type": "string",
+                        "description": (
+                            "ONLY when this booking is one piece of a multi-part trip the user "
+                            "asked for (e.g. they wanted flight + hotel + car): one short, plain "
+                            "sentence naming what still remains, e.g. 'your hotel in Islamabad, "
+                            "22-30 July, then the airport car'. It is shown to the user after "
+                            "this booking so the trip can continue. Purely descriptive — never "
+                            "put a price, PNR, booking reference or confirmation wording in it, "
+                            "and omit it entirely for a single standalone booking."
+                        ),
+                    },
                 },
                 "required": ["booking_type"],
             },
@@ -303,7 +329,7 @@ TOOL_SCHEMAS: list[dict] = [
 def _to_date(value: str | None, *, default_days: int = 7) -> date:
     """Parse a YYYY-MM-DD or relative phrase to a date; default N days out."""
     if not value:
-        return date.today() + timedelta(days=default_days)
+        return pk_today() + timedelta(days=default_days)
     s = str(value).strip()
     try:
         return datetime.strptime(s, "%Y-%m-%d").date()
@@ -311,7 +337,7 @@ def _to_date(value: str | None, *, default_days: int = 7) -> date:
         rel = _parse_relative_date(s)
         if rel:
             return datetime.strptime(rel, "%Y-%m-%d").date()
-        return date.today() + timedelta(days=default_days)
+        return pk_today() + timedelta(days=default_days)
 
 
 # ── Date-sanity gate: deterministic rejection of past dates ────────────────────
@@ -377,7 +403,7 @@ def find_past_date_error(args: dict, date_fields: list[str], *, today: date | No
     flagged here — that's a different, pre-existing concern (clarification /
     _to_date's default-N-days-out fallback), not what this gate is for.
     """
-    ref_today = today or date.today()
+    ref_today = today or pk_today()
     for field in date_fields:
         parsed = _parse_date_strict((args or {}).get(field))
         if parsed is not None and parsed < ref_today:
@@ -537,7 +563,7 @@ def get_car_booking_error(args: dict, *, now: datetime | None = None) -> dict | 
             ),
         }
 
-    ref_now = now or datetime.now()
+    ref_now = now or pk_now()
     if parsed < ref_now:
         return {
             "error": "past_pickup_datetime",
@@ -755,15 +781,43 @@ def check_budget_feasibility(
 
 # ── Executors ─────────────────────────────────────────────────────────────────
 
+def _is_pakistani_place(name: str) -> bool:
+    """
+    Deterministic backstop for Travello's domestic-only scope.
+
+    A place is treated as Pakistani if any domestic dataset knows it — the hotel
+    city aliases cover ~45 places including non-airport towns (Hunza, Murree,
+    Naran), so this stays true for somewhere like Skardu while being false for
+    Dubai or London.
+    """
+    n = (name or "").strip().lower()
+    return bool(n) and (n in CITY_ALIASES or n in CITY_TO_IATA)
+
+
+def _no_airport_error(city: str) -> dict:
+    """
+    Distinguish 'Pakistani town without an airport' from 'not in Pakistan at all'.
+    The old message offered the road-travel hint for BOTH, so asking for Dubai got
+    told it "may be reachable only by road (e.g. Hunza via Gilgit)" — nonsense, and
+    it hid the real reason (Travello has no international inventory).
+    """
+    if _is_pakistani_place(city):
+        return {"error": f"No domestic airport at '{city}'. It may be reachable only by "
+                         f"road or via a nearby airport (e.g. Hunza via Gilgit)."}
+    return {"error": f"'{city}' is outside Pakistan. Travello covers domestic Pakistan "
+                     f"travel only — there is no international inventory to search. Tell "
+                     f"the user this plainly and offer a domestic alternative instead."}
+
+
 async def _exec_flights(args: dict) -> dict:
     origin = (args.get("origin_city") or "").strip()
     dest = (args.get("destination_city") or "").strip()
     o_iata = CITY_TO_IATA.get(origin.lower())
     d_iata = CITY_TO_IATA.get(dest.lower())
     if not o_iata:
-        return {"error": f"No domestic airport found for '{origin}'. Ask the user for a city with an airport."}
+        return _no_airport_error(origin)
     if not d_iata:
-        return {"error": f"No domestic airport found for '{dest}'. {dest} may be reachable only by road (e.g. Hunza via Gilgit)."}
+        return _no_airport_error(dest)
     d = _to_date(args.get("travel_date"))
     pax = int(args.get("passengers") or 1)
     cabin = (args.get("cabin_class") or "ECONOMY").upper()
@@ -920,6 +974,98 @@ def missing_fields_result(missing: list[str]) -> dict:
             "do not guess, default, or invent any of them."
         ),
     }
+
+
+# ── Transfer gate: the pickup address must be a real one ──────────────────────
+#
+# The optional airport/station transfer is NOT cosmetic text on a summary card.
+# After payment, services.car_service.book_car_transfers copies
+# transfer_pickup_location straight into car_bookings.pickup_location and emails
+# it to the assigned driver as the address to drive to. Its only guard is
+# `if not pickup_location` — so a model-invented placeholder like
+# "Your pickup address in Islamabad" is non-empty, clears every existing check,
+# and dispatches a real driver to a sentence. The address has to have come from
+# the user, and "did the model actually ask?" is not something the model can be
+# trusted to self-report — so it is inferred deterministically from the value.
+
+_TRANSFER_PLACEHOLDER_RE = re.compile(
+    # A genuine street address never contains the words "pickup address" — only
+    # a model narrating the field it was supposed to fill does. This is the exact
+    # shape observed in the wild ("Your pickup address in Islamabad").
+    r"pickup\s+(?:address|location|point)"
+    r"|(?:your|users?'?s?|customers?'?s?|their)\s+(?:address|location)"
+    r"|address\s+(?:here|goes\s+here|to\s+follow)"
+    r"|to\s+be\s+(?:confirmed|provided|shared|advised|decided|determined)"
+    r"|not\s+(?:provided|specified|given|yet\s+provided)"
+    r"|same\s+as\s+above"
+    r"|\b(?:tbd|tba|n/?a|unknown|placeholder|xxx+)\b"
+    # <address>, [address], {address} — template leftovers.
+    r"|[<\[\{]",
+    re.IGNORECASE,
+)
+
+
+def _transfer_error(problem: str, ask_for: str) -> dict:
+    return {
+        "error": "invalid_transfer_pickup",
+        "problem": problem,
+        "instruction": (
+            f"{problem} Do NOT call prepare_booking again until the user has "
+            f"given you this. Ask them for {ask_for} in one short, warm question. "
+            "Never fill it in yourself, never describe the field back as if it "
+            "were an answer, and never default it — a driver is dispatched to "
+            "this exact text after payment."
+        ),
+    }
+
+
+def get_transfer_error(booking_data: dict) -> dict | None:
+    """
+    Validate the optional car-transfer fields on a prepare_booking call.
+    Returns a structured error dict (hard stop, like the date and count gates)
+    or None when there is no transfer, or the transfer is properly specified.
+    """
+    bd = booking_data or {}
+    vehicle = str(bd.get("transfer_vehicle_type") or "").strip()
+    pickup = str(bd.get("transfer_pickup_location") or "").strip()
+
+    # No transfer on this booking — nothing to validate.
+    if not vehicle and not pickup:
+        return None
+
+    if vehicle and vehicle not in _CAR_VEHICLES:
+        return _transfer_error(
+            f"'{vehicle}' is not a vehicle we run.",
+            "which vehicle they want — Sedan (1-3 pax), SUV (1-5) or Van (6-9)",
+        )
+
+    if not vehicle:
+        return _transfer_error(
+            "A pickup address was given but no vehicle type.",
+            "which vehicle they want — Sedan (1-3 pax), SUV (1-5) or Van (6-9)",
+        )
+
+    if not pickup:
+        return _transfer_error(
+            "The car transfer has no pickup address.",
+            "the street address the driver should collect them from",
+        )
+
+    if _TRANSFER_PLACEHOLDER_RE.search(pickup):
+        return _transfer_error(
+            f"'{pickup}' is a placeholder, not an address the user gave you.",
+            "their actual pickup address — house/street/area, not just the city",
+        )
+
+    # A bare city name is a real place but useless to a driver, and it's the
+    # other way this field gets filled without asking (echoing the route).
+    if _is_pakistani_place(pickup):
+        return _transfer_error(
+            f"'{pickup}' is just a city, not an address a driver can reach.",
+            "their full pickup address within the city — house/street/area",
+        )
+
+    return None
 
 
 # ── Count gate: deterministic traveler/guest/room range validation ─────────────
@@ -1112,6 +1258,10 @@ async def _reprice_train(bd: dict) -> dict | None:
                 verified["total_price_pkr"] = c["price_pkr"]
                 verified["travelers"] = passengers
                 verified["airline_or_train_name"] = t.get("train_name")
+                # Carried from the matched live listing, never from the model —
+                # the ticket shows this as the train Number, and a guessed one
+                # would be a fabricated travel document detail.
+                verified["train_number"] = t.get("train_number")
                 return verified
     return None
 
@@ -1139,6 +1289,11 @@ async def _reprice_hotel(bd: dict) -> dict | None:
         verified["rooms"] = rooms
         verified["check_in"] = result["check_in"]
         verified["check_out"] = result["check_out"]
+        # Carried from the matched live listing, never from the model — these
+        # render as the hotel's star rating and address on the ticket, and a
+        # guessed star count would be a fabricated booking detail.
+        verified["hotel_stars"] = h.get("stars")
+        verified["hotel_address"] = h.get("area")
         return verified
     return None
 
@@ -1156,11 +1311,53 @@ async def reprice_booking(booking_data: dict) -> dict | None:
     booking_type = booking_data.get("booking_type")
     try:
         if booking_type == "flight":
-            return await _reprice_flight(booking_data)
-        if booking_type == "train":
-            return await _reprice_train(booking_data)
-        if booking_type == "hotel":
-            return await _reprice_hotel(booking_data)
+            verified = await _reprice_flight(booking_data)
+        elif booking_type == "train":
+            verified = await _reprice_train(booking_data)
+        elif booking_type == "hotel":
+            verified = await _reprice_hotel(booking_data)
+        else:
+            return None
+        return _add_transfer_fare(verified) if verified else None
     except Exception as exc:
         logger.warning("reprice_booking failed for type=%s: %s", booking_type, exc)
     return None
+
+
+def _add_transfer_fare(verified: dict) -> dict:
+    """
+    Add an accepted airport/station transfer fare to the authoritative total.
+
+    The manual checkout charges it — booking_checkout.dart's `_subtotal` is
+    ticket + baggage + seats + `_transferFee` — so the agent path has to as
+    well, or the same Sedan costs PKR 800 through the form and nothing through
+    chat. Deliberately applied AFTER the per-type reprice so it stacks on the
+    server-derived price and never on the model's advisory figure.
+
+    The condition mirrors _agentTransferFacilities in ai_assistant.dart exactly:
+    both vehicle and pickup must be present, because that is precisely when the
+    app sends the transfer on to be booked. Charging on any looser condition
+    would bill for a driver who is never dispatched.
+    """
+    vehicle = str(verified.get("transfer_vehicle_type") or "").strip()
+    pickup = str(verified.get("transfer_pickup_location") or "").strip()
+    fare = _CAR_VEHICLE_PRICES.get(vehicle)
+    if not fare or not pickup:
+        return verified
+
+    # This is a payment amount, so it gets a guard rather than an assumption:
+    # today reprice_booking has exactly one call site and runs once per booking,
+    # but a second pass would silently bill the transfer twice.
+    if verified.get("transfer_pkr"):
+        return verified
+
+    try:
+        base = float(verified.get("total_price_pkr") or 0)
+    except (TypeError, ValueError):
+        return verified
+    if base <= 0:
+        return verified
+
+    verified["transfer_pkr"] = fare
+    verified["total_price_pkr"] = round(base + fare)
+    return verified

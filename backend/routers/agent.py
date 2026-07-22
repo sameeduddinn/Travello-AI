@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from core.auth import CurrentUser
 from core.supabase_client import supabase_admin
 from agents.master_agent import process_message_agentic
-from agents.memory_agent import start_new_conversation
+from agents.memory_agent import save_message, start_new_conversation
 from services.booking_service import create_booking
 from services.weather_service import get_weather
 from services.llm_service import generate_text
@@ -35,6 +35,12 @@ class ChatRequest(BaseModel):
     conversation_id: str | None = None
 
 
+class ConversationNoteRequest(BaseModel):
+    # Milestone cards are short by construction; the cap just stops an oversized
+    # body from being written into chat history.
+    content: str = Field(..., min_length=1, max_length=2000)
+
+
 class AgentBookRequest(BaseModel):
     booking_type: Literal["flight", "train", "hotel"]
     conversation_id: str
@@ -45,6 +51,7 @@ class AgentBookRequest(BaseModel):
     arrival_time: str | None = None     # HH:MM — e.g. "10:00"
     flight_number: str | None = None    # e.g. "G9848"
     train_name: str | None = None       # e.g. "Tezgam Express"
+    train_number: str | None = None     # e.g. "7-Up" — server-verified, shown on the ticket
     check_in: str | None = None
     check_out: str | None = None
     # Upper bound is a loose sanity cap only — the authoritative party-size gate
@@ -66,6 +73,9 @@ class AgentBookRequest(BaseModel):
     cabin_class: str | None = None      # flights, e.g. "Economy"
     train_class: str | None = None      # trains, e.g. "AC Standard"
     room_type: str | None = None        # hotels, e.g. "Standard Room"
+    # Server-verified from the matched listing — shown on the hotel ticket.
+    hotel_stars: int | None = None
+    hotel_address: str | None = None
     # Optional airport/station car transfer, keyed with the SAME names the manual
     # booking forms use (transferAdded / transferVehicleType / transferPickupLocation)
     # so the existing post-payment book_car_transfers task picks it up unchanged.
@@ -227,6 +237,34 @@ async def get_messages(conversation_id: str, user: CurrentUser):
     return result.data or []
 
 
+@router.post("/conversations/{conversation_id}/notes", status_code=204)
+async def append_conversation_note(
+    conversation_id: str,
+    payload: ConversationNoteRequest,
+    user: CurrentUser,
+):
+    """
+    Persist an assistant-authored milestone note into the conversation.
+
+    The booking milestone cards ("Passenger details saved…", "Booking
+    Confirmed! PNR…", "Booking Saved!") were previously appended in the Flutter
+    client only. Nothing wrote them to ai_messages, so reopening the chat
+    dropped them and the conversation looked like it stopped at the booking
+    summary. Flutter posts them here after the underlying action really
+    succeeded, so the reloaded history matches what the user saw.
+
+    Ownership is verified — supabase_admin bypasses RLS.
+    """
+    conv = await asyncio.to_thread(_verify_conversation_owner, conversation_id, user.id)
+    if not conv.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found.",
+        )
+    await save_message(conversation_id, user.id, "assistant", payload.content)
+    return Response(status_code=204)
+
+
 @router.delete("/conversations/{conversation_id}", status_code=204)
 async def delete_conversation(conversation_id: str, user: CurrentUser):
     """Soft-delete a conversation (sets is_active = false)."""
@@ -320,6 +358,7 @@ async def agent_book(payload: AgentBookRequest, user: CurrentUser):
         "travelers": payload.travelers,
         "flight_number": payload.flight_number,
         "train_name": payload.train_name,
+        "train_number": payload.train_number,
         "passenger_name": passenger_name,
         # Traveler breakdown + class/room labels — display parity with manual bookings.
         "adults": payload.adults,
@@ -329,6 +368,8 @@ async def agent_book(payload: AgentBookRequest, user: CurrentUser):
         "cabin_class": payload.cabin_class,
         "train_class": payload.train_class,
         "room_type": payload.room_type,
+        "hotel_stars": payload.hotel_stars,
+        "hotel_address": payload.hotel_address,
     }
 
     # Airport/station car transfer legs — merged with the SAME key names the manual
@@ -448,4 +489,15 @@ async def proactive_alert(user: CurrentUser):
             "Double-check your documents and have a wonderful journey! ✈️"
         )
 
-    return {"alert": alert.strip() if alert else None}
+    dep_day = dep_raw[:10]
+    return {
+        "alert": alert.strip() if alert else None,
+        # Stable identity for THIS trip. The client also surfaces the alert in
+        # the notifications panel, and since the alert text is LLM-generated it
+        # differs on every call — dedup has to key off the trip itself, or every
+        # new chat session would stack another near-duplicate reminder.
+        "trip_key": f"trip:{pnr}:{dep_day}" if pnr else None,
+        # Deterministic headline (no LLM) — the generated text is the body.
+        "title": f"Your {booking_type} to {destination} is {days_text}".strip(),
+        "category": booking_type,
+    }

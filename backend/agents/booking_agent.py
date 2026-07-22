@@ -13,6 +13,7 @@ from __future__ import annotations
 # =============================================================================
 
 import logging
+import re
 from typing import Any
 
 from services.booking_service import cancel_booking
@@ -140,7 +141,13 @@ def format_booking_summary(booking_data: dict) -> str:
 
     if booking_data.get("transfer_vehicle_type"):
         pickup = booking_data.get("transfer_pickup_location") or "pickup to be confirmed"
-        lines.append(f"🚗  **Car transfer:** {booking_data['transfer_vehicle_type']} — {pickup}")
+        # transfer_pkr is set by _add_transfer_fare during repricing and is already
+        # inside the total below — show it so the total adds up on screen.
+        fare = booking_data.get("transfer_pkr")
+        fare_part = f" (PKR {int(fare):,})" if fare else ""
+        lines.append(
+            f"🚗  **Car transfer:** {booking_data['transfer_vehicle_type']}{fare_part} — {pickup}"
+        )
 
     if price:
         lines.append(f"\n💰  **Total: PKR {int(price):,}**")
@@ -152,7 +159,42 @@ def format_booking_summary(booking_data: dict) -> str:
     lines.append("• **Pay with Card** — Proceed to the secure in-app payment screen")
     lines.append("• **Pay Later** — Save this booking and pay when you're ready")
 
+    # Multi-part trips only. The model's own prose is discarded on the booking
+    # turn (the app renders THIS summary instead), and no chat turn happens
+    # during passenger-details/payment — so without this line a package would
+    # silently dead-end after its first piece.
+    nxt = sanitize_next_step(booking_data.get("next_step"))
+    if nxt:
+        lines.append(f"\n\n➡️  **After this:** {nxt}")
+
     return "\n".join(lines)
+
+
+# Anything a model writes that reaches the user unedited needs a deterministic
+# gate. next_step is descriptive only — it must never carry a reference number or
+# imply this booking is already done.
+_NEXT_STEP_BANNED = re.compile(
+    r"\b(pnr|booking reference|reference number|confirmation number|confirmed|"
+    r"booked|paid|ticket number)\b",
+    re.IGNORECASE,
+)
+
+
+def sanitize_next_step(raw) -> str:
+    """
+    Return a safe one-line 'what's left in this trip' hint, or '' to drop it.
+
+    Dropped entirely if it claims a booking is confirmed or carries any kind of
+    reference number — a fabricated PNR is the one thing this surface must never
+    be able to print, and the prompt asking nicely is not a guarantee.
+    """
+    if not isinstance(raw, str):
+        return ""
+    # Collapse to a single line so it can't fake headings or extra card sections.
+    text = " ".join(raw.split()).strip()
+    if not text or _NEXT_STEP_BANNED.search(text):
+        return ""
+    return text[:160].rstrip()
 
 
 def format_car_booking_summary(car_data: dict) -> str:

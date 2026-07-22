@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Every bell badge across the app observes [unreadCount].
 class NotificationController extends GetxController {
   static const String _storagePrefix = 'notifications_v1_';
+  static const String _seenPrefix = 'notif_seen_v1_';
 
   // ── Reactive notification lists ────────────────────────────────────────────
   final RxList<NotificationModel> today = <NotificationModel>[].obs;
@@ -114,6 +115,35 @@ class NotificationController extends GetxController {
   /// Prepend a new unread notification to [today].
   void addNotification(NotificationModel n) {
     today.insert(0, n);
+  }
+
+  /// Prepend [n] only if nothing was ever added under [key] before.
+  ///
+  /// Used by the AI trip alert, which is re-fetched every time a fresh chat
+  /// session opens. Its wording is LLM-generated and differs on every call, so
+  /// dedup has to key off the trip itself (PNR + departure date) — matching on
+  /// the text would let the panel fill with near-duplicate reminders for one
+  /// trip. Returns true only when the notification was actually added.
+  Future<bool> addNotificationOnce(String key, NotificationModel n) async {
+    if (key.isEmpty) return false;
+    try {
+      final storageKey = _activeStorageKey.isNotEmpty
+          ? _activeStorageKey
+          : await _resolveStorageKey();
+      final prefs = await SharedPreferences.getInstance();
+      final seenKey = '$_seenPrefix$storageKey';
+      final seen = prefs.getStringList(seenKey) ?? <String>[];
+      if (seen.contains(key)) return false;
+      seen.add(key);
+      // Bound the list so a long-lived account's entry can't grow without limit.
+      if (seen.length > 100) seen.removeRange(0, seen.length - 100);
+      await prefs.setStringList(seenKey, seen);
+      addNotification(n);
+      return true;
+    } catch (_) {
+      // Never let a storage hiccup break the caller — worst case, no alert card.
+      return false;
+    }
   }
 
   // ── Booking Confirmation Notifications (Expedia/Booking.com style) ─────────

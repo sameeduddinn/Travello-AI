@@ -1178,7 +1178,11 @@ class ApiClient {
 
   /// GET /agent/proactive-alert — personalized trip alert if user has an
   /// upcoming booking within the next 7 days. Returns null if nothing upcoming.
-  static Future<String?> getProactiveAlert() async {
+  ///
+  /// Returns the full payload (`alert`, plus `trip_key` / `title` / `category`)
+  /// so the caller can both render the chat card and file the same alert in the
+  /// notifications panel, deduped on `trip_key`.
+  static Future<Map<String, dynamic>?> getProactiveAlert() async {
     if (_token == null) return null;
     try {
       final res = await http
@@ -1187,7 +1191,7 @@ class ApiClient {
       if (res.statusCode != 200) return null;
       final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
       final alert = data['alert'];
-      return alert is String && alert.isNotEmpty ? alert : null;
+      return alert is String && alert.isNotEmpty ? data : null;
     } catch (_) {
       return null;
     }
@@ -1237,6 +1241,7 @@ class ApiClient {
     String? arrivalTime,
     String? flightNumber,
     String? trainName,
+    String? trainNumber,
     String? checkIn,
     String? checkOut,
     int travelers = 1,
@@ -1251,6 +1256,8 @@ class ApiClient {
     String? cabinClass,
     String? trainClass,
     String? roomType,
+    int? hotelStars,
+    String? hotelAddress,
     Map<String, dynamic>? facilities,
     String description = 'Agent-initiated booking',
   }) async {
@@ -1268,6 +1275,7 @@ class ApiClient {
             if (arrivalTime != null) 'arrival_time': arrivalTime,
             if (flightNumber != null) 'flight_number': flightNumber,
             if (trainName != null) 'train_name': trainName,
+            if (trainNumber != null) 'train_number': trainNumber,
             if (checkIn != null) 'check_in': checkIn,
             if (checkOut != null) 'check_out': checkOut,
             'travelers': travelers,
@@ -1282,6 +1290,8 @@ class ApiClient {
             if (cabinClass != null) 'cabin_class': cabinClass,
             if (trainClass != null) 'train_class': trainClass,
             if (roomType != null) 'room_type': roomType,
+            if (hotelStars != null) 'hotel_stars': hotelStars,
+            if (hotelAddress != null) 'hotel_address': hotelAddress,
             if (facilities != null) 'facilities': facilities,
             'description': description,
           }),
@@ -1350,6 +1360,25 @@ class ApiClient {
     } catch (_) {
       return [];
     }
+  }
+
+  /// Persist an assistant milestone note (e.g. "Booking Confirmed! PNR…") into
+  /// the conversation so it survives reopening the chat. These cards are built
+  /// client-side after a real success, and nothing else writes them to history.
+  /// Best-effort: a failure here must never break the booking the user just
+  /// completed, so errors are swallowed.
+  static Future<void> saveAgentNote(
+      String conversationId, String content) async {
+    if (_token == null) return;
+    try {
+      await http
+          .post(
+            Uri.parse('$_baseUrl/agent/conversations/$conversationId/notes'),
+            headers: _headers,
+            body: jsonEncode({'content': content}),
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {}
   }
 
   /// Soft-delete a conversation (sets is_active = false on the backend).

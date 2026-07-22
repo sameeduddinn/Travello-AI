@@ -110,16 +110,37 @@ class _MyBookingsState extends State<MyBookings>
       if (ciDt != null && coDt != null) {
         nights = coDt.difference(ciDt).inDays.clamp(1, 365);
       }
+      // Same gap the flight and train branches had: the booked room type, the
+      // hotel's star rating and its address all live in raw_payload, but the old
+      // mapping hardcoded 'Standard Room' and 0 stars — so a Deluxe booking
+      // showed the WRONG room on the ticket, not merely a blank one.
+      final rp = m['raw_payload'];
+      final rpMap =
+          rp is Map ? Map<String, dynamic>.from(rp) : <String, dynamic>{};
+      final roomType = (rpMap['room_type'] ?? '').toString().trim();
+      final address = (rpMap['hotel_address'] ?? '').toString().trim();
       hotelDetails = {
         'hotelName': m['hotel_name'] ?? 'Hotel',
         'city': m['destination'] ?? m['origin'] ?? '',
         'checkIn': ci,
         'checkOut': co,
         'nights': nights,
-        'rating': 0,
-        'roomType': 'Standard Room',
+        'rating': (rpMap['hotel_stars'] as num?)?.toInt() ?? 0,
+        'roomType': roomType.isNotEmpty ? roomType : 'Standard Room',
+        if (address.isNotEmpty) 'address': address,
       };
     } else if (bookingType == 'train') {
+      // Same gap the flight branch had: the train name/number and the booked
+      // class live in raw_payload, but the old mapping never read them — so the
+      // ticket showed "Train: N/A", "Number: N/A" and a hardcoded Economy.
+      // Class labels come through pre-formatted (e.g. "AC Standard"), so use
+      // them as-is rather than title-casing and turning "AC" into "Ac".
+      final rp = m['raw_payload'];
+      final rpMap =
+          rp is Map ? Map<String, dynamic>.from(rp) : <String, dynamic>{};
+      final trainName = (rpMap['train_name'] ?? '').toString().trim();
+      final trainNo = (rpMap['train_number'] ?? '').toString().trim();
+      final trainClass = (rpMap['train_class'] ?? '').toString().trim();
       trainDetails = {
         'from': m['origin'] ?? '',
         'to': m['destination'] ?? '',
@@ -131,26 +152,46 @@ class _MyBookingsState extends State<MyBookings>
             arrDt != null ? _fmtTime(arrDt) : 'N/A',
         'date': depDt != null ? _fmtDateStr(depDt) : '',
         'duration': _calcDuration(depDt, arrDt),
-        'class': 'Economy',
+        'class': trainClass.isNotEmpty ? trainClass : 'Economy',
+        if (trainName.isNotEmpty) 'trainName': trainName,
+        if (trainNo.isNotEmpty) 'trainNumber': trainNo,
       };
     } else {
+      // AI-created flight bookings keep their metadata in flat columns
+      // (origin/destination cities, departure_at/arrival_at) plus raw_payload
+      // (the flight number + cabin class the agent stored). The old mapping only
+      // carried from/to/time, so the ticket showed N/A for airline, flight number,
+      // duration and the (CODE) the detail screen needs — pull it all through here.
+      final rp = m['raw_payload'];
+      final rpMap =
+          rp is Map ? Map<String, dynamic>.from(rp) : <String, dynamic>{};
+      final flightNo = (rpMap['flight_number'] ?? '').toString().trim();
+      final cabin = (rpMap['cabin_class'] ?? '').toString().trim();
+      final airline = _airlineFromFlightNumber(flightNo);
       flightDetails = {
-        'from': m['origin'] ?? '',
-        'to': m['destination'] ?? '',
-        'departure':
-            depDt != null ? _fmtTime(depDt) : 'N/A',
-        'arrival':
-            arrDt != null ? _fmtTime(arrDt) : 'N/A',
+        'from': _flightCityWithCode(m['origin'] as String? ?? ''),
+        'to': _flightCityWithCode(m['destination'] as String? ?? ''),
+        'departure': depDt != null ? _fmtTime(depDt) : 'N/A',
+        'arrival': arrDt != null ? _fmtTime(arrDt) : 'N/A',
         'date': depDt != null ? _fmtDateStr(depDt) : '',
+        'duration': _calcDuration(depDt, arrDt),
+        'class': cabin.isNotEmpty ? _titleCaseCabin(cabin) : 'Economy',
+        if (flightNo.isNotEmpty) 'flightNumber': flightNo,
+        if (airline.isNotEmpty) 'airline': airline,
       };
     }
 
-    // Passenger count from raw_payload if available
+    // Passenger count from raw_payload if available. Agent bookings store the
+    // count under `travelers` (with an `adults` breakdown); manual bookings may
+    // use passenger_count/passengers — accept any of them.
     int passengerCount = 1;
-    final rp = m['raw_payload'];
-    if (rp is Map) {
-      passengerCount =
-          (rp['passenger_count'] ?? rp['passengers'] ?? 1) as int? ?? 1;
+    final rpCount = m['raw_payload'];
+    if (rpCount is Map) {
+      final raw = rpCount['passenger_count'] ??
+          rpCount['passengers'] ??
+          rpCount['travelers'] ??
+          rpCount['adults'];
+      passengerCount = (raw as num?)?.toInt() ?? 1;
     }
 
     return {
@@ -185,6 +226,74 @@ class _MyBookingsState extends State<MyBookings>
           .toUpperCase();
     }
     return clean.substring(0, clean.length.clamp(0, 3)).toUpperCase();
+  }
+
+  // Domestic city → IATA, aligned with the booking-detail screen's reverse
+  // (code → city) map so the route text and chips both resolve. Cities without a
+  // safe, unambiguous code are intentionally omitted — they degrade to a plain
+  // city name (no crash) rather than a wrong code.
+  static const Map<String, String> _cityToIata = {
+    'karachi': 'KHI',
+    'lahore': 'LHE',
+    'islamabad': 'ISB',
+    'peshawar': 'PEW',
+    'multan': 'MUX',
+    'quetta': 'UET',
+    'faisalabad': 'LYP',
+    'sialkot': 'SKT',
+    'bahawalpur': 'BHV',
+    'gilgit': 'GIL',
+    'skardu': 'SKZ',
+  };
+
+  /// Append the IATA code to a bare city name ("Karachi" → "Karachi (KHI)"). The
+  /// booking-detail widgets extract the code with a `(XXX)` regex, so without this
+  /// an AI booking (which stores just the city) renders the route as N/A. Returns
+  /// the input unchanged if it already has a code or isn't a known domestic airport.
+  static String _flightCityWithCode(String city) {
+    final c = city.trim();
+    if (c.isEmpty) return '';
+    if (RegExp(r'\([A-Z]{3}\)').hasMatch(c)) return c;
+    final code = _cityToIata[c.toLowerCase()];
+    return code != null ? '$c ($code)' : c;
+  }
+
+  /// Derive the airline name from a flight number's carrier prefix
+  /// ("PK448" → "Pakistan International Airlines"). Mirrors ApiClient's carrier
+  /// map. Returns '' for an unknown carrier so the ticket shows a clean 'N/A'
+  /// instead of a bare code.
+  static String _airlineFromFlightNumber(String flightNo) {
+    final fn = flightNo.trim().toUpperCase();
+    if (fn.isEmpty) return '';
+    // Carrier code = leading letters, else the first two chars (handles '9P').
+    final m = RegExp(r'^([A-Z]{2})').firstMatch(fn);
+    final code = m?.group(1) ?? (fn.length >= 2 ? fn.substring(0, 2) : fn);
+    const airlines = {
+      'PK': 'Pakistan International Airlines',
+      'PA': 'Airblue',
+      'ED': 'Airblue',
+      'ER': 'SereneAir',
+      'PF': 'AirSial',
+      '9P': 'Fly Jinnah',
+      'EK': 'Emirates',
+      'QR': 'Qatar Airways',
+      'TK': 'Turkish Airlines',
+      'SV': 'Saudia',
+      'EY': 'Etihad Airways',
+      'FZ': 'flydubai',
+      'G9': 'Air Arabia',
+    };
+    return airlines[code] ?? '';
+  }
+
+  /// "ECONOMY" → "Economy", "PREMIUM_ECONOMY" → "Premium Economy".
+  static String _titleCaseCabin(String cabin) {
+    return cabin
+        .replaceAll('_', ' ')
+        .split(' ')
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
+        .join(' ');
   }
 
   // ─────────────────────────────────────────────────────────────────────────

@@ -1,19 +1,23 @@
 ﻿import 'dart:async';
 
 import 'package:flight_app/app/app_link.dart';
+import 'package:flight_app/controllers/notification_controller.dart';
 import 'package:flight_app/models/ai_chat.dart';
 import 'package:flight_app/models/airport.dart';
+import 'package:flight_app/models/notification.dart' show NotificationModel;
 import 'package:flight_app/models/hotel.dart' show Hotel;
 import 'package:flight_app/screens/flight/flight_results_screen.dart'
     show FlightResult;
 import 'package:flight_app/screens/railway/train_results_screen.dart'
     show TrainResult;
 import 'package:flight_app/services/api_client.dart';
+import 'package:flight_app/services/notification_service.dart';
+import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:get/get.dart' show Get, GetNavigation;
+import 'package:get/get.dart' show Get, GetNavigation, Inst;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,10 +28,12 @@ class _SendButton extends StatefulWidget {
   final VoidCallback onPressed;
   final Color backgroundColor;
   final Color iconColor;
+  final bool enabled;
   const _SendButton(
       {required this.onPressed,
       required this.backgroundColor,
-      required this.iconColor});
+      required this.iconColor,
+      this.enabled = true});
   @override
   State<_SendButton> createState() => _SendButtonState();
 }
@@ -36,36 +42,42 @@ class _SendButtonState extends State<_SendButton> {
   bool _hovered = false;
   @override
   Widget build(BuildContext context) {
+    final enabled = widget.enabled;
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _hovered = enabled),
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedScale(
-        scale: _hovered ? 1.1 : 1.0,
+        scale: (_hovered && enabled) ? 1.1 : 1.0,
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
-        child: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFD4AF37), Color(0xFFE8C76A)],
-            ),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFD4AF37).withValues(alpha: _hovered ? 0.4 : 0.2),
-                blurRadius: _hovered ? 12 : 6,
-                offset: const Offset(0, 2),
+        child: Opacity(
+          opacity: enabled ? 1.0 : 0.45,
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFD4AF37), Color(0xFFE8C76A)],
               ),
-            ],
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-            onPressed: widget.onPressed,
-            padding: EdgeInsets.zero,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFD4AF37)
+                      .withValues(alpha: _hovered ? 0.4 : 0.2),
+                  blurRadius: _hovered ? 12 : 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon:
+                  const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+              onPressed: enabled ? widget.onPressed : null,
+              padding: EdgeInsets.zero,
+            ),
           ),
         ),
       ),
@@ -852,8 +864,16 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
 
   Future<void> _fetchAndShowProactiveAlert() async {
     try {
-      final alert = await ApiClient.getProactiveAlert();
-      if (!mounted || alert == null) return;
+      final data = await ApiClient.getProactiveAlert();
+      if (!mounted || data == null) return;
+      final alert = data['alert'] as String;
+
+      // File the same alert in the notifications panel. The chat card is only
+      // seen by someone who opens the assistant, so a trip reminder used to
+      // vanish the moment they navigated away — the panel is where it belongs.
+      // Deduped on trip_key so reopening the chat can't stack duplicates.
+      _fileTripAlertNotification(data, alert);
+
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
       setState(() {
@@ -868,6 +888,104 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     } catch (_) {}
   }
 
+  /// Best-effort — a notification failure must never disturb the chat.
+  void _fileTripAlertNotification(Map<String, dynamic> data, String alert) {
+    try {
+      final tripKey = (data['trip_key'] as String?) ?? '';
+      if (tripKey.isEmpty) return;
+      final title = (data['title'] as String?)?.trim();
+      final category = (data['category'] as String?) ?? 'ai';
+      Get.find<NotificationController>().addNotificationOnce(
+        tripKey,
+        NotificationModel(
+          type: 'info',
+          category: category.isNotEmpty ? category : 'ai',
+          tag: 'AI Trip',
+          title: (title != null && title.isNotEmpty)
+              ? title
+              : 'Upcoming trip reminder',
+          subtitle: alert,
+          date: 'Just now',
+          isRead: false,
+        ),
+      );
+    } catch (_) {}
+  }
+
+  /// Mirror the manual flows: a confirmed booking files a notification — plus
+  /// its check-in and leave-home reminders — into the notifications panel.
+  /// Agent bookings were silent here; NotificationService was only ever called
+  /// from the manual confirmation screens, so a trip booked through chat left
+  /// no trace in the panel at all.
+  ///
+  /// Best-effort: a notification failure must never disturb a paid booking.
+  void _fileBookingNotification(Map<String, dynamic> data, String pnr) {
+    try {
+      final svc = NotificationService.instance;
+      final type = (data['booking_type'] as String?) ?? 'flight';
+      final from = (data['origin'] as String?) ?? '';
+      final to = (data['destination'] as String?) ?? '';
+      final date = _fmtNotifDate(data['travel_date'] as String?);
+      final departure = (data['departure_time'] as String?) ?? 'N/A';
+
+      if (type == 'train') {
+        svc.trainBooked(
+          trainName: (data['train_name'] as String?) ??
+              (data['airline_or_train_name'] as String?) ??
+              'Pakistan Railways',
+          fromStation: from,
+          toStation: to,
+          date: date,
+          departure: departure,
+          seatClass: (data['train_class'] as String?) ?? 'Economy',
+          // coach/seat deliberately omitted — assigned at the station, and a
+          // guessed seat number would be a fabricated ticket detail.
+          pnr: pnr,
+        );
+      } else if (type == 'hotel') {
+        svc.hotelBooked(
+          hotelName: (data['hotel_name'] as String?) ?? 'Hotel',
+          city: to.isNotEmpty ? to : from,
+          roomType: (data['room_type'] as String?) ?? 'Standard Room',
+          checkIn: _fmtNotifDate(data['check_in'] as String?),
+          checkOut: _fmtNotifDate(data['check_out'] as String?),
+          bookingRef: pnr,
+        );
+      } else {
+        svc.flightBooked(
+          airline: (data['airline_or_train_name'] as String?) ?? 'Flight',
+          flightNumber: (data['flight_number'] as String?) ?? '',
+          fromCode: from,
+          toCode: to,
+          date: date,
+          departure: departure,
+          pnr: pnr,
+          seatClass: _prettyCabin(data['cabin_class'] as String?),
+        );
+      }
+    } catch (_) {}
+  }
+
+  /// 'YYYY-MM-DD' → '22 Jul 2026', matching how the manual flows label dates.
+  static String _fmtNotifDate(String? raw) {
+    if (raw == null || raw.isEmpty) return 'N/A';
+    final d = DateTime.tryParse(raw);
+    return d != null ? DateFormat('d MMM yyyy').format(d) : raw;
+  }
+
+  /// 'ECONOMY' → 'Economy'. Only flight cabins arrive shouted; train classes
+  /// come through pre-formatted ('AC Business') and are used as-is.
+  static String _prettyCabin(String? raw) {
+    final c = (raw ?? '').trim();
+    if (c.isEmpty) return 'Economy';
+    return c
+        .replaceAll('_', ' ')
+        .split(' ')
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
+        .join(' ');
+  }
+
   Future<void> _saveConversationId(String id) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kConvIdKey, id);
@@ -879,8 +997,33 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     setState(() {
       _conversationId = null;
       _messages.clear();
+      // Drop any half-finished booking bar so a fresh chat starts on the text
+      // input, never a leftover "Add Passenger Details" from the old chat.
+      _pendingAction = null;
+      _pendingBookingData = null;
+      _agentPassengers = null;
+      _agentContact = null;
     });
     _addWelcomeMessage();
+  }
+
+  // Append a booking milestone card AND persist it to the conversation.
+  // These cards are built here after a real success (passenger form returned,
+  // payment went through), so nothing on the server had written them — which is
+  // why reopening the chat used to drop them and leave the thread ending at the
+  // booking summary. Saving is best-effort and never blocks the UI.
+  void _addMilestoneMessage(String text) {
+    setState(() {
+      _messages.add(ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        message: text,
+        isUser: false,
+        timestamp: DateTime.now(),
+      ));
+    });
+    _scrollToBottom();
+    final convId = _conversationId;
+    if (convId != null) ApiClient.saveAgentNote(convId, text);
   }
 
   // ── Payment choice handlers ────────────────────────────────────────────────
@@ -904,20 +1047,22 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         passengers: _agentPassengers,
         contact: _agentContact,
         onSuccess: (pnr, amount) {
+          // Capture before _clearPendingAction() nulls _pendingBookingData.
+          final booked = _pendingBookingData;
           _clearPendingAction();
-          setState(() {
-            _messages.add(ChatMessage(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              message: '✅ **Booking Confirmed!**\n\n'
-                  '**PNR:** $pnr\n'
-                  '**Amount Paid:** PKR ${amount.toStringAsFixed(0)}\n\n'
-                  'A confirmation email has been sent to you. '
-                  'You can view your booking in **My Bookings**.',
-              isUser: false,
-              timestamp: DateTime.now(),
-            ));
-          });
-          _scrollToBottom();
+          if (booked != null) _fileBookingNotification(booked, pnr);
+          // Multi-part trip: carry the outstanding pieces onto the confirmation
+          // so the package doesn't dead-end here. The agent gets no turn between
+          // the summary and this card, so this is the handoff.
+          final next = (booked?['next_step'] as String?)?.trim() ?? '';
+          _addMilestoneMessage(
+            '✅ **Booking Confirmed!**\n\n'
+            '**PNR:** $pnr\n'
+            '**Amount Paid:** PKR ${amount.toStringAsFixed(0)}\n\n'
+            'A confirmation email has been sent to you. '
+            'You can view your booking in **My Bookings**.'
+            '${next.isEmpty ? '' : '\n\n➡️ **Next up:** $next\n\nJust say the word and I\'ll set it up.'}',
+          );
         },
         onCancel: _clearPendingAction,
       ),
@@ -955,6 +1100,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         arrivalTime: data['arrival_time'] as String?,
         flightNumber: data['flight_number'] as String?,
         trainName: data['train_name'] as String?,
+        trainNumber: data['train_number'] as String?,
         checkIn: data['check_in'] as String?,
         checkOut: data['check_out'] as String?,
         travelers: (data['travelers'] as num?)?.toInt() ?? 1,
@@ -969,6 +1115,8 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         cabinClass: data['cabin_class'] as String?,
         trainClass: data['train_class'] as String?,
         roomType: data['room_type'] as String?,
+        hotelStars: (data['hotel_stars'] as num?)?.toInt(),
+        hotelAddress: data['hotel_address'] as String?,
         facilities: _agentTransferFacilities(data),
         description: data['selected_option'] as String? ?? 'Agent booking',
       );
@@ -987,19 +1135,13 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       }
       if (!mounted) return;
       _clearPendingAction();
-      setState(() {
-        _savingForLater = false;
-        _messages.add(ChatMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          message: '📌 **Booking Saved!**\n\n'
-              '**PNR:** $pnr\n'
-              '**Amount Due:** PKR ${amount.toStringAsFixed(0)}\n\n'
-              "It's saved as pending — you can pay anytime from **My Bookings**.",
-          isUser: false,
-          timestamp: DateTime.now(),
-        ));
-      });
-      _scrollToBottom();
+      setState(() => _savingForLater = false);
+      _addMilestoneMessage(
+        '📌 **Booking Saved!**\n\n'
+        '**PNR:** $pnr\n'
+        '**Amount Due:** PKR ${amount.toStringAsFixed(0)}\n\n'
+        "It's saved as pending — you can pay anytime from **My Bookings**.",
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -1051,38 +1193,75 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             ),
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _collectingPassengers ? null : _openPassengerForm,
-              icon: _collectingPassengers
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.person_add_alt_1_rounded,
-                      size: 18, color: Colors.white),
-              label: const Text(
-                'Add Passenger Details',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _collectingPassengers ? null : _openPassengerForm,
+                  icon: _collectingPassengers
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.person_add_alt_1_rounded,
+                          size: 18, color: Colors.white),
+                  label: const Text(
+                    'Add Passenger Details',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: gold,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
+                  ),
+                ),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: gold,
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                elevation: 2,
+              const SizedBox(width: 10),
+              OutlinedButton(
+                onPressed: _collectingPassengers ? null : _cancelPassengerFlow,
+                style: OutlinedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+                  side: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text('Cancel',
+                    style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13)),
               ),
-            ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  // User backed out of the booking before entering traveler details. Drop the
+  // pending booking so the text input returns, and leave a short note so the
+  // chat clearly reflects the cancellation and the user can carry on.
+  void _cancelPassengerFlow() {
+    if (_collectingPassengers) return;
+    _clearPendingAction();
+    setState(() {
+      _messages.add(ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        message: "No problem — I've set that booking aside. "
+            "Just tell me what you'd like to do next.",
+        isUser: false,
+        timestamp: DateTime.now(),
+      ));
+    });
+    _scrollToBottom();
   }
 
   Future<void> _openPassengerForm() async {
@@ -1132,15 +1311,11 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         ])
           if ((res[k] as String?)?.isNotEmpty ?? false) k: res[k],
       };
-      _messages.add(ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        message: '✅ Passenger details saved for '
-            '${passengers.length} traveler(s). Now choose how you\'d like to pay.',
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
     });
-    _scrollToBottom();
+    _addMilestoneMessage(
+      '✅ Passenger details saved for '
+      '${passengers.length} traveler(s). Now choose how you\'d like to pay.',
+    );
   }
 
   int _countOf(Map<String, dynamic> data, String key, int fallback) =>
@@ -1534,6 +1709,11 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
           setState(() {
             _conversationId = null;
             _messages.clear();
+            // Never carry a pending booking bar from the previous chat.
+            _pendingAction = null;
+            _pendingBookingData = null;
+            _agentPassengers = null;
+            _agentContact = null;
           });
           await _loadConversationState();
         },
@@ -1912,6 +2092,28 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                           color: TravelloTheme.textPrimary,
                           fontSize: 14,
                         ),
+                        // Tables (e.g. flight results) must size columns to their
+                        // content, not divide the narrow bubble width evenly — the
+                        // flex default crushed cells to ~1 char ("P K 4 4 8"). With
+                        // IntrinsicColumnWidth, flutter_markdown also wraps the table
+                        // in a horizontal scroll view, so wide tables stay readable.
+                        tableColumnWidth: const IntrinsicColumnWidth(),
+                        tableCellsPadding:
+                            const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                        tableHead: TravelloTheme.paragraph.copyWith(
+                          color: TravelloTheme.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        tableBody: TravelloTheme.paragraph.copyWith(
+                          color: TravelloTheme.textPrimary,
+                          fontSize: 13,
+                          height: 1.3,
+                        ),
+                        tableBorder: TableBorder.all(
+                          color: const Color(0xFFE5E0D0),
+                          width: 1,
+                        ),
                         blockquotePadding: const EdgeInsets.only(left: 8),
                         blockquoteDecoration: const BoxDecoration(
                           border: Border(
@@ -2184,6 +2386,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                   onPressed: () => _sendMessage(_messageController.text.trim()),
                   backgroundColor: const Color(0xFFD4AF37),
                   iconColor: Colors.white,
+                  enabled: !_isTyping,
                 ),
               ),
             ],
@@ -2195,6 +2398,11 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
 
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
+
+    // A reply is still generating — ignore this submit. Firing a second agent
+    // request while the first is in flight raced two responses onto the same
+    // state and could crash the screen. One turn at a time.
+    if (_isTyping) return;
 
     // Require a logged-in session before hitting the authenticated agent endpoint,
     // so the user sees a clear prompt instead of a generic connection error.
@@ -2743,6 +2951,7 @@ class _CardPaymentSheetState extends State<_CardPaymentSheet> {
         arrivalTime: data['arrival_time'] as String?,
         flightNumber: data['flight_number'] as String?,
         trainName: data['train_name'] as String?,
+        trainNumber: data['train_number'] as String?,
         checkIn: data['check_in'] as String?,
         checkOut: data['check_out'] as String?,
         travelers: (data['travelers'] as num?)?.toInt() ?? 1,
@@ -2759,6 +2968,8 @@ class _CardPaymentSheetState extends State<_CardPaymentSheet> {
         cabinClass: data['cabin_class'] as String?,
         trainClass: data['train_class'] as String?,
         roomType: data['room_type'] as String?,
+        hotelStars: (data['hotel_stars'] as num?)?.toInt(),
+        hotelAddress: data['hotel_address'] as String?,
         facilities: _agentTransferFacilities(data),
         description: data['selected_option'] as String? ?? 'Agent booking',
       );
@@ -2861,8 +3072,7 @@ class _CardPaymentSheetState extends State<_CardPaymentSheet> {
                 hint: 'As printed on card',
                 icon: Icons.person_outline_rounded,
                 keyboardType: TextInputType.name,
-                validator: (v) =>
-                    (v == null || v.trim().length < 2) ? 'Enter cardholder name' : null,
+                validator: DSValidators.cardholderName,
               ),
               const SizedBox(height: 14),
 
@@ -2883,10 +3093,10 @@ class _CardPaymentSheetState extends State<_CardPaymentSheet> {
                     );
                   }
                 },
-                validator: (v) {
-                  final digits = (v ?? '').replaceAll(' ', '');
-                  return digits.length < 16 ? 'Enter 16-digit card number' : null;
-                },
+                // Full validation incl. the Luhn checksum — rejects a mistyped or
+                // made-up 16-digit number that isn't a real card. Same validator
+                // the manual booking payment screen uses.
+                validator: DSValidators.cardNumber,
               ),
               const SizedBox(height: 14),
 
@@ -2911,14 +3121,8 @@ class _CardPaymentSheetState extends State<_CardPaymentSheet> {
                           );
                         }
                       },
-                      validator: (v) {
-                        final parts = (v ?? '').split('/');
-                        if (parts.length != 2 || parts[0].length != 2 ||
-                            parts[1].length != 2) {
-                          return 'Invalid date';
-                        }
-                        return null;
-                      },
+                      // Rejects a bad month (00, 13+) and an already-expired card.
+                      validator: DSValidators.cardExpiry,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -2931,8 +3135,7 @@ class _CardPaymentSheetState extends State<_CardPaymentSheet> {
                       keyboardType: TextInputType.number,
                       maxLength: 3,
                       obscureText: true,
-                      validator: (v) =>
-                          ((v ?? '').length < 3) ? 'Enter 3-digit CVV' : null,
+                      validator: DSValidators.cvv,
                     ),
                   ),
                 ],

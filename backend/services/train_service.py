@@ -11,6 +11,8 @@ from __future__ import annotations
 import hashlib
 import random
 from datetime import date, datetime, timedelta
+
+from core.pk_time import pk_now, pk_today
 from typing import Any
 
 from models.train import SeatClass, TrainOffer, TrainSearchResponse
@@ -399,7 +401,9 @@ def get_train_offer(train_offer_id: str, passengers: int = 1) -> TrainOffer | No
     if not train:
         return None
 
-    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    # PK wall-clock, not UTC: utcnow() rebuilt this offer against YESTERDAY
+    # for every request between midnight and 5am Pakistan time.
+    today = pk_now().replace(hour=0, minute=0, second=0, microsecond=0)
     return _build_offer(train, origin_code, dest_code, today, passengers)
 
 

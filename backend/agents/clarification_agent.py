@@ -14,6 +14,8 @@ from __future__ import annotations
 import logging
 import re
 from datetime import date, timedelta
+
+from core.pk_time import pk_now, pk_today
 from typing import Any
 
 from services.llm_service import generate_text, generate_json, GeminiError
@@ -99,7 +101,7 @@ async def detect_query_type(
     after a weather discussion) are classified correctly.
     Falls back to 'general' on any error or unknown label.
     """
-    today = date.today().isoformat()
+    today = pk_today().isoformat()
     prompt = QUERY_CLASSIFICATION_PROMPT.format(
         today=today,
         query=user_message,
@@ -158,7 +160,7 @@ async def extract_entities(
         "cabin_class": "ECONOMY",
     }
 
-    today = date.today().isoformat()
+    today = pk_today().isoformat()
     prompt = ENTITY_EXTRACTION_PROMPT.format(
         today=today,
         message=user_message,
@@ -342,7 +344,7 @@ def _parse_relative_date(text: str, today: date | None = None) -> str | None:
     if not text:
         return None
     t = text.lower()
-    today = today or date.today()
+    today = today or pk_today()
 
     # Order matters: check the more specific phrase first.
     if "day after tomorrow" in t:

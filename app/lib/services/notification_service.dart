@@ -146,10 +146,17 @@ class NotificationService {
     required String date,
     required String departure,
     required String seatClass,
-    required String coach,
-    required String seat,
+    // Optional: agent-booked tickets have no coach/seat yet — those are assigned
+    // at the station. Inventing them would put a fabricated seat number on a
+    // travel document, so the segment is simply omitted when they're absent.
+    String? coach,
+    String? seat,
     required String pnr,
   }) {
+    final hasSeat =
+        (coach != null && coach.isNotEmpty) && (seat != null && seat.isNotEmpty);
+    final seatPart = hasSeat ? 'Coach $coach, Seat $seat | ' : '';
+
     // 1. Booking confirmation
     _prepend(NotificationModel(
       type: 'success',
@@ -157,7 +164,7 @@ class NotificationService {
       tag: 'Train',
       title: 'Pakistan Railways - Ticket Confirmed',
       subtitle:
-          '$trainName | $fromStation -> $toStation | $date, $departure | $seatClass | Coach $coach, Seat $seat | PNR: $pnr',
+          '$trainName | $fromStation -> $toStation | $date, $departure | $seatClass | ${seatPart}PNR: $pnr',
       date: 'Just now',
       isRead: false,
     ));

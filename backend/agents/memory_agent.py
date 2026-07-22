@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from core.supabase_client import supabase_admin
@@ -188,12 +188,18 @@ async def save_message(
     input_tokens: int = 0,
     output_tokens: int = 0,
     message_type: str = "text",
+    created_at: str | None = None,
 ) -> None:
     """
     Persist a single message to ai_messages.
 
     `role` MUST be 'user' or 'assistant' (never 'model' — that's a Gemini
     internal name; we always store the canonical 'assistant').
+
+    `created_at` (ISO-8601) may be passed to override the DB `NOW()` default.
+    ai_messages has no monotonic ordering key, and history is replayed by
+    `created_at` alone — so callers that persist a user+assistant pair must stamp
+    explicit, strictly increasing values (see `save_turn`) to keep replay in order.
     """
     if role not in ("user", "assistant"):
         raise ValueError(f"save_message: invalid role={role!r} (must be 'user' or 'assistant')")
@@ -208,6 +214,8 @@ async def save_message(
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
     }
+    if created_at is not None:
+        payload["created_at"] = created_at
 
     def _insert():
         supabase_admin.table("ai_messages").insert(payload).execute()
@@ -220,6 +228,39 @@ async def save_message(
         await asyncio.to_thread(_insert)
     except Exception as exc:
         logger.warning("save_message failed for conv=%s: %s", conversation_id, exc)
+
+
+async def save_turn(
+    conversation_id: str,
+    user_id: str,
+    user_message: str,
+    assistant_message: str,
+    model_used: str = "llama-3.3-70b-versatile",
+    user_type: str = "text",
+    assistant_type: str = "text",
+) -> None:
+    """
+    Persist one user turn + the assistant reply with GUARANTEED replay ordering.
+
+    ai_messages has only a random-UUID primary key and `created_at DEFAULT NOW()`.
+    Saving the pair concurrently (asyncio.gather) let the two rows race on NOW(),
+    so on reload the assistant row could tie with — or land *before* — the user
+    row, scrambling the conversation (e.g. a "Book PK448" turn showing out of
+    place). We stamp explicit timestamps here, the assistant strictly 1ms after
+    the user, so history always replays as user-then-assistant.
+    """
+    base = datetime.now(timezone.utc)
+    await asyncio.gather(
+        save_message(
+            conversation_id, user_id, "user", user_message,
+            message_type=user_type, created_at=base.isoformat(),
+        ),
+        save_message(
+            conversation_id, user_id, "assistant", assistant_message,
+            model_used=model_used, message_type=assistant_type,
+            created_at=(base + timedelta(milliseconds=1)).isoformat(),
+        ),
+    )
 
 
 # Memory -> prompt formatting
