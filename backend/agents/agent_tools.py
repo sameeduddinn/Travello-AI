@@ -711,18 +711,44 @@ _LOC_STOPWORDS: frozenset[str] = frozenset({
 # Words that start (or continue) a car request. Used to scope provenance to the
 # car sub-conversation: a hotel's check-in dates or a flight's date, given turns
 # earlier, must NOT count as the car's pickup time — the "when" has to come from
-# the car discussion itself. Scanning from the FIRST car-intent message onward
-# excludes those earlier bookings while keeping every detail the user gave for
-# THIS ride (which always lands at or after they first mention a car/vehicle).
+# the car discussion itself.
 _CAR_INTENT_RE = re.compile(r"\b(?:car|ride|driver|cab|taxi|sedan|suv|van)\b", re.IGNORECASE)
+
+# A "fresh" car request pairs a car word with an actual request verb ("book a
+# car", "need a van", "reserve another SUV"). This is what STARTS a new ride,
+# versus a bare follow-up answer ("sedan", "3pm") that only continues the one in
+# progress. Scoping to the LAST fresh request is what stops a SECOND car booking
+# in the same session from inheriting the FIRST ride's drop-off / vehicle / time
+# as though the user had re-stated them — an evaluator booking two cars back to
+# back was otherwise handed car #1's "Sedan"/"9am" to ground car #2's invented ride.
+_CAR_REQUEST_VERB_RE = re.compile(
+    r"\b(?:book|reserve|need|want|arrange|hire|order|get|rent)\b", re.IGNORECASE
+)
+
+
+def _is_fresh_car_request(t: str) -> bool:
+    """A message that both names a car word AND asks for one — a new ride's start."""
+    return bool(isinstance(t, str) and _CAR_INTENT_RE.search(t) and _CAR_REQUEST_VERB_RE.search(t))
 
 
 def _scope_to_car(texts_chrono: list[str]) -> list[str]:
-    """Slice user messages (oldest->newest) from the first car-intent mention on."""
-    for i, t in enumerate(texts_chrono):
-        if isinstance(t, str) and _CAR_INTENT_RE.search(t):
-            return texts_chrono[i:]
-    return list(texts_chrono or [])
+    """
+    Slice the user's messages (oldest->newest) down to just the CURRENT car request.
+
+    Prefer the LAST "fresh" car request onward: in a session with two car bookings
+    this drops the first ride's details, so its Sedan/9am/drop-off can't ground the
+    second ride's invented values. Fall back to the first bare car-intent mention
+    when nothing reads as a fresh request, which preserves a single multi-turn spec
+    whose details dribble across follow-up messages ("book a car" → "sedan" → "3pm").
+    """
+    texts = [t for t in (texts_chrono or []) if isinstance(t, str) and t.strip()]
+    last_fresh = next((i for i in range(len(texts) - 1, -1, -1) if _is_fresh_car_request(texts[i])), None)
+    if last_fresh is not None:
+        return texts[last_fresh:]
+    for i, t in enumerate(texts):
+        if _CAR_INTENT_RE.search(t):
+            return texts[i:]
+    return texts
 
 
 def _joined_user_text(texts: list[str]) -> str:
