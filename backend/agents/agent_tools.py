@@ -13,6 +13,7 @@ from __future__ import annotations
 # =============================================================================
 
 import asyncio
+import difflib
 import json
 import logging
 import re
@@ -667,6 +668,149 @@ def build_car_booking_data(args: dict) -> dict:
     }
 
 
+# ── Car booking provenance: the sensitive details must come from the USER ──────
+#
+# get_car_booking_error validates SHAPE (present, valid vehicle, future time) but
+# not PROVENANCE — it cannot tell a detail the user actually gave from one the
+# model invented. Observed live: "book car for me too" (the entire request, no
+# other detail) produced a fully-specified, confirmable ride — Sedan,
+# hotel -> "Islamabad Airport", checkout-day 10:00 — none of which the user said,
+# and confirming it dispatched a real driver to an invented destination at an
+# invented time. Same failure class as the date-provenance gate: an
+# invented-but-valid value clears every shape check.
+#
+# So the three sensitive fields must additionally be traceable to the user's own
+# words: the drop-off (where a real driver is sent), the vehicle (the prompt says
+# offer Sedan/SUV/Van and let the user choose — a silent default is a guess), and
+# the pickup time. PICKUP is deliberately exempt — inferring it from the hotel /
+# booking the user just made is a reasonable convenience, and it's the least
+# consequential of the four. Fires only when a field is genuinely ungrounded, so
+# a real "Sedan from my hotel to the airport at 3pm tomorrow" passes untouched.
+
+_CAR_VEHICLE_RE = re.compile(r"\b(?:sedan|suv|van)\b", re.IGNORECASE)
+
+# Clock-time signals user_supplied_date_signal doesn't cover (it handles the
+# date/day half — "tomorrow", weekdays, "tonight"). Together they answer "did the
+# user say WHEN".
+_CLOCK_TIME_RE = re.compile(
+    r"\b\d{1,2}:\d{2}\b"                                   # 10:00, 3:30
+    r"|\b\d{1,2}\s*(?:a\.?m\.?|p\.?m\.?)\b"                # 3pm, 10 a.m.
+    r"|\b(?:morning|afternoon|evening|noon|midnight|midday|dawn|dusk)\b",
+    re.IGNORECASE,
+)
+
+# Pure connectors — never distinctive enough to ground a drop-off on their own.
+# A place-type word ("airport", "mall", "station") is NOT here: it's exactly the
+# token that must have come from the user.
+_LOC_STOPWORDS: frozenset[str] = frozenset({
+    "the", "near", "from", "drop", "pick", "pickup", "dropoff", "please",
+    "road", "street", "avenue", "block", "sector", "phase", "town", "city",
+})
+
+
+# Words that start (or continue) a car request. Used to scope provenance to the
+# car sub-conversation: a hotel's check-in dates or a flight's date, given turns
+# earlier, must NOT count as the car's pickup time — the "when" has to come from
+# the car discussion itself. Scanning from the FIRST car-intent message onward
+# excludes those earlier bookings while keeping every detail the user gave for
+# THIS ride (which always lands at or after they first mention a car/vehicle).
+_CAR_INTENT_RE = re.compile(r"\b(?:car|ride|driver|cab|taxi|sedan|suv|van)\b", re.IGNORECASE)
+
+
+def _scope_to_car(texts_chrono: list[str]) -> list[str]:
+    """Slice user messages (oldest->newest) from the first car-intent mention on."""
+    for i, t in enumerate(texts_chrono):
+        if isinstance(t, str) and _CAR_INTENT_RE.search(t):
+            return texts_chrono[i:]
+    return list(texts_chrono or [])
+
+
+def _joined_user_text(texts: list[str]) -> str:
+    return " ".join(t.lower() for t in (texts or []) if isinstance(t, str) and t.strip())
+
+
+def _user_said_vehicle(texts: list[str]) -> bool:
+    return bool(_CAR_VEHICLE_RE.search(_joined_user_text(texts)))
+
+
+def _user_said_time(texts: list[str]) -> bool:
+    """True if the user gave a date/day (date-provenance) OR a clock time."""
+    if user_supplied_date_signal(texts):
+        return True
+    return bool(_CLOCK_TIME_RE.search(_joined_user_text(texts)))
+
+
+def _location_grounded(location: str, texts: list[str]) -> bool:
+    """
+    True if the drop-off traces back to the user's own words — either the whole
+    phrase appears, or a distinctive token does. A bare city name is NOT
+    distinctive (the user said "Islamabad" when booking a hotel, but never said
+    "airport"), so the city is stripped before matching — which is precisely what
+    catches the invented "Islamabad Airport" while still grounding a real
+    "Centaurus Mall" or "the airport" the user actually typed.
+    """
+    loc = _norm(location)
+    joined = _joined_user_text(texts)
+    if not loc or not joined:
+        return False
+    if loc in joined:                                # user typed the whole thing
+        return True
+    for tok in re.findall(r"[a-z0-9]+", loc):
+        if len(tok) < 4 or tok in _LOC_STOPWORDS or tok in _KNOWN_CITIES:
+            continue
+        if re.search(r"\b" + re.escape(tok) + r"\b", joined):
+            return True
+    return False
+
+
+_CAR_PROVENANCE_LABELS: dict[str, str] = {
+    "dropoff": "where they want to be dropped off (a real destination address)",
+    "vehicle": "which vehicle they'd like — Sedan (PKR 800), SUV (PKR 1,200) or Van (PKR 1,500)",
+    "time": "what date and time they want to be picked up",
+}
+
+
+def get_car_provenance_error(args: dict, user_texts: list[str]) -> dict | None:
+    """
+    Provenance gate for book_car — the companion to get_car_booking_error. Run it
+    AFTER the shape gate (so genuinely-missing fields are caught first) and before
+    build_car_booking_data. Returns a structured clarify error naming the details
+    the user never actually gave (so the model asks instead of inventing), or None
+    when the drop-off, vehicle and pickup time all trace back to the user's words.
+
+    `user_texts` MUST be the user's messages in CHRONOLOGICAL order (oldest first,
+    current message last) — the scan is scoped to the car sub-conversation, so an
+    earlier hotel/flight date can't masquerade as the car's pickup time.
+    """
+    a = args or {}
+    texts = _scope_to_car([t for t in (user_texts or []) if isinstance(t, str) and t.strip()])
+
+    missing: list[str] = []
+    if not _location_grounded(str(a.get("dropoff_location") or ""), texts):
+        missing.append("dropoff")
+    if not _user_said_vehicle(texts):
+        missing.append("vehicle")
+    if not _user_said_time(texts):
+        missing.append("time")
+
+    if not missing:
+        return None
+
+    labels = "; ".join(_CAR_PROVENANCE_LABELS[m] for m in missing)
+    return {
+        "error": "car_details_not_provided",
+        "missing": missing,
+        "instruction": (
+            f"The user asked to book a car but has NOT actually told you: {labels}. "
+            "Do NOT invent, assume, or default any of these — a real driver is "
+            "dispatched to exactly what you enter, so a guessed drop-off or time "
+            "books a wrong real ride. Ask the user for the missing details in ONE "
+            "short, friendly question, then book only once they answer. You may keep "
+            "a pickup point you can reasonably infer (e.g. the hotel they just booked)."
+        ),
+    }
+
+
 # ── Compact serializers (keep tool results small & token-cheap) ───────────────
 
 def _serialize_flights(offers: list) -> list[dict]:
@@ -874,6 +1018,108 @@ def _is_pakistani_place(name: str) -> bool:
     return bool(n) and (n in CITY_ALIASES or n in CITY_TO_IATA)
 
 
+# ── Fuzzy city-name correction ─────────────────────────────────────────────────
+#
+# Used by the self-improvement retry layer (agents/self_improvement.py), not by
+# execute_tool itself — a failed search_flights call whose city is a near-miss
+# spelling of a real known place gets ONE retry with the correction, rather than
+# reporting "outside Pakistan" for what was actually a typo.
+#
+# CITY_TO_IATA is a flat, un-aliased dict, so a typo has zero built-in tolerance.
+# difflib recovers it deterministically WITHOUT an LLM round-trip and without
+# ever inventing a new fact — it only maps a typo back to a place already in our
+# own vocabulary. cutoff=0.8 is intentionally strict: at 0.72, "narnia" matched
+# "naran" — a real place near enough in spelling to a nonsense word that a
+# lower cutoff would silently redirect a joke input into a real search. 0.8
+# rejects every nonexistent/international name tested (dubai, london, narnia,
+# atlantis) while still catching realistic typos (karrachi, lahoer, mutlan,
+# faislabad, islamabaad, skarduu).
+_KNOWN_CITIES: list[str] = sorted(set(CITY_TO_IATA.keys()) | set(CITY_ALIASES.keys()))
+
+
+def suggest_city_correction(name: str) -> str | None:
+    """
+    Best-guess correction for an unrecognized city name, or None if nothing is
+    close enough. A wrong "correction" that silently searches a different city
+    is worse than reporting the failure, hence the strict cutoff.
+    """
+    candidate = (name or "").strip().lower()
+    if not candidate:
+        return None
+    matches = difflib.get_close_matches(candidate, _KNOWN_CITIES, n=1, cutoff=0.8)
+    if not matches or matches[0] == candidate:
+        return None
+    return matches[0].title()
+
+
+# ── Deterministic booking-location recovery ────────────────────────────────────
+#
+# The prepare_booking schema names the city field `destination`, but the search
+# tools name it `city` (hotels) / `destination_city` (flights). A free-tier model
+# that carried the hotel name, dates and price across several turns routinely
+# still DROPS `destination` on the booking call — because that exact field name
+# never appeared in the search it's copying from. The required-fields gate then
+# asks "which city?", the user answers, the model re-issues the booking STILL
+# without destination, and it loops (observed live: ~6 rounds of "confirm Multan?"
+# before it happened to fill the field).
+#
+# The city is not actually unknown — it's in the chosen hotel's name and all over
+# the conversation. So recover it deterministically instead of asking again. This
+# only ever fills a BLANK destination, and it can't cause a wrong booking:
+# reprice_booking re-searches that city and must still match the hotel by name, so
+# a bad recovery fails the match and falls back to asking — exactly today's
+# behaviour — rather than booking the wrong place.
+# Cities sorted longest-first so a multi-word name ("gilgit baltistan") wins over
+# a substring ("gilgit") and a full name wins over a short IATA-style alias.
+_KNOWN_CITIES_BY_LEN: list[str] = sorted(_KNOWN_CITIES, key=len, reverse=True)
+
+
+def _canonical_city(token: str) -> str:
+    t = (token or "").strip().lower()
+    if t in CITY_ALIASES:
+        return CITY_ALIASES[t]
+    if t in CITY_TO_IATA:
+        return t.title()
+    return (token or "").strip()
+
+
+def _first_known_city(text: str) -> str | None:
+    """Return the first known Pakistani city named in `text` (word-bounded), canonicalized."""
+    if not text:
+        return None
+    low = text.lower()
+    for city in _KNOWN_CITIES_BY_LEN:
+        if re.search(r"\b" + re.escape(city) + r"\b", low):
+            return _canonical_city(city)
+    return None
+
+
+def recover_booking_location(booking_data: dict, context_texts: list[str]) -> dict:
+    """
+    Backfill a hotel booking's missing `destination` from the hotel name, then
+    from the conversation (context_texts newest-first), so the model dropping
+    that one field doesn't force a repeated "which city?" loop. Returns a copy.
+    Only fills a genuinely blank destination — an explicit value always wins —
+    and only recovers a city already named by the user/listing, never invents one.
+    Scoped to hotels: a single unambiguous city. Flights/trains carry two cities
+    (origin + destination) that a plain scan can't safely tell apart.
+    """
+    bd = dict(booking_data or {})
+    if str(bd.get("booking_type") or "") != "hotel":
+        return bd
+    if str(bd.get("destination") or "").strip():
+        return bd
+    city = _first_known_city(str(bd.get("hotel_name") or ""))
+    if not city:
+        for t in context_texts or []:
+            city = _first_known_city(t if isinstance(t, str) else "")
+            if city:
+                break
+    if city:
+        bd["destination"] = city
+    return bd
+
+
 def _no_airport_error(city: str) -> dict:
     """
     Distinguish 'Pakistani town without an airport' from 'not in Pakistan at all'.
@@ -996,7 +1242,21 @@ async def execute_tool(name: str, args: dict) -> str:
         return json.dumps(result, default=str)
     except Exception as exc:
         logger.warning("tool '%s' failed: %s", name, exc)
-        return json.dumps({"error": f"{name} failed: {exc}"})
+        # Distinctly tagged (not a domain slug like 'missing_date') so the
+        # self-improvement retry layer can tell "a real exception, worth one
+        # blind retry" apart from a gate rejection by matching this literal
+        # tag, never by sniffing the free-text message. See agents/self_improvement.py.
+        return json.dumps({
+            "error": "tool_execution_error",
+            "tool": name,
+            "detail": str(exc),
+            "instruction": (
+                "A live data source failed unexpectedly. Apologise briefly, tell "
+                "the user the search is temporarily unavailable, and suggest "
+                "trying again shortly — do not invent a flight, train, hotel, "
+                "or price in its place."
+            ),
+        })
 
 
 # ── Booking gate: deterministic required-field check ──────────────────────────

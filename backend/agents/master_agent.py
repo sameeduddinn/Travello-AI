@@ -52,12 +52,12 @@ from agents.booking_agent import (
 )
 from agents.recommendation_agent import get_recommendations
 from agents.healthcare_agent import get_safety_briefing
+from agents import self_improvement
 
 from core.pk_time import pk_today
 from services.llm_service import generate_text, generate_with_tools, GeminiError, LLMError
 from agents.agent_tools import (
     TOOL_SCHEMAS,
-    execute_tool,
     get_missing_booking_fields,
     get_booking_count_error,
     get_booking_date_error,
@@ -67,10 +67,11 @@ from agents.agent_tools import (
     missing_fields_result,
     offer_not_found_result,
     get_car_booking_error,
+    get_car_provenance_error,
     build_car_booking_data,
     check_budget_feasibility,
-    date_provenance_error,
     user_supplied_date_signal,
+    recover_booking_location,
 )
 from prompts.master_agent import MASTER_SYSTEM, MASTER_AGENTIC_SYSTEM
 from prompts.knowledge import get_relevant_facts, EMERGENCY_NUMBERS
@@ -872,20 +873,6 @@ def _redact_tool_names(text: str) -> str:
     return text
 
 
-async def _dispatch_tool(name: str, args: dict, *, has_user_date: bool) -> str:
-    """
-    execute_tool with the date-provenance gate in front. A search that needs a
-    date is blocked when the user never gave one — the model gets a clarify
-    result back and asks instead of searching on an invented date. Every other
-    tool passes straight through unchanged.
-    """
-    gate = date_provenance_error(name, has_user_date=has_user_date)
-    if gate:
-        logger.info("date-provenance gate blocked %s — no user-supplied date this conversation", name)
-        return json.dumps(gate)
-    return await execute_tool(name, args)
-
-
 async def process_message_agentic(
     user_id: str,
     conversation_id: str,
@@ -936,13 +923,47 @@ async def process_message_agentic(
     learned: dict = {}
     gathered: list[tuple[str, str]] = []  # (tool_name, result_json) — real data we collected
 
-    # Did the user ever actually give a date? Computed once over the whole
-    # conversation (this message + earlier user turns). The model tends to invent
-    # a travel_date rather than ask; an invented "today" passes the missing/past
+    # The user's own messages in CHRONOLOGICAL order (oldest first, this turn
+    # last). Shared by both provenance gates below; the car gate relies on the
+    # order to scope its scan to the car sub-conversation.
+    conversation_user_texts = [
+        *(m.get("content", "") for m in history if m.get("role") == "user"),
+        user_message,
+    ]
+
+    # Did the user ever actually give a date? The model tends to invent a
+    # travel_date rather than ask; an invented "today" passes the missing/past
     # gates, so provenance is the only thing that catches it — see date_provenance_error.
-    user_dates_known = user_supplied_date_signal(
-        [user_message, *(m.get("content", "") for m in history if m.get("role") == "user")]
-    )
+    user_dates_known = user_supplied_date_signal(conversation_user_texts)
+
+    # Self-improvement logging (see agents/self_improvement.py) — a heuristic,
+    # conservative detector for "the user is correcting a prior agent turn".
+    # Logged only, never auto-acted on: only the user knows what the actual
+    # correction is, so this is pure signal for a human reviewing the log later.
+    if self_improvement.detect_user_correction(user_message):
+        last_assistant = next(
+            (m.get("content") for m in reversed(history) if m.get("role") == "assistant"),
+            None,
+        )
+        asyncio.ensure_future(self_improvement.log_agent_failure(
+            user_id=user_id, conversation_id=conversation_id,
+            failure_type="user_correction", user_message=user_message,
+            assistant_message=last_assistant,
+        ))
+
+    def _log_gate_failure(tool_name: str, args: dict, error: dict) -> None:
+        """
+        Fire-and-forget log for a prepare_booking/book_car gate rejection.
+        These are never auto-retried — fixing them means guessing a date, a
+        party size, or an address the user didn't give, which is exactly what
+        every one of these gates exists to prevent. Logged for a human to
+        review whether the prompt needs to ask more clearly up front.
+        """
+        asyncio.ensure_future(self_improvement.log_agent_failure(
+            user_id=user_id, conversation_id=conversation_id,
+            failure_type="slot_fill_failure", user_message=user_message,
+            tool_name=tool_name, tool_args=args, error_detail=str(error.get("error")),
+        ))
 
     started = time.monotonic()
     try:
@@ -987,17 +1008,28 @@ async def process_message_agentic(
             booking_gate_results: dict[str, dict] = {}
             for tc in booking_calls:
                 bd = _safe_args(tc.function.arguments)
+                # Deterministically recover a hotel's `destination` if the model
+                # dropped it (search names the field `city`, booking names it
+                # `destination` — the mismatch makes free-tier models omit it and
+                # loop on "which city?"). Only fills a blank; reprice still
+                # validates the hotel, so a bad recovery can't misbook.
+                bd = recover_booking_location(
+                    bd, [user_message, *(m.get("content", "") for m in reversed(history))]
+                )
                 missing = get_missing_booking_fields(bd)
                 if missing:
                     booking_gate_results[tc.id] = missing_fields_result(missing)
+                    _log_gate_failure("prepare_booking", bd, booking_gate_results[tc.id])
                     continue
                 count_error = get_booking_count_error(bd)
                 if count_error:
                     booking_gate_results[tc.id] = count_error
+                    _log_gate_failure("prepare_booking", bd, count_error)
                     continue
                 date_error = get_booking_date_error(bd)
                 if date_error:
                     booking_gate_results[tc.id] = date_error
+                    _log_gate_failure("prepare_booking", bd, date_error)
                     continue
                 # The transfer pickup address is dispatched to a real driver
                 # after payment, so it gets the same hard gate as the date and
@@ -1005,6 +1037,7 @@ async def process_message_agentic(
                 transfer_error = get_transfer_error(bd)
                 if transfer_error:
                     booking_gate_results[tc.id] = transfer_error
+                    _log_gate_failure("prepare_booking", bd, transfer_error)
                     continue
                 bd = apply_traveler_totals(bd)
                 verified = await reprice_booking(bd)
@@ -1012,6 +1045,7 @@ async def process_message_agentic(
                     booking_data = verified
                     break
                 booking_gate_results[tc.id] = offer_not_found_result()
+                _log_gate_failure("prepare_booking", bd, booking_gate_results[tc.id])
 
             # book_car — standalone within-city ride. Same posture as
             # prepare_booking: the model NEVER commits it. The gate validates the
@@ -1026,6 +1060,16 @@ async def process_message_agentic(
                 car_error = get_car_booking_error(ca)
                 if car_error:
                     car_gate_results[tc.id] = car_error
+                    _log_gate_failure("book_car", ca, car_error)
+                    continue
+                # Provenance: the drop-off, vehicle and pickup time must trace
+                # back to the user's own words — the shape gate above passes an
+                # invented-but-valid ride ("book car for me too" -> a fabricated
+                # Sedan/airport/10:00), and confirming it dispatches a real driver.
+                prov_error = get_car_provenance_error(ca, conversation_user_texts)
+                if prov_error:
+                    car_gate_results[tc.id] = prov_error
+                    _log_gate_failure("book_car", ca, prov_error)
                     continue
                 car_booking_data = build_car_booking_data(ca)
                 break
@@ -1056,7 +1100,9 @@ async def process_message_agentic(
                 if tc.function.name not in ("prepare_booking", "book_car")
             ]
             results = await asyncio.gather(
-                *[_dispatch_tool(tc.function.name, args, has_user_date=user_dates_known)
+                *[self_improvement.dispatch_tool_with_retry(
+                      user_id=user_id, conversation_id=conversation_id, user_message=user_message,
+                      name=tc.function.name, args=args, has_user_date=user_dates_known)
                   for tc, args in other_calls],
                 return_exceptions=True,
             )

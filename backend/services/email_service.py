@@ -281,7 +281,11 @@ def _hotel_email_html(b: dict) -> str:
     booking_id = b.get("booking_id", "—")
     raw = b.get("raw_payload") or {}
     city = raw.get("city", b.get("destination", "—"))
-    guests = raw.get("guests", "—")
+    # Agent-initiated hotel bookings store the party size as `travelers` (guests
+    # and travelers are the same thing for a hotel) and never set a separate
+    # `guests` key — so without this fallback the emailed ticket printed
+    # "Guests: —" even though the summary card correctly showed the count.
+    guests = raw.get("guests") or raw.get("travelers") or "—"
     rooms = raw.get("rooms", "—")
 
     # Calculate nights
