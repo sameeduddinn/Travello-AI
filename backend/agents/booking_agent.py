@@ -106,12 +106,20 @@ def format_booking_summary(booking_data: dict) -> str:
             lines.append(f"📅  **Date:** {booking_data['travel_date']}")
         if booking_data.get("airline_or_train_name"):
             lines.append(f"🛫  **Airline:** {booking_data['airline_or_train_name']}")
+        # The class sets the fare — show it so the user can verify what they're
+        # paying for. cabin_class is stored uppercase ("ECONOMY"); title-case it.
+        if booking_data.get("cabin_class"):
+            lines.append(f"💺  **Class:** {str(booking_data['cabin_class']).title()}")
     elif bt == "train":
         lines.append(f"🚂  **Train:** {booking_data.get('origin', '—')} → {booking_data.get('destination', '—')}")
         if booking_data.get("travel_date"):
             lines.append(f"📅  **Date:** {booking_data['travel_date']}")
         if booking_data.get("airline_or_train_name"):
             lines.append(f"🚆  **Train:** {booking_data['airline_or_train_name']}")
+        # train_class drives the price (Economy vs AC Standard vs AC Business),
+        # so the summary must state which one — it's already a display label.
+        if booking_data.get("train_class"):
+            lines.append(f"💺  **Class:** {booking_data['train_class']}")
     elif bt == "hotel":
         lines.append(f"🏨  **Hotel:** {booking_data.get('hotel_name') or booking_data.get('destination', '—')}")
         if booking_data.get("check_in"):

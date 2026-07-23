@@ -167,6 +167,16 @@ def _flight_email_html(b: dict) -> str:
     amount = _fmt_amount(b.get("total_amount", 0), b.get("currency", "PKR"))
     booking_id = b.get("booking_id", "—")
     passengers = b.get("passengers", [])
+    # Cabin class the passenger paid for. Stored uppercase ("ECONOMY") in
+    # raw_payload; title-cased here, and only rendered when present so older
+    # rows without it don't print an empty "Class: —".
+    raw = b.get("raw_payload") or {}
+    cabin_class = raw.get("cabin_class")
+    class_row = (
+        f'\n      <div class="info-row"><span class="label">Class: </span>'
+        f'<span class="value"> {str(cabin_class).title()}</span></div>'
+        if cabin_class else ""
+    )
 
     return f"""<!DOCTYPE html><html><head><meta charset="UTF-8">{_BASE_STYLE}</head>
 <body><div class="wrapper">
@@ -186,7 +196,7 @@ def _flight_email_html(b: dict) -> str:
     <div class="section">
       <div class="section-title">Flight Details</div>
       <div class="info-row"><span class="label">Route: </span>
-        <span class="value"> { origin} → {destination}</span></div>
+        <span class="value"> { origin} → {destination}</span></div>{class_row}
       <div class="info-row"><span class="label">Departure: </span>
         <span class="value"> { dep}</span></div>
       <div class="info-row"><span class="label">Arrival: </span>
@@ -225,6 +235,14 @@ def _train_email_html(b: dict) -> str:
     raw = b.get("raw_payload") or {}
     train_name = raw.get("train_name", "Pakistan Railways Train")
     train_number = raw.get("train_number", "")
+    # The class the passenger paid for (Economy / AC Standard / AC Business). Only
+    # rendered when present so older rows without it don't print an empty "Class: —".
+    train_class = raw.get("train_class")
+    class_row = (
+        f'\n      <div class="info-row"><span class="label">Class: </span>'
+        f'<span class="value"> {train_class}</span></div>'
+        if train_class else ""
+    )
 
     return f"""<!DOCTYPE html><html><head><meta charset="UTF-8">{_BASE_STYLE}</head>
 <body><div class="wrapper">
@@ -246,7 +264,7 @@ def _train_email_html(b: dict) -> str:
       <div class="info-row"><span class="label">Train: </span>
         <span class="value">{ train_name} ({train_number})</span></div>
       <div class="info-row"><span class="label">Route:</span>
-        <span class="value">{ origin} → {destination}</span></div>
+        <span class="value">{ origin} → {destination}</span></div>{class_row}
       <div class="info-row"><span class="label">Departure: </span>
         <span class="value">{ dep}</span></div>
       <div class="info-row"><span class="label">Arrival: </span>
