@@ -7,8 +7,8 @@ Thumbs.db
 *.code-workspace
 
 # ── Claude Code ───────────────────────────────────────────────────────────────
-.claude/settings.local.json
-**/.claude/settings.local.json
+.claude/
+**/.claude/
 
 # ── Python / FastAPI backend ──────────────────────────────────────────────────
 __pycache__/
