@@ -143,7 +143,16 @@ def _passenger_cards_html(passengers: list[dict]) -> str:
         return "<p style='color:#888;font-size:13px'>No passenger details recorded.</p>"
     cards = []
     for i, p in enumerate(passengers, 1):
-        name = f"{p.get('title','')} {p.get('first_name','')} {p.get('last_name','')}".strip()
+        # Join only the parts that are actually present. `.get(k, "")` is not
+        # enough: a stored-but-null title comes back as None, and an f-string
+        # would render it literally as "None Firstname Lastname".
+        name = " ".join(
+            part for part in (
+                (p.get("title") or "").strip(),
+                (p.get("first_name") or "").strip(),
+                (p.get("last_name") or "").strip(),
+            ) if part
+        ) or "—"
         ptype = p.get("passenger_type", "adult").title()
         seat = p.get("seat_number") or "To be assigned"
         cnic = p.get("cnic") or p.get("passport_number") or "—"

@@ -1628,6 +1628,17 @@ async def _reprice_train(bd: dict) -> dict | None:
                 # the ticket shows this as the train Number, and a guessed one
                 # would be a fabricated travel document detail.
                 verified["train_number"] = t.get("train_number")
+                # Same as _reprice_flight: carry the matched offer's real times so
+                # the ticket shows a real arrival instead of "—" and a real
+                # departure instead of the midnight fallback in routers/agent.py.
+                # The serializer formats these as "YYYY-MM-DD HH:MM"; agent.py
+                # wants the HH:MM half.
+                depart = t.get("depart", "")
+                arrive = t.get("arrive", "")
+                if " " in depart:
+                    verified["departure_time"] = depart.split(" ", 1)[1]
+                if " " in arrive:
+                    verified["arrival_time"] = arrive.split(" ", 1)[1]
                 return verified
     return None
 
