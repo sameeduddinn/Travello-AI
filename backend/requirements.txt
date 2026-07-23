@@ -6,7 +6,7 @@ fastapi==0.115.6
 uvicorn[standard]==0.32.1          # includes websockets + uvloop for speed
 
 # ─ Supabase
-supabase==2.10.0                   # supabase-py client (anon + service role)
+supabase==2.15.3                   # supabase-py client (anon + service role); 2.15+ allows httpx>=0.28 (needed by google-genai)
 
 # ─ Direct DB (asyncpg) 
 asyncpg==0.30.0                    # async PostgreSQL driver for raw queries
@@ -18,7 +18,7 @@ bcrypt==4.2.1                      # explicit pin — passlib uses this
 
 # ─ HTTP client 
 
-httpx>=0.26,<0.28                  # async HTTP 
+httpx==0.28.1                      # async HTTP; pinned — satisfies both supabase 2.15 and google-genai
 
 # ─ Environment / config 
 python-dotenv==1.0.1               # load .env in development
@@ -28,7 +28,7 @@ pydantic-settings==2.7.0           # typed settings from env vars
 orjson==3.10.12                    # fast JSON - FastAPI picks it up automatically
 
 # Google Gemini (new SDK — replaces deprecated google-generativeai)
-google-genai>=2.0.0
+google-genai==2.14.0               # pinned — unpinned floated to a build that broke httpx resolution
 
 # Groq (free LLM API — Llama 3.3 70B, no billing required)
 groq>=0.13.0
