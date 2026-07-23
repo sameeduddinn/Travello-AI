@@ -13,6 +13,8 @@ import 'package:flight_app/screens/railway/train_results_screen.dart'
 import 'package:flight_app/services/api_client.dart';
 import 'package:flight_app/services/notification_service.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
+import 'package:flight_app/widgets/booking/flight_seat_picker.dart';
+import 'package:flight_app/widgets/railway/train_seat_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flight_app/ui/themes/theme_system.dart';
@@ -1035,6 +1037,20 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         _agentContact = null;
       });
 
+  /// Dismissing the card sheet must NOT throw away the booking. Cancelling card
+  /// entry means "not by card right now", not "abandon everything" — wiping
+  /// _pendingBookingData here discarded the booking, the passenger details, and
+  /// the chosen seat, and removed the buttons, leaving the user stranded on the
+  /// text box (where a typed "pay" only makes the agent fake a confirmation).
+  /// So keep the payment_choice state intact and just reassure them.
+  void _onCardSheetCancelled() {
+    if (!mounted) return;
+    _addMilestoneMessage(
+      'No problem — your booking is still here. Tap **Pay with Card** or '
+      "**Pay Later** below whenever you're ready.",
+    );
+  }
+
   void _showCardPaymentSheet() {
     if (_pendingBookingData == null || _conversationId == null) return;
     showModalBottomSheet(
@@ -1064,7 +1080,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             '${next.isEmpty ? '' : '\n\n➡️ **Next up:** $next\n\nJust say the word and I\'ll set it up.'}',
           );
         },
-        onCancel: _clearPendingAction,
+        onCancel: _onCardSheetCancelled,
       ),
     );
   }
@@ -1312,10 +1328,70 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
           if ((res[k] as String?)?.isNotEmpty ?? false) k: res[k],
       };
     });
+
+    // Free-seat classes (premium flight cabins + every train class) get to pick
+    // their seat, reusing the manual flow's exact seat maps. Best-effort: the
+    // user can skip and have a seat assigned at the desk, and any hiccup here
+    // must never block a booking that already has its passengers.
+    final seatNote = await _collectAgentSeats(data, passengers);
+
     _addMilestoneMessage(
       '✅ Passenger details saved for '
-      '${passengers.length} traveler(s). Now choose how you\'d like to pay.',
+      '${passengers.length} traveler(s).$seatNote Now choose how you\'d like to pay.',
     );
+  }
+
+  /// Free-seat scope only: premium flight cabins (Business/Premium/First) and
+  /// every train class select seats at no charge, so nothing here changes the
+  /// amount charged. Economy flights are intentionally excluded — their front /
+  /// exit rows carry a fee that would touch the payment pipeline (deferred).
+  bool _seatSelectionEligible(Map<String, dynamic> data) {
+    final type = data['booking_type'] as String? ?? '';
+    if (type == 'train') return true;
+    if (type == 'flight') {
+      final cabin = (data['cabin_class'] as String? ?? 'Economy').toLowerCase();
+      return cabin.contains('business') ||
+          cabin.contains('premium') ||
+          cabin.contains('first');
+    }
+    return false;
+  }
+
+  /// Open the seat map (if eligible), write each chosen seat onto the matching
+  /// passenger as `seat_number` so the existing POST /passengers call persists
+  /// it, and return a short note for the milestone message ('' if none picked).
+  Future<String> _collectAgentSeats(
+    Map<String, dynamic> data,
+    List<Map<String, dynamic>> passengers,
+  ) async {
+    if (!_seatSelectionEligible(data)) return ' ';
+    List<Map<String, dynamic>> chosen = const [];
+    try {
+      final result = await Get.to<List<Map<String, dynamic>>>(
+        () => _AgentSeatPickerScreen(bookingData: data, passengers: passengers),
+      );
+      if (result != null) chosen = result;
+    } catch (_) {
+      return ' ';
+    }
+    if (chosen.isEmpty || _agentPassengers == null) return ' ';
+
+    final labels = <String>[];
+    setState(() {
+      for (final s in chosen) {
+        final idx = (s['passengerIndex'] as num?)?.toInt() ?? -1;
+        final seat = (s['seatName'] as String? ?? '').trim();
+        if (seat.isEmpty || idx < 0 || idx >= _agentPassengers!.length) continue;
+        // Trains number seats within a coach, so keep the coach for an
+        // unambiguous ticket value ('Coach#2 · 03B'); flights need only '12A'.
+        final coach = (s['coach'] as String? ?? '').trim();
+        final label = coach.isEmpty ? seat : '$coach · $seat';
+        _agentPassengers![idx]['seat_number'] = label;
+        labels.add(label);
+      }
+    });
+    if (labels.isEmpty) return ' ';
+    return '\n🪑 Seats: ${labels.join(', ')}\n\n';
   }
 
   int _countOf(Map<String, dynamic> data, String key, int fallback) =>
@@ -2418,6 +2494,42 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       return;
     }
 
+    // While a booking sits on the summary awaiting payment, a typed payment word
+    // must drive the REAL action (open the card sheet / save for later) — never
+    // the agent. The agent has no booking-creation tool, so it would only fake a
+    // "reservation saved" reply for a booking that was never actually created.
+    if (_pendingAction == 'payment_choice' && _pendingBookingData != null) {
+      final intent = _paymentIntent(text);
+      if (intent != _PayIntent.none) {
+        setState(() {
+          _messages.add(ChatMessage(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              message: text,
+              isUser: true,
+              timestamp: DateTime.now()));
+        });
+        _messageController.clear();
+        _scrollToBottom();
+        switch (intent) {
+          case _PayIntent.card:
+            _showCardPaymentSheet();
+            break;
+          case _PayIntent.later:
+            _saveBookingForLater();
+            break;
+          case _PayIntent.ambiguous:
+            _addMilestoneMessage(
+              'To finish this booking, tap **Pay with Card** or **Pay Later** '
+              'below 👇',
+            );
+            break;
+          case _PayIntent.none:
+            break;
+        }
+        return;
+      }
+    }
+
     setState(() {
       _messages.add(ChatMessage(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -3476,6 +3588,169 @@ class _ConversationsSheetState extends State<_ConversationsSheet> {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+// A typed payment command, classified only while a booking awaits payment.
+enum _PayIntent { card, later, ambiguous, none }
+
+/// Classify a SHORT, command-like message typed while a booking sits on the
+/// summary awaiting payment. Tight and length-capped so a normal sentence that
+/// merely mentions "pay" isn't hijacked — only consulted when the pending action
+/// is 'payment_choice'. `card` opens the card sheet, `later` saves for later,
+/// `ambiguous` nudges the user to the buttons, `none` falls through to the agent.
+_PayIntent _paymentIntent(String raw) {
+  final t = raw.trim().toLowerCase();
+  if (t.isEmpty) return _PayIntent.none;
+  // Only brief, imperative messages count as payment commands ("pay with card"
+  // is the longest real one, at 3 words).
+  if (t.split(RegExp(r'\s+')).length > 4) return _PayIntent.none;
+  // A question is asking about payment, not issuing it — let the agent answer.
+  if (t.endsWith('?') ||
+      RegExp(r'^(what|how|why|when|where|which|who|is|are|do|does|can|could|should|would|will)\b')
+          .hasMatch(t)) {
+    return _PayIntent.none;
+  }
+
+  final isCard = RegExp(r'pay\s*(with|by)?\s*card|\bcard\b|pay\s*now|pay\s*online|credit')
+      .hasMatch(t);
+  final isLater = RegExp(r'pay\s*later|\blater\b|save(\s*(it|this|for\s*later|booking))?|\bhold\b|reserve')
+      .hasMatch(t);
+  if (isCard && !isLater) return _PayIntent.card;
+  if (isLater && !isCard) return _PayIntent.later;
+  if (isCard && isLater) return _PayIntent.ambiguous;
+  // Bare "pay" / "proceed" / "confirm" — real intent to pay, but which way is
+  // unclear, so point them at the buttons instead of guessing.
+  if (RegExp(r'\bpay\b|\bpayment\b|proceed|checkout|check\s*out|confirm|book\s*it')
+      .hasMatch(t)) {
+    return _PayIntent.ambiguous;
+  }
+  return _PayIntent.none;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Agent seat picker — hosts the manual flow's FlightSeatPicker / TrainSeatPicker
+// in a simple confirm screen for the chat booking flow. Scope is free-seat
+// classes only (premium flight cabins + every train class), so there is no seat
+// fee and nothing here changes the charged total. Returns the per-passenger
+// selections via Get.back, or null when the user skips / backs out.
+// ─────────────────────────────────────────────────────────────────────────────
+class _AgentSeatPickerScreen extends StatefulWidget {
+  final Map<String, dynamic> bookingData;
+  final List<Map<String, dynamic>> passengers;
+  const _AgentSeatPickerScreen({
+    required this.bookingData,
+    required this.passengers,
+  });
+
+  @override
+  State<_AgentSeatPickerScreen> createState() => _AgentSeatPickerScreenState();
+}
+
+class _AgentSeatPickerScreenState extends State<_AgentSeatPickerScreen> {
+  List<Map<String, dynamic>> _selections = const [];
+
+  int get _total => widget.passengers.length;
+
+  int get _chosenCount => _selections
+      .where((s) => (s['seatName'] as String? ?? '').isNotEmpty)
+      .length;
+
+  bool get _allChosen => _total > 0 && _chosenCount >= _total;
+
+  void _onSeats(List<Map<String, dynamic>> selections) {
+    setState(() => _selections = selections);
+  }
+
+  // 'BUSINESS' → 'Business'. The seat map shows this label; the widget itself
+  // matches on lower-case, so casing only affects display.
+  static String _prettyCabin(String? raw) {
+    final c = (raw ?? '').trim();
+    if (c.isEmpty) return 'Economy';
+    return c
+        .split(RegExp(r'[ _]+'))
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
+        .join(' ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const gold = Color(0xFFD4AF37);
+    final isTrain = (widget.bookingData['booking_type'] as String?) == 'train';
+
+    final picker = isTrain
+        ? TrainSeatPicker(
+            trainClass:
+                (widget.bookingData['train_class'] as String?) ?? 'Economy',
+            totalPassengers: _total,
+            passengers: widget.passengers,
+            onSeatsSelected: _onSeats,
+          )
+        : FlightSeatPicker(
+            totalPassengers: _total,
+            passengers: widget.passengers,
+            cabinClass:
+                _prettyCabin(widget.bookingData['cabin_class'] as String?),
+            onSeatsSelected: _onSeats,
+          );
+
+    return Scaffold(
+      backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        title: const Text('Choose your seat'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0.5,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: picker,
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Row(
+            children: [
+              TextButton(
+                onPressed: () => Get.back<List<Map<String, dynamic>>>(),
+                child: Text(
+                  'Skip',
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _allChosen
+                      ? () => Get.back<List<Map<String, dynamic>>>(
+                          result: _selections)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: gold,
+                    disabledBackgroundColor: Colors.grey.shade300,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text(
+                    _allChosen
+                        ? 'Confirm seats'
+                        : 'Select $_chosenCount / $_total seats',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
