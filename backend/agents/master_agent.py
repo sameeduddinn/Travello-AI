@@ -186,6 +186,99 @@ def _is_affirmative(message: str) -> bool:
     return msg in _AFFIRMATIVES
 
 
+# ── Deterministic "pick from the list" resolution (agentic path) ──────────────
+#
+# When the user answers a numbered list with just "6", "option 6", or "the sixth
+# one", the model otherwise has to re-derive which item that was by re-reading the
+# whole history — and on the free tier that extra reasoning is exactly what makes a
+# selection turn thrash (re-search, re-ask) and run out of the turn's time budget,
+# surfacing to the user as the "trouble responding" / "taking longer" messages. We
+# resolve the pick in code and hand the model ONE unambiguous line so it converges
+# in a single prepare_booking call. This is only a NUDGE: every booking gate
+# (missing fields, date, party size) and the server-side reprice still run — a bad
+# guess can't misbook, it just falls through to the model asking.
+_SELECTION_ORDINALS = {
+    "first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5,
+    "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10,
+}
+
+
+def _selected_index(message: str) -> int | None:
+    """The 1-based list position the user is picking, or None if it isn't a pick."""
+    msg = message.lower().strip()
+    # Bare number, optionally prefixed/suffixed: "6", "6.", "#6", "option 6"
+    m = re.fullmatch(r"(?:option|number|no\.?|#|item)?\s*(\d{1,2})[.!)]?", msg)
+    if m:
+        return int(m.group(1))
+    # 'option 6', 'i select option 6', 'flight 2', 'hotel 3', 'choice 4'
+    m = re.search(
+        r"\b(?:option|number|no|#|item|flight|train|hotel|bus|car|choice)\s*#?\s*(\d{1,2})\b",
+        msg,
+    )
+    if m:
+        return int(m.group(1))
+    # verb + trailing number ("i'll take 2", "go with 3", "book 6"), anchored to
+    # end so "take 2 rooms" / "book 3 nights" are NOT misread as a list pick.
+    m = re.search(
+        r"\b(?:take|pick|choose|select|book|go with|want|get|reserve)\s+"
+        r"(?:option\s+|number\s+|the\s+)?(\d{1,2})\s*[.!]?\s*$",
+        msg,
+    )
+    if m:
+        return int(m.group(1))
+    for word, idx in _SELECTION_ORDINALS.items():
+        if re.search(r"\b" + word + r"\b", msg):
+            return idx
+    return None
+
+
+def _numbered_list_items(text: str) -> dict[int, str]:
+    """Best-effort parse of '1. Foo' / '1) Foo' / '| 1 | Foo |' rows -> {index: label}."""
+    items: dict[int, str] = {}
+    for line in text.splitlines():
+        s = line.strip()
+        # Markdown table row: | 6 | Hermes Urban Stay | ... |  (skip separator rows)
+        m = re.match(r"\|?\s*(\d{1,2})\s*\|\s*([^|]+?)\s*(?:\||$)", s)
+        if m and not set(m.group(2).strip()) <= {"-", " ", ":"}:
+            items.setdefault(int(m.group(1)), m.group(2).strip())
+            continue
+        # Numbered/prefixed list: '6. Hermes' / '6) Hermes' / '6 - Hermes' / '6: Hermes'
+        m = re.match(r"(\d{1,2})\s*[.)\-:]\s+(.+)", s)
+        if m:
+            items.setdefault(int(m.group(1)), m.group(2).strip())
+    return items
+
+
+def _selection_hint(user_message: str, history: list[dict]) -> str | None:
+    """
+    A one-line nudge naming the exact list item the user just picked, or None.
+    Scans the most recent assistant message that actually CONTAINS a numbered
+    list, so a bare "6" answering "how many passengers?" (no list) is ignored.
+    """
+    idx = _selected_index(user_message)
+    if idx is None:
+        return None
+    for m in reversed(history):
+        if (m.get("role") or "").lower() != "assistant":
+            continue
+        items = _numbered_list_items(m.get("content") or "")
+        if not items:
+            continue
+        label = items.get(idx)
+        if not label:
+            return None  # picked a number the list doesn't have — let the model ask
+        label = label.strip(" *`").strip()
+        return (
+            f'The user is choosing item #{idx} from the numbered list you just showed: '
+            f'"{label}". Book THAT exact option — call prepare_booking for it now, reusing '
+            f'the route/city, dates, class and traveller count already established earlier '
+            f'in this conversation. Do NOT search again and do NOT ask them to re-enter '
+            f'details they already gave. Only if a required detail (like the travel date) '
+            f'was genuinely never provided, ask for that one thing.'
+        )
+    return None
+
+
 def _booking_data_is_valid(bd: dict | None) -> bool:
     """
     Guard against showing a 'Pay with Card' summary built from hallucinated or
@@ -919,6 +1012,16 @@ async def process_message_agentic(
     messages: list[dict] = [{"role": "system", "content": system_prompt}]
     messages.extend(history)
     messages.append({"role": "user", "content": user_message})
+
+    # Deterministic pick-from-a-list nudge (see _selection_hint): when the user
+    # answers a numbered list with "6" / "option 6" / "the second one", name the
+    # exact item so the model converges in ONE prepare_booking call instead of
+    # re-deriving it from the whole history under a tight turn budget — the thrash
+    # that produced the "trouble responding" / "taking longer" replies. The booking
+    # gates and server-side reprice still run, so this can never misbook.
+    pick_hint = _selection_hint(user_message, history)
+    if pick_hint:
+        messages.append({"role": "system", "content": pick_hint})
 
     booking_data: dict | None = None
     car_booking_data: dict | None = None
