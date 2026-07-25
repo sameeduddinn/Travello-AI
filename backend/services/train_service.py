@@ -255,8 +255,16 @@ def _calculate_price(
     price_range = band["max"] - band["min"]
     base_price = band["min"] + price_range * fraction
     final_price = base_price * train.get("price_factor", 1.0) * passengers
-    # Add small randomness for realism (±5%)
-    jitter = random.uniform(0.95, 1.05)
+    # ±5% realism jitter, but DETERMINISTIC — seeded on the fare's identity
+    # (train / route / class), never on the call or passenger count. An unseeded
+    # random.uniform() re-rolled on every search, so reprice_booking re-confirmed a
+    # different number than the one quoted and the user was charged up to ±5% off.
+    # Passengers are deliberately excluded from the seed so the per-seat fare is
+    # stable and the party total stays an exact multiple of it.
+    _jseed = int(hashlib.md5(
+        f"jitter-{train['id']}-{origin_code}-{dest_code}-{class_code}".encode()
+    ).hexdigest(), 16) % (2**32)
+    jitter = random.Random(_jseed).uniform(0.95, 1.05)
     return round(final_price * jitter, 2)
 
 

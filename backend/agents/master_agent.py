@@ -671,7 +671,11 @@ def _budget_verdict_note(other_calls: list, results: list) -> str | None:
             continue
         name = tc.function.name
         if name == "search_flights" and data.get("flights"):
-            prices = [f.get("price_pkr") or 0 for f in data["flights"]]
+            # PER-SEAT here on purpose: check_budget_feasibility multiplies
+            # flight_pkr by travelers, and the serialized total_price_pkr is
+            # already the whole-party fare — feeding the total would square the
+            # head-count (per-seat × passengers²) and wildly overstate the trip.
+            prices = [f.get("price_per_seat_pkr") or 0 for f in data["flights"]]
             prices = [p for p in prices if p > 0]
             if prices:
                 flight_pkr = min(prices)

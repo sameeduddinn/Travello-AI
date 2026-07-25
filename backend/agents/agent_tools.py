@@ -853,7 +853,10 @@ def _serialize_flights(offers: list) -> list[dict]:
             "depart": seg.departure_time.strftime("%Y-%m-%d %H:%M"),
             "arrive": seg.arrival_time.strftime("%H:%M"),
             "cabin": seg.cabin_class,
-            "price_pkr": round(o.total_price_pkr),
+            # Whole-party fare (the service already multiplied per-seat × passengers).
+            # Named total_price_pkr so the model never mistakes it for a per-seat price
+            # and re-multiplies by the head-count. _exec_flights adds price_per_seat_pkr.
+            "total_price_pkr": round(o.total_price_pkr),
             "seats_left": o.seats_available,
             "refundable": o.is_refundable,
         })
@@ -866,7 +869,9 @@ def _serialize_trains(resp) -> dict:
     trains: list[dict] = []
     for t in (resp.trains or [])[:5]:
         classes = [
-            {"class": c.class_name, "price_pkr": round(c.price_pkr), "seats_left": c.seats_available}
+            # total_price_pkr = whole-party fare (service already ×passengers).
+            # _exec_trains adds price_per_seat_pkr alongside it.
+            {"class": c.class_name, "total_price_pkr": round(c.price_pkr), "seats_left": c.seats_available}
             for c in t.classes
         ]
         trains.append({
@@ -936,8 +941,8 @@ def _filter_train_classes_by_budget(trains: list[dict], budget) -> tuple[list[di
     filtered: list[dict] = []
     for t in trains:
         classes = sorted(
-            (c for c in t.get("classes", []) if (c.get("price_pkr") or 0) <= budget_val),
-            key=lambda c: c.get("price_pkr") or 0,
+            (c for c in t.get("classes", []) if (c.get("total_price_pkr") or 0) <= budget_val),
+            key=lambda c: c.get("total_price_pkr") or 0,
         )
         if classes:
             filtered.append({**t, "classes": classes})
@@ -946,7 +951,7 @@ def _filter_train_classes_by_budget(trains: list[dict], budget) -> tuple[list[di
         return filtered, f"Showing classes at or under your PKR {budget_val:,.0f} budget, cheapest first."
 
     fallback = [
-        {**t, "classes": sorted(t.get("classes", []), key=lambda c: c.get("price_pkr") or 0)}
+        {**t, "classes": sorted(t.get("classes", []), key=lambda c: c.get("total_price_pkr") or 0)}
         for t in trains
     ]
     return fallback, f"Nothing found at or under PKR {budget_val:,.0f} — showing all classes, cheapest first."
@@ -1177,8 +1182,13 @@ async def _exec_flights(args: dict) -> dict:
     if not offers:
         return {"flights": [], "note": f"No flights found {origin}->{dest} on {d.isoformat()}."}
     flights = _serialize_flights(offers)
+    # total_price_pkr is the whole-party fare. Surface the per-seat figure too so
+    # the model can quote either without ever multiplying the party total again.
+    for f in flights:
+        total = f.get("total_price_pkr") or 0
+        f["price_per_seat_pkr"] = round(total / pax) if pax else total
     result = {"search_date": d.isoformat(), "passengers": pax, "flights": flights}
-    flights, note = _filter_by_budget(flights, "price_pkr", args.get("max_budget_pkr"))
+    flights, note = _filter_by_budget(flights, "total_price_pkr", args.get("max_budget_pkr"))
     result["flights"] = flights
     if note:
         result["budget_note"] = note
@@ -1193,6 +1203,13 @@ async def _exec_trains(args: dict) -> dict:
     resp = await asyncio.to_thread(search_trains, origin, dest, d, pax)
     result = _serialize_trains(resp)
     result["search_date"] = d.isoformat()
+    result["passengers"] = pax
+    # Each class total_price_pkr is the whole-party fare; add the per-seat figure
+    # so the model quotes either without re-multiplying by the head-count.
+    for t in result.get("trains", []):
+        for c in t.get("classes", []):
+            total = c.get("total_price_pkr") or 0
+            c["price_per_seat_pkr"] = round(total / pax) if pax else total
     trains, note = _filter_train_classes_by_budget(result.get("trains", []), args.get("max_budget_pkr"))
     result["trains"] = trains
     if note:
@@ -1591,7 +1608,7 @@ async def _reprice_flight(bd: dict) -> dict | None:
     for f in result.get("flights", []):
         if _norm_code(f.get("flight_number")) == target:
             verified = dict(bd)
-            verified["total_price_pkr"] = f["price_pkr"]
+            verified["total_price_pkr"] = f["total_price_pkr"]
             verified["travelers"] = passengers
             verified["cabin_class"] = cabin
             depart = f.get("depart", "")
@@ -1621,7 +1638,7 @@ async def _reprice_train(bd: dict) -> dict | None:
         for c in t.get("classes", []):
             if _norm(c.get("class")) == target_class:
                 verified = dict(bd)
-                verified["total_price_pkr"] = c["price_pkr"]
+                verified["total_price_pkr"] = c["total_price_pkr"]
                 verified["travelers"] = passengers
                 verified["airline_or_train_name"] = t.get("train_name")
                 # Carried from the matched live listing, never from the model —
