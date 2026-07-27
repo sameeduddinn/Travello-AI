@@ -49,6 +49,7 @@ from agents.booking_agent import (
     extract_booking_from_history,
     format_booking_summary,
     format_car_booking_summary,
+    sanitize_next_step,
 )
 from agents.recommendation_agent import get_recommendations
 from agents.healthcare_agent import get_safety_briefing
@@ -982,6 +983,88 @@ def _redact_tool_names(text: str) -> str:
     return text.strip()
 
 
+# ── Package continuity safeguard ──────────────────────────────────────────────
+# A package is booked piece-by-piece, and the model is supposed to set `next_step`
+# on each non-final piece so the app can carry the trip forward after payment (no
+# chat turn happens during passenger-details/payment). If a free-tier model
+# FORGETS next_step, the package silently dead-ends after the first piece. This
+# deterministic fallback fills it in — but only from the components the user
+# actually asked for, minus the ones already booked in this conversation, and
+# never overriding a next_step the model did set.
+_PKG_TRANSPORT_RE = re.compile(r"\b(flight|flights|fly|flying|plane|air\s?ticket|train|trains|rail)\b", re.I)
+_PKG_STAY_RE = re.compile(r"\b(hotel|hotels|room|rooms|stay|accommodation|lodging|lodge|guest\s?house)\b", re.I)
+_PKG_CAR_RE = re.compile(r"\b(car|cab|taxi|transfer|ride|driver|pick\s?up|pickup)\b", re.I)
+_PKG_EXPLICIT_RE = re.compile(r"\b(package|bundle|whole trip|entire trip|full trip|everything)\b", re.I)
+
+
+def _components_in(text: str) -> set[str]:
+    found: set[str] = set()
+    if _PKG_TRANSPORT_RE.search(text):
+        found.add("transport")
+    if _PKG_STAY_RE.search(text):
+        found.add("stay")
+    if _PKG_CAR_RE.search(text):
+        found.add("car")
+    return found
+
+
+def _infer_package_next_step(
+    booking_data: dict,
+    conversation_user_texts: list[str],
+    history: list[dict],
+    learned: dict,
+) -> str:
+    """
+    A safe, deterministic `next_step` for a multi-piece package when the model
+    left it blank. Returns '' when there's no clear package intent or nothing is
+    outstanding, so it never nags a plain single booking.
+    """
+    all_text = " ".join(conversation_user_texts)
+    requested = _components_in(all_text)
+    # Require a STRONG package signal: an explicit "package/everything", or two+
+    # components named together in a SINGLE message ("book a flight and hotel").
+    # Scattered mentions across turns ("I flew in yesterday" … "book a hotel")
+    # must not trigger a spurious "next, your flight".
+    explicit = bool(_PKG_EXPLICIT_RE.search(all_text))
+    multi_in_one = any(len(_components_in(t)) >= 2 for t in conversation_user_texts)
+    if not (explicit or multi_in_one):
+        return ""
+
+    # Components already presented/booked in THIS conversation (summary markers).
+    hist_text = " ".join(
+        m.get("content", "") for m in history if (m.get("role") or "").lower() == "assistant"
+    )
+    booked: set[str] = set()
+    if any(mark in hist_text for mark in ("✈️", "🚂", "**Flight:**", "**Train:**")):
+        booked.add("transport")
+    if any(mark in hist_text for mark in ("🏨", "**Hotel:**")):
+        booked.add("stay")
+    if any(mark in hist_text for mark in ("🚗", "**Car transfer:**", "Car Booking")):
+        booked.add("car")
+
+    # The piece being booked on THIS turn.
+    bt = booking_data.get("booking_type")
+    if bt in ("flight", "train"):
+        booked.add("transport")
+    elif bt == "hotel":
+        booked.add("stay")
+    if booking_data.get("transfer_vehicle_type"):  # a transfer riding along counts
+        booked.add("car")
+
+    remaining = [c for c in ("transport", "stay", "car") if c in requested and c not in booked]
+    if not remaining:
+        return ""
+
+    dest = (learned.get("destination") or "").strip()
+    where = f" in {dest}" if dest else ""
+    transport_label = "your flight"
+    if not re.search(r"\b(flight|flights|fly|flying|plane|air)\b", all_text, re.I):
+        transport_label = "your train"
+    labels = {"transport": transport_label, "stay": f"your hotel{where}", "car": "a car/transfer"}
+    parts = [labels[c] for c in remaining]
+    return "next, " + ", then ".join(parts)
+
+
 async def process_message_agentic(
     user_id: str,
     conversation_id: str,
@@ -1310,6 +1393,17 @@ async def process_message_agentic(
 
     # Booking path → payment_choice (same contract the Flutter app already handles)
     if booking_data:
+        # Package continuity: keep the model's next_step if it set a safe one;
+        # otherwise synthesize one deterministically so a forgotten next_step can't
+        # silently dead-end a multi-piece package. Sanitize the result so BOTH the
+        # summary and the app's post-payment handoff (which reads next_step raw)
+        # get vetted text — never a fabricated PNR or a "booked" claim.
+        safe_next = sanitize_next_step(booking_data.get("next_step"))
+        if not safe_next:
+            safe_next = _infer_package_next_step(
+                booking_data, conversation_user_texts, history, learned
+            )
+        booking_data["next_step"] = safe_next
         summary = format_booking_summary(booking_data)
         await save_turn(
             conversation_id, user_id, user_message, summary,
