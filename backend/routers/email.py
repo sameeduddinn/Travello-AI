@@ -1,12 +1,14 @@
 import logging
+import re
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel
 
 from core.auth import CurrentUser
 from core.config import settings
 from core.email import send_email
 from core.supabase_client import supabase_admin
+from core.support_token import make_reply_token
 from services.email_service import send_booking_confirmation
 
 logger = logging.getLogger(__name__)
@@ -14,6 +16,26 @@ router = APIRouter(prefix="/email", tags=["Email"])
 
 
 SUPPORT_INBOX = "travelloo.ai@gmail.com"
+
+
+def _public_base_url(request: Request) -> str:
+    """
+    The public base URL the client actually reached us on — used to build the
+    reply-form link in support notification emails. Derived from the REQUEST, not
+    from a static env var, so the link always points at wherever the backend is
+    really running. (A BACKEND_BASE_URL left at localhost once shipped a dead
+    'http://localhost:8000/...' link in a real support email.)
+    """
+    base = str(request.base_url).rstrip("/")
+    # Render terminates TLS and forwards over plain http internally, so the
+    # request scheme can be http even though the public URL is https. Force https
+    # for any non-local host so the emailed link isn't an insecure/unreachable
+    # http URL that browsers or mail clients block.
+    if base.startswith("http://") and not re.search(
+        r"://(localhost|127\.0\.0\.1)([:/]|$)", base
+    ):
+        base = "https://" + base[len("http://"):]
+    return base
 
 
 class BookingConfirmationRequest(BaseModel):
@@ -31,7 +53,7 @@ class ContactSupportRequest(BaseModel):
 # POST /email/contact-support
 
 @router.post("/contact-support")
-async def contact_support(payload: ContactSupportRequest):
+async def contact_support(payload: ContactSupportRequest, request: Request):
     """
     Save support message to DB, then forward to travelloo.ai@gmail.com.
     Admin email includes the message ID for use with the reply endpoint.
@@ -61,9 +83,12 @@ async def contact_support(payload: ContactSupportRequest):
         <div class="value" style="font-family:monospace;font-size:13px;color:#888;">{message_id}</div>
     """ if message_id else ""
 
+    # Message-scoped signed token instead of the raw ADMIN_SECRET_KEY, so the
+    # email/URL/logs never carry the master key and a leaked link can only touch
+    # this one message (and only until the token expires). See core.support_token.
     reply_link = (
-        f"{settings.BACKEND_BASE_URL.rstrip('/')}/support/reply-form"
-        f"?message_id={message_id}&secret={settings.ADMIN_SECRET_KEY}"
+        f"{_public_base_url(request)}/support/reply-form"
+        f"?message_id={message_id}&token={make_reply_token(message_id)}"
     ) if message_id and settings.ADMIN_SECRET_KEY else None
 
     admin_secret_hint = f"""

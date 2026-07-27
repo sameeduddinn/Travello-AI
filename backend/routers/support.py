@@ -16,6 +16,7 @@ from core.auth import CurrentUser
 from core.config import settings
 from core.email import send_email
 from core.supabase_client import supabase_admin
+from core.support_token import make_reply_token, verify_reply_token
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/support", tags=["Support"])
@@ -57,7 +58,8 @@ async def delete_support_messages(payload: DeleteMessagesRequest, user: CurrentU
 class ReplyRequest(BaseModel):
     message_id: str
     reply_text: str
-    admin_key: str
+    token: str = ""        # message-scoped signed token (from the reply form)
+    admin_key: str = ""    # legacy raw-key fallback, kept for direct admin use
 
 
 class DeleteMessagesRequest(BaseModel):
@@ -71,10 +73,16 @@ async def admin_reply(payload: ReplyRequest):
     Requires ADMIN_SECRET_KEY in the request body.
     Updates DB status to 'replied' and emails the user.
     """
-    if not settings.ADMIN_SECRET_KEY or payload.admin_key != settings.ADMIN_SECRET_KEY:
+    # Authorised by a message-scoped signed token (the reply form sends one), or
+    # the legacy raw admin key for direct/manual admin use. The token path keeps
+    # the master key out of the request entirely.
+    authed = verify_reply_token(payload.token, payload.message_id) or (
+        bool(settings.ADMIN_SECRET_KEY) and payload.admin_key == settings.ADMIN_SECRET_KEY
+    )
+    if not authed:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid admin key.",
+            detail="Invalid or expired reply authorisation.",
         )
 
     # Fetch the message
@@ -117,15 +125,21 @@ async def admin_reply(payload: ReplyRequest):
 # GET /support/reply-form  — admin opens this link from the notification email
 
 @router.get("/reply-form", response_class=HTMLResponse)
-async def reply_form(message_id: str, secret: str):
+async def reply_form(message_id: str, token: str = "", secret: str = ""):
     """
     Serves an HTML reply form for the admin.
     Link is embedded in every support notification email.
-    Validates the secret before showing any message content.
+
+    Authorised by a message-scoped signed token (new links). The legacy raw
+    ?secret= param is still accepted so reply links already sitting in an inbox
+    keep working — drop it once no old emails remain in use.
     """
-    if not settings.ADMIN_SECRET_KEY or secret != settings.ADMIN_SECRET_KEY:
+    authed = verify_reply_token(token, message_id) or (
+        bool(settings.ADMIN_SECRET_KEY) and secret == settings.ADMIN_SECRET_KEY
+    )
+    if not authed:
         return HTMLResponse(
-            content="<h2 style='font-family:sans-serif;color:red'>❌ Invalid or missing admin key.</h2>",
+            content="<h2 style='font-family:sans-serif;color:red'>❌ Invalid or expired link.</h2>",
             status_code=403,
         )
 
@@ -151,7 +165,9 @@ async def reply_form(message_id: str, secret: str):
 
     status_color = {"pending": "#d97706", "replied": "#16a34a", "closed": "#6b7280"}.get(current_status, "#888")
 
-    base_url = settings.BACKEND_BASE_URL.rstrip("/")
+    # Fresh message-scoped token for THIS page's submit, so the served HTML never
+    # embeds the raw admin secret — even when the admin arrived via a legacy link.
+    submit_token = make_reply_token(message_id)
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -247,13 +263,13 @@ async def reply_form(message_id: str, secret: str):
       result.style.display = 'none';
 
       try {{
-        const res = await fetch('{base_url}/support/reply', {{
+        const res = await fetch('/support/reply', {{
           method: 'POST',
           headers: {{ 'Content-Type': 'application/json' }},
           body: JSON.stringify({{
             message_id: '{message_id}',
             reply_text: text,
-            admin_key: '{secret}'
+            token: '{submit_token}'
           }})
         }});
         const data = await res.json();
