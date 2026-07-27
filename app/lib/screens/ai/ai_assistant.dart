@@ -1397,6 +1397,24 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
   int _countOf(Map<String, dynamic> data, String key, int fallback) =>
       (data[key] as num?)?.toInt() ?? fallback;
 
+  /// Per-person fare for the native passenger/checkout screens.
+  ///
+  /// Those screens treat a flight/train price as PER-PERSON and multiply it by
+  /// the passenger count (booking_passengers `_calculateTotalPrice`,
+  /// booking_payment `_baseFare`, the train form's per-passenger loop). The
+  /// agent's `total_price_pkr` is already the WHOLE-PARTY total, so passing it in
+  /// raw made those screens show — and would charge — it × pax: a PKR 29,116 fare
+  /// for 2 adults rendered as PKR 58,232. Divide it back to per-person so the
+  /// screen's multiply reconciles to the real total. The actual agent charge uses
+  /// `total_price_pkr` directly in the chat pay sheet and is unaffected by this.
+  double _perSeatFromTotal(Map<String, dynamic> data) {
+    final pax = (_countOf(data, 'adults', 1) +
+            _countOf(data, 'children', 0) +
+            _countOf(data, 'infants', 0))
+        .clamp(1, 99);
+    return (((data['total_price_pkr'] as num?) ?? 0).toDouble()) / pax;
+  }
+
   Map<String, dynamic> _flightFormArgs(Map<String, dynamic> data) {
     Airport lookup(String city, String fallbackCode) => airportList.firstWhere(
           (a) =>
@@ -1417,7 +1435,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       duration: '--',
       stops: 0,
       stopCities: const [],
-      price: ((data['total_price_pkr'] as num?) ?? 0).toDouble(),
+      price: _perSeatFromTotal(data),
       isRefundable: false,
       cabinClass: (data['cabin_class'] as String?) ?? 'Economy',
       flightNumber: data['flight_number'] as String?,
@@ -1450,7 +1468,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       arrivalTime: (data['arrival_time'] as String?) ?? '--:--',
       duration: '--',
       classSeats: {cls: null},
-      classPrices: {cls: ((data['total_price_pkr'] as num?) ?? 0).toDouble()},
+      classPrices: {cls: _perSeatFromTotal(data)},
       availableClasses: [cls],
     );
     return {
