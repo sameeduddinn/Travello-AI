@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import random
 from datetime import date, datetime, timedelta
@@ -341,6 +342,19 @@ def _seeded_int(seed: int, lo: int, hi: int) -> int:
     return random.Random(seed).randint(lo, hi)
 
 
+def _stable_seed(text: str) -> int:
+    """
+    A process-STABLE seed for the mock generators. Python's built-in hash() on a
+    str is salted per process (PYTHONHASHSEED), so the same route produced a
+    DIFFERENT flight number and price on each worker/restart. When the original
+    search and the later booking reprice landed on different processes, the
+    reprice couldn't find the flight the user picked (its number had changed),
+    rejected the booking, and the user got a broken/fabricated summary with no
+    payment buttons. md5 is identical everywhere, so search and reprice agree.
+    """
+    return int(hashlib.md5(text.encode("utf-8")).hexdigest(), 16) % (2 ** 31)
+
+
 
 
 def _flight_offer_key(offer: FlightOffer) -> tuple[str, str, str, str, str]:
@@ -427,7 +441,7 @@ def _generate_domestic_offers(
     offers: list[FlightOffer] = []
     for airline in route["airlines"]:
         for dep_time in dep_times:
-            seed = hash(f"{origin}{destination}{date_str}{airline['code']}{dep_time}{cabin}") % (2**31)
+            seed = _stable_seed(f"{origin}{destination}{date_str}{airline['code']}{dep_time}{cabin}")
             base_price = _seeded_int(seed, route["price_min_pkr"], route["price_max_pkr"])
             price      = round(base_price * cfg["multiplier"])
             seats      = _seeded_int(seed ^ 0xABCD, 4, 30) if cabin != "ECONOMY" else _seeded_int(seed ^ 0xABCD, 8, 52)
@@ -491,7 +505,7 @@ def _generate_domestic_generic_mock(
     offers: list[FlightOffer] = []
     for idx, carrier in enumerate(carriers):
         dep_time = departure_slots[idx % len(departure_slots)]
-        seed = hash(f"DOM-{origin}-{destination}-{date_str}-{carrier['code']}-{dep_time}-{cabin}") % (2**31)
+        seed = _stable_seed(f"DOM-{origin}-{destination}-{date_str}-{carrier['code']}-{dep_time}-{cabin}")
         rng = random.Random(seed)
         duration_min = rng.randint(50, 140)
         base_price = round(rng.randint(6000, 22000) * cfg["multiplier"])

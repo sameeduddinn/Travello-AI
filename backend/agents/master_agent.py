@@ -983,6 +983,56 @@ def _redact_tool_names(text: str) -> str:
     return text.strip()
 
 
+# ── Fabricated-booking backstop ───────────────────────────────────────────────
+# The REAL booking summary + payment buttons only ever reach the app through the
+# booking_data path below (a booking that passed the deterministic gate AND the
+# server-side reprice). When that gate REJECTS a prepare_booking — e.g. the picked
+# option can't be re-confirmed against live listings — the model is told to say so
+# plainly. A free-tier model sometimes ignores that and instead writes the summary
+# card itself as PLAIN PROSE, or on a later turn just claims "your flight is now
+# booked!". The user then sees a card with a price nothing will honour and NO
+# buttons (there was no real booking behind it), and a "booked" that never
+# happened. No legitimate chat reply reproduces the card's own UI labels or
+# asserts a booking is already done — those are the app's job after payment — so
+# their presence in free prose is a reliable fabrication signal we scrub here.
+_FAKE_CARD_RE = re.compile(
+    r"add passenger details"
+    r"|pay with card"
+    r"|\bpay later\b"
+    r"|booking summary",
+    re.IGNORECASE,
+)
+# A booking noun asserted as already-done ("flight is now booked", "booking is
+# confirmed", "ticket has been reserved"), in either order. Requires a completion
+# word (booked/confirmed/reserved/secured/paid) tied to a booking noun by a
+# state/now/perfect connector, so plain future/imperative prose ("would you like
+# to book?", "to get it booked") does not trip it.
+_FAKE_CONFIRM_RE = re.compile(
+    r"\b(?:flight|train|hotel|booking|ticket|seat|reservation|room|trip|package|car|ride|sedan|suv|van)s?\b"
+    r"[^.\n!?]{0,60}?\b(?:is|are|was|were|has been|have been|'s|now|been|successfully)\b"
+    r"[^.\n!?]{0,25}?\b(?:booked|confirmed|reserved|secured|paid)\b"
+    r"|\b(?:booked|confirmed|reserved|secured)\b[^.\n!?]{0,30}?\byour\b"
+    r"[^.\n!?]{0,25}?\b(?:flight|train|hotel|booking|ticket|seat|reservation|room|trip|car|ride|sedan|suv|van)s?\b",
+    re.IGNORECASE,
+)
+
+_BOOKING_NOT_DONE_MSG = (
+    "Just to be clear — nothing has been booked or charged yet. To actually book, "
+    "tell me the exact option you'd like (for example, \"book the 3 PM ER322\") and "
+    "I'll bring up the secure booking screen. You'll add passenger details there and "
+    "pay by card, with the correct total shown before anything is confirmed."
+)
+
+
+def _is_fabricated_booking(text: str) -> bool:
+    """True when free prose imitates the app's booking card or claims a booking is
+    already done — neither can be genuine here, since a real booking returns via
+    the booking_data path (the app renders the card), never as chat prose."""
+    if not text:
+        return False
+    return bool(_FAKE_CARD_RE.search(text) or _FAKE_CONFIRM_RE.search(text))
+
+
 # ── Package continuity safeguard ──────────────────────────────────────────────
 # A package is booked piece-by-piece, and the model is supposed to set `next_step`
 # on each non-final piece so the app can carry the trip forward after payment (no
@@ -1436,6 +1486,16 @@ async def process_message_agentic(
     # leaked into user-facing prose, THEN fall back if nothing usable remains
     # (so stripping a pure-markup reply can't leave the user a blank bubble).
     final_text = _redact_tool_names(final_text)
+    # We only reach here when NO real booking was produced this turn. If the model
+    # nonetheless faked the booking card or claimed a booking is done, replace the
+    # whole reply — the user must never see a summary/confirmation with no real
+    # booking (and no payment buttons) behind it.
+    if _is_fabricated_booking(final_text):
+        logger.warning(
+            "Neutralized a fabricated booking reply (no booking_data this turn): %r",
+            final_text[:160],
+        )
+        final_text = _BOOKING_NOT_DONE_MSG
     if not final_text:
         final_text = "I'm having trouble responding right now. Could you rephrase that?"
 
