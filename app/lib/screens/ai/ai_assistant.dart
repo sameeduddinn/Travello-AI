@@ -2436,6 +2436,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             border: Border.all(color: Colors.grey.shade200),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
                 child: TextField(
@@ -2451,8 +2452,10 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
-                  onSubmitted: _sendMessage,
-                  textInputAction: TextInputAction.send,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  minLines: 1,
+                  maxLines: 6,
                   style: const TextStyle(fontSize: 14),
                 ),
               ),
