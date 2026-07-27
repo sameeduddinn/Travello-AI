@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 from typing import Any
 
@@ -311,13 +312,32 @@ async def _fetch_open_meteo(city: str, lat: float, lon: float) -> dict[str, Any]
 # Coordinate resolver
 
 def _resolve_coords(city: str) -> tuple[float, float] | None:
-    """Exact match first, then case-insensitive fuzzy match."""
+    """
+    Exact match first, then a WHOLE-WORD match — never a loose substring.
+
+    The old substring test (`city_lower in k.lower() or k.lower() in city_lower`)
+    silently turned "nara" into Naran and "gil" into Gilgit, so the user was shown
+    the wrong city's real weather with no hint anything was off. We now accept a
+    fuzzy hit only when the catalogue city appears as a COMPLETE word-sequence in
+    the user's input ("Karachi City", "Islamabad, Pakistan") — a bare fragment
+    falls through to "no live data", which is honest rather than wrong.
+    """
     coords = CITY_COORDS.get(city)
     if coords:
         return coords
     city_lower = city.lower().strip()
+    if not city_lower:
+        return None
     for k, v in CITY_COORDS.items():
-        if k.lower() == city_lower or city_lower in k.lower() or k.lower() in city_lower:
+        if k.lower() == city_lower:
+            return v
+    city_words = set(re.findall(r"\w+", city_lower))
+    for k, v in CITY_COORDS.items():
+        k_words = set(re.findall(r"\w+", k.lower()))
+        # Catalogue name must be fully contained (as whole words) in the user's
+        # input — so "islamabad" matches "islamabad pakistan" but "naran" does
+        # NOT match "nara", and "khan" does NOT pull in "Dera Ghazi Khan".
+        if k_words and k_words <= city_words:
             return v
     return None
 

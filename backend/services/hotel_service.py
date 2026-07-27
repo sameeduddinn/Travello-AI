@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import random
 import urllib.parse
@@ -76,6 +77,26 @@ def _rapidapi_is_configured() -> bool:
 
 def _normalise_hotel_text(value: str) -> str:
     return " ".join((value or "").strip().lower().split())
+
+
+def _hotel_rng(city: str, name: str) -> random.Random:
+    """
+    A per-hotel RNG seeded on the hotel's identity (name + city), STABLE across
+    calls AND processes.
+
+    Live sources (Nominatim/Overpass/Google/TripAdvisor fallback) don't always
+    return a real nightly rate, so we synthesise one. Doing that with a bare
+    random.uniform() re-rolls a DIFFERENT price every call — so the figure shown
+    when options are listed (search) never matches the figure re-derived when the
+    user picks one (reprice_booking re-runs the same search), and the user is
+    quoted one total and charged another. That was reported live for a hotel
+    booking. Seeding on md5(name+city) — NOT Python's hash(), which is salted per
+    process (PYTHONHASHSEED) and so differs between the search worker and the
+    reprice worker — makes the same hotel resolve to the same price every time.
+    """
+    key = f"{_normalise_hotel_text(name)}::{_normalise_hotel_text(city)}"
+    seed = int(hashlib.md5(key.encode("utf-8")).hexdigest(), 16) % (2 ** 32)
+    return random.Random(seed)
 
 
 def _hotel_merge_key(hotel: HotelOffer) -> tuple[str, str, float | None, float | None]:
@@ -328,8 +349,11 @@ async def _fetch_nominatim_hotels(canonical_city: str, *, limit: int = 20) -> li
         seen.add(dedupe_key)
         seen_ids.add(osm_id)
 
-        star_rating = random.choice([2.0, 2.5, 3.0, 3.5, 4.0])
-        base_price_usd = random.uniform(18, 90)
+        # Seeded on the hotel's identity so the star rating and nightly rate are
+        # identical at search time and at reprice time (see _hotel_rng).
+        _rng = _hotel_rng(canonical_city, name)
+        star_rating = _rng.choice([2.0, 2.5, 3.0, 3.5, 4.0])
+        base_price_usd = _rng.uniform(18, 90)
         price_pkr = round(base_price_usd * settings.USD_TO_PKR_RATE, 2)
 
         address = item.get("display_name") or canonical_city
@@ -467,7 +491,7 @@ async def _fetch_google_places_hotels(canonical_city: str, *, limit: int = 20) -
             # Price level → PKR estimate
             price_level = place.get("price_level")
             lo, hi = _GOOGLE_PRICE_LEVEL_TO_USD.get(price_level or 2, (40.0, 100.0))
-            price_usd = random.uniform(lo, hi)
+            price_usd = _hotel_rng(canonical_city, name).uniform(lo, hi)
             price_pkr = round(price_usd * settings.USD_TO_PKR_RATE, 2)
 
             # Photos — build signed URL for first photo
@@ -553,7 +577,8 @@ def _parse_hotel(prop: dict, check_in: date, check_out: date, city: str) -> Hote
         pass
 
     if price_usd_per_night <= 0:
-        price_usd_per_night = random.uniform(40, 150)
+        _nm = prop.get("title") or prop.get("name") or ""
+        price_usd_per_night = _hotel_rng(city, _nm).uniform(40, 150)
 
     price_pkr_per_night = round(price_usd_per_night * settings.USD_TO_PKR_RATE, 2)
 
@@ -815,7 +840,7 @@ def _parse_hotels_com_hotel(prop: dict, city: str) -> HotelOffer | None:
     except (ValueError, TypeError):
         price_usd = 0.0
     if price_usd <= 0:
-        price_usd = random.uniform(40, 150)
+        price_usd = _hotel_rng(city, name).uniform(40, 150)
     price_pkr = round(price_usd * settings.USD_TO_PKR_RATE, 2)
 
     # Location
@@ -1871,11 +1896,13 @@ async def _fetch_overpass_hotels(canonical_city: str) -> list[HotelOffer]:
                 stars = 3.0
 
             tourism_type = tags.get("tourism", "hotel")
-            base_price_usd = {
-                "hotel": random.uniform(35, 120),
-                "hostel": random.uniform(8, 25),
-                "guest_house": random.uniform(15, 45),
-            }.get(tourism_type, 35.0)
+            # Seeded per-hotel so the nightly rate is stable search↔reprice.
+            _lo, _hi = {
+                "hotel": (35.0, 120.0),
+                "hostel": (8.0, 25.0),
+                "guest_house": (15.0, 45.0),
+            }.get(tourism_type, (35.0, 35.0))
+            base_price_usd = _hotel_rng(canonical_city, name).uniform(_lo, _hi)
             # Star-scale the price
             base_price_usd = round(base_price_usd * (0.6 + stars * 0.18), 2)
             price_pkr = round(base_price_usd * settings.USD_TO_PKR_RATE, 2)

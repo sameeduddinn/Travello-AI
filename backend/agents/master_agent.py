@@ -961,13 +961,25 @@ _TOOL_NAME_RE = re.compile(
 )
 
 
+# Raw tool-call markup the model sometimes emits as plain TEXT, e.g.
+# "<function=search for flights>{...}</function>". llm_service salvages the
+# well-formed ones into real calls before we ever get here; these strip any
+# un-salvageable remnant (broken JSON, dangling opener) so the raw markup can
+# never surface in a chat reply — which is exactly what a user reported seeing.
+_LEAKED_FUNC_RE = re.compile(r"<function=.*?</function>", re.IGNORECASE | re.DOTALL)
+_LEAKED_FUNC_DANGLING_RE = re.compile(r"<\s*/?\s*function\b.*$", re.IGNORECASE | re.DOTALL)
+
+
 def _redact_tool_names(text: str) -> str:
-    """Rewrite any internal tool name the model leaked into a human phrase."""
+    """Rewrite any internal tool name the model leaked into a human phrase, and
+    strip any raw <function=...> tool-call markup that slipped through as text."""
     if not text:
         return text
+    text = _LEAKED_FUNC_RE.sub("", text)
+    text = _LEAKED_FUNC_DANGLING_RE.sub("", text)
     text = _TOOL_VERB_RE.sub(lambda m: _TOOL_PHRASES[m.group(1).lower()], text)
     text = _TOOL_NAME_RE.sub(lambda m: _TOOL_PHRASES[m.group(1).lower()], text)
-    return text
+    return text.strip()
 
 
 async def process_message_agentic(
@@ -1326,11 +1338,12 @@ async def process_message_agentic(
             "booking_data": car_booking_data,
         }
 
+    # Backstop: strip any internal tool name or raw tool-call markup the model
+    # leaked into user-facing prose, THEN fall back if nothing usable remains
+    # (so stripping a pure-markup reply can't leave the user a blank bubble).
+    final_text = _redact_tool_names(final_text)
     if not final_text:
         final_text = "I'm having trouble responding right now. Could you rephrase that?"
-
-    # Backstop: strip any internal tool name the model leaked into user-facing prose.
-    final_text = _redact_tool_names(final_text)
 
     # Persist both messages (ordered so replay stays user-then-assistant)
     await save_turn(

@@ -1227,12 +1227,20 @@ async def _exec_hotels(args: dict) -> dict:
     rooms = _as_count(args.get("rooms"), default=1) or 1
     resp = await search_hotels(city, ci, co, guests, rooms)
     hotels = _serialize_hotels(resp)
+    nights = max((co - ci).days, 1)
+    # Precompute the whole-stay total the SAME way reprice_booking will
+    # (price_per_night × nights × rooms) so the figure the model quotes equals
+    # what gets charged — the model computing it in prose drifted by a few PKR
+    # and, worse, could pair the wrong per-night with the wrong hotel.
+    for h in hotels:
+        h["total_stay_pkr"] = round((h.get("price_per_night_pkr") or 0) * nights * rooms)
     hotels, note = _filter_by_budget(hotels, "price_per_night_pkr", args.get("max_budget_pkr"))
     result = {
         "city": city,
         "check_in": ci.isoformat(),
         "check_out": co.isoformat(),
-        "nights": max((co - ci).days, 1),
+        "nights": nights,
+        "rooms": rooms,
         "hotels": hotels,
     }
     if note:
@@ -1243,6 +1251,22 @@ async def _exec_hotels(args: dict) -> dict:
 async def _exec_weather(args: dict) -> dict:
     city = (args.get("city") or "").strip()
     w = await get_weather(city)
+    # get_weather returns a synthetic 27C "Pleasant" record tagged source="fallback"
+    # when it has no coordinates for the city or every live source failed. That
+    # placeholder exists for the app's weather SCREEN — it is NOT a real reading, so
+    # the agent must never quote it as live weather. Signal the gap explicitly (with
+    # the instruction inline) so the model says it plainly instead of inventing 27C.
+    if (w or {}).get("source") == "fallback":
+        return {
+            "city": city,
+            "weather_available": False,
+            "note": (
+                f"No live weather data is available for {city or 'this city'} right now "
+                "(it may be a town not covered, or the weather service is temporarily "
+                "unreachable). Do NOT state a temperature or condition — tell the user "
+                "you don't have live weather for this place."
+            ),
+        }
     return {"city": city, "weather": w}
 
 

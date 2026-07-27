@@ -481,15 +481,78 @@ async def generate_json(
 # Llama-on-Groq occasionally emits a malformed tool call as TEXT instead of a
 # structured call, e.g.  <function=search_flights{"city": "Lahore"}</function>
 # or, with a closing '>' on the opening tag, <function=search_flights>{"city": "Lahore"}</function>
-# Groq then rejects the request with a 400 'tool_use_failed'. We salvage the
-# intended call(s) from that error payload so a stochastic formatting slip
-# doesn't break the turn. The optional '>' must be matched — otherwise a
-# refusal or answer the model already generated correctly, with only this
-# trailing malformed call attached, is thrown away and the turn silently
-# falls back to the legacy pipeline for an unrelated formatting reason.
+# Sometimes Groq rejects it with a 400 'tool_use_failed' (salvaged from the error
+# payload); other times it comes straight back as the message CONTENT with no
+# structured tool_calls at all — and then the raw "<function=...>" markup lands in
+# the chat as a bubble the user sees (observed live). Both paths are salvaged.
+#
+# The name itself may arrive as natural language ("search for flights") or
+# hyphenated, so the capture is permissive (spaces / '.' / '-') and the result is
+# normalised to a real tool id by _normalize_tool_name below. The optional '>'
+# must be matched — otherwise a refusal or answer the model already generated
+# correctly, with only this trailing malformed call attached, is thrown away.
 _MALFORMED_FUNC_RE = re.compile(
-    r"<function=([a-zA-Z0-9_]+)\s*>?\s*(\{.*?\})\s*</function>", re.DOTALL
+    r"<function=([a-zA-Z0-9_ .\-]+?)\s*>?\s*(\{.*?\})\s*</function>", re.DOTALL
 )
+
+
+def _tool_names_from_schemas(tools: list[dict] | None) -> set[str]:
+    """The set of real tool ids from an OpenAI/Groq tools list — used to normalise
+    a salvaged, possibly natural-language function name back to a dispatchable id."""
+    names: set[str] = set()
+    for t in tools or []:
+        fn = (t.get("function") or {}) if isinstance(t, dict) else {}
+        n = fn.get("name")
+        if n:
+            names.add(n)
+    return names
+
+
+# Filler the model sprinkles into a spelled-out function name ("search FOR
+# flights", "find THE hotels") that isn't part of the real id.
+_TOOLNAME_FILLER = {"for", "the", "a", "an", "me", "some", "of", "my", "to", "up"}
+
+# Verb tokens of real tool ids — dropped in the verb-swap fallback so a tool is
+# matched on its distinctive noun ("hotels", "car", "booking") when the model
+# picks a different verb than the canonical one.
+_TOOLNAME_VERBS = {"search", "find", "get", "book", "prepare", "look", "show", "fetch", "reserve"}
+
+
+def _normalize_tool_name(raw: str, known: set[str]) -> str | None:
+    """
+    Map a possibly natural-language function name ('search for flights',
+    'search-flights', 'Search Flights') to a real tool id. Returns None when it
+    can't be resolved to a KNOWN tool, so a nonsense name is dropped rather than
+    dispatched. With no known set (shouldn't happen on the tool paths) it falls
+    back to the plain underscore form.
+    """
+    cand = re.sub(r"[\s.\-]+", "_", raw.strip().lower()).strip("_")
+    if not known:
+        return cand or None
+    if cand in known:
+        return cand
+    tokens = {t for t in re.split(r"[\s_.\-]+", raw.strip().lower()) if t}
+    tokens -= _TOOLNAME_FILLER
+    best: str | None = None
+    for name in known:
+        name_tokens = set(name.split("_"))
+        # Every significant token of the real tool id must be present in what the
+        # model wrote — "search_flights" matches "search for flights", but
+        # "search_hotels" does not.
+        if name_tokens and name_tokens <= tokens:
+            if best is None or len(name_tokens) > len(set(best.split("_"))):
+                best = name
+    if best:
+        return best
+    # Verb-swap fallback: the model kept the distinctive NOUN but changed the verb
+    # ("find the hotels" for search_hotels, "look up flights" for search_flights).
+    # Match on the tool id's non-verb tokens, which are unique per tool.
+    for name in known:
+        noun_tokens = set(name.split("_")) - _TOOLNAME_VERBS
+        if noun_tokens and noun_tokens <= tokens:
+            if best is None or len(noun_tokens) > len(set(best.split("_")) - _TOOLNAME_VERBS):
+                best = name
+    return best
 
 
 class _ToolCallFunction:
@@ -524,13 +587,21 @@ def _repair_json_arithmetic(args: str) -> str:
     )
 
 
-def _salvage_tool_calls(text: str | None) -> list | None:
-    """Extract well-formed tool calls from a malformed <function=...> blob."""
+def _salvage_tool_calls(text: str | None, known: set[str] | None = None) -> list | None:
+    """Extract well-formed tool calls from a malformed <function=...> blob.
+
+    `known` is the set of real tool ids for this turn; the captured function name
+    is normalised against it, and any call whose name can't be resolved to a real
+    tool is dropped (never dispatched)."""
     if not text:
         return None
+    known = known or set()
     calls: list = []
     for i, m in enumerate(_MALFORMED_FUNC_RE.finditer(text)):
-        name, args = m.group(1), m.group(2)
+        raw_name, args = m.group(1), m.group(2)
+        name = _normalize_tool_name(raw_name, known)
+        if not name:
+            continue  # couldn't map to a real tool — don't invent a dispatch
         try:
             json.loads(args)  # only accept valid JSON args
         except json.JSONDecodeError:
@@ -544,17 +615,17 @@ def _salvage_tool_calls(text: str | None) -> list | None:
     return calls or None
 
 
-def _salvage_from_exception(exc: Exception) -> list | None:
+def _salvage_from_exception(exc: Exception, known: set[str] | None = None) -> list | None:
     """Pull failed_generation out of a Groq tool_use_failed 400 and parse it."""
     failed_text = None
     body = getattr(exc, "body", None)
     if isinstance(body, dict):
         failed_text = (body.get("error") or {}).get("failed_generation")
     # Fall back to scanning the string form — the <function=...> blob appears there too.
-    return _salvage_tool_calls(failed_text or str(exc))
+    return _salvage_tool_calls(failed_text or str(exc), known)
 
 
-def _openrouter_tool_message(data: dict):
+def _openrouter_tool_message(data: dict, known: set[str] | None = None):
     """Wrap an OpenRouter (OpenAI-format) response into the .content/.tool_calls
     shape the orchestrator expects, reusing the salvage mimic classes."""
     try:
@@ -574,7 +645,7 @@ def _openrouter_tool_message(data: dict):
             c.get("id") or f"or_call_{i}", name, fn.get("arguments") or "{}"))
     # No structured calls but a malformed <function=...> blob in content → salvage it.
     if not calls and content:
-        salvaged = _salvage_tool_calls(content)
+        salvaged = _salvage_tool_calls(content, known)
         if salvaged:
             return _SalvagedMessage(None, salvaged)
     return _SalvagedMessage(content, calls)
@@ -603,11 +674,22 @@ async def _groq_generate_with_tools(
         kwargs["tools"] = tools
         kwargs["tool_choice"] = "auto"
 
+    known_names = _tool_names_from_schemas(tools)
     last_exc: Exception | None = None
     for attempt in range(max_attempts):
         try:
             response = await client.chat.completions.create(**kwargs)
-            return response.choices[0].message
+            message = response.choices[0].message
+            # Llama sometimes emits a tool call as TEXT content instead of a
+            # structured call ("<function=search for flights>{...}</function>")
+            # WITHOUT a 400 error. With no structured tool_calls, salvage it from
+            # the content so the raw markup never reaches the user as a chat bubble.
+            if known_names and not getattr(message, "tool_calls", None) and getattr(message, "content", None):
+                salvaged = _salvage_tool_calls(message.content, known_names)
+                if salvaged:
+                    logger.info("Recovered %d malformed tool call(s) from Groq content", len(salvaged))
+                    return _SalvagedMessage(None, salvaged)
+            return message
         except Exception as exc:
             err = str(exc)
             if "429" in err or "rate_limit" in err.lower():
@@ -616,7 +698,7 @@ async def _groq_generate_with_tools(
             if "401" in err or "403" in err:
                 raise LLMError("invalid_key")
             if "tool_use_failed" in err or "Failed to call a function" in err:
-                salvaged = _salvage_from_exception(exc)
+                salvaged = _salvage_from_exception(exc, known_names)
                 if salvaged:
                     logger.info("Recovered %d malformed tool call(s) from Groq", len(salvaged))
                     return _SalvagedMessage(None, salvaged)
@@ -645,7 +727,7 @@ async def _openrouter_generate_with_tools(
         messages, temperature=temperature,
         max_output_tokens=max_output_tokens, tools=tools,
     )
-    return _openrouter_tool_message(data)
+    return _openrouter_tool_message(data, _tool_names_from_schemas(tools))
 
 
 async def generate_with_tools(
