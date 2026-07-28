@@ -318,7 +318,7 @@ async def agent_book(payload: AgentBookRequest, user: CurrentUser):
     Creates the booking record in pending state — Flutter then calls
     POST /payments/initiate to complete payment.
     """
-    from datetime import datetime as dt
+    from datetime import datetime as dt, timedelta
 
     # Verify the conversation belongs to this user before creating a booking.
     # supabase_admin bypasses RLS, so ownership MUST be enforced here.
@@ -379,6 +379,12 @@ async def agent_book(payload: AgentBookRequest, user: CurrentUser):
                 try:
                     h, m = [int(x) for x in payload.arrival_time.split(":")]
                     arrival_at = dt(base_date.year, base_date.month, base_date.day, h, m)
+                    # Both times are clock times hung off the DEPARTURE date, so
+                    # anything landing after midnight (a night train, a late
+                    # flight) would otherwise be stored as arriving before it
+                    # left — printing a negative duration on the ticket and email.
+                    if departure_at and arrival_at < departure_at:
+                        arrival_at += timedelta(days=1)
                 except Exception:
                     pass
 

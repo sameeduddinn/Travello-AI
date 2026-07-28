@@ -153,9 +153,13 @@ async def list_bookings(
     """
     offset = (page - 1) * per_page
 
+    # Embed each booking's passengers. The list is what My Bookings renders from,
+    # and the e-ticket opened from there reads its passenger names, ID numbers and
+    # seats out of that same row — without the embed it fell back to a single
+    # nameless "Passenger", so a 3-traveller booking printed a 1-passenger ticket.
     query = (
         supabase_admin.table("bookings")
-        .select("*", count=CountMethod.exact)
+        .select("*, passengers(*)", count=CountMethod.exact)
         .eq("user_id", user_id)
         .order("created_at", desc=True)
         .range(offset, offset + per_page - 1)
@@ -422,7 +426,13 @@ def _row_to_booking_out(row: dict[str, Any]) -> BookingOut:
         check_in=_d(row.get("check_in")),
         check_out=_d(row.get("check_out")),
         raw_payload=row.get("raw_payload"),
-        passengers=[],
+        # Present when the caller embedded them (list_bookings); get_booking
+        # overwrites this with its own explicit fetch.
+        passengers=[
+            _row_to_passenger_out(p)
+            for p in (row.get("passengers") or [])
+            if isinstance(p, dict)
+        ],
         created_at=_dt(row.get("created_at")),
         updated_at=_dt(row.get("updated_at")),
     )

@@ -181,9 +181,41 @@ class _MyBookingsState extends State<MyBookings>
       };
     }
 
+    // Real travellers saved against this booking, converted to the camelCase
+    // shape the e-ticket and booking-detail screens read. Without this the
+    // e-ticket fell back to one nameless "Passenger" with "N/A" for ID, no
+    // matter how many people were actually booked and paid for.
+    final paxRows = m['passengers'];
+    final allPassengers = <Map<String, dynamic>>[];
+    if (paxRows is List) {
+      for (final row in paxRows) {
+        if (row is! Map) continue;
+        final first = (row['first_name'] ?? '').toString().trim();
+        final last = (row['last_name'] ?? '').toString().trim();
+        final doc = (row['cnic'] ?? '').toString().trim().isNotEmpty
+            ? row['cnic'].toString().trim()
+            : (row['passport_number'] ?? '').toString().trim();
+        allPassengers.add({
+          'firstName': first,
+          'lastName': last,
+          'name': '$first $last'.trim(),
+          'salutation': (row['title'] ?? '').toString(),
+          'passportOrId': doc,
+          'cnic': (row['cnic'] ?? '').toString(),
+          'passportNumber': (row['passport_number'] ?? '').toString(),
+          'dateOfBirth': (row['date_of_birth'] ?? '').toString(),
+          'gender': (row['gender'] ?? '').toString(),
+          'nationality': (row['nationality'] ?? '').toString(),
+          'passengerType': (row['passenger_type'] ?? 'adult').toString(),
+          'seat': (row['seat_number'] ?? '').toString(),
+        });
+      }
+    }
+
     // Passenger count from raw_payload if available. Agent bookings store the
     // count under `travelers` (with an `adults` breakdown); manual bookings may
-    // use passenger_count/passengers — accept any of them.
+    // use passenger_count/passengers — accept any of them. The saved traveller
+    // rows are the ground truth when they exist.
     int passengerCount = 1;
     final rpCount = m['raw_payload'];
     if (rpCount is Map) {
@@ -193,8 +225,12 @@ class _MyBookingsState extends State<MyBookings>
           rpCount['adults'];
       passengerCount = (raw as num?)?.toInt() ?? 1;
     }
+    if (allPassengers.isNotEmpty) {
+      passengerCount = allPassengers.length;
+    }
 
     return {
+      if (allPassengers.isNotEmpty) 'allPassengers': allPassengers,
       'bookingId': m['booking_id'] ?? m['id'] ?? '',
       'bookingType': bookingType,
       'status': m['status'] ?? 'confirmed',

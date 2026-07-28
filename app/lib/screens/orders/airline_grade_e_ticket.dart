@@ -349,6 +349,24 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
     ];
   }
 
+  /// The seat actually assigned to THIS passenger on THIS leg. Prefers the seat
+  /// saved against the traveller (what the confirmation email prints), then the
+  /// leg's seat list by position, and finally an em dash — never a placeholder
+  /// that would put the same seat on every passenger's ticket.
+  String _seatFor(Map<String, dynamic> pax, int index, bool isReturn) {
+    final own = (pax['seat'] ?? pax['seatNumber'] ?? pax['seat_number'] ?? '')
+        .toString()
+        .trim();
+    if (own.isNotEmpty) return own;
+    final seats = _flightData(isReturn, 'seats');
+    if (seats is List && index < seats.length) {
+      final s = seats[index]?.toString().trim() ?? '';
+      if (s.isNotEmpty) return s;
+    }
+    final single = (_flightData(isReturn, 'seat') ?? '').toString().trim();
+    return single;
+  }
+
   dynamic _flightData(bool isReturn, String key) {
     final fd = isReturn
         ? (_booking['returnFlightDetails'] as Map<String, dynamic>?)
@@ -367,6 +385,25 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
   String _arr(bool r) => _flightData(r, 'arrival') as String? ?? '00:00';
   String _duration(bool r) => _flightData(r, 'duration') as String? ?? '--';
   String _date(bool r) => _flightData(r, 'date') as String? ?? 'N/A';
+
+  /// Gate boarding time — 45 minutes before departure, matching the check-in
+  /// deadline printed in this ticket's own Travel Guidelines. The chip used to
+  /// show the departure time itself, which read as boarding and departing at
+  /// the very same minute. Falls back to the departure time only if it can't
+  /// be parsed, so the chip is never blank.
+  String _boarding(bool r) {
+    final dep = _dep(r);
+    final parts = dep.split(':');
+    if (parts.length < 2) return dep;
+    final h = int.tryParse(parts[0].trim());
+    final m = int.tryParse(parts[1].trim().substring(
+        0, math.min(2, parts[1].trim().length)));
+    if (h == null || m == null) return dep;
+    final total = (h * 60 + m - 45) % (24 * 60);
+    final norm = total < 0 ? total + 24 * 60 : total;
+    return '${(norm ~/ 60).toString().padLeft(2, '0')}:'
+        '${(norm % 60).toString().padLeft(2, '0')}';
+  }
 
   String _extractCode(String full) {
     final match = RegExp(r'\(([^)]+)\)').firstMatch(full);
@@ -504,12 +541,13 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                     final pax = passengers[i];
                     final name = pax['name'] as String? ?? 'Passenger ${i + 1}';
                     final doc = pax['passportOrId'] as String? ?? '';
+                    final seat = _seatFor(pax, i, false);
                     return Column(
                       children: [
                         if (_isRoundTrip || passengers.length > 1)
                           _buildFlightLabel(
                               'OUTBOUND', name, Icons.flight_takeoff),
-                        _buildTicketCard(false, name, doc),
+                        _buildTicketCard(false, name, doc, seat),
                         const SizedBox(height: DS.space24),
                       ],
                     );
@@ -520,10 +558,11 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                       final name =
                           pax['name'] as String? ?? 'Passenger ${i + 1}';
                       final doc = pax['passportOrId'] as String? ?? '';
+                      final seat = _seatFor(pax, i, true);
                       return Column(
                         children: [
                           _buildFlightLabel('RETURN', name, Icons.flight_land),
-                          _buildTicketCard(true, name, doc),
+                          _buildTicketCard(true, name, doc, seat),
                           const SizedBox(height: DS.space24),
                         ],
                       );
@@ -701,8 +740,8 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
   // SECTION 3: TICKET CARD (Main Component)
   // ════════════════════════════════════════════════════════════════════════
 
-  Widget _buildTicketCard(
-      bool isReturn, String passengerName, String passportOrId) {
+  Widget _buildTicketCard(bool isReturn, String passengerName,
+      String passportOrId, String seat) {
     final fromCode = _extractCode(_from(isReturn));
     final toCode = _extractCode(_to(isReturn));
     final fromCity = _extractCity(_from(isReturn));
@@ -732,7 +771,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
               fromCode, toCode, fromCity, toCity, dep, arr, date, dur),
 
           // 3C. FLIGHT DETAILS GRID
-          _buildFlightDetailsGrid(),
+          _buildFlightDetailsGrid(isReturn, seat),
 
           // 3D. PERFORATED DIVIDER
           _buildPerforatedDivider(),
@@ -741,7 +780,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
           _buildPassengerSection(passengerName, passportOrId, date),
 
           // 3F. SCAN SECTION
-          _buildScanSection(flightNum, isReturn, passengerName),
+          _buildScanSection(flightNum, isReturn, passengerName, seat),
         ],
       ),
     );
@@ -1012,7 +1051,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
 
   // ── 3C. Flight Details Grid ────────────────────────────────────────────
 
-  Widget _buildFlightDetailsGrid() {
+  Widget _buildFlightDetailsGrid(bool isReturn, String seat) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: DS.cardPadding),
       padding: const EdgeInsets.all(DS.space16),
@@ -1024,13 +1063,17 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildDetailChip(Icons.airline_seat_recline_normal, 'SEAT', 'A1'),
+          // This passenger's real assigned seat. It used to be the constant
+          // 'A1' on every ticket, so a 3-seat booking printed A1/A1/A1 while
+          // the confirmation email correctly listed A2, B2 and C2.
+          _buildDetailChip(Icons.airline_seat_recline_normal, 'SEAT',
+              seat.isNotEmpty ? seat : '—'),
           _buildVerticalDivider(),
           _buildDetailChip(Icons.door_front_door_rounded, 'GATE', 'H22'),
           _buildVerticalDivider(),
           _buildDetailChip(Icons.account_balance_rounded, 'TERMINAL', '3'),
           _buildVerticalDivider(),
-          _buildDetailChip(Icons.schedule_rounded, 'BOARDS', _dep(false)),
+          _buildDetailChip(Icons.schedule_rounded, 'BOARDS', _boarding(isReturn)),
         ],
       ),
     );
@@ -1210,13 +1253,14 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
   // ── 3F. Scan Section ────────────────────────────────────────────────────
 
   Widget _buildScanSection(
-      String flightNum, bool isReturn, String passengerName) {
-    // Enhanced barcode format: PNR-LEG-ROUTE-FLIGHT-SEAT
+      String flightNum, bool isReturn, String passengerName, String seat) {
+    // Enhanced barcode format: PNR-LEG-ROUTE-FLIGHT-SEAT. The seat is this
+    // passenger's own — with the old hardcoded fallback every traveller on a
+    // booking scanned an identical barcode.
     final leg = isReturn ? 'R' : 'O';
     final fromCode = _extractCode(_from(isReturn));
     final toCode = _extractCode(_to(isReturn));
     final route = '$fromCode$toCode';
-    final seat = _flightData(isReturn, 'seat') ?? 'A1';
     final barcodeData = '$_pnr$leg$route$flightNum$seat'.toUpperCase();
 
     final qrData =
@@ -1448,25 +1492,29 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
       final paxList = _allPassengers;
 
       // Generate PDF for outbound flights
-      for (final pax in paxList) {
+      for (var i = 0; i < paxList.length; i++) {
+        final pax = paxList[i];
         _addPdfPage(
           doc,
           theme: pdfTheme,
           isReturn: false,
           passengerName: pax['name'] as String? ?? '',
           passportOrId: pax['passportOrId'] as String? ?? '',
+          seat: _seatFor(pax, i, false),
         );
       }
 
       // Generate PDF for return flights if round trip
       if (_isRoundTrip) {
-        for (final pax in paxList) {
+        for (var i = 0; i < paxList.length; i++) {
+          final pax = paxList[i];
           _addPdfPage(
             doc,
             theme: pdfTheme,
             isReturn: true,
             passengerName: pax['name'] as String? ?? '',
             passportOrId: pax['passportOrId'] as String? ?? '',
+            seat: _seatFor(pax, i, true),
           );
         }
       }
@@ -1492,6 +1540,7 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
     required bool isReturn,
     required String passengerName,
     required String passportOrId,
+    required String seat,
   }) {
     // PDF Colors matching airline design
     const pdfNavy = PdfColor(0.039, 0.086, 0.157); // #0A1628
@@ -1514,7 +1563,6 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
     final arr = _arr(isReturn);
     final dur = _duration(isReturn);
     final date = _date(isReturn);
-    final seat = _flightData(isReturn, 'seat') ?? 'A1';
 
     // Barcode data
     final leg = isReturn ? 'R' : 'O';
@@ -1933,8 +1981,8 @@ class _AirlineGradeETicketState extends State<AirlineGradeETicket>
                                 pdfTextTertiary, pdfTextPrimary),
                             pw.Container(
                                 width: 1, height: 40, color: pdfBorder),
-                            _buildPdfDetailChip(
-                                'BOARDS', dep, pdfTextTertiary, pdfTextPrimary),
+                            _buildPdfDetailChip('BOARDS', _boarding(isReturn),
+                                pdfTextTertiary, pdfTextPrimary),
                           ],
                         ),
                       ),
