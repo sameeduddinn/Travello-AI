@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import date
 from typing import Any
 
 from services.booking_service import cancel_booking
@@ -89,6 +90,85 @@ async def extract_booking_from_history(
         return None
 
 
+def _as_int(value, default: int = 0) -> int:
+    """Best-effort int for a display-only field — never raises."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _as_float(value: Any, default: float | None = None) -> float | None:
+    """Best-effort float for a display-only field — never raises."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _stay_nights(check_in, check_out) -> int:
+    """Nights between two YYYY-MM-DD strings, or 0 if either is unusable."""
+    try:
+        ci = date.fromisoformat(str(check_in))
+        co = date.fromisoformat(str(check_out))
+    except (TypeError, ValueError):
+        return 0
+    return max((co - ci).days, 0)
+
+
+def _price_breakdown(bd: dict) -> str | None:
+    """
+    Explain a multi-unit total in words: "PKR 16,341 per person x 2 passengers".
+
+    Display only. This is DERIVED from the already server-verified
+    total_price_pkr — it never feeds back into pricing and cannot change what is
+    charged. It exists because the summary previously showed only the final
+    total next to "Passengers: 2 adult(s)", which gave the user no way to see
+    that the per-person fare had in fact been multiplied — a correct total that
+    reads as though the multiplication never happened.
+
+    Returns None when there is nothing to explain (one traveler, no total) or
+    when the figures would not multiply back out exactly, since a breakdown that
+    doesn't add up on screen is worse than none at all.
+    """
+    total = _as_float(bd.get("total_price_pkr"))
+    if total is None or total <= 0:
+        return None
+
+    # A car transfer is a flat add-on already inside the total and is NOT
+    # charged per traveler, so take it out before dividing.
+    transfer = _as_float(bd.get("transfer_pkr"), 0.0) or 0.0
+    base = round(total - transfer)
+    if base <= 0:
+        return None
+
+    if bd.get("booking_type") == "hotel":
+        nights = _stay_nights(bd.get("check_in"), bd.get("check_out"))
+        rooms = max(_as_int(bd.get("rooms"), 1), 1)
+        units = nights * rooms
+        if units <= 1:
+            return None
+        per = round(base / units)
+        if per * units != base:
+            return None
+        parts = [f"PKR {per:,}/night", f"{nights} night(s)"]
+        if rooms > 1:
+            parts.append(f"{rooms} rooms")
+        return " × ".join(parts)
+
+    pax = _as_int(bd.get("travelers"), 0) or (
+        _as_int(bd.get("adults"), 0)
+        + _as_int(bd.get("children"), 0)
+        + _as_int(bd.get("infants"), 0)
+    )
+    if pax <= 1:
+        return None
+    per = round(base / pax)
+    if per * pax != base:
+        return None
+    return f"PKR {per:,} per person × {pax} passengers"
+
+
 def format_booking_summary(booking_data: dict) -> str:
     """
     Build the booking summary message that includes the two payment-choice buttons
@@ -159,7 +239,12 @@ def format_booking_summary(booking_data: dict) -> str:
         )
 
     if price:
-        lines.append(f"\n💰  **Total: PKR {int(price):,}**")
+        # Show HOW the total was reached whenever it covers more than one seat
+        # or night — the bare total alone read as if the party size had been
+        # ignored, even though it never was.
+        breakdown = _price_breakdown(booking_data)
+        suffix = f"  _({breakdown})_" if breakdown else ""
+        lines.append(f"\n💰  **Total: PKR {int(price):,}**{suffix}")
     else:
         lines.append("\n💰  **Total: As quoted above**")
 
@@ -237,7 +322,11 @@ def _component_line(index: int, component: dict) -> str:
             detail += f", {component['travel_date']}"
     price = component.get("total_price_pkr")
     money = f"PKR {int(price):,}" if price else "as quoted"
-    return f"{index}. {icon}  **{label}:** {detail} — **{money}**"
+    # Same reason as format_booking_summary: a package line showing only the
+    # multiplied total looks like the party size was never applied.
+    breakdown = _price_breakdown(component) if price else None
+    tail = f"  _({breakdown})_" if breakdown else ""
+    return f"{index}. {icon}  **{label}:** {detail} — **{money}**{tail}"
 
 
 def format_package_summary(package_data: dict) -> str:
