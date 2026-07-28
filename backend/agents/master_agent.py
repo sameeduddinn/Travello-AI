@@ -276,21 +276,60 @@ def _numbered_list_items(text: str) -> dict[int, str]:
 _PICK_KEYWORD_RE = re.compile(
     r"\b(?:option|number|no|#|item|flight|train|hotel|choice)\s*#?\s*(\d{1,2})\b", re.I
 )
-_PICK_LEG_RE = re.compile(
-    r"\b(\d{1,2})\s+for\s+(?:the\s+)?"
-    r"(?:outbound|return|inbound|onward|departing|returning|first|second)\b",
+
+# Words naming WHICH leg a pick belongs to, mapped to the order the legs are
+# always listed in (outbound list first, return list second).
+_LEG_RANK: dict[str, int] = {
+    "outbound": 0, "onward": 0, "departing": 0, "departure": 0,
+    "first": 0, "going": 0,
+    "return": 1, "inbound": 1, "returning": 1, "second": 1, "back": 1,
+}
+_LEG_WORDS = "|".join(_LEG_RANK)
+
+# "3 for outbound", "2 for the return", "2 for in return". The leg word may be
+# preceded by filler the user threw in — requiring it to sit immediately after
+# "for" (or "for the") is what made "2 for in return" parse as no pick at all,
+# so only the outbound leg of a real round trip got booked.
+_PICK_FOR_LEG_RE = re.compile(
+    rf"\b(\d{{1,2}})\s+for\s+(?:\w+\s+){{0,2}}?({_LEG_WORDS})\b", re.I
+)
+# "outbound 3", "return #2", "return flight 2" — the leg named BEFORE the number.
+# Only a small set of filler words may sit between them: allowing anything would
+# read "returning on 2 Aug" as picking option 2, which would book the wrong seat.
+_LEG_FIRST_RE = re.compile(
+    rf"\b({_LEG_WORDS})\s*(?:flight|train|leg|option|number|no|is|it'?s|=)?"
+    rf"\s*[:#-]?\s*(\d{{1,2}})\b",
     re.I,
 )
+
+
+def _leg_picks(message: str) -> list[int]:
+    """
+    Picks that say out loud which leg they belong to, returned in LEG order
+    rather than the order typed — so "return 2, outbound 3" still books outbound
+    #3 and return #2 instead of silently swapping the two flights. [] unless at
+    least two DIFFERENT legs were named.
+    """
+    by_rank: dict[int, int] = {}
+    for pattern, num_first in ((_PICK_FOR_LEG_RE, True), (_LEG_FIRST_RE, False)):
+        for m in pattern.finditer(message):
+            num, leg = (m.group(1), m.group(2)) if num_first else (m.group(2), m.group(1))
+            by_rank.setdefault(_LEG_RANK[leg.lower()], int(num))
+    if len(by_rank) < 2:
+        return []
+    return [by_rank[rank] for rank in sorted(by_rank)]
 
 
 def _selected_indices(message: str) -> list[int]:
     """Every list position the user picked, in order. [] when it isn't a multi-pick."""
     message = _as_text(message)
-    for pattern in (_PICK_KEYWORD_RE, _PICK_LEG_RE):
-        picks = [int(m.group(1)) for m in pattern.finditer(message)]
-        if len(picks) >= 2:
-            return picks
-    return []
+    # Leg-aware parsing first: it knows which pick is the outbound and which is
+    # the return, so it stays correct no matter which order they were typed in.
+    legs = _leg_picks(message)
+    if legs:
+        return legs
+    picks = [int(m.group(1)) for m in _PICK_KEYWORD_RE.finditer(message)]
+    return picks if len(picks) >= 2 else []
 
 
 # An offer list's labels are short identifiers ("PA-180", "Serena Hotel"); a
