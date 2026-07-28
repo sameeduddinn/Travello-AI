@@ -89,6 +89,42 @@ class _SendButtonState extends State<_SendButton> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Small frosted-glass circular icon button used in the AI chat header
+// ─────────────────────────────────────────────────────────────────────────────
+class _GlassHeaderButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? tooltip;
+  final double size;
+  const _GlassHeaderButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+    this.size = 17,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final button = Material(
+      color: Colors.white.withValues(alpha: 0.08),
+      shape: const CircleBorder(
+        side: BorderSide(color: Colors.white24, width: 1),
+      ),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 38,
+          height: 38,
+          child: Icon(icon, color: Colors.white70, size: size),
+        ),
+      ),
+    );
+    return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Itinerary data model
 // ─────────────────────────────────────────────────────────────────────────────
 class _DayPlan {
@@ -1066,18 +1102,26 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         onSuccess: (pnr, amount) {
           // Capture before _clearPendingAction() nulls _pendingBookingData.
           final booked = _pendingBookingData;
+          final isPackage = booked?['booking_type'] == 'package';
           _clearPendingAction();
-          if (booked != null) _fileBookingNotification(booked, pnr);
+          if (booked != null) {
+            // The notification describes a trip (route/dates), so a package hands
+            // it the first real component rather than the wrapper, which carries
+            // no route of its own.
+            _fileBookingNotification(_packageComponents(booked).first, pnr);
+          }
           // Multi-part trip: carry the outstanding pieces onto the confirmation
           // so the package doesn't dead-end here. The agent gets no turn between
-          // the summary and this card, so this is the handoff.
-          final next = (booked?['next_step'] as String?)?.trim() ?? '';
+          // the summary and this card, so this is the handoff. A package just
+          // paid for everything at once, so there is nothing left to hand off.
+          final next =
+              isPackage ? '' : (booked?['next_step'] as String?)?.trim() ?? '';
           _addMilestoneMessage(
-            '✅ **Booking Confirmed!**\n\n'
+            '${isPackage ? '✅ **Package Confirmed!**' : '✅ **Booking Confirmed!**'}\n\n'
             '**PNR:** $pnr\n'
             '**Amount Paid:** PKR ${amount.toStringAsFixed(0)}\n\n'
             'A confirmation email has been sent to you. '
-            'You can view your booking in **My Bookings**.'
+            'You can view your ${isPackage ? 'bookings' : 'booking'} in **My Bookings**.'
             '${next.isEmpty ? '' : '\n\n➡️ **Next up:** $next\n\nJust say the word and I\'ll set it up.'}',
           );
         },
@@ -1107,56 +1151,50 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
 
     setState(() => _savingForLater = true);
     try {
-      final booking = await ApiClient.agentBook(
-        bookingType: data['booking_type'] as String? ?? 'flight',
-        conversationId: _conversationId!,
-        origin: data['origin'] as String?,
-        destination: data['destination'] as String?,
-        travelDate: data['travel_date'] as String?,
-        departureTime: data['departure_time'] as String?,
-        arrivalTime: data['arrival_time'] as String?,
-        flightNumber: data['flight_number'] as String?,
-        trainName: data['train_name'] as String?,
-        trainNumber: data['train_number'] as String?,
-        checkIn: data['check_in'] as String?,
-        checkOut: data['check_out'] as String?,
-        travelers: (data['travelers'] as num?)?.toInt() ?? 1,
-        totalAmount: amount,
-        hotelName: data['hotel_name'] as String?,
-        passengerName: _agentContact?['contactName'] as String?,
-        contactPhone: _agentContact?['contactPhone'] as String?,
-        adults: (data['adults'] as num?)?.toInt(),
-        children: (data['children'] as num?)?.toInt(),
-        infants: (data['infants'] as num?)?.toInt(),
-        rooms: (data['rooms'] as num?)?.toInt(),
-        cabinClass: data['cabin_class'] as String?,
-        trainClass: data['train_class'] as String?,
-        roomType: data['room_type'] as String?,
-        hotelStars: (data['hotel_stars'] as num?)?.toInt(),
-        hotelAddress: data['hotel_address'] as String?,
-        facilities: _agentTransferFacilities(data),
-        description: data['selected_option'] as String? ?? 'Agent booking',
-      );
-      final pnr = booking['pnr'] as String? ?? '';
+      // Same flattening as the payment path: a package saves each piece as its own
+      // pending booking, a single booking is a one-item list. Nothing is charged.
+      final components = _packageComponents(data);
+      final saved = <String>[];
+      double dueTotal = 0.0;
 
-      // Persist the passengers collected via the native form onto the pending
-      // booking, so a saved-for-later booking carries real traveler rows too.
-      final bookingId = booking['booking_id'] as String?;
-      if (bookingId != null &&
-          _agentPassengers != null &&
-          _agentPassengers!.isNotEmpty) {
-        await ApiClient.addPassengers(
-          bookingId: bookingId,
-          passengers: _agentPassengers!,
+      for (final component in components) {
+        final componentAmount =
+            (component['total_price_pkr'] as num?)?.toDouble() ?? 0.0;
+        if (componentAmount <= 0) continue;
+
+        final booking = await _createAgentBooking(
+          data: component,
+          conversationId: _conversationId!,
+          amount: componentAmount,
+          passengerName: _agentContact?['contactName'] as String?,
+          contactPhone: _agentContact?['contactPhone'] as String?,
         );
+        final pnr = booking['pnr'] as String? ?? '';
+
+        // Persist the passengers collected via the native form onto the pending
+        // booking, so a saved-for-later booking carries real traveler rows too.
+        final bookingId = booking['booking_id'] as String?;
+        if (bookingId != null &&
+            _agentPassengers != null &&
+            _agentPassengers!.isNotEmpty) {
+          await ApiClient.addPassengers(
+            bookingId: bookingId,
+            passengers: _agentPassengers!,
+          );
+        }
+        dueTotal += componentAmount;
+        saved.add(components.length > 1
+            ? '${_componentLabel(component)} — $pnr'
+            : pnr);
       }
+
       if (!mounted) return;
       _clearPendingAction();
       setState(() => _savingForLater = false);
       _addMilestoneMessage(
         '📌 **Booking Saved!**\n\n'
-        '**PNR:** $pnr\n'
-        '**Amount Due:** PKR ${amount.toStringAsFixed(0)}\n\n'
+        '**PNR:** ${saved.join('\n**PNR:** ')}\n'
+        '**Amount Due:** PKR ${dueTotal.toStringAsFixed(0)}\n\n'
         "It's saved as pending — you can pay anytime from **My Bookings**.",
       );
     } catch (e) {
@@ -1282,8 +1320,12 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
   }
 
   Future<void> _openPassengerForm() async {
-    final data = _pendingBookingData;
-    if (data == null || _collectingPassengers) return;
+    final pending = _pendingBookingData;
+    if (pending == null || _collectingPassengers) return;
+    // For a package this resolves to its flight/train/hotel piece — the wrapper
+    // itself carries no route or dates to build a form from, and the travelers
+    // collected here are reused for every other piece in the package.
+    final data = _primaryComponent(pending);
     final type = data['booking_type'] as String? ?? 'flight';
 
     setState(() => _collectingPassengers = true);
@@ -1527,6 +1569,8 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
 
   Widget _buildPaymentButtons() {
     const gold = Color(0xFFD4AF37);
+    // One payment covers every piece of a package, so say so on the button.
+    final isPackage = _pendingBookingData?['booking_type'] == 'package';
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       decoration: BoxDecoration(
@@ -1545,7 +1589,9 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Choose payment method:',
+            isPackage
+                ? 'One payment for your whole package:'
+                : 'Choose payment method:',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -1561,9 +1607,9 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                   onPressed: _savingForLater ? null : _showCardPaymentSheet,
                   icon: const Icon(Icons.credit_card_rounded,
                       size: 18, color: Colors.white),
-                  label: const Text(
-                    'Pay with Card',
-                    style: TextStyle(
+                  label: Text(
+                    isPackage ? 'Pay for Package' : 'Pay with Card',
+                    style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
                         fontSize: 13),
@@ -1843,200 +1889,278 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       backgroundColor: const Color(0xFFF8F6F1),
       body: Column(
         children: [
-          // ── Premium header with depth ─────────────────────────────────
+          // ── Header: rounded glass-dark card with a floating gold orb ────
           Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF1A1400),
-                  Color(0xFF3D2B00),
-                  Color(0xFF5C4200),
+                  Color(0xFF120C00),
+                  Color(0xFF2E2000),
+                  Color(0xFF574000),
                 ],
               ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(28),
+                bottomRight: Radius.circular(28),
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFD4AF37).withValues(alpha: 0.25),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.28),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(4, 8, 16, 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Back button
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new,
-                          color: Colors.white70, size: 18),
-                      onPressed: () => Navigator.of(context).maybePop(),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(28),
+                bottomRight: Radius.circular(28),
+              ),
+              child: Stack(
+                children: [
+                  // Purely decorative soft glow accent — no state, no logic.
+                  Positioned(
+                    top: -40,
+                    right: -30,
+                    child: Container(
+                      width: 140,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            const Color(0xFFD4AF37).withValues(alpha: 0.25),
+                            const Color(0xFFD4AF37).withValues(alpha: 0.0),
+                          ],
+                        ),
+                      ),
                     ),
-                    // Animated AI logo
-                    SlideTransition(
-                      position: _headerSlide,
-                      child: FadeTransition(
-                        opacity: _headerFade,
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Color(0xFFD4AF37),
-                                Color(0xFFE8C76A),
-                              ],
+                  ),
+                  SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 16, 16, 18),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Back button
+                          _GlassHeaderButton(
+                            icon: Icons.arrow_back_ios_new,
+                            size: 15,
+                            onTap: () => Navigator.of(context).maybePop(),
+                          ),
+                          const SizedBox(width: 8),
+                          // Animated AI logo — gold-ringed orb
+                          SlideTransition(
+                            position: _headerSlide,
+                            child: FadeTransition(
+                              opacity: _headerFade,
+                              child: Container(
+                                width: 46,
+                                height: 46,
+                                padding: const EdgeInsets.all(2.5),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color(0xFFE8C76A),
+                                      Color(0xFFD4AF37),
+                                    ],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFD4AF37)
+                                          .withValues(alpha: 0.5),
+                                      blurRadius: 14,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: const DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Color(0xFF1A1400),
+                                  ),
+                                  child: Icon(Icons.smart_toy_rounded,
+                                      color: Color(0xFFE8C76A), size: 22),
+                                ),
+                              ),
                             ),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFD4AF37)
-                                    .withValues(alpha: 0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
                           ),
-                          child: const Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Icon(Icons.smart_toy_rounded,
-                                  color: Colors.white, size: 22),
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Icon(Icons.auto_awesome,
-                                    color: Colors.white, size: 10),
+                          const SizedBox(width: 14),
+                          // Title
+                          Expanded(
+                            child: SlideTransition(
+                              position: _headerSlide,
+                              child: FadeTransition(
+                                opacity: _headerFade,
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ShaderMask(
+                                      shaderCallback: (rect) =>
+                                          const LinearGradient(
+                                        colors: [
+                                          Color(0xFFF3DFA0),
+                                          Color(0xFFD4AF37),
+                                        ],
+                                      ).createShader(rect),
+                                      child: const Text(
+                                        'Travello AI',
+                                        style: TextStyle(
+                                          fontSize: 21,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.white,
+                                          letterSpacing: -0.3,
+                                          height: 1.1,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 9, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Colors.white.withValues(alpha: 0.08),
+                                        borderRadius:
+                                            BorderRadius.circular(20),
+                                        border: Border.all(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.14)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 6,
+                                            height: 6,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF4ADE80),
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(
+                                                          0xFF4ADE80)
+                                                      .withValues(alpha: 0.7),
+                                                  blurRadius: 5,
+                                                  spreadRadius: 0.5,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'Online',
+                                            style: TextStyle(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.65),
+                                              letterSpacing: 0.2,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          // History + New Chat buttons
+                          _GlassHeaderButton(
+                            icon: Icons.history_rounded,
+                            tooltip: 'Conversation History',
+                            onTap: _showConversationsSheet,
+                          ),
+                          const SizedBox(width: 8),
+                          _GlassHeaderButton(
+                            icon: Icons.add_comment_outlined,
+                            tooltip: 'New Chat',
+                            onTap: _startNewChat,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    // Title
-                    Expanded(
-                      child: SlideTransition(
-                        position: _headerSlide,
-                        child: FadeTransition(
-                          opacity: _headerFade,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Row(
-                                children: [
-                                  Text(
-                                    'Travello ',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w300,
-                                      color: Colors.white70,
-                                      letterSpacing: 0.5,
-                                      height: 1.1,
-                                    ),
-                                  ),
-                                  Text(
-                                    'AI',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFFD4AF37),
-                                      letterSpacing: -0.5,
-                                      height: 1.1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 3),
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF4ADE80),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    'Online  •  Your Pakistan travel planner',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.white
-                                          .withValues(alpha: 0.55),
-                                      letterSpacing: 0.3,
-                                      height: 1.2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    // History + New Chat buttons
-                    IconButton(
-                      tooltip: 'Conversation History',
-                      icon: const Icon(Icons.history_rounded,
-                          color: Colors.white70, size: 22),
-                      onPressed: _showConversationsSheet,
-                    ),
-                    IconButton(
-                      tooltip: 'New Chat',
-                      icon: const Icon(Icons.add_comment_outlined,
-                          color: Colors.white70, size: 22),
-                      onPressed: _startNewChat,
-                    ),
-                  ],
-                ),   // Row
-              ),     // Padding
-            ),       // SafeArea
-          ),         // Container
-          // ── TabBar ───────────────────────────────────────────────────────
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-            child: TabBar(
-              controller: _tabController,
-              indicatorColor: const Color(0xFFD4AF37),
-              indicatorWeight: 3,
-              labelColor: const Color(0xFFD4AF37),
-              unselectedLabelColor: Colors.grey.shade400,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                letterSpacing: 0.3,
+          ),
+          // ── Floating segmented tab pill ──────────────────────────────────
+          Container(
+            color: const Color(0xFFF8F6F1),
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-              unselectedLabelStyle: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 13,
+              child: TabBar(
+                controller: _tabController,
+                dividerColor: Colors.transparent,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFE8C76A), Color(0xFFD4AF37)],
+                  ),
+                ),
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.grey.shade500,
+                splashBorderRadius: BorderRadius.circular(20),
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  letterSpacing: 0.2,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+                tabs: const [
+                  Tab(
+                    height: 38,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat_rounded, size: 17),
+                        SizedBox(width: 6),
+                        Text('Chat'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    height: 38,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(CupertinoIcons.bookmark_fill, size: 15),
+                        SizedBox(width: 6),
+                        Text('Saved'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              tabs: const [
-                Tab(
-                    icon: Icon(Icons.chat_rounded, size: 20),
-                    text: 'Chat'),
-                Tab(
-                    icon: Icon(CupertinoIcons.bookmark_fill, size: 18),
-                    text: 'Saved'),
-              ],
             ),
           ),
           // ── Tab content ──────────────────────────────────────────────────
@@ -2088,7 +2212,10 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             },
           ),
         ),
-        if (_pendingAction == 'payment_choice')
+        // A package uses the identical two-step bar: collect travelers once, then
+        // pay once — the only difference is that the payment covers every piece.
+        if (_pendingAction == 'payment_choice' ||
+            _pendingAction == 'package_choice')
           _agentPassengers == null
               ? _buildAddPassengerBar()
               : _buildPaymentButtons()
@@ -2533,7 +2660,9 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     // must drive the REAL action (open the card sheet / save for later) — never
     // the agent. The agent has no booking-creation tool, so it would only fake a
     // "reservation saved" reply for a booking that was never actually created.
-    if (_pendingAction == 'payment_choice' && _pendingBookingData != null) {
+    if ((_pendingAction == 'payment_choice' ||
+            _pendingAction == 'package_choice') &&
+        _pendingBookingData != null) {
       final intent = _paymentIntent(text);
       if (intent != _PayIntent.none) {
         setState(() {
@@ -3010,6 +3139,101 @@ Map<String, dynamic>? _agentTransferFacilities(Map<String, dynamic> data) {
   };
 }
 
+/// The bookable pieces inside a `package_choice` payload, or the payload itself
+/// when it's an ordinary single booking.
+///
+/// A package arrives as {booking_type: 'package', components: [...]} where every
+/// component was already gated and server-repriced exactly like a standalone
+/// booking. Flattening to a list here means the commit path is ONE loop that
+/// behaves identically for both shapes — a single booking is just a package of
+/// one — so the proven create -> passengers -> pay sequence is never duplicated.
+List<Map<String, dynamic>> _packageComponents(Map<String, dynamic> data) {
+  final raw = data['components'];
+  if (raw is List) {
+    final parsed = raw
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+    if (parsed.isNotEmpty) return parsed;
+  }
+  return [data];
+}
+
+/// The component whose form should collect the travelers for a whole package.
+///
+/// Travelers are entered ONCE, on the form belonging to the most identity-heavy
+/// piece: a flight (then a train) needs full passenger identity, and those same
+/// people are then reused for the hotel and the car transfer. Returns the payload
+/// itself for an ordinary single booking.
+Map<String, dynamic> _primaryComponent(Map<String, dynamic> data) {
+  final components = _packageComponents(data);
+  if (components.length == 1) return components.first;
+  for (final type in const ['flight', 'train', 'hotel']) {
+    for (final c in components) {
+      if (c['booking_type'] == type) return c;
+    }
+  }
+  return components.first;
+}
+
+/// Short human label for a component, used in the multi-PNR confirmation.
+String _componentLabel(Map<String, dynamic> c) {
+  switch (c['booking_type'] as String?) {
+    case 'flight':
+      return 'Flight';
+    case 'train':
+      return 'Train';
+    case 'hotel':
+      return 'Hotel';
+    default:
+      return 'Booking';
+  }
+}
+
+/// Create ONE booking from a verified component via /agent/book.
+///
+/// Single place that maps a component's fields onto the endpoint, so the package
+/// loop, the card-payment path and save-for-later can't drift apart (they each
+/// used to carry their own copy of this ~20-field mapping).
+Future<Map<String, dynamic>> _createAgentBooking({
+  required Map<String, dynamic> data,
+  required String conversationId,
+  required double amount,
+  String? passengerName,
+  String? contactPhone,
+}) {
+  return ApiClient.agentBook(
+    bookingType: data['booking_type'] as String? ?? 'flight',
+    conversationId: conversationId,
+    origin: data['origin'] as String?,
+    destination: data['destination'] as String?,
+    travelDate: data['travel_date'] as String?,
+    departureTime: data['departure_time'] as String?,
+    arrivalTime: data['arrival_time'] as String?,
+    flightNumber: data['flight_number'] as String?,
+    trainName: data['train_name'] as String?,
+    trainNumber: data['train_number'] as String?,
+    checkIn: data['check_in'] as String?,
+    checkOut: data['check_out'] as String?,
+    travelers: (data['travelers'] as num?)?.toInt() ?? 1,
+    totalAmount: amount,
+    hotelName: data['hotel_name'] as String?,
+    passengerName: passengerName,
+    contactPhone: contactPhone,
+    adults: (data['adults'] as num?)?.toInt(),
+    children: (data['children'] as num?)?.toInt(),
+    infants: (data['infants'] as num?)?.toInt(),
+    rooms: (data['rooms'] as num?)?.toInt(),
+    cabinClass: data['cabin_class'] as String?,
+    trainClass: data['train_class'] as String?,
+    roomType: data['room_type'] as String?,
+    hotelStars: (data['hotel_stars'] as num?)?.toInt(),
+    hotelAddress: data['hotel_address'] as String?,
+    facilities: _agentTransferFacilities(data),
+    description: data['selected_option'] as String? ?? 'Agent booking',
+  );
+}
+
 class _CardPaymentSheet extends StatefulWidget {
   final Map<String, dynamic> bookingData;
   final String conversationId;
@@ -3091,61 +3315,72 @@ class _CardPaymentSheetState extends State<_CardPaymentSheet> {
       }
 
       final contactName = (widget.contact?['contactName'] as String?)?.trim();
-      // Step 1: Create booking via agent endpoint
-      final booking = await ApiClient.agentBook(
-        bookingType: data['booking_type'] as String? ?? 'flight',
-        conversationId: widget.conversationId,
-        origin: data['origin'] as String?,
-        destination: data['destination'] as String?,
-        travelDate: data['travel_date'] as String?,
-        departureTime: data['departure_time'] as String?,
-        arrivalTime: data['arrival_time'] as String?,
-        flightNumber: data['flight_number'] as String?,
-        trainName: data['train_name'] as String?,
-        trainNumber: data['train_number'] as String?,
-        checkIn: data['check_in'] as String?,
-        checkOut: data['check_out'] as String?,
-        travelers: (data['travelers'] as num?)?.toInt() ?? 1,
-        totalAmount: amount,
-        hotelName: data['hotel_name'] as String?,
-        passengerName: (contactName != null && contactName.isNotEmpty)
-            ? contactName
-            : (_nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim() : null),
-        contactPhone: widget.contact?['contactPhone'] as String?,
-        adults: (data['adults'] as num?)?.toInt(),
-        children: (data['children'] as num?)?.toInt(),
-        infants: (data['infants'] as num?)?.toInt(),
-        rooms: (data['rooms'] as num?)?.toInt(),
-        cabinClass: data['cabin_class'] as String?,
-        trainClass: data['train_class'] as String?,
-        roomType: data['room_type'] as String?,
-        hotelStars: (data['hotel_stars'] as num?)?.toInt(),
-        hotelAddress: data['hotel_address'] as String?,
-        facilities: _agentTransferFacilities(data),
-        description: data['selected_option'] as String? ?? 'Agent booking',
-      );
+      final passengerName = (contactName != null && contactName.isNotEmpty)
+          ? contactName
+          : (_nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim() : null);
 
-      final bookingId = booking['booking_id'] as String;
-      final pnr = booking['pnr'] as String;
+      // A package commits each of its pieces through the SAME proven sequence a
+      // single booking uses (create -> /passengers -> pay); a single booking is
+      // simply a one-item list here. The card details are entered once and the
+      // user sees one payment, but each piece still becomes its own booking with
+      // its own PNR, so tickets, emails and My Bookings all behave as before.
+      final components = _packageComponents(data);
+      final confirmations = <String>[];
+      double paidTotal = 0.0;
 
-      // Step 2: Attach the passengers collected via the native form, before
-      // payment — same order as the manual flow (create -> /passengers -> pay).
-      if (widget.passengers != null && widget.passengers!.isNotEmpty) {
-        await ApiClient.addPassengers(
-          bookingId: bookingId,
-          passengers: widget.passengers!,
+      for (final component in components) {
+        final componentAmount =
+            (component['total_price_pkr'] as num?)?.toDouble() ?? 0.0;
+        // Never create a zero-priced booking; skip rather than charge nothing.
+        if (componentAmount <= 0) continue;
+
+        // Step 1: Create booking via agent endpoint
+        final booking = await _createAgentBooking(
+          data: component,
+          conversationId: widget.conversationId,
+          amount: componentAmount,
+          passengerName: passengerName,
+          contactPhone: widget.contact?['contactPhone'] as String?,
         );
+
+        final bookingId = booking['booking_id'] as String;
+        final pnr = booking['pnr'] as String;
+
+        // Step 2: Attach the passengers collected via the native form, before
+        // payment — same order as the manual flow (create -> /passengers -> pay).
+        // The same travelers apply to every piece, which is the whole point of
+        // collecting them once for the package.
+        if (widget.passengers != null && widget.passengers!.isNotEmpty) {
+          await ApiClient.addPassengers(
+            bookingId: bookingId,
+            passengers: widget.passengers!,
+          );
+        }
+
+        // Step 3: Initiate card payment (instant confirmation)
+        await ApiClient.initiatePayment(
+          bookingId: bookingId,
+          method: 'card',
+          amount: componentAmount,
+        );
+
+        paidTotal += componentAmount;
+        confirmations.add(components.length > 1
+            ? '${_componentLabel(component)} — $pnr'
+            : pnr);
       }
 
-      // Step 3: Initiate card payment (instant confirmation)
-      await ApiClient.initiatePayment(
-        bookingId: bookingId,
-        method: 'card',
-        amount: amount,
-      );
+      if (confirmations.isEmpty) {
+        setState(() {
+          _processing = false;
+          _errorMsg = 'Nothing in this booking had a confirmed price. Please ask '
+              'the assistant to show the exact fare and try again.';
+        });
+        return;
+      }
 
       if (mounted) Navigator.pop(context);
-      widget.onSuccess(pnr, amount);
+      widget.onSuccess(confirmations.join('\n**PNR:** '), paidTotal);
     } catch (e) {
       setState(() {
         _errorMsg = e.toString().replaceFirst('Exception: ', '');

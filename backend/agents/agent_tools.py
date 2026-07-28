@@ -48,7 +48,19 @@ TOOL_SCHEMAS: list[dict] = [
                     "origin_city": {"type": "string", "description": "Departure city, e.g. Karachi"},
                     "destination_city": {"type": "string", "description": "Arrival city, e.g. Lahore"},
                     "travel_date": {"type": "string", "description": "Departure date as YYYY-MM-DD"},
-                    "passengers": {"type": "integer", "description": "Number of passengers (default 1)"},
+                    # NOT "(default 1)" — that wording read as permission to leave it out,
+                    # and the executor then priced ONE seat while the answer said "2 adults".
+                    # The party size IS the fare here (fare = per-seat x passengers), so a
+                    # silent 1 makes every quoted total wrong and the price jumps at booking.
+                    "passengers": {
+                        "type": "integer",
+                        "description": (
+                            "How many people are flying. REQUIRED — the fare is per-seat x "
+                            "passengers, so this number decides the price. Pass the party "
+                            "size the user actually gave; if they haven't said, ask before "
+                            "quoting a fare. Never leave it out and never guess."
+                        ),
+                    },
                     "cabin_class": {
                         "type": "string",
                         "enum": ["ECONOMY", "BUSINESS", "FIRST"],
@@ -63,7 +75,7 @@ TOOL_SCHEMAS: list[dict] = [
                         ),
                     },
                 },
-                "required": ["origin_city", "destination_city", "travel_date"],
+                "required": ["origin_city", "destination_city", "travel_date", "passengers"],
             },
         },
     },
@@ -81,7 +93,17 @@ TOOL_SCHEMAS: list[dict] = [
                     "origin_city": {"type": "string", "description": "Departure city, e.g. Karachi"},
                     "destination_city": {"type": "string", "description": "Arrival city, e.g. Lahore"},
                     "travel_date": {"type": "string", "description": "Travel date as YYYY-MM-DD"},
-                    "passengers": {"type": "integer", "description": "Number of passengers (default 1)"},
+                    # Same reasoning as search_flights: the fare is per-seat x passengers,
+                    # so a silently-defaulted 1 prices one seat for a whole party.
+                    "passengers": {
+                        "type": "integer",
+                        "description": (
+                            "How many people are travelling. REQUIRED — the fare is "
+                            "per-seat x passengers, so this number decides the price. Pass "
+                            "the party size the user actually gave; if they haven't said, "
+                            "ask before quoting a fare. Never leave it out and never guess."
+                        ),
+                    },
                     "max_budget_pkr": {
                         "type": "number",
                         "description": (
@@ -91,7 +113,7 @@ TOOL_SCHEMAS: list[dict] = [
                         ),
                     },
                 },
-                "required": ["origin_city", "destination_city", "travel_date"],
+                "required": ["origin_city", "destination_city", "travel_date", "passengers"],
             },
         },
     },
@@ -1187,7 +1209,23 @@ async def _exec_flights(args: dict) -> dict:
     for f in flights:
         total = f.get("total_price_pkr") or 0
         f["price_per_seat_pkr"] = round(total / pax) if pax else total
-    result = {"search_date": d.isoformat(), "passengers": pax, "flights": flights}
+    # Spell out, in words, what these numbers cover. The model previously quoted a
+    # ONE-seat fare as "the cheapest option ... for the whole party" for a 2-adult
+    # trip, and the price then doubled at booking (where the real party size is
+    # priced). Stating the basis deterministically removes the room to mislabel it.
+    result = {
+        "search_date": d.isoformat(),
+        "passengers": pax,
+        "fare_basis": (
+            f"This search priced {pax} seat(s). total_price_pkr is the fare for "
+            f"{pax} passenger(s); price_per_seat_pkr is per person. Quote these as "
+            f"'for {pax} passenger(s)' — do NOT call it the whole-party total unless "
+            f"the party really is {pax}. If the group size differs, re-run "
+            f"search_flights with the correct `passengers` first: booking prices the "
+            f"real party size, so quoting the wrong basis makes the total jump later."
+        ),
+        "flights": flights,
+    }
     flights, note = _filter_by_budget(flights, "total_price_pkr", args.get("max_budget_pkr"))
     result["flights"] = flights
     if note:
@@ -1204,6 +1242,13 @@ async def _exec_trains(args: dict) -> dict:
     result = _serialize_trains(resp)
     result["search_date"] = d.isoformat()
     result["passengers"] = pax
+    # Same anti-mislabel guard as _exec_flights — state what the fare covers.
+    result["fare_basis"] = (
+        f"This search priced {pax} seat(s). Each class's total_price_pkr is the fare "
+        f"for {pax} passenger(s); price_per_seat_pkr is per person. Quote these as "
+        f"'for {pax} passenger(s)'. If the group size differs, re-run search_trains "
+        f"with the correct `passengers` before quoting or booking."
+    )
     # Each class total_price_pkr is the whole-party fare; add the per-seat figure
     # so the model quotes either without re-multiplying by the head-count.
     for t in result.get("trains", []):

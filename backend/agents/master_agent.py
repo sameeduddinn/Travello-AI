@@ -49,6 +49,8 @@ from agents.booking_agent import (
     extract_booking_from_history,
     format_booking_summary,
     format_car_booking_summary,
+    build_package_data,
+    format_package_summary,
     sanitize_next_step,
 )
 from agents.recommendation_agent import get_recommendations
@@ -1136,6 +1138,49 @@ def _has_here_cue(message: str) -> bool:
     return bool(_HERE_CUE_RE.search(message or ""))
 
 
+# How many of the most recent turns stay verbatim, and how hard older assistant
+# turns are trimmed. Tuned for the package flow, which is by far the heaviest.
+_HISTORY_RECENT_FULL = 4
+_HISTORY_MAX_CHARS = 700
+
+
+def _compact_history(history: list[dict]) -> list[dict]:
+    """
+    Shrink the history that goes to the MODEL, without touching `history` itself.
+
+    A package turn emits very large assistant messages — six-row flight, hotel
+    and train tables plus a budget breakdown. All twenty of those then ride along
+    in EVERY later call, and on the free tier that bulk alone pushed a turn past
+    the 52s budget: a plain "yes" to "shall I book the hotel?" timed out with
+    nothing wrong except payload size.
+
+    Only ASSISTANT messages are trimmed, and only older ones:
+      - user turns stay verbatim — they are what the party size, dates, addresses
+        and car details are read from, and every provenance gate scans them;
+      - the last few turns stay whole, so the immediate context is never lossy.
+    The caller keeps using the untrimmed `history` for those gates.
+    """
+    if not history:
+        return []
+    cutoff = len(history) - _HISTORY_RECENT_FULL
+    out: list[dict] = []
+    for i, m in enumerate(history):
+        content = m.get("content") or ""
+        if (
+            m.get("role") == "assistant"
+            and i < cutoff
+            and len(content) > _HISTORY_MAX_CHARS
+        ):
+            out.append({
+                **m,
+                "content": content[:_HISTORY_MAX_CHARS].rstrip()
+                + "\n…[earlier options trimmed — re-run the search if you need them]",
+            })
+        else:
+            out.append(m)
+    return out
+
+
 async def process_message_agentic(
     user_id: str,
     conversation_id: str,
@@ -1204,7 +1249,8 @@ async def process_message_agentic(
         )
 
     messages: list[dict] = [{"role": "system", "content": system_prompt}]
-    messages.extend(history)
+    # Trimmed for the model only — the gates below still read the full `history`.
+    messages.extend(_compact_history(history))
     messages.append({"role": "user", "content": user_message})
 
     # Deterministic pick-from-a-list nudge (see _selection_hint): when the user
@@ -1219,6 +1265,8 @@ async def process_message_agentic(
 
     booking_data: dict | None = None
     car_booking_data: dict | None = None
+    # Every server-repriced component prepared this turn. 2+ => a package.
+    package_components: list[dict] = []
     final_text: str = ""
     tools_used: list[str] = []
     learned: dict = {}
@@ -1343,8 +1391,19 @@ async def process_message_agentic(
                 bd = apply_traveler_totals(bd)
                 verified = await reprice_booking(bd)
                 if verified:
-                    booking_data = verified
-                    break
+                    # Collect EVERY component the model prepared this turn, not just
+                    # the first. A package ("flight + hotel + car") is exactly this:
+                    # several prepare_booking calls in one turn, each independently
+                    # gated and server-repriced by the code above. Two or more
+                    # verified components become a single package_choice with one
+                    # combined total, so the user fills passenger details once and
+                    # pays once, instead of being walked through a separate booking
+                    # and a separate payment per piece. A single component still
+                    # takes the original payment_choice path, unchanged.
+                    package_components.append(verified)
+                    if booking_data is None:
+                        booking_data = verified
+                    continue
                 booking_gate_results[tc.id] = offer_not_found_result()
                 _log_gate_failure("prepare_booking", bd, booking_gate_results[tc.id])
 
@@ -1510,6 +1569,29 @@ async def process_message_agentic(
             else:
                 # Nothing gathered → safe to try the legacy pipeline as a last resort.
                 return await process_message(user_id, conversation_id, user_message)
+
+    # Package path → package_choice. Two or more components were prepared and each
+    # one already passed the same gates and the same server-side reprice a single
+    # booking gets — this only bundles them so the app can collect passenger details
+    # once and take ONE payment for the combined total. The per-component totals are
+    # the repriced ones, so the package total is a sum of server-verified numbers and
+    # can never be a model-invented figure.
+    if len(package_components) >= 2:
+        package_data = build_package_data(package_components)
+        summary = format_package_summary(package_data)
+        await save_turn(
+            conversation_id, user_id, user_message, summary,
+            model_used=settings.GROQ_MODEL,
+        )
+        asyncio.ensure_future(_log_task(
+            user_id, conversation_id, "booking", user_message, package_data,
+        ))
+        return {
+            "response": summary,
+            "conversation_id": conversation_id,
+            "action": "package_choice",
+            "booking_data": package_data,
+        }
 
     # Booking path → payment_choice (same contract the Flutter app already handles)
     if booking_data:

@@ -178,6 +178,101 @@ def format_booking_summary(booking_data: dict) -> str:
     return "\n".join(lines)
 
 
+_COMPONENT_LABELS = {
+    "flight": ("✈️", "Flight"),
+    "train": ("🚂", "Train"),
+    "hotel": ("🏨", "Hotel"),
+}
+
+
+def build_package_data(components: list[dict]) -> dict:
+    """
+    Bundle 2+ already-repriced booking components into one package payload.
+
+    Every component in `components` has ALREADY been through the same required-field,
+    party-size, date and transfer gates as a single booking, and had its price
+    re-derived server-side by reprice_booking. So the package total here is a sum of
+    server-verified numbers — it is never a figure the model produced, which is what
+    lets a single payment cover the whole package safely.
+
+    The per-component dicts are passed through untouched so the app can commit each
+    one through the existing /agent/book + /passengers + /payments/initiate path.
+    """
+    safe = [c for c in (components or []) if isinstance(c, dict)]
+    total = 0.0
+    for c in safe:
+        try:
+            total += float(c.get("total_price_pkr") or 0)
+        except (TypeError, ValueError):
+            continue
+    return {
+        "booking_type": "package",
+        "components": safe,
+        "total_price_pkr": round(total),
+        "component_count": len(safe),
+    }
+
+
+def _component_line(index: int, component: dict) -> str:
+    """One '1. ✈️ Flight: Lahore → Islamabad — PKR 24,974' row."""
+    bt = component.get("booking_type", "trip")
+    icon, label = _COMPONENT_LABELS.get(bt, ("🧳", "Trip"))
+    if bt == "hotel":
+        where = component.get("hotel_name") or component.get("destination") or "—"
+        detail = f"{where}"
+        if component.get("check_in") and component.get("check_out"):
+            detail += f", {component['check_in']} → {component['check_out']}"
+    else:
+        detail = f"{component.get('origin', '—')} → {component.get('destination', '—')}"
+        if component.get("travel_date"):
+            detail += f", {component['travel_date']}"
+    price = component.get("total_price_pkr")
+    money = f"PKR {int(price):,}" if price else "as quoted"
+    return f"{index}. {icon}  **{label}:** {detail} — **{money}**"
+
+
+def format_package_summary(package_data: dict) -> str:
+    """
+    Build the package summary the app renders above ONE passenger form and ONE
+    payment button. Deliberately mirrors format_booking_summary's shape so the
+    chat reads consistently, but states the combined total and makes it explicit
+    that passenger details and payment are collected once for everything.
+    """
+    components = package_data.get("components") or []
+    total = package_data.get("total_price_pkr")
+
+    lines = ["**Your Package**\n"]
+    for i, component in enumerate(components, start=1):
+        lines.append(_component_line(i, component))
+
+    # A car transfer rides along on whichever component carries it, and its fare is
+    # already inside that component's repriced total — surface it so the sum adds up.
+    for component in components:
+        if component.get("transfer_vehicle_type"):
+            pickup = component.get("transfer_pickup_location") or "pickup to be confirmed"
+            fare = component.get("transfer_pkr")
+            fare_part = f" (PKR {int(fare):,})" if fare else ""
+            lines.append(
+                f"🚗  **Car transfer:** {component['transfer_vehicle_type']}"
+                f"{fare_part} — {pickup}"
+            )
+            break
+
+    if total:
+        lines.append(f"\n💰  **Package total: PKR {int(total):,}**")
+    else:
+        lines.append("\n💰  **Package total: As quoted above**")
+
+    lines.append(
+        "\n\nEverything above is booked together. Tap **Add Passenger Details** once "
+        "— the same travelers are used for every part — then choose how to pay:"
+    )
+    lines.append("• **Pay for Package** — one payment covers all of the above")
+    lines.append("• **Pay Later** — save the whole package and pay when you're ready")
+
+    return "\n".join(lines)
+
+
 # Anything a model writes that reaches the user unedited needs a deterministic
 # gate. next_step is descriptive only — it must never carry a reference number or
 # imply this booking is already done.
