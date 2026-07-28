@@ -1249,7 +1249,9 @@ async def _exec_hotels(args: dict) -> dict:
 
 
 async def _exec_weather(args: dict) -> dict:
-    city = (args.get("city") or "").strip()
+    # str() guard: a model can emit a non-string city (e.g. {"city": 123}) in its
+    # tool-call JSON; coerce so .strip() never raises on the safety-adjacent path.
+    city = str(args.get("city") or "").strip()
     # Live device GPS (injected by the orchestrator, never by the model). Used for a
     # "weather here" / "near me" query, or when no city was named, so the reading is
     # for the user's ACTUAL position. Otherwise weather is fetched by city as before.
@@ -1303,7 +1305,9 @@ async def _exec_healthcare(args: dict) -> dict:
     )
     from prompts.knowledge import EMERGENCY_NUMBERS
 
-    city = (args.get("city") or "").strip()
+    # str() guard: the model can emit a non-string city (e.g. {"city": 123}) in its
+    # tool-call JSON; coerce so .strip() never raises on this safety-critical path.
+    city = str(args.get("city") or "").strip()
     # Live device GPS (injected by the orchestrator, never by the model). Used for a
     # "near me" query, or whenever no city was named, so "hospitals near me" resolves
     # to the user's ACTUAL position rather than a city they had to type.

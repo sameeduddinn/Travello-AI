@@ -395,7 +395,7 @@ _MOCK_HOSPITALS: list[dict[str, Any]] = [
     {"name": "Ziauddin Hospital",                   "city": "Karachi",      "address": "Clifton, Karachi",                  "phone": "021-35862937",  "lat": 24.8217, "lng": 67.0310, "is_open": True},
     {"name": "Services Hospital Lahore",            "city": "Lahore",       "address": "Jail Road, Lahore",                 "phone": "042-99203406",  "lat": 31.5270, "lng": 74.3243, "is_open": True},
     {"name": "Shaukat Khanum Cancer Hospital",      "city": "Lahore",       "address": "Johar Town, Lahore",                "phone": "042-35945100",  "lat": 31.4669, "lng": 74.2647, "is_open": True},
-    {"name": "Mayo Hospital Lahore",                "city": "Lahore",       "address": "The Mall, Lahore",                  "phone": "042-99203406",  "lat": 31.5697, "lng": 74.3217, "is_open": True},
+    {"name": "Mayo Hospital Lahore",                "city": "Lahore",       "address": "The Mall, Lahore",                  "phone": "042-99211100",  "lat": 31.5697, "lng": 74.3217, "is_open": True},
     {"name": "PIMS Hospital Islamabad",             "city": "Islamabad",    "address": "Shifa Road, Islamabad",             "phone": "051-9261170",   "lat": 33.7120, "lng": 73.0671, "is_open": True},
     {"name": "Shifa International Hospital",        "city": "Islamabad",    "address": "Pitras Bukhari Road, Islamabad",    "phone": "051-8464646",   "lat": 33.7128, "lng": 73.0591, "is_open": True},
     {"name": "Combined Military Hospital (CMH) Skardu", "city": "Skardu",  "address": "Airport Road, Skardu",              "phone": "058-9270255",   "lat": 35.2955, "lng": 75.6324, "is_open": True},

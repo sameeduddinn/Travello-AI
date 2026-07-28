@@ -62,9 +62,16 @@ _FACILITY_RE = re.compile(
 _CITY_KEYS = sorted(_CITY_COORDS.keys(), key=len, reverse=True)
 
 
+def _text(message: object) -> str:
+    """Coerce any input to a safe string. A non-str (int, dict, None from a
+    misbehaving caller) becomes "" so the regexes never raise — these gates sit on
+    the safety-critical path and must degrade, not crash, on unexpected input."""
+    return message if isinstance(message, str) else ""
+
+
 def has_emergency_signal(message: str) -> bool:
     """True when the wording carries genuine urgency (drives the 🚨 lead line)."""
-    return bool(_EMERGENCY_RE.search(message or ""))
+    return bool(_EMERGENCY_RE.search(_text(message)))
 
 
 def is_medical_emergency(message: str) -> bool:
@@ -74,7 +81,7 @@ def is_medical_emergency(message: str) -> bool:
     the LLM entirely. Deliberately strict (needs a medical/facility word) so a
     booking turn ("urgent flight", "nearest hotel") never lands here.
     """
-    m = message or ""
+    m = _text(message)
     if _EMERGENCY_RE.search(m) and _MEDICAL_RE.search(m):
         return True
     if _LOCATION_RE.search(m) and _FACILITY_RE.search(m):
@@ -89,7 +96,7 @@ def looks_like_healthcare(message: str) -> bool:
     generous match ("best hospital in Lahore?") just means the user gets real
     facilities + emergency numbers instead of a dead "try again".
     """
-    return bool(_MEDICAL_RE.search(message or ""))
+    return bool(_MEDICAL_RE.search(_text(message)))
 
 
 # --- City extraction (deterministic, no geocoding) ---------------------------
@@ -101,9 +108,9 @@ def _extract_city(message: str, history_texts: list[str] | None = None) -> str |
     clinic" still resolves the city named a turn ago. Word-boundary matched so a
     city name embedded in another word can't false-match.
     """
-    texts = [message or ""]
+    texts = [_text(message)]
     if history_texts:
-        texts.extend(t or "" for t in reversed(history_texts))
+        texts.extend(_text(t) for t in reversed(history_texts))
     for text in texts:
         low = text.lower()
         for city in _CITY_KEYS:
@@ -158,19 +165,27 @@ def build_emergency_reply(
         "If it's urgent, call Rescue 1122 or Edhi Ambulance 115."
     )
 
-    city_key = _extract_city(message, history_texts)
-    # Device GPS wins on an explicit "near me" cue, or whenever no city was named.
-    # The is-not-None checks live in the condition itself so the coordinates narrow
-    # to plain floats inside the branch.
-    if (
+    # A city named in the CURRENT message is the strongest, least-ambiguous signal.
+    # If the user says "hospitals near me in Lahore" while their GPS sits in Karachi,
+    # the explicit "Lahore" must win over the "near me" cue — handing Karachi
+    # hospitals to someone asking about Lahore is exactly wrong in a medical context.
+    # Device GPS only fills a genuine gap: a "near me" with no city, or no city at all.
+    # The is-not-None checks live in the elif condition itself so the coordinates
+    # narrow to plain floats inside the branch.
+    current_city = _extract_city(message)
+    context_city = current_city or _extract_city(message, history_texts)
+    if current_city:
+        lat, lng = _CITY_COORDS[current_city]
+        where = f"in {current_city.title()}"
+    elif (
         device_lat is not None and device_lng is not None
-        and (prefer_device or not city_key)
+        and (prefer_device or not context_city)
     ):
         lat, lng = float(device_lat), float(device_lng)
         where = "near your current location"
-    elif city_key:
-        lat, lng = _CITY_COORDS[city_key]
-        where = f"in {city_key.title()}"
+    elif context_city:
+        lat, lng = _CITY_COORDS[context_city]
+        where = f"in {context_city.title()}"
     else:
         return (
             f"{lead}\n\n{_NUMBERS_LINE}\n\n"
