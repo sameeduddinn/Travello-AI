@@ -129,11 +129,70 @@ def _note_groq_rate_limit(exc: Exception) -> None:
     logger.warning("Groq rate-limited — skipping it for %.0fs", delay)
 
 
+# ── OpenRouter availability window ────────────────────────────────────────────
+#
+# OpenRouter's free tier has its OWN daily cap (50 requests/day across ALL free
+# models, keyed to the account — not the model), and when it is spent every
+# configured model returns 429 instantly. Tracking that matters for more than
+# saving a round trip: _use_groq below decides whether Groq's cooldown is worth
+# honouring, and that decision is only sound if "there is a fallback" means a
+# fallback that can actually answer right now, not merely one that has a key.
+_openrouter_blocked_until: float = 0.0
+_OPENROUTER_MIN_COOLDOWN = 30.0
+_OPENROUTER_MAX_COOLDOWN = 900.0
+
+
+def _openrouter_available() -> bool:
+    return time.monotonic() >= _openrouter_blocked_until
+
+
+def _note_openrouter_rate_limit(resp=None) -> None:
+    """Park OpenRouter until the reset it reported (or a short default)."""
+    global _openrouter_blocked_until
+    delay = _OPENROUTER_MIN_COOLDOWN
+    reset_ms = None
+    if resp is not None:
+        try:
+            reset_ms = resp.headers.get("X-RateLimit-Reset")
+        except Exception:
+            reset_ms = None
+        if reset_ms is None:
+            # The daily-cap 429 carries the reset inside the error body instead.
+            try:
+                meta = ((resp.json().get("error") or {}).get("metadata") or {})
+                reset_ms = (meta.get("headers") or {}).get("X-RateLimit-Reset")
+            except Exception:
+                reset_ms = None
+    if reset_ms:
+        try:
+            secs = float(reset_ms) / 1000.0 - time.time()
+            if secs > 0:
+                delay = max(secs, _OPENROUTER_MIN_COOLDOWN)
+        except (TypeError, ValueError):
+            pass
+    delay = min(delay, _OPENROUTER_MAX_COOLDOWN)
+    _openrouter_blocked_until = time.monotonic() + delay
+    logger.warning("OpenRouter rate-limited — skipping it for %.0fs", delay)
+
+
+def _fallback_ready(include_gemini: bool = True) -> bool:
+    """
+    Is there a provider OTHER than Groq that could actually serve a request right
+    now? A configured key is not enough — an OpenRouter key whose daily free quota
+    is spent answers nothing, and treating it as a live fallback is what made the
+    agent skip a perfectly healthy Groq and report "quota exhausted" instead.
+    """
+    if settings.OPENROUTER_API_KEY and _openrouter_available():
+        return True
+    return bool(include_gemini and settings.GEMINI_API_KEY)
+
+
 def _use_groq(has_fallback: bool) -> bool:
     """
     Whether to try Groq at all. A known cooldown is only worth honouring when
-    something else can serve the request — with no fallback configured, a doomed
-    attempt still beats no attempt.
+    something else can serve the request — with no usable fallback, a doomed
+    attempt still beats no attempt (and Groq's per-minute window often reset
+    seconds after the 429 that parked it).
     """
     if _get_groq_client() is None:
         return False
@@ -347,6 +406,10 @@ async def _openrouter_chat_raw(
                 raise LLMError("invalid_key")
             if resp.status_code == 429:
                 last_exc = LLMError("quota_exhausted")
+                # Free-tier limits on OpenRouter are per ACCOUNT, not per model, so
+                # one 429 means the next model will 429 too. Remember it, so the
+                # next turn prefers Groq instead of walking a dead model list.
+                _note_openrouter_rate_limit(resp)
                 logger.warning("OpenRouter model %s rate-limited (429) — trying next", model)
                 continue
             if resp.status_code >= 400:
@@ -367,6 +430,7 @@ async def _openrouter_chat_raw(
                 msg = err.get("message", "") if isinstance(err, dict) else str(err)
                 if "rate" in msg.lower() or "429" in msg:
                     last_exc = LLMError("quota_exhausted")
+                    _note_openrouter_rate_limit(resp)
                     logger.warning("OpenRouter model %s rate-limited (body) — trying next", model)
                 else:
                     last_exc = LLMError(f"OpenRouter error: {msg[:200]}")
@@ -410,8 +474,9 @@ async def generate_text(
     max_output_tokens: int = 1024,
 ) -> str:
     """Send chat messages, return plain-text reply. Groq → OpenRouter → Gemini."""
-    # Primary: Groq (free, fast) — unless it is in a known rate-limit cooldown
-    if _use_groq(bool(settings.OPENROUTER_API_KEY or settings.GEMINI_API_KEY)):
+    # Primary: Groq (free, fast) — its cooldown is skipped only when some other
+    # provider is genuinely able to serve right now.
+    if _use_groq(_fallback_ready()):
         try:
             return await _call_groq(messages, temperature=temperature,
                                     max_output_tokens=max_output_tokens)
@@ -438,8 +503,8 @@ async def generate_json(
     max_output_tokens: int = 2048,
 ) -> Any:
     """Force JSON output and parse it. Groq → OpenRouter → Gemini."""
-    # Primary: Groq with json_mode — unless it is in a known rate-limit cooldown
-    if _use_groq(bool(settings.OPENROUTER_API_KEY or settings.GEMINI_API_KEY)):
+    # Primary: Groq with json_mode — see generate_text on the cooldown condition
+    if _use_groq(_fallback_ready()):
         try:
             raw = await _call_groq(messages, temperature=temperature,
                                    max_output_tokens=max_output_tokens,
@@ -822,7 +887,13 @@ async def generate_with_tools(
     The caller passes a complete OpenAI/Groq-format message list (which may include
     'tool' role messages and assistant messages carrying tool_calls).
     """
-    groq_ready = _use_groq(bool(settings.OPENROUTER_API_KEY))
+    # Gemini is not part of the tool-calling chain, so only OpenRouter counts as
+    # a fallback here. If its own quota is spent, Groq is tried even while it is
+    # in cooldown — a Groq per-minute wall usually clears within seconds, and an
+    # attempt that might work always beats reporting "quota exhausted" without
+    # having asked the one provider that is actually up.
+    groq_ready = _use_groq(_fallback_ready(include_gemini=False))
+    groq_error: LLMError | None = None
     if groq_ready:
         try:
             return await _groq_generate_with_tools(
@@ -830,13 +901,37 @@ async def generate_with_tools(
                 max_output_tokens=max_output_tokens, max_attempts=max_attempts,
             )
         except LLMError as exc:
-            if not settings.OPENROUTER_API_KEY:
+            groq_error = exc
+            if not (settings.OPENROUTER_API_KEY and _openrouter_available()):
                 raise
             logger.warning("Groq tools failed (%s) — falling back to OpenRouter", exc)
 
-    if settings.OPENROUTER_API_KEY:
-        return await _openrouter_generate_with_tools(
-            messages, tools, temperature=temperature, max_output_tokens=max_output_tokens,
-        )
+    if settings.OPENROUTER_API_KEY and _openrouter_available():
+        try:
+            return await _openrouter_generate_with_tools(
+                messages, tools, temperature=temperature,
+                max_output_tokens=max_output_tokens,
+            )
+        except LLMError as exc:
+            # Groq was skipped for its cooldown and the fallback we skipped it for
+            # has just turned out to be dead. Groq is the only thing left worth
+            # asking, cooldown or not.
+            if not groq_ready and _get_groq_client() is not None:
+                logger.warning(
+                    "OpenRouter unusable (%s) — retrying Groq despite its cooldown", exc
+                )
+                return await _groq_generate_with_tools(
+                    messages, tools, temperature=temperature,
+                    max_output_tokens=max_output_tokens, max_attempts=max_attempts,
+                )
+            raise
 
+    # No usable OpenRouter. If Groq was never tried this turn, try it now.
+    if not groq_ready and _get_groq_client() is not None:
+        return await _groq_generate_with_tools(
+            messages, tools, temperature=temperature,
+            max_output_tokens=max_output_tokens, max_attempts=max_attempts,
+        )
+    if groq_error:
+        raise groq_error
     raise LLMError("groq_unavailable")
