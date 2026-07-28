@@ -1,6 +1,6 @@
 -- =============================================================================
 -- FILE: sql/09_ai_agent.sql
--- PURPOSE: AI Agent tables — conversations, messages, saved itineraries,
+-- PURPOSE: AI Agent tables — conversations, messages,
 --          autonomous agent task queue, action audit log, and user feedback.
 -- RUN IN: Supabase SQL Editor (safe to re-run — idempotent)
 -- =============================================================================
@@ -104,81 +104,6 @@ CREATE POLICY "ai_messages_insert_own" ON public.ai_messages
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "ai_messages_delete_own" ON public.ai_messages
     FOR DELETE USING (auth.uid() = user_id);
-
--- =============================================================================
--- TABLE: ai_saved_itineraries
--- Persisted trip plans generated (or saved) via the AI assistant.
--- Replaces the hard-coded in-memory _savedTrips list in the Flutter app.
---
--- itinerary_data JSONB shape:
--- {
---   "days": [
---     { "day": 1, "title": "Arrival", "icon": "flight_takeoff",
---       "activities": ["Land at airport", "Check in", ...] },
---     ...
---   ]
--- }
--- =============================================================================
-CREATE TABLE IF NOT EXISTS public.ai_saved_itineraries (
-    id                  UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id             UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-
-    -- Optionally linked to the conversation that produced this plan
-    conversation_id     UUID        REFERENCES public.ai_conversations(id) ON DELETE SET NULL,
-
-    -- Destination metadata
-    destination         TEXT        NOT NULL,
-    province            TEXT,
-    image_url           TEXT,
-
-    -- Trip parameters
-    travel_style        TEXT        CHECK (travel_style IN (
-                                        'Adventure', 'Cultural', 'Relaxing',
-                                        'Family', 'Nature', 'Mixed')),
-    duration_days       INT         NOT NULL DEFAULT 3 CHECK (duration_days > 0),
-    budget_range        TEXT        CHECK (budget_range IN ('Budget', 'Mid-range', 'Luxury')),
-
-    -- Full day-by-day plan stored as JSON
-    itinerary_data      JSONB       NOT NULL,
-
-    -- Optional user metadata
-    trip_date           DATE,                           -- planned start date
-    notes               TEXT,                           -- user's personal notes
-    is_booked           BOOLEAN     NOT NULL DEFAULT FALSE,  -- marked true after booking
-
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_ai_itineraries_user_id
-    ON public.ai_saved_itineraries(user_id);
-CREATE INDEX IF NOT EXISTS idx_ai_itineraries_destination
-    ON public.ai_saved_itineraries(destination);
-CREATE INDEX IF NOT EXISTS idx_ai_itineraries_user_created
-    ON public.ai_saved_itineraries(user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_ai_itineraries_booked
-    ON public.ai_saved_itineraries(user_id, is_booked);
-
-ALTER TABLE public.ai_saved_itineraries ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "ai_itineraries_select_own" ON public.ai_saved_itineraries;
-DROP POLICY IF EXISTS "ai_itineraries_insert_own" ON public.ai_saved_itineraries;
-DROP POLICY IF EXISTS "ai_itineraries_update_own" ON public.ai_saved_itineraries;
-DROP POLICY IF EXISTS "ai_itineraries_delete_own" ON public.ai_saved_itineraries;
-
-CREATE POLICY "ai_itineraries_select_own" ON public.ai_saved_itineraries
-    FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "ai_itineraries_insert_own" ON public.ai_saved_itineraries
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "ai_itineraries_update_own" ON public.ai_saved_itineraries
-    FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "ai_itineraries_delete_own" ON public.ai_saved_itineraries
-    FOR DELETE USING (auth.uid() = user_id);
-
-DROP TRIGGER IF EXISTS set_ai_itineraries_updated_at ON public.ai_saved_itineraries;
-CREATE TRIGGER set_ai_itineraries_updated_at
-    BEFORE UPDATE ON public.ai_saved_itineraries
-    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- =============================================================================
 -- TABLE: agent_tasks
@@ -447,3 +372,4 @@ BEGIN
     RETURN affected;
 END;
 $$;
+DROP TABLE IF EXISTS public.ai_saved_itineraries CASCADE;

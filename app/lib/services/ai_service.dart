@@ -5,7 +5,6 @@
 // Covers:
 //   • ai_conversations  — chat session CRUD
 //   • ai_messages       — per-turn message persistence
-//   • ai_saved_itineraries — save / load / delete trip plans
 //   • agent_tasks       — create and monitor autonomous tasks
 //   • ai_feedback       — thumbs-up / thumbs-down on messages
 // =============================================================================
@@ -130,72 +129,6 @@ class AIService {
     } catch (e) {
       debugPrint('[AIService] loadMessages error: $e');
       return [];
-    }
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // SAVED ITINERARIES
-  // ──────────────────────────────────────────────────────────────────────────
-
-  /// Save a trip plan; returns the generated UUID.
-  static Future<String?> saveItinerary(AISavedItinerary itinerary) async {
-    try {
-      final uid = _uid;
-      if (uid == null) return null;
-      final payload = {'user_id': uid, ...itinerary.toMap()};
-      final res = await _db
-          .from('ai_saved_itineraries')
-          .insert(payload)
-          .select('id')
-          .single();
-      return res['id'] as String?;
-    } catch (e) {
-      debugPrint('[AIService] saveItinerary error: $e');
-      return null;
-    }
-  }
-
-  /// Fetch all saved itineraries for the current user, newest first.
-  static Future<List<AISavedItinerary>> loadItineraries() async {
-    try {
-      final uid = _uid;
-      if (uid == null) return [];
-      final res = await _db
-          .from('ai_saved_itineraries')
-          .select()
-          .eq('user_id', uid)
-          .order('created_at', ascending: false);
-      return (res as List)
-          .map((r) =>
-              AISavedItinerary.fromMap(r as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      debugPrint('[AIService] loadItineraries error: $e');
-      return [];
-    }
-  }
-
-  /// Delete a saved itinerary by its DB id.
-  static Future<void> deleteItinerary(String itineraryId) async {
-    try {
-      await _db
-          .from('ai_saved_itineraries')
-          .delete()
-          .eq('id', itineraryId);
-    } catch (e) {
-      debugPrint('[AIService] deleteItinerary error: $e');
-    }
-  }
-
-  /// Mark an itinerary as booked (is_booked = true).
-  static Future<void> markItineraryBooked(String itineraryId) async {
-    try {
-      await _db
-          .from('ai_saved_itineraries')
-          .update({'is_booked': true})
-          .eq('id', itineraryId);
-    } catch (e) {
-      debugPrint('[AIService] markItineraryBooked error: $e');
     }
   }
 
