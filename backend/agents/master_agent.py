@@ -76,6 +76,12 @@ from agents.agent_tools import (
 )
 from prompts.master_agent import MASTER_SYSTEM, MASTER_AGENTIC_SYSTEM
 from prompts.knowledge import get_relevant_facts, EMERGENCY_NUMBERS
+from agents.emergency_healthcare import (
+    is_medical_emergency,
+    has_emergency_signal,
+    looks_like_healthcare,
+    build_emergency_reply,
+)
 from core.supabase_client import supabase_admin
 from core.config import settings
 
@@ -1133,6 +1139,30 @@ async def process_message_agentic(
         asyncio.gather(get_user_memory(user_id), get_user_profile(user_id)),
         get_conversation_history(conversation_id, limit=20),
     )
+
+    # ── Emergency / healthcare fast-path ──────────────────────────────────────
+    # A medical emergency must NEVER hinge on the LLM chain being up. When the
+    # message clearly signals a medical emergency or asks for the nearest
+    # hospital/clinic, answer deterministically from curated facility data + the
+    # national emergency numbers. Instant and immune to the Groq/OpenRouter
+    # rate-limit wall that otherwise degrades these turns to "try again in a
+    # minute" — the worst possible reply when someone is hurt. Booking turns
+    # ("urgent flight", "nearest hotel") don't match, so this can't hijack them.
+    if is_medical_emergency(user_message):
+        prior_user_texts = [m.get("content", "") for m in history if m.get("role") == "user"]
+        emergency_reply = build_emergency_reply(
+            user_message, prior_user_texts, urgent=has_emergency_signal(user_message),
+        )
+        await save_turn(
+            conversation_id, user_id, user_message, emergency_reply,
+            model_used="deterministic-emergency",
+        )
+        asyncio.ensure_future(_log_task(
+            user_id, conversation_id, "healthcare", user_message,
+            {"tools": ["emergency_healthcare"]},
+        ))
+        return {"response": emergency_reply, "conversation_id": conversation_id}
+
     memory_context = _format_memory(memory, profile)
     # PK date, not the host's. On a UTC server this line is what tells a
     # 2am Karachi user it is still yesterday, so their "tomorrow" books a
@@ -1427,7 +1457,16 @@ async def process_message_agentic(
                 started, system_prompt, history, user_message, gathered
             )
         if not final_text:
-            if _is_rate_limit_error(exc):
+            if looks_like_healthcare(user_message):
+                # Safety-critical: a medical/hospital query must never degrade to a
+                # transient "try again" just because the LLM chain is down. Answer
+                # from curated facility data + the national emergency numbers.
+                final_text = build_emergency_reply(
+                    user_message,
+                    [m.get("content", "") for m in history if m.get("role") == "user"],
+                    urgent=has_emergency_signal(user_message),
+                )
+            elif _is_rate_limit_error(exc):
                 # Per-minute rate limit with nothing gathered: re-running the legacy
                 # pipeline just hits the same 429 and double-spends the budget. Fail
                 # fast with an honest, transient message instead of hanging to 504.
@@ -1497,7 +1536,14 @@ async def process_message_agentic(
         )
         final_text = _BOOKING_NOT_DONE_MSG
     if not final_text:
-        final_text = "I'm having trouble responding right now. Could you rephrase that?"
+        if looks_like_healthcare(user_message):
+            final_text = build_emergency_reply(
+                user_message,
+                [m.get("content", "") for m in history if m.get("role") == "user"],
+                urgent=has_emergency_signal(user_message),
+            )
+        else:
+            final_text = "I'm having trouble responding right now. Could you rephrase that?"
 
     # Persist both messages (ordered so replay stays user-then-assistant)
     await save_turn(
