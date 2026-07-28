@@ -2499,10 +2499,7 @@ class _BookingDetailState extends State<BookingDetail> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildPriceRow('Base Fare', _booking['amount']),
-          _buildPriceRow('Taxes & Fees', _booking['tax']),
-          if ((_booking['serviceFee'] ?? 0) > 0)
-            _buildPriceRow('Service Fee', _booking['serviceFee']),
+          ..._buildFareRows(),
           const SizedBox(height: 12),
           Divider(color: Colors.grey.shade200, thickness: 1.5),
           const SizedBox(height: 12),
@@ -2593,6 +2590,69 @@ class _BookingDetailState extends State<BookingDetail> {
                 color: fg,
                 fontWeight: FontWeight.w600,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Rows above the Total in the payment summary.
+  ///
+  /// A booking stores one all-in figure (`total_amount`) — there is no base/tax
+  /// split anywhere in the backend, so the old fixed "Base Fare" and
+  /// "Taxes & Fees" rows read PKR 0 against a real total of PKR 148,578, which
+  /// looks like a billing fault. Splitting the total by an invented tax rate
+  /// would be worse: a made-up financial figure on a paid booking. So show only
+  /// what is genuinely known — the per-traveller fare when it divides exactly,
+  /// and taxes marked as included in the quoted price.
+  List<Widget> _buildFareRows() {
+    final baseFare = (_booking['amount'] as num?)?.toDouble() ?? 0.0;
+    final taxes = (_booking['tax'] as num?)?.toDouble() ?? 0.0;
+    final serviceFee = (_booking['serviceFee'] as num?)?.toDouble() ?? 0.0;
+
+    // A real split exists (manual booking flow) — show it as before.
+    if (baseFare > 0 || taxes > 0) {
+      return [
+        _buildPriceRow('Base Fare', baseFare),
+        _buildPriceRow('Taxes & Fees', taxes),
+        if (serviceFee > 0) _buildPriceRow('Service Fee', serviceFee),
+      ];
+    }
+
+    final total = (_booking['total'] as num?)?.toDouble() ?? 0.0;
+    final count = (_booking['passengerCount'] as num?)?.toInt() ?? 1;
+    final rows = <Widget>[];
+    if (total > 0 && count > 1 && (total / count) % 1 == 0) {
+      rows.add(_buildPriceRow('Fare ($count travellers)', total));
+      rows.add(_buildNoteRow(
+          'Per traveller', 'PKR ${(total / count).toStringAsFixed(0)}'));
+    } else if (total > 0) {
+      rows.add(_buildPriceRow('Fare', total));
+    }
+    rows.add(_buildNoteRow('Taxes & Fees', 'Included'));
+    if (serviceFee > 0) rows.add(_buildPriceRow('Service Fee', serviceFee));
+    return rows;
+  }
+
+  /// A summary row whose value is a word rather than an amount.
+  Widget _buildNoteRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TravelloTheme.paragraph.copyWith(
+              color: Colors.grey.shade700,
+            ),
+          ),
+          Text(
+            value,
+            style: TravelloTheme.paragraph.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade600,
             ),
           ),
         ],
