@@ -11,6 +11,7 @@ import 'package:flight_app/screens/flight/flight_results_screen.dart'
 import 'package:flight_app/screens/railway/train_results_screen.dart'
     show TrainResult;
 import 'package:flight_app/services/api_client.dart';
+import 'package:flight_app/services/location_service.dart';
 import 'package:flight_app/services/notification_service.dart';
 import 'package:flight_app/utils/design_system_validators.dart';
 import 'package:flight_app/widgets/booking/flight_seat_picker.dart';
@@ -2493,6 +2494,19 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     );
   }
 
+  // Only reach for device GPS when the message is plausibly location-relevant, so
+  // an unrelated message ("book a flight") never triggers a permission prompt. The
+  // backend still decides whether to actually use the coordinates — a named city
+  // always wins over "near me".
+  static final RegExp _locationCueRe = RegExp(
+    r'near\s*me|nearby|around\s+me|closest|nearest|my\s+location|current\s+location|'
+    r'where\s+i\s+am|right\s+here|over\s+here|\bhere\b|hospital|clinic|pharmac|'
+    r'chemist|doctor|emergency|injur|weather|mere\s+paas|meri\s+location|yahan|idhar',
+    caseSensitive: false,
+  );
+
+  bool _mightNeedLocation(String text) => _locationCueRe.hasMatch(text);
+
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
@@ -2563,9 +2577,13 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     _scrollToBottom();
 
     try {
+      final coords =
+          _mightNeedLocation(text) ? await LocationService.getCoords() : null;
       final result = await ApiClient.agentChat(
         message: text,
         conversationId: _conversationId,
+        lat: coords?.lat,
+        lng: coords?.lng,
       );
       if (!mounted) return;
       final newConvId = result['conversation_id'] as String?;

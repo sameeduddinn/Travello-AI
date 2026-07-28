@@ -1306,6 +1306,8 @@ class ApiClient {
   static Future<Map<String, dynamic>> agentChat({
     required String message,
     String? conversationId,
+    double? lat,
+    double? lng,
   }) async {
     _logDebug('POST $_baseUrl/agent/chat');
     final res = await http
@@ -1315,6 +1317,10 @@ class ApiClient {
           body: jsonEncode({
             'message': message,
             if (conversationId != null) 'conversation_id': conversationId,
+            // Optional live location — the backend uses it for "near me" /
+            // "weather here" queries and ignores it when a city is named.
+            if (lat != null && lng != null) 'lat': lat,
+            if (lat != null && lng != null) 'lng': lng,
           }),
         )
         .timeout(const Duration(seconds: 60)); // agents can take a few seconds

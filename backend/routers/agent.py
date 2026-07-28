@@ -33,6 +33,12 @@ _MAX_MESSAGE_CHARS = 2000
 class ChatRequest(BaseModel):
     message: str
     conversation_id: str | None = None
+    # Optional live device location (the app attaches it when the user has granted
+    # location permission). Lets "hospitals near me" / "weather here" resolve to the
+    # user's ACTUAL position instead of a city they have to name. Never required —
+    # every query still works without it, just city-based.
+    lat: float | None = None
+    lng: float | None = None
 
 
 class ConversationNoteRequest(BaseModel):
@@ -201,7 +207,10 @@ async def chat(request: ChatRequest, user: CurrentUser):
 
     try:
         result = await asyncio.wait_for(
-            process_message_agentic(user.id, conversation_id, request.message),
+            process_message_agentic(
+                user.id, conversation_id, request.message,
+                device_lat=request.lat, device_lng=request.lng,
+            ),
             timeout=60.0,
         )
     except asyncio.TimeoutError:

@@ -1250,7 +1250,19 @@ async def _exec_hotels(args: dict) -> dict:
 
 async def _exec_weather(args: dict) -> dict:
     city = (args.get("city") or "").strip()
-    w = await get_weather(city)
+    # Live device GPS (injected by the orchestrator, never by the model). Used for a
+    # "weather here" / "near me" query, or when no city was named, so the reading is
+    # for the user's ACTUAL position. Otherwise weather is fetched by city as before.
+    dev_lat, dev_lng = args.get("_dev_lat"), args.get("_dev_lng")
+    prefer_device = bool(args.get("_prefer_device"))
+    # is-not-None checks in the condition so dev_lat/dev_lng narrow to floats here.
+    if dev_lat is not None and dev_lng is not None and (prefer_device or not city):
+        label = "your current location"
+        w = await get_weather(label, lat=float(dev_lat), lon=float(dev_lng))
+    else:
+        label = city
+        w = await get_weather(city)
+
     # get_weather returns a synthetic 27C "Pleasant" record tagged source="fallback"
     # when it has no coordinates for the city or every live source failed. That
     # placeholder exists for the app's weather SCREEN — it is NOT a real reading, so
@@ -1258,24 +1270,85 @@ async def _exec_weather(args: dict) -> dict:
     # the instruction inline) so the model says it plainly instead of inventing 27C.
     if (w or {}).get("source") == "fallback":
         return {
-            "city": city,
+            "city": label,
             "weather_available": False,
             "note": (
-                f"No live weather data is available for {city or 'this city'} right now "
+                f"No live weather data is available for {label or 'this city'} right now "
                 "(it may be a town not covered, or the weather service is temporarily "
                 "unreachable). Do NOT state a temperature or condition — tell the user "
                 "you don't have live weather for this place."
             ),
         }
-    return {"city": city, "weather": w}
+    return {"city": label, "weather": w}
 
 
 async def _exec_healthcare(args: dict) -> dict:
-    city = (args.get("city") or "").strip()
+    """
+    Return STRUCTURED facility data (hospitals, pharmacies, national emergency
+    numbers) — never a prose briefing gated behind a second LLM call.
+
+    The old version handed the fetched facilities to generate_text to write a
+    summary, and when THAT call hit the free-tier quota wall it returned "" — so
+    the tool reported "No healthcare data available" and discarded real hospitals
+    it had already fetched. That made the assistant tell a user there are no
+    clinics in a city it had just listed (see the Islamabad follow-up). Facility
+    data is safety-critical, so it must reach the model deterministically; the
+    model only does the wording. _nearby already layers Google -> Overpass ->
+    curated mock, so a supported city always yields real, phone-numbered results.
+    """
     # Lazy import to avoid a heavy import chain at module load.
-    from agents.healthcare_agent import get_safety_briefing
-    briefing = await get_safety_briefing(city)
-    return {"city": city, "briefing": briefing or "No healthcare data available."}
+    from fastapi import HTTPException
+    from routers.healthcare import (
+        _resolve_coordinates, _nearby, _MOCK_HOSPITALS, _MOCK_PHARMACIES,
+    )
+    from prompts.knowledge import EMERGENCY_NUMBERS
+
+    city = (args.get("city") or "").strip()
+    # Live device GPS (injected by the orchestrator, never by the model). Used for a
+    # "near me" query, or whenever no city was named, so "hospitals near me" resolves
+    # to the user's ACTUAL position rather than a city they had to type.
+    dev_lat, dev_lng = args.get("_dev_lat"), args.get("_dev_lng")
+    prefer_device = bool(args.get("_prefer_device"))
+    # is-not-None checks in the condition so dev_lat/dev_lng narrow to floats here.
+    if dev_lat is not None and dev_lng is not None and (prefer_device or not city):
+        lat, lng = float(dev_lat), float(dev_lng)
+        location_label = "your current location"
+        used_device = True
+    else:
+        used_device = False
+        try:
+            lat, lng = _resolve_coordinates(None, None, None, city)
+        except HTTPException:
+            # City we can't place and no device fix — still hand back the national
+            # numbers so a medical question never dead-ends on an unknown town.
+            return {
+                "city": city, "hospitals": [], "pharmacies": [],
+                "emergency_numbers": EMERGENCY_NUMBERS,
+                "note": "City not recognised — no facility coordinates; use the emergency numbers.",
+            }
+        except Exception:
+            return {
+                "city": city, "hospitals": [], "pharmacies": [],
+                "emergency_numbers": EMERGENCY_NUMBERS,
+            }
+        location_label = city
+
+    try:
+        hospitals, pharmacies = await asyncio.gather(
+            _nearby(lat, lng, 15.0, "hospital", _MOCK_HOSPITALS),
+            _nearby(lat, lng, 5.0, "pharmacy", _MOCK_PHARMACIES),
+        )
+    except Exception:
+        hospitals, pharmacies = [], []
+
+    return {
+        "city": city,
+        "location": location_label,
+        "used_device_location": used_device,
+        "hospitals": (hospitals or [])[:5],
+        "pharmacies": (pharmacies or [])[:3],
+        "emergency_numbers": EMERGENCY_NUMBERS,
+    }
 
 
 _EXECUTORS = {

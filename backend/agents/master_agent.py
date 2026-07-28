@@ -20,7 +20,7 @@ import logging
 import re
 import time
 import uuid
-from datetime import date as date_type, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from agents.memory_agent import (
     get_user_memory,
@@ -1121,10 +1121,27 @@ def _infer_package_next_step(
     return "next, " + ", then ".join(parts)
 
 
+# "near me / here / my location" cues. When one of these appears AND the app sent
+# live GPS, the location-sensitive tools (find_healthcare, get_weather) use the
+# device's real position instead of a city the model might guess from memory.
+_HERE_CUE_RE = re.compile(
+    r"\b(near\s*me|nearby\s+me|around\s+me|close(?:st)?\s+to\s+me|near\s+my\s+location|"
+    r"my\s+(?:current\s+)?location|my\s+area|current\s+location|where\s+i\s+am|"
+    r"right\s+here|over\s+here|mere\s+paas|meri\s+location|yahan|idhar)\b",
+    re.IGNORECASE,
+)
+
+
+def _has_here_cue(message: str) -> bool:
+    return bool(_HERE_CUE_RE.search(message or ""))
+
+
 async def process_message_agentic(
     user_id: str,
     conversation_id: str,
     user_message: str,
+    device_lat: float | None = None,
+    device_lng: float | None = None,
 ) -> dict:
     """
     Agentic entry point: the LLM holds real tools, decides which to call, sees
@@ -1152,6 +1169,8 @@ async def process_message_agentic(
         prior_user_texts = [m.get("content", "") for m in history if m.get("role") == "user"]
         emergency_reply = build_emergency_reply(
             user_message, prior_user_texts, urgent=has_emergency_signal(user_message),
+            device_lat=device_lat, device_lng=device_lng,
+            prefer_device=_has_here_cue(user_message),
         )
         await save_turn(
             conversation_id, user_id, user_message, emergency_reply,
@@ -1377,6 +1396,18 @@ async def process_message_agentic(
             })
 
             call_args = [_safe_args(tc.function.arguments) for tc in tool_calls]
+            # Device-location injection: hand the user's live GPS (if the app sent it)
+            # to the location-sensitive tools so "hospitals near me" / "weather here"
+            # resolve to the user's ACTUAL position, not a city the model guessed.
+            # Deterministic ambient context — the model never supplies these; the
+            # executor prefers them only for a "near me" cue or when no city was named.
+            if device_lat is not None and device_lng is not None:
+                _prefer_device = _has_here_cue(user_message)
+                for _tc, _args in zip(tool_calls, call_args):
+                    if _tc.function.name in ("find_healthcare", "get_weather"):
+                        _args["_dev_lat"] = device_lat
+                        _args["_dev_lng"] = device_lng
+                        _args["_prefer_device"] = _prefer_device
             other_calls = [
                 (tc, args) for tc, args in zip(tool_calls, call_args)
                 if tc.function.name not in ("prepare_booking", "book_car")

@@ -344,12 +344,31 @@ def _resolve_coords(city: str) -> tuple[float, float] | None:
 
 # Public API
 
-async def get_weather(city: str) -> dict[str, Any]:
+async def get_weather(
+    city: str, lat: float | None = None, lon: float | None = None
+) -> dict[str, Any]:
     """
-    Fetch current weather for a city.
-    Chain: Google Weather API → Open-Meteo → static default.
+    Fetch current weather for a city — or, when explicit coordinates are given
+    (the user's live device location for a "near me"/"weather here" query), for
+    that exact point. Chain: Google Weather API → Open-Meteo → static default.
     Results are cached for 5 minutes.
     """
+    # Explicit coordinates (device GPS) take priority over the name lookup, so
+    # "weather here" reads the user's ACTUAL position, not a city they had to name.
+    if lat is not None and lon is not None:
+        label = city or "your area"
+        coord_key = f"@{round(lat, 3)},{round(lon, 3)}"
+        cached = _CACHE.get(coord_key)
+        if cached and (time.monotonic() - cached[1]) < _CACHE_TTL:
+            return cached[0]
+        result = (
+            await _fetch_google_weather(label, lat, lon)
+            or await _fetch_open_meteo(label, lat, lon)
+            or _default_weather(label)
+        )
+        _CACHE[coord_key] = (result, time.monotonic())
+        return result
+
     # Serve from cache if still fresh
     cached = _CACHE.get(city)
     if cached and (time.monotonic() - cached[1]) < _CACHE_TTL:

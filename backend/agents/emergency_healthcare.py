@@ -26,7 +26,6 @@ from routers.healthcare import (
     _MOCK_PHARMACIES,
     _mock_nearby,
 )
-from prompts.knowledge import EMERGENCY_NUMBERS  # noqa: F401  (kept for parity/callers)
 
 
 # --- Intent detection --------------------------------------------------------
@@ -141,12 +140,16 @@ def build_emergency_reply(
     history_texts: list[str] | None = None,
     *,
     urgent: bool = True,
+    device_lat: float | None = None,
+    device_lng: float | None = None,
+    prefer_device: bool = False,
 ) -> str:
     """
     Build the user-facing emergency answer entirely from curated data. Always
-    returns usable text: with a resolved city it lists the nearest hospitals
-    (and a pharmacy) with real phone numbers and true distances; without one it
-    still gives the national emergency numbers and asks for the city.
+    returns usable text: from the user's live GPS (a "near me" query) or a named
+    city it lists the nearest hospitals (and a pharmacy) with real phone numbers
+    and true distances; with neither it still gives the national emergency numbers
+    and asks for the city. Stays LLM- and network-independent by design.
     """
     lead = (
         "🚨 If this is life-threatening, get an ambulance now — call Rescue 1122 "
@@ -156,25 +159,35 @@ def build_emergency_reply(
     )
 
     city_key = _extract_city(message, history_texts)
-    if not city_key:
+    # Device GPS wins on an explicit "near me" cue, or whenever no city was named.
+    # The is-not-None checks live in the condition itself so the coordinates narrow
+    # to plain floats inside the branch.
+    if (
+        device_lat is not None and device_lng is not None
+        and (prefer_device or not city_key)
+    ):
+        lat, lng = float(device_lat), float(device_lng)
+        where = "near your current location"
+    elif city_key:
+        lat, lng = _CITY_COORDS[city_key]
+        where = f"in {city_key.title()}"
+    else:
         return (
             f"{lead}\n\n{_NUMBERS_LINE}\n\n"
             "Tell me which city or town you're in and I'll list the nearest "
             "hospitals with their phone numbers."
         )
 
-    lat, lng = _CITY_COORDS[city_key]
     hospitals = _mock_nearby(lat, lng, 15.0, _MOCK_HOSPITALS)[:3]
     pharmacies = _mock_nearby(lat, lng, 5.0, _MOCK_PHARMACIES)[:1]
-    city_title = city_key.title()
 
     parts: list[str] = [lead, ""]
     if hospitals:
-        parts.append(f"Nearest hospitals in {city_title}:")
+        parts.append(f"Nearest hospitals {where}:")
         parts.extend(f"• {_facility_line(h)}" for h in hospitals)
     else:
         parts.append(
-            f"I don't have specific facilities listed for {city_title}, so please "
+            f"I don't have specific facilities listed {where}, so please "
             "use the emergency numbers below."
         )
     if pharmacies:
