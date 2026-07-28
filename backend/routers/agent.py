@@ -10,6 +10,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from core.auth import CurrentUser
+from core.config import settings
 from core.supabase_client import supabase_admin
 from agents.master_agent import process_message_agentic
 from agents.memory_agent import save_message, start_new_conversation
@@ -105,14 +106,15 @@ class ChatResponse(BaseModel):
 
 # Helpers — wrap sync Supabase calls in to_thread
 
-def _count_today_messages(user_id: str, today_midnight: str) -> int:
+def _count_today_messages(user_id: str, today_midnight: str, limit: int) -> int:
     result = (
         supabase_admin.table("ai_messages")
         .select("id")
         .eq("user_id", user_id)
         .eq("role", "user")
         .gte("created_at", today_midnight)
-        .limit(51)          # only need to know if >= 50; never loads unbounded rows
+        # Only need to know whether the cap is reached; never loads unbounded rows.
+        .limit(max(limit, 0) + 1)
         .execute()
     )
     return len(result.data or [])
@@ -180,11 +182,14 @@ async def chat(request: ChatRequest, user: CurrentUser):
         .replace(hour=0, minute=0, second=0, microsecond=0)
         .isoformat()
     )
-    count = await asyncio.to_thread(_count_today_messages, user.id, today_midnight)
-    if count >= 50:
+    daily_limit = settings.AGENT_DAILY_MESSAGE_LIMIT
+    count = await asyncio.to_thread(
+        _count_today_messages, user.id, today_midnight, daily_limit
+    )
+    if count >= daily_limit:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Daily message limit of 50 reached. Try again tomorrow.",
+            detail=f"Daily message limit of {daily_limit} reached. Try again tomorrow.",
         )
 
     # Resolve or create conversation
@@ -217,6 +222,23 @@ async def chat(request: ChatRequest, user: CurrentUser):
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail="The AI agent took too long to respond. Please try again.",
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        # Last resort. Everything inside the agent already degrades gracefully, so
+        # reaching here means an unforeseen bug — and the default would be a raw
+        # HTTP 500, which the app can only render as a hard failure. Answer with a
+        # plain, honest chat message instead. NO action and NO booking_data are
+        # returned, so this can never surface a payment button or imply that
+        # anything was booked; the turn simply didn't happen.
+        logger.exception("agent chat turn failed for user=%s conv=%s", user.id, conversation_id)
+        return ChatResponse(
+            response=(
+                "Sorry — something went wrong on my side handling that message. "
+                "Nothing was booked or charged. Please try again."
+            ),
+            conversation_id=conversation_id,
         )
     return ChatResponse(
         response=result["response"],

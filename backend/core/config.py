@@ -88,6 +88,14 @@ class Settings(BaseSettings):
     OTP_EXPIRE_MINUTES: int = 10
     OTP_MAX_ATTEMPTS: int = 3
 
+    # AI agent
+    # Per-account cap on user messages per UTC day. This is OUR OWN throttle (it
+    # protects the Groq free-tier budget), not a provider limit — once it trips the
+    # agent refuses every message until UTC midnight. Raise it via .env for a live
+    # demo or evaluation, where rehearsal messages earlier in the day would
+    # otherwise consume the allowance before the session starts.
+    AGENT_DAILY_MESSAGE_LIMIT: int = 50
+
     # CORS
     # Comma-separated list of allowed origins.
     # Use "*" during development; restrict to your Flutter app URL in production.

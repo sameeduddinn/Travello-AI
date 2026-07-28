@@ -212,9 +212,19 @@ _SELECTION_ORDINALS = {
 }
 
 
+def _as_text(value) -> str:
+    """Coerce any value to a string for the pure text helpers below.
+
+    These read model output and stored conversation content; a non-string there
+    would raise inside a regex and lose an otherwise fine turn. Coercing at the
+    function boundary keeps every call site safe.
+    """
+    return value if isinstance(value, str) else ("" if value is None else str(value))
+
+
 def _selected_index(message: str) -> int | None:
     """The 1-based list position the user is picking, or None if it isn't a pick."""
-    msg = message.lower().strip()
+    msg = _as_text(message).lower().strip()
     # Bare number, optionally prefixed/suffixed: "6", "6.", "#6", "option 6"
     m = re.fullmatch(r"(?:option|number|no\.?|#|item)?\s*(\d{1,2})[.!)]?", msg)
     if m:
@@ -244,7 +254,7 @@ def _selected_index(message: str) -> int | None:
 def _numbered_list_items(text: str) -> dict[int, str]:
     """Best-effort parse of '1. Foo' / '1) Foo' / '| 1 | Foo |' rows -> {index: label}."""
     items: dict[int, str] = {}
-    for line in text.splitlines():
+    for line in _as_text(text).splitlines():
         s = line.strip()
         # Markdown table row: | 6 | Hermes Urban Stay | ... |  (skip separator rows)
         m = re.match(r"\|?\s*(\d{1,2})\s*\|\s*([^|]+?)\s*(?:\||$)", s)
@@ -258,21 +268,123 @@ def _numbered_list_items(text: str) -> dict[int, str]:
     return items
 
 
+# A round trip shows TWO numbered lists in one reply (outbound, then return), and
+# the user picks from both at once — "option 1, option 1" / "1 for outbound, 1 for
+# return". _selected_index returns only the FIRST number, so the hint below used to
+# name the outbound flight and say "Book THAT exact option", pushing the model to
+# book one leg when two were asked for. These find every pick in the message.
+_PICK_KEYWORD_RE = re.compile(
+    r"\b(?:option|number|no|#|item|flight|train|hotel|choice)\s*#?\s*(\d{1,2})\b", re.I
+)
+_PICK_LEG_RE = re.compile(
+    r"\b(\d{1,2})\s+for\s+(?:the\s+)?"
+    r"(?:outbound|return|inbound|onward|departing|returning|first|second)\b",
+    re.I,
+)
+
+
+def _selected_indices(message: str) -> list[int]:
+    """Every list position the user picked, in order. [] when it isn't a multi-pick."""
+    message = _as_text(message)
+    for pattern in (_PICK_KEYWORD_RE, _PICK_LEG_RE):
+        picks = [int(m.group(1)) for m in pattern.finditer(message)]
+        if len(picks) >= 2:
+            return picks
+    return []
+
+
+# An offer list's labels are short identifiers ("PA-180", "Serena Hotel"); a
+# trailing "Next steps: 1. Choose your outbound flight…" list is full sentences.
+# Only offer lists may be paired with a pick, so a second pick can never be
+# resolved against instructional prose.
+_OFFER_LABEL_MAX = 60
+
+
+def _numbered_lists(text: str) -> list[dict[int, str]]:
+    """The numbered lists in `text`, in order — a restart in numbering starts a new one."""
+    lists: list[dict[int, str]] = []
+    current: dict[int, str] = {}
+    last_idx = 0
+    for line in _as_text(text).splitlines():
+        s = line.strip()
+        idx: int | None = None
+        label = ""
+        m = re.match(r"\|?\s*(\d{1,2})\s*\|\s*([^|]+?)\s*(?:\||$)", s)
+        if m and not set(m.group(2).strip()) <= {"-", " ", ":"}:
+            idx, label = int(m.group(1)), m.group(2).strip()
+        else:
+            m = re.match(r"(\d{1,2})\s*[.)\-:]\s+(.+)", s)
+            if m:
+                idx, label = int(m.group(1)), m.group(2).strip()
+        if idx is None:
+            continue
+        if idx <= last_idx:          # numbering restarted → a new list began
+            if current:
+                lists.append(current)
+            current = {}
+        current.setdefault(idx, label)
+        last_idx = idx
+    if current:
+        lists.append(current)
+    return lists
+
+
+def _offer_lists(text: str) -> list[dict[int, str]]:
+    """Only the numbered lists that look like pickable offers."""
+    return [
+        lst for lst in _numbered_lists(text)
+        if len(lst) >= 2 and all(len(v) <= _OFFER_LABEL_MAX for v in lst.values())
+    ]
+
+
 def _selection_hint(user_message: str, history: list[dict]) -> str | None:
     """
-    A one-line nudge naming the exact list item the user just picked, or None.
+    A one-line nudge naming the exact list item(s) the user just picked, or None.
     Scans the most recent assistant message that actually CONTAINS a numbered
     list, so a bare "6" answering "how many passengers?" (no list) is ignored.
     """
+    picks = _selected_indices(user_message)
     idx = _selected_index(user_message)
-    if idx is None:
+    if not picks and idx is None:
         return None
     for m in reversed(history):
         if (m.get("role") or "").lower() != "assistant":
             continue
-        items = _numbered_list_items(m.get("content") or "")
+        content = m.get("content") or ""
+
+        # Multi-pick (round trip): pair pick #1 with the first offer list, pick #2
+        # with the second, and tell the model to prepare BOTH. Two prepared
+        # components become one package_choice — one passenger form, one payment.
+        if len(picks) >= 2:
+            lists = _offer_lists(content)
+            if not lists and not _numbered_list_items(content):
+                continue     # no list in this message at all — keep scanning back
+            if len(lists) < len(picks):
+                return None  # can't pair confidently — no hint beats a wrong one
+            chosen: list[str] = []
+            for pick, lst in zip(picks, lists):
+                label = lst.get(pick)
+                if not label:
+                    return None
+                chosen.append(label.strip(" *`").strip())
+            named = "; ".join(
+                f'#{p} from list {i + 1} ("{lbl}")'
+                for i, (p, lbl) in enumerate(zip(picks, chosen))
+            )
+            return (
+                f"The user is picking one item from EACH numbered list you just showed: "
+                f"{named}. They want ALL of them. Call prepare_booking once for EVERY one "
+                f"of those options, in this SAME reply — one call per list — reusing the "
+                f"route, dates, class and traveller count already established earlier in "
+                f"this conversation. Do NOT search again, do NOT book only the first one, "
+                f"and do NOT ask them to re-enter details they already gave."
+            )
+
+        items = _numbered_list_items(content)
         if not items:
             continue
+        if idx is None:
+            return None
         label = items.get(idx)
         if not label:
             return None  # picked a number the list doesn't have — let the model ask
@@ -982,6 +1094,7 @@ _LEAKED_FUNC_DANGLING_RE = re.compile(r"<\s*/?\s*function\b.*$", re.IGNORECASE |
 def _redact_tool_names(text: str) -> str:
     """Rewrite any internal tool name the model leaked into a human phrase, and
     strip any raw <function=...> tool-call markup that slipped through as text."""
+    text = _as_text(text)
     if not text:
         return text
     text = _LEAKED_FUNC_RE.sub("", text)
@@ -1036,6 +1149,7 @@ def _is_fabricated_booking(text: str) -> bool:
     """True when free prose imitates the app's booking card or claims a booking is
     already done — neither can be genuine here, since a real booking returns via
     the booking_data path (the app renders the card), never as chat prose."""
+    text = _as_text(text)
     if not text:
         return False
     return bool(_FAKE_CARD_RE.search(text) or _FAKE_CONFIRM_RE.search(text))
@@ -1337,7 +1451,22 @@ async def process_message_agentic(
             tool_calls = getattr(msg, "tool_calls", None)
 
             if not tool_calls:
-                final_text = (msg.content or "").strip()
+                # Redact BEFORE accepting this as the answer. A reply that is
+                # nothing but leaked <function=...> markup (a tool call the
+                # salvage pass couldn't recover) redacts to an EMPTY string, and
+                # treating that as "the model replied" is what produced the bare
+                # "I'm having trouble responding right now." the user kept hitting
+                # on booking-confirm turns. Empty here means we have no answer
+                # yet, not that the turn failed — so fall through to the
+                # synthesis step below, which answers from the data we gathered.
+                raw_reply = (msg.content or "").strip()
+                final_text = _redact_tool_names(raw_reply)
+                if raw_reply and not final_text:
+                    logger.warning(
+                        "model reply was unsalvageable tool-call markup — "
+                        "synthesizing from gathered data instead: %r",
+                        raw_reply[:300],
+                    )
                 break
 
             # prepare_booking — deterministic gate + server-side repricing.

@@ -146,7 +146,9 @@ def _classify_retry(name: str, args: dict, error_data: dict) -> tuple[str, dict]
         corrected = dict(args or {})
         changed = False
         for field in ("origin_city", "destination_city"):
-            fix = suggest_city_correction(corrected.get(field, ""))
+            # corrected[...] holds raw model-authored tool arguments, so the
+            # value is not guaranteed to be a string.
+            fix = suggest_city_correction(corrected.get(field) or "")
             if fix:
                 corrected[field] = fix
                 changed = True

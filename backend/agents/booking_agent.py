@@ -94,6 +94,7 @@ def format_booking_summary(booking_data: dict) -> str:
     Build the booking summary message that includes the two payment-choice buttons
     as clearly labelled options the Flutter app will render as action buttons.
     """
+    booking_data = booking_data if isinstance(booking_data, dict) else {}
     bt = booking_data.get("booking_type", "trip")
     price = booking_data.get("total_price_pkr")
     option = booking_data.get("selected_option", "your selected option")
@@ -198,13 +199,21 @@ def build_package_data(components: list[dict]) -> dict:
     The per-component dicts are passed through untouched so the app can commit each
     one through the existing /agent/book + /passengers + /payments/initiate path.
     """
-    safe = [c for c in (components or []) if isinstance(c, dict)]
+    if not isinstance(components, (list, tuple)):
+        components = []
+    safe = [c for c in components if isinstance(c, dict)]
     total = 0.0
     for c in safe:
         try:
-            total += float(c.get("total_price_pkr") or 0)
+            price = float(c.get("total_price_pkr") or 0)
         except (TypeError, ValueError):
             continue
+        # A NaN/inf price would survive float() and then blow up in round() —
+        # this figure is what a single payment charges, so a non-finite value is
+        # dropped rather than allowed anywhere near a total.
+        if price != price or price in (float("inf"), float("-inf")):
+            continue
+        total += price
     return {
         "booking_type": "package",
         "components": safe,
@@ -238,6 +247,7 @@ def format_package_summary(package_data: dict) -> str:
     chat reads consistently, but states the combined total and makes it explicit
     that passenger details and payment are collected once for everything.
     """
+    package_data = package_data if isinstance(package_data, dict) else {}
     components = package_data.get("components") or []
     total = package_data.get("total_price_pkr")
 

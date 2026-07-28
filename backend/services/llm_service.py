@@ -587,6 +587,63 @@ def _repair_json_arithmetic(args: str) -> str:
     )
 
 
+# The same leaked markup, but with the closing </function> missing entirely:
+#   <function=prepare_booking>{"booking_type":"flight", ...}
+# _MALFORMED_FUNC_RE requires the closing tag, so these salvage to NOTHING — and a
+# reply that is nothing but unsalvageable markup gets stripped to an empty string
+# upstream, which surfaced to the user as "I'm having trouble responding right
+# now." (reported repeatedly on multi-call turns, e.g. booking both legs of a
+# round trip, where the second call is the one left unterminated). The JSON is
+# still read by BALANCED BRACES and must parse — nothing is guessed or repaired
+# into existence, so a genuinely truncated payload is still dropped rather than
+# dispatched with invented arguments.
+_DANGLING_FUNC_RE = re.compile(r"<function=([a-zA-Z0-9_ .\-]+?)\s*>?\s*(?=\{)")
+
+
+def _json_object_at(text: str, start: int) -> str | None:
+    """The balanced {...} substring beginning at `start`, or None if it never closes.
+
+    Brace-counting is string-aware so a '}' inside a value ("note": "a } b")
+    doesn't end the object early.
+    """
+    depth = 0
+    in_str = False
+    escaped = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if in_str:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:i + 1]
+    return None
+
+
+def _accept_args(raw: str) -> str | None:
+    """Validated tool arguments, or None when they aren't usable JSON."""
+    try:
+        json.loads(raw)
+        return raw
+    except json.JSONDecodeError:
+        repaired = _repair_json_arithmetic(raw)
+        try:
+            json.loads(repaired)
+        except json.JSONDecodeError:
+            return None
+        return repaired
+
+
 def _salvage_tool_calls(text: str | None, known: set[str] | None = None) -> list | None:
     """Extract well-formed tool calls from a malformed <function=...> blob.
 
@@ -597,21 +654,35 @@ def _salvage_tool_calls(text: str | None, known: set[str] | None = None) -> list
         return None
     known = known or set()
     calls: list = []
+    consumed: list[tuple[int, int]] = []
     for i, m in enumerate(_MALFORMED_FUNC_RE.finditer(text)):
         raw_name, args = m.group(1), m.group(2)
+        consumed.append(m.span())
         name = _normalize_tool_name(raw_name, known)
         if not name:
             continue  # couldn't map to a real tool — don't invent a dispatch
-        try:
-            json.loads(args)  # only accept valid JSON args
-        except json.JSONDecodeError:
-            repaired = _repair_json_arithmetic(args)
-            try:
-                json.loads(repaired)
-            except json.JSONDecodeError:
-                continue
-            args = repaired
+        args = _accept_args(args)
+        if args is None:
+            continue
         calls.append(_SalvagedToolCall(f"call_salvaged_{i}", name, args))
+
+    # Second pass for calls whose closing </function> never arrived. Regions the
+    # pass above already claimed are skipped, so a blob holding one complete call
+    # and one unterminated call recovers BOTH rather than only the first.
+    for j, m in enumerate(_DANGLING_FUNC_RE.finditer(text)):
+        if any(lo <= m.start() < hi for lo, hi in consumed):
+            continue
+        name = _normalize_tool_name(m.group(1), known)
+        if not name:
+            continue
+        blob = _json_object_at(text, m.end())
+        if blob is None:
+            continue  # truncated mid-JSON — dropping beats guessing the rest
+        args = _accept_args(blob)
+        if args is None:
+            continue
+        calls.append(_SalvagedToolCall(f"call_dangling_{j}", name, args))
+
     return calls or None
 
 

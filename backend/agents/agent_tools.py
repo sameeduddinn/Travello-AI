@@ -546,14 +546,48 @@ def get_booking_date_error(booking_data: dict) -> dict | None:
     """
     Deterministic date-sanity gate for prepare_booking — same role as
     get_missing_booking_fields, but for date validity instead of field
-    completeness. Returns a structured past_date error if travel_date /
-    check_in / check_out resolves to before today, else None. The caller must
-    treat a non-None result as a hard stop: do not proceed to reprice_booking
-    or a payment screen.
+    completeness. Returns a structured error if any of travel_date / check_in /
+    check_out is unusable, already past, or (for a hotel) an inverted stay; else
+    None. The caller must treat a non-None result as a hard stop: do not proceed
+    to reprice_booking or a payment screen.
     """
-    booking_type = str((booking_data or {}).get("booking_type") or "")
+    booking_data = booking_data if isinstance(booking_data, dict) else {}
+    booking_type = str(booking_data.get("booking_type") or "")
     date_fields = _BOOKING_DATE_FIELDS.get(booking_type, [])
-    return find_past_date_error(booking_data or {}, date_fields)
+
+    # UNPARSEABLE dates are the dangerous case, and until now only the SEARCH
+    # path checked for them. prepare_booking accepted anything non-empty, so a
+    # model emitting a plausible-but-non-ISO date ("15-08-2026", "August 15,
+    # 2026") slipped through every gate and _to_date silently substituted a
+    # default N days out — repricing and booking a DIFFERENT day than the user
+    # asked for, with the payment screen showing it as confirmed. Reusing the
+    # same helper the search path already trusts keeps both paths in step.
+    unusable = find_missing_date_error(booking_data, date_fields)
+    if unusable:
+        return unusable
+
+    past = find_past_date_error(booking_data, date_fields)
+    if past:
+        return past
+
+    # A stay that ends before it starts. _to_date/_exec_hotels quietly "repairs"
+    # this to check_in + 2 nights, which would bill nights the user never chose.
+    if booking_type == "hotel":
+        ci = _parse_date_strict(booking_data.get("check_in"))
+        co = _parse_date_strict(booking_data.get("check_out"))
+        if ci and co and co <= ci:
+            return {
+                "error": "invalid_stay_dates",
+                "check_in": ci.isoformat(),
+                "check_out": co.isoformat(),
+                "instruction": (
+                    f"The check-out date ({co.isoformat()}) is not after the check-in "
+                    f"date ({ci.isoformat()}), so the stay has no nights. Do NOT guess "
+                    "or adjust the dates yourself — ask the user to confirm the correct "
+                    "check-in and check-out dates."
+                ),
+            }
+    return None
 
 
 # ── Standalone car booking (book_car) — deterministic gate ────────────────────
@@ -923,6 +957,26 @@ def _serialize_hotels(resp) -> list[dict]:
     return out
 
 
+# ── No-availability notice ────────────────────────────────────────────────────
+#
+# A search that legitimately returns ZERO results is not an error, and the model
+# must not paper over it. Left to itself a free-tier model fills the silence —
+# it recalls "PK-301 usually departs 07:00" from training data, or quietly widens
+# the date. Both put a flight on screen that nobody can sell. So an empty result
+# carries an explicit, deterministic notice instead of just an empty list: state
+# plainly that nothing runs on that date, and offer to check nearby dates.
+
+def _no_availability_note(kind: str, where: str, when: str) -> str:
+    return (
+        f"NO AVAILABILITY: the live search returned ZERO {kind} for {where} on {when}. "
+        f"Tell the user plainly and specifically that there are no {kind} for that route "
+        f"on that date — name the date. Do NOT invent, recall from memory, or estimate "
+        f"any {kind[:-1]}, price or timing, and do NOT silently search a different date, "
+        f"route or city. Offer concrete next steps instead: check a nearby date, or a "
+        f"different departure city / mode of travel, and ask which they'd like."
+    )
+
+
 # ── Budget filter — deterministic, applied only when the model passes a number ─
 
 def _filter_by_budget(items: list[dict], price_key: str, budget) -> tuple[list[dict], str | None]:
@@ -1058,6 +1112,14 @@ def check_budget_feasibility(
 
 # ── Executors ─────────────────────────────────────────────────────────────────
 
+def _as_text(value) -> str:
+    """Coerce a model-supplied value to a string. Tool-call arguments are
+    model-authored JSON, so a field typed as a city/name can arrive as a number,
+    list or dict; coercing here keeps every caller safe instead of relying on
+    each one to guard its own arguments."""
+    return value if isinstance(value, str) else ("" if value is None else str(value))
+
+
 def _is_pakistani_place(name: str) -> bool:
     """
     Deterministic backstop for Travello's domestic-only scope.
@@ -1067,7 +1129,7 @@ def _is_pakistani_place(name: str) -> bool:
     Naran), so this stays true for somewhere like Skardu while being false for
     Dubai or London.
     """
-    n = (name or "").strip().lower()
+    n = _as_text(name).strip().lower()
     return bool(n) and (n in CITY_ALIASES or n in CITY_TO_IATA)
 
 
@@ -1096,7 +1158,7 @@ def suggest_city_correction(name: str) -> str | None:
     close enough. A wrong "correction" that silently searches a different city
     is worse than reporting the failure, hence the strict cutoff.
     """
-    candidate = (name or "").strip().lower()
+    candidate = _as_text(name).strip().lower()
     if not candidate:
         return None
     matches = difflib.get_close_matches(candidate, _KNOWN_CITIES, n=1, cutoff=0.8)
@@ -1189,8 +1251,12 @@ def _no_airport_error(city: str) -> dict:
 
 
 async def _exec_flights(args: dict) -> dict:
-    origin = (args.get("origin_city") or "").strip()
-    dest = (args.get("destination_city") or "").strip()
+    # str() guard: tool-call arguments are model-authored JSON, so a city can
+    # arrive as a non-string (e.g. {"origin_city": ["Lahore"]}). Without this the
+    # .strip() raises, execute_tool converts it into "the search is temporarily
+    # unavailable", and a perfectly valid request looks like an outage.
+    origin = str(args.get("origin_city") or "").strip()
+    dest = str(args.get("destination_city") or "").strip()
     o_iata = CITY_TO_IATA.get(origin.lower())
     d_iata = CITY_TO_IATA.get(dest.lower())
     if not o_iata:
@@ -1201,9 +1267,16 @@ async def _exec_flights(args: dict) -> dict:
     pax = _as_count(args.get("passengers"), default=1) or 1
     cabin = (args.get("cabin_class") or "ECONOMY").upper()
     offers = await search_flights(o_iata, d_iata, d, pax, cabin_class=cabin)
-    if not offers:
-        return {"flights": [], "note": f"No flights found {origin}->{dest} on {d.isoformat()}."}
-    flights = _serialize_flights(offers)
+    flights = _serialize_flights(offers) if offers else []
+    if not flights:
+        return {
+            "flights": [],
+            "available_count": 0,
+            "search_date": d.isoformat(),
+            "note": _no_availability_note(
+                "flights", f"{origin.title()} -> {dest.title()}", d.isoformat()
+            ),
+        }
     # total_price_pkr is the whole-party fare. Surface the per-seat figure too so
     # the model can quote either without ever multiplying the party total again.
     for f in flights:
@@ -1234,14 +1307,24 @@ async def _exec_flights(args: dict) -> dict:
 
 
 async def _exec_trains(args: dict) -> dict:
-    origin = (args.get("origin_city") or "").strip()
-    dest = (args.get("destination_city") or "").strip()
+    # See _exec_flights — the model can emit a non-string city.
+    origin = str(args.get("origin_city") or "").strip()
+    dest = str(args.get("destination_city") or "").strip()
     d = _to_date(args.get("travel_date"))
     pax = _as_count(args.get("passengers"), default=1) or 1
     resp = await asyncio.to_thread(search_trains, origin, dest, d, pax)
     result = _serialize_trains(resp)
     result["search_date"] = d.isoformat()
     result["passengers"] = pax
+    # Same posture as _exec_flights: an empty result must SAY it's empty. Pakistan
+    # Railways doesn't serve the far north at all, so this is a routine outcome,
+    # not a failure — and the model must relay it instead of recalling a train.
+    if not result.get("trains"):
+        result["available_count"] = 0
+        result["note"] = _no_availability_note(
+            "trains", f"{origin.title() or '—'} -> {dest.title() or '—'}", d.isoformat()
+        )
+        return result
     # Same anti-mislabel guard as _exec_flights — state what the fare covers.
     result["fare_basis"] = (
         f"This search priced {pax} seat(s). Each class's total_price_pkr is the fare "
@@ -1263,7 +1346,8 @@ async def _exec_trains(args: dict) -> dict:
 
 
 async def _exec_hotels(args: dict) -> dict:
-    city = (args.get("city") or "").strip()
+    # See _exec_flights — the model can emit a non-string city.
+    city = str(args.get("city") or "").strip()
     ci = _to_date(args.get("check_in"))
     co = _to_date(args.get("check_out"), default_days=10)
     if co <= ci:
@@ -1288,6 +1372,15 @@ async def _exec_hotels(args: dict) -> dict:
         "rooms": rooms,
         "hotels": hotels,
     }
+    # Same posture as _exec_flights/_exec_trains — an empty result must say so
+    # rather than leaving the model to fill the gap with a remembered hotel.
+    if not hotels:
+        result["available_count"] = 0
+        result["note"] = _no_availability_note(
+            "hotels", city.title() or "that city",
+            f"{ci.isoformat()} to {co.isoformat()}",
+        )
+        return result
     if note:
         result["budget_note"] = note
     return result
@@ -1483,7 +1576,8 @@ def get_missing_booking_fields(booking_data: dict) -> list[str]:
     model's prepare_booking arguments. Returns ["booking_type"] if booking_type
     itself is missing or unrecognized — the caller can't even dispatch without it.
     """
-    booking_type = str((booking_data or {}).get("booking_type") or "")
+    booking_data = booking_data if isinstance(booking_data, dict) else {}
+    booking_type = str(booking_data.get("booking_type") or "")
     required = _BOOKING_REQUIRED_FIELDS.get(booking_type)
     if required is None:
         return ["booking_type"]
@@ -1554,7 +1648,7 @@ def get_transfer_error(booking_data: dict) -> dict | None:
     Returns a structured error dict (hard stop, like the date and count gates)
     or None when there is no transfer, or the transfer is properly specified.
     """
-    bd = booking_data or {}
+    bd = booking_data if isinstance(booking_data, dict) else {}
     vehicle = str(bd.get("transfer_vehicle_type") or "").strip()
     pickup = str(bd.get("transfer_pickup_location") or "").strip()
 
@@ -1613,9 +1707,19 @@ _COUNT_LIMITS_NOTE = {
 
 
 def _as_count(value, *, default: int | None = None) -> int | None:
-    """Coerce a model-supplied count to a non-negative int; None if unusable."""
+    """Coerce a model-supplied count to a non-negative int; None if unusable.
+
+    A count of people must be a WHOLE number. int() would silently accept both
+    2.5 (-> 2 travelers) and True (-> 1 traveler), quietly booking and pricing a
+    party size the user never gave; both are rejected so the count gate asks
+    instead of guessing.
+    """
     if value is None or value == "":
         return default
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, float) and not value.is_integer():
+        return None
     try:
         n = int(value)
     except (TypeError, ValueError):
@@ -1642,7 +1746,7 @@ def get_booking_count_error(booking_data: dict) -> dict | None:
     get_missing_booking_fields and before repricing. Returns a structured
     error dict (hard stop, like the date gate) or None if counts are valid.
     """
-    bd = booking_data or {}
+    bd = booking_data if isinstance(booking_data, dict) else {}
     booking_type = str(bd.get("booking_type") or "")
 
     if booking_type in ("flight", "train"):
