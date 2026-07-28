@@ -458,6 +458,7 @@ def _generate_domestic_offers(
 
             segment = FlightSegment(
                 carrier_code=airline["code"],
+                carrier_name=airline.get("name"),
                 flight_number=flt_num,
                 departure_airport=origin,
                 arrival_airport=destination,
@@ -518,6 +519,7 @@ def _generate_domestic_generic_mock(
 
         segment = FlightSegment(
             carrier_code=carrier["code"],
+            carrier_name=carrier.get("name"),
             flight_number=flight_number,
             departure_airport=origin,
             arrival_airport=destination,
@@ -666,6 +668,7 @@ async def _fetch_aviationstack(
 
             segment = FlightSegment(
                 carrier_code=airline_info.get("iata") or "XX",
+                carrier_name=airline_info.get("name"),
                 flight_number=flight_no,
                 departure_airport=dep_info.get("iata") or origin,
                 arrival_airport=arr_info.get("iata") or destination,

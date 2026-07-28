@@ -40,6 +40,12 @@ class FlightSearchRequest(BaseModel):
 class FlightSegment(BaseModel):
     """One leg of a flight (departure → arrival at one airport)."""
     carrier_code:      str
+    # Human airline name for this carrier code. The code alone is NOT enough:
+    # the agent used to show only the code, leaving the model to translate it
+    # from memory — it rendered AirSial (ER) as "Airblue" and Airblue (PA) as
+    # "PIA", and that invented name reached a paid booking and its ticket.
+    # Optional so any caller constructing a segment without it still validates.
+    carrier_name:      Optional[str] = None
     flight_number:     str
     departure_airport: str
     arrival_airport:   str

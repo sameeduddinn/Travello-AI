@@ -904,6 +904,11 @@ def _serialize_flights(offers: list) -> list[dict]:
         out.append({
             "flight_number": seg.flight_number,
             "airline_code": seg.carrier_code,
+            # The real airline name, so the model never has to translate the
+            # 2-letter code from memory. It got this wrong in practice (ER is
+            # AirSial, not Airblue; PA is Airblue, not PIA) and the invented
+            # name was carried onto a paid booking's ticket and email.
+            "airline": getattr(seg, "carrier_name", None) or seg.carrier_code,
             "from": seg.departure_airport,
             "to": seg.arrival_airport,
             "depart": seg.departure_time.strftime("%Y-%m-%d %H:%M"),
@@ -1861,6 +1866,12 @@ async def _reprice_flight(bd: dict) -> dict | None:
             verified["total_price_pkr"] = f["total_price_pkr"]
             verified["travelers"] = passengers
             verified["cabin_class"] = cabin
+            # Overwrite the airline with the matched live listing's own name,
+            # exactly as _reprice_train already does for train_name. Until now
+            # the model's guess survived onto the booking, the ticket and the
+            # confirmation email — a fabricated travel-document detail.
+            if f.get("airline"):
+                verified["airline_or_train_name"] = f["airline"]
             depart = f.get("depart", "")
             if " " in depart:
                 verified["departure_time"] = depart.split(" ", 1)[1]
