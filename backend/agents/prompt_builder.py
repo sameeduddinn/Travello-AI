@@ -113,17 +113,34 @@ _OFFER_LIST_RE = re.compile(r"^\s*\|?\s*\d{1,2}\s*[.)\-:|]\s*\S", re.M)
 # Tool ids we can detect in an earlier assistant/tool turn, to carry forward.
 _CARRY_FORWARD_LOOKBACK = 6
 
+# The app's own confirmation milestone — written back into the conversation by
+# the Flutter client after payment succeeds. Same marker the already-paid gate
+# in agent_tools keys off.
+_CONFIRMED_RE = re.compile(r"(?:booking|package)\s+confirmed|\*\*PNR:\*\*", re.I)
+
 
 def _looks_like_offer_list(text: str) -> bool:
     return bool(_OFFER_LIST_RE.search(text or ""))
 
 
 def _recent_assistant_offers(history: list[dict] | None) -> bool:
-    """Did the assistant recently show a numbered list of options?"""
+    """
+    Is there still a numbered list of options the user could be replying to?
+
+    A confirmation retires the list it came from. Those options were picked,
+    summarised, paid for and given a PNR — they are not on the table any more,
+    they are a booking. Treating them as live is what made "now i want driver
+    at lahore airport" ship prepare_booking (and suppress the standalone-car
+    rule that would have removed it), so the model re-proposed the flight the
+    traveller had just paid for, with the car added on top.
+    """
     for m in reversed(list(history or [])[-_CARRY_FORWARD_LOOKBACK:]):
         if (m.get("role") or "").lower() != "assistant":
             continue
-        if _looks_like_offer_list(m.get("content") or ""):
+        text = m.get("content") or ""
+        if _CONFIRMED_RE.search(text):
+            return False
+        if _looks_like_offer_list(text):
             return True
     return False
 

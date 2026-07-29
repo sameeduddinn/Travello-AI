@@ -1569,6 +1569,154 @@ _TRANSFER_PLACEHOLDER_RE = re.compile(
 )
 
 
+# ── Already-paid guard ───────────────────────────────────────────────────────
+#
+# A booking that has been PAID for is finished: it has a PNR, a charge on a
+# card, and a confirmation email. Putting it into a second prepare_booking
+# bills the user again for something they already own.
+#
+# This is not hypothetical. Right after paying for a Karachi→Lahore flight,
+# "now i want driver at lahore airport" produced a fresh summary containing
+# that same flight PLUS the car, totalling the fare a second time — because
+# prepare_booking carries transfer_* fields and the model reached for them
+# instead of book_car.
+#
+# The signal is the app's own confirmation milestone, which the Flutter client
+# writes back into the conversation (ApiClient.saveAgentNote), matched to the
+# summary immediately before it — the summary is where the route and date live.
+# Both are produced by our own formatters, so the shapes are ours, not a
+# model's prose.
+
+_CONFIRMED_RE = re.compile(r"(?:booking|package)\s+confirmed|\*\*PNR:\*\*", re.I)
+_SUMMARY_RE = re.compile(r"\*\*Booking Summary\*\*|\*\*Your Package\*\*", re.I)
+_ISO_DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
+# "**Flight:** Karachi → Lahore" and the package form
+# "1. ✈️ **Flight:** Lahore → Karachi, 2026-08-20 — **PKR 21,210**".
+# The comma stops the destination capture so the package form yields a city.
+_ROUTE_LINE_RE = re.compile(
+    r"\*\*(Flight|Train):\*\*\s*([^\n*,]+?)\s*(?:→|->)\s*([^\n*,]+)", re.I)
+_HOTEL_LINE_RE = re.compile(r"\*\*Hotel:\*\*\s*([^\n*,]+)", re.I)
+_DATE_LINE_RE = re.compile(r"\*\*(?:Date|Check-in):\*\*\s*(\d{4}-\d{2}-\d{2})", re.I)
+
+
+def _components_in_summary(text: str) -> list[dict]:
+    """Pull (type, route/name, date) out of one of our own rendered summaries."""
+    out: list[dict] = []
+    lines = (text or "").splitlines()
+    for i, line in enumerate(lines):
+        route = _ROUTE_LINE_RE.search(line)
+        hotel = None if route else _HOTEL_LINE_RE.search(line)
+        if not route and not hotel:
+            continue
+        # A package puts the date on the same line; a single booking puts it on
+        # the next one or two. Stop at the following component so one leg can
+        # never borrow another leg's date.
+        same_line = _ISO_DATE_RE.search(line)
+        date = same_line.group(1) if same_line else ""
+        if not date:
+            for nxt in lines[i + 1:i + 4]:
+                if _ROUTE_LINE_RE.search(nxt) or _HOTEL_LINE_RE.search(nxt):
+                    break
+                found = _DATE_LINE_RE.search(nxt)
+                if found:
+                    date = found.group(1)
+                    break
+        if route:
+            out.append({
+                "booking_type": route.group(1).lower(),
+                "origin": route.group(2).strip(),
+                "destination": route.group(3).strip(),
+                "travel_date": date,
+            })
+        else:
+            out.append({
+                "booking_type": "hotel",
+                "hotel_name": hotel.group(1).strip(),
+                "check_in": date,
+            })
+    return out
+
+
+def confirmed_components(history: list[dict] | None) -> list[dict]:
+    """
+    Every component this conversation has already PAID for.
+
+    Walks forward remembering the most recent summary; when a confirmation
+    milestone appears, that summary is what was just paid for.
+    """
+    out: list[dict] = []
+    pending = ""
+    for m in history or []:
+        if (m.get("role") or "").lower() != "assistant":
+            continue
+        text = m.get("content")
+        if not isinstance(text, str):
+            continue
+        if _SUMMARY_RE.search(text):
+            pending = text
+            continue
+        if _CONFIRMED_RE.search(text) and pending:
+            out.extend(_components_in_summary(pending))
+            pending = ""
+    return out
+
+
+def _same_component(booked: dict, proposed: dict) -> bool:
+    """
+    Conservative equality: every part must be present on BOTH sides and match.
+
+    Deliberately strict. A false positive refuses a booking the user is
+    entitled to make, so a missing date or a blank city means "not the same"
+    and the booking proceeds through the normal gates.
+
+    Uses the module's existing `_norm` (defined further down with the repricing
+    helpers) rather than a second copy — two spellings of "casefold and strip"
+    is exactly how the two drift apart later.
+    """
+    kind = booked.get("booking_type")
+    if kind != proposed.get("booking_type"):
+        return False
+    if kind == "hotel":
+        name = _norm(booked.get("hotel_name"))
+        other = _norm(proposed.get("hotel_name")) or _norm(proposed.get("destination"))
+        if not (name and other and name == other):
+            return False
+        return bool(booked.get("check_in")) and booked.get("check_in") == proposed.get("check_in")
+    for field_name in ("origin", "destination"):
+        mine = _norm(booked.get(field_name))
+        if not mine or mine != _norm(proposed.get(field_name)):
+            return False
+    return bool(booked.get("travel_date")) and booked.get("travel_date") == proposed.get("travel_date")
+
+
+def get_already_booked_error(booking_data: dict, history: list[dict] | None) -> dict | None:
+    """
+    Refuse a prepare_booking for something this conversation already paid for.
+
+    Returns a structured error naming what is already owned, or None. This is a
+    REFUSAL gate: it can only ever stop a commit, never create one.
+    """
+    bd = booking_data if isinstance(booking_data, dict) else {}
+    for booked in confirmed_components(history):
+        if _same_component(booked, bd):
+            return {
+                "error": "already_booked",
+                "component": {k: v for k, v in booked.items() if v},
+                "instruction": (
+                    "This exact booking is ALREADY BOOKED AND PAID FOR earlier in "
+                    "this same conversation — it has a PNR and the card was already "
+                    "charged. Putting it into another booking or a package would "
+                    "charge the traveller a second time for something they already "
+                    "own. Do NOT include it again. If they asked for a car or a "
+                    "ride, use book_car for a standalone ride instead. If they "
+                    "asked for something genuinely new, prepare ONLY that new "
+                    "piece. Tell them warmly that their existing booking is "
+                    "unaffected and still confirmed."
+                ),
+            }
+    return None
+
+
 def _transfer_error(problem: str, ask_for: str) -> dict:
     return {
         "error": "invalid_transfer_pickup",

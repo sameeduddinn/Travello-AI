@@ -79,6 +79,7 @@ from agents.prompt_builder import build_system_prompt, select_tools, select_tool
 from agents.agent_tools import (
     get_missing_booking_fields,
     get_booking_count_error,
+    get_already_booked_error,
     get_booking_date_error,
     get_transfer_error,
     apply_traveler_totals,
@@ -1733,6 +1734,11 @@ async def process_message_agentic(
             # never saw offered together.
             step_components: list[dict] = []
             step_failures: list[dict] = []
+            # Calls refused because that component is already paid for. Counted
+            # apart from step_failures because it is NOT a failure of this
+            # checkout — the piece simply isn't part of it, so it must not make
+            # the package look short and withhold the piece that IS new.
+            already_booked = 0
             for tc in booking_calls:
                 bd = _safe_args(tc.function.arguments)
                 # Deterministically recover a hotel's `destination` if the model
@@ -1760,6 +1766,16 @@ async def process_message_agentic(
                     booking_gate_results[tc.id] = date_error
                     step_failures.append(bd)
                     _log_gate_failure("prepare_booking", bd, date_error)
+                    continue
+                # Already paid for, earlier in this same conversation. Runs
+                # before repricing because the answer cannot depend on whether
+                # the fare is still available — the traveller already owns it,
+                # and re-preparing it would charge them twice.
+                booked_error = get_already_booked_error(bd, history)
+                if booked_error:
+                    booking_gate_results[tc.id] = booked_error
+                    already_booked += 1
+                    _log_gate_failure("prepare_booking", bd, booked_error)
                     continue
                 # The transfer pickup address is dispatched to a real driver
                 # after payment, so it gets the same hard gate as the date and
@@ -1821,7 +1837,13 @@ async def process_message_agentic(
             # prepared one leg, and the model's calls catch a package the user
             # described in prose rather than by numbers.
             if booking_calls:
-                expected_components = max(len(booking_calls), len(user_picks), 1)
+                # Pieces already paid for don't belong to this checkout, so they
+                # don't count towards what it owes. Without this, re-proposing a
+                # paid flight alongside a genuinely new hotel would make the
+                # package look incomplete and withhold the hotel too.
+                expected_components = max(
+                    len(booking_calls) - already_booked, len(user_picks), 1
+                )
                 if len(step_components) >= expected_components:
                     package_components = step_components
                     booking_data = step_components[0]
