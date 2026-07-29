@@ -1,24 +1,29 @@
 from __future__ import annotations
 # =============================================================================
-# PURPOSE: Unified LLM service — Groq primary, Gemini as fallback.
+# PURPOSE: Unified LLM service — Groq primary, OpenRouter + Gemini as fallbacks.
 #
-#   Public API (unchanged — all agents import these):
+#   Public API (all agents import these):
 #       generate_text(messages, *, temperature, max_output_tokens) -> str
 #       generate_json(messages, *, temperature, max_output_tokens) -> Any
-#       LLMError  — raised on unrecoverable failures
+#       generate_with_tools(messages, tools, ...)  -> assistant message object
+#       LLMError  — raised on unrecoverable failures, carrying a typed `.kind`
 #
 #   Provider priority:
 #       1. Groq   (settings.GROQ_MODEL)       — primary (free, fast, cheap on quota)
-#       2. Gemini (settings.GEMINI_MODEL)     — fallback if Groq quota/timeout
+#       2. OpenRouter (settings.OPENROUTER_MODEL) — second independent budget
+#       3. Gemini (settings.GEMINI_MODEL)     — third budget, ALSO tool-capable
 #
-#   To switch to Gemini-primary: swap the try-order in generate_text / generate_json.
+#   All three speak tool calling: Groq/OpenRouter over the OpenAI schema, Gemini
+#   over its native function-calling API (see _gemini_generate_with_tools).
 # =============================================================================
 
 import asyncio
+import contextvars
 import json
 import logging
 import re
 import time
+import uuid
 from typing import Any
 
 import httpx
@@ -28,12 +33,344 @@ from core.config import settings
 logger = logging.getLogger(__name__)
 
 
+# Which provider/model actually produced the last answer on THIS request.
+#
+# Saved history used to record settings.GROQ_MODEL unconditionally, so a turn
+# that Gemini or OpenRouter actually served was filed under Groq — and that is
+# the single field you most want to be true when you are working out why one
+# turn behaved differently from the next.
+#
+# A ContextVar, not a module global: FastAPI runs every request in its own task,
+# so two concurrent chats cannot overwrite each other's attribution.
+#
+# The var holds a MUTABLE dict rather than the value itself, and that detail is
+# load-bearing. A child context (anything wrapped in create_task/gather, and
+# asyncio.wait_for on Python ≤3.11) gets a COPY of the context: a `.set()` inside
+# it is invisible to the caller that has to persist the value. Every copy shares
+# the same dict object, so mutating it is visible everywhere — which is exactly
+# the "written deep in the call stack, read at the top" shape we need.
+_answering: contextvars.ContextVar[dict | None] = contextvars.ContextVar(
+    "llm_answering_provider", default=None,
+)
+
+
+def begin_turn() -> None:
+    """
+    Start attribution for one user turn. Call at the top of a request, in the
+    request's own task, before any provider call.
+    """
+    _answering.set({})
+
+
+def _note_answered(provider: str, model: str) -> None:
+    holder = _answering.get()
+    if holder is None:
+        # No begin_turn() — best effort. Correct in the common case (same task),
+        # and a stale read here only mislabels a log field, never a booking.
+        _answering.set({"provider": provider, "model": model})
+        return
+    holder["provider"] = provider
+    holder["model"] = model
+
+
+def answering_provider() -> str | None:
+    """Provider name that served the last call in this turn, or None."""
+    return (_answering.get() or {}).get("provider")
+
+
+def answering_model(default: str | None = None) -> str:
+    """
+    Model id that served the last call in this turn.
+
+    Falls back to the configured Groq model so callers that persist it always
+    have something to write — but that fallback now only applies when no call
+    was made at all (a deterministic reply, a guard that short-circuited).
+    """
+    return (_answering.get() or {}).get("model") or default or settings.GROQ_MODEL
+
+
+# ── Typed provider failures ───────────────────────────────────────────────────
+#
+# "429" is four different problems wearing the same hat, and treating them alike
+# is what made the agent unusable: a DAILY token budget that is spent for the
+# next several hours was retried every turn as though it were a per-minute blip,
+# while a payload the model can never accept (413) was retried too. The caller
+# needs to know WHICH so it can pick a cooldown, a fallback, and an honest
+# user-facing message. `kind` is that discriminator.
+
+QUOTA_MINUTE = "quota_minute"                # per-minute TPM/RPM wall — clears in seconds
+QUOTA_DAILY = "quota_daily"                  # per-day TPD/RPD budget — gone for hours
+REQUEST_TOO_LARGE = "request_too_large"      # payload exceeds the model's window/TPM
+INVALID_KEY = "invalid_key"                  # 401/403 — a different model won't help
+PROVIDER_UNAVAILABLE = "provider_unavailable"  # transport/5xx/misconfiguration
+TOOL_CALL_FAILURE = "tool_call_failure"      # model emitted an unusable tool call
+
+# Kinds that mean "this provider cannot serve ANY request right now", as opposed
+# to "this particular request was wrong".
+_BLOCKING_KINDS = (QUOTA_MINUTE, QUOTA_DAILY, INVALID_KEY)
+
+
 class LLMError(RuntimeError):
-    """Raised on any LLM call failure."""
+    """
+    An LLM call failure with a machine-readable cause.
+
+    `kind` is one of the constants above. `retry_after` is seconds, parsed from
+    the provider's own headers or error body when it told us — never guessed.
+    The message is for LOGS ONLY; callers render user-facing text from `kind`.
+    """
+
+    def __init__(
+        self,
+        message: str = "",
+        *,
+        kind: str = PROVIDER_UNAVAILABLE,
+        provider: str | None = None,
+        model: str | None = None,
+        retry_after: float | None = None,
+    ):
+        super().__init__(message or kind)
+        self.kind = kind
+        self.provider = provider
+        self.model = model
+        self.retry_after = retry_after
 
 
 # Keep GeminiError as an alias so old imports don't break during transition
 GeminiError = LLMError
+
+
+def error_kind(exc: Exception) -> str:
+    """The typed cause of `exc`, for callers that catch a bare Exception."""
+    return getattr(exc, "kind", PROVIDER_UNAVAILABLE)
+
+
+def is_quota_error(exc: Exception) -> bool:
+    """True for either flavour of quota wall (per-minute or per-day)."""
+    return error_kind(exc) in (QUOTA_MINUTE, QUOTA_DAILY)
+
+
+# ── Token estimation ──────────────────────────────────────────────────────────
+#
+# Groq bills and rejects on tokens, but only tells us the count AFTER the call —
+# by which time a too-large request has already spent a retry and, on a TPD wall,
+# nothing at all. A cheap local estimate lets us log the size of every request we
+# send and compare it against what the provider actually charged, so payload
+# growth is visible in the logs instead of showing up as a mystery 429.
+#
+# 4 chars/token is the standard English heuristic and was calibrated against this
+# app's own traffic: the 35,541-char fixed payload estimated 8,885 tokens and Groq
+# reported "Requested 8635" for the same call — ~3% high, i.e. conservative.
+_CHARS_PER_TOKEN = 4.0
+# JSON is denser than prose: braces, quotes, commas and digit runs each cost a
+# token, so a serialised tool result tokenises well below 4 chars/token. Measured
+# against Groq's own counts on this app's traffic, prose came in ~2% high while a
+# JSON-heavy booking payload was ~25% LOW at 4.0 — an underestimate is the
+# dangerous direction, because it hides an approaching request-too-large wall.
+_JSON_CHARS_PER_TOKEN = 3.2
+# Each message carries role/delimiter overhead the char count doesn't see.
+_TOKENS_PER_MESSAGE = 4
+
+
+def estimate_tokens(text: str, *, json_like: bool = False) -> int:
+    """Rough token count for a blob of text. Never raises."""
+    divisor = _JSON_CHARS_PER_TOKEN if json_like else _CHARS_PER_TOKEN
+    return int(len(text or "") / divisor) + 1
+
+
+def estimate_request_tokens(messages: list[dict] | None, tools: list[dict] | None = None) -> int:
+    """
+    Estimated input size of a chat request, tool schemas included.
+
+    Deliberately counts the JSON serialisation of tool calls and schemas, because
+    that is what actually goes over the wire — a 7-tool schema block is ~1.9k
+    tokens on its own and was invisible in every earlier size calculation.
+    """
+    total = 0
+    for m in messages or []:
+        total += _TOKENS_PER_MESSAGE
+        content = m.get("content")
+        # A 'tool' message is always a serialised result, never prose.
+        as_json = (m.get("role") or "").lower() == "tool"
+        if isinstance(content, str):
+            total += estimate_tokens(content, json_like=as_json)
+        elif content is not None:
+            total += estimate_tokens(json.dumps(content), json_like=True)
+        if m.get("tool_calls"):
+            try:
+                total += estimate_tokens(json.dumps(m["tool_calls"]), json_like=True)
+            except (TypeError, ValueError):
+                pass
+    if tools:
+        try:
+            total += estimate_tokens(
+                json.dumps(tools, separators=(",", ":")), json_like=True)
+        except (TypeError, ValueError):
+            pass
+    return total
+
+
+def _log_call(
+    provider: str,
+    model: str,
+    *,
+    est_in: int,
+    status: str,
+    actual_in: Any = None,
+    actual_out: Any = None,
+    retry_after: float | None = None,
+    detail: str = "",
+) -> None:
+    """
+    One structured line per provider call. This is the record that turns "the
+    agent said quota exhausted" into a diagnosis — provider, model, error
+    category, when it resets, and how big the request actually was.
+    """
+    parts = [
+        f"llm_call provider={provider}",
+        f"model={model}",
+        f"est_in={est_in}",
+        f"status={status}",
+    ]
+    if actual_in is not None:
+        parts.append(f"in={actual_in}")
+    if actual_out is not None:
+        parts.append(f"out={actual_out}")
+    if retry_after is not None:
+        parts.append(f"retry_after={retry_after:.0f}s")
+    if detail:
+        parts.append(f"detail={detail[:160]!r}")
+    line = " ".join(parts)
+    if status.startswith("ok"):
+        # Single choke point for attribution: every provider path logs its
+        # success here, so recording it here cannot drift out of sync with the
+        # provider chain the way a per-branch assignment would.
+        _note_answered(provider, model)
+    # "ok_salvaged" is a success we still want visible — a rising salvage rate
+    # is how you find out the model is drifting before users do.
+    if status == "ok":
+        logger.info(line)
+    else:
+        logger.warning(line)
+
+
+# ── Provider error classification ─────────────────────────────────────────────
+
+# The three providers spell the same window three different ways, so the
+# separator is optional and the match is case-insensitive:
+#   Groq        "on tokens per day (TPD)"          -> "per day"
+#   OpenRouter  "Rate limit exceeded: free-models-per-day"  -> "per-day"
+#   Gemini      "GenerateRequestsPerDayPerProjectPerModel"  -> "PerDay"
+_DAILY_RE = re.compile(r"per[\s_-]*day|\bTPD\b|\bRPD\b", re.IGNORECASE)
+_MINUTE_RE = re.compile(r"per[\s_-]*minute|\bTPM\b|\bRPM\b", re.IGNORECASE)
+
+# A 429 whose reset is further out than this is a budget window, not a per-minute
+# bucket — no per-minute wall ever asks you to wait five minutes.
+_UNLABELLED_DAILY_THRESHOLD = 180.0
+_TOO_LARGE_RE = re.compile(
+    r"request_too_large|request too large|too large for|context length|"
+    r"maximum context|input is too long|prompt is too long|reduce the length",
+    re.IGNORECASE,
+)
+_RATE_LIMIT_RE = re.compile(r"rate[_ ]?limit|429|resource_exhausted|quota", re.IGNORECASE)
+_INVALID_KEY_RE = re.compile(r"\b401\b|\b403\b|invalid_api_key|permission_denied|unauthorized",
+                             re.IGNORECASE)
+
+# "Please try again in 5m39.6s" / "in 1h2m3s" / "in 12.5s" — Groq puts the real
+# reset here, and on a DAILY wall it is the only place it appears (the response
+# headers describe the per-minute bucket, which reads full).
+_DURATION_RE = re.compile(
+    r"try again in\s*(?:(\d+)h)?\s*(?:(\d+)m(?!s))?\s*(?:([\d.]+)s)?", re.IGNORECASE
+)
+
+
+def _parse_retry_seconds(text: str) -> float | None:
+    """Seconds from a 'try again in 1h2m3.5s' phrase, or None."""
+    m = _DURATION_RE.search(text or "")
+    if not m or not any(m.groups()):
+        return None
+    hours, minutes, seconds = m.groups()
+    try:
+        total = (int(hours or 0) * 3600) + (int(minutes or 0) * 60) + float(seconds or 0)
+    except (TypeError, ValueError):
+        return None
+    return total or None
+
+
+def _header_retry_seconds(headers: Any) -> float | None:
+    """Seconds from a Retry-After / X-RateLimit-Reset header, or None."""
+    if not headers:
+        return None
+
+    def _get(name: str):
+        try:
+            return headers.get(name)
+        except Exception:
+            return None
+
+    raw = _get("retry-after") or _get("Retry-After")
+    if raw:
+        try:
+            return float(raw)
+        except (TypeError, ValueError):
+            parsed = _parse_retry_seconds(str(raw))
+            if parsed:
+                return parsed
+    # OpenRouter reports an absolute epoch-milliseconds reset instead.
+    reset = _get("X-RateLimit-Reset") or _get("x-ratelimit-reset")
+    if reset:
+        try:
+            secs = float(reset) / 1000.0 - time.time()
+            if secs > 0:
+                return secs
+        except (TypeError, ValueError):
+            pass
+    # Groq's per-minute token bucket reset, e.g. "7.66s".
+    tok_reset = _get("x-ratelimit-reset-tokens") or _get("X-RateLimit-Reset-Tokens")
+    if tok_reset:
+        parsed = _parse_retry_seconds(f"try again in {tok_reset}")
+        if parsed:
+            return parsed
+    return None
+
+
+def classify_provider_error(
+    text: str,
+    *,
+    status_code: int | None = None,
+    headers: Any = None,
+) -> tuple[str, float | None]:
+    """
+    Map a raw provider error (body text + status + headers) to (kind, retry_after).
+
+    The ordering matters. A Groq daily-quota 429 and a per-minute 429 are the SAME
+    status code with the SAME headers — only the body distinguishes them ("on
+    tokens per day (TPD)" vs "per minute (TPM)") — so the body is read first and
+    the status code is only a fallback. Getting this backwards is precisely what
+    made the agent re-probe a provider whose budget was gone for the rest of the
+    day, on every single turn.
+    """
+    text = text or ""
+    retry = _parse_retry_seconds(text) or _header_retry_seconds(headers)
+
+    # 413 / context-window errors are NOT rate limits: the same payload will fail
+    # forever, so a cooldown is the wrong response — the payload must shrink.
+    if status_code == 413 or _TOO_LARGE_RE.search(text):
+        return REQUEST_TOO_LARGE, None
+
+    if status_code in (401, 403) or _INVALID_KEY_RE.search(text):
+        return INVALID_KEY, None
+
+    if status_code == 429 or _RATE_LIMIT_RE.search(text):
+        if _DAILY_RE.search(text):
+            return QUOTA_DAILY, retry
+        if _MINUTE_RE.search(text):
+            return QUOTA_MINUTE, retry
+        # Unlabelled 429. A long reset means a budget window, not a minute bucket.
+        if retry and retry > _UNLABELLED_DAILY_THRESHOLD:
+            return QUOTA_DAILY, retry
+        return QUOTA_MINUTE, retry
+
+    return PROVIDER_UNAVAILABLE, retry
 
 
 def _strip_code_fences(raw: str) -> str:
@@ -72,107 +409,244 @@ def _extract_system(messages: list[dict]) -> tuple[str, list[dict]]:
 
 
 # ── Groq provider ─────────────────────────────────────────────────────────────
+#
+# TWO keys, because the free-tier limit that actually ends a day is per-ACCOUNT
+# (TPD), not per-minute. A second Groq account is a second daily budget, so a
+# spent key 1 no longer drops the agent onto a weaker fallback for hours.
+#
+# Each key gets its OWN client and its OWN _ProviderState. Sharing state would
+# defeat the point: key 1's daily wall would park key 2 as well.
+#
+# Slot 0 keeps the plain names (_get_groq_client, _groq_state, provider "groq")
+# so every existing call site, log line and test stub reads the same as before.
 
-_groq_client = None
+_GROQ_SLOT_NAMES = ("groq", "groq2")
+
+_groq_client = None      # key 1
+_groq_client_2 = None    # key 2 (optional)
 
 
-def _get_groq_client():
-    global _groq_client
-    if _groq_client is not None:
-        return _groq_client
-    if not settings.GROQ_API_KEY:
-        return None
+def _build_groq_client(api_key: str, label: str):
+    """
+    Construct one Groq client. `label` is "key 1"/"key 2" — a POSITION, never
+    the key itself; nothing in this module may put a key value in a log line.
+    """
     try:
         from groq import AsyncGroq
         # max_retries=0: on a free-tier TPM 429, Groq returns a large `retry-after`
         # (~55s) and the SDK would otherwise sleep+retry internally, blowing past the
         # 60s request cap and hanging the chat UI. Fail fast instead and let the
-        # orchestrator degrade gracefully (generate_with_tools -> quota_exhausted).
-        _groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY, max_retries=0)
-        logger.info("Groq client ready — model=%s", settings.GROQ_MODEL)
-        return _groq_client
+        # orchestrator degrade gracefully on a typed QUOTA_MINUTE error.
+        client = AsyncGroq(api_key=api_key, max_retries=0)
+        logger.info("Groq client ready — %s, model=%s", label, settings.GROQ_MODEL)
+        return client
     except Exception as exc:
-        logger.warning("Groq client init failed: %s", exc)
+        logger.warning("Groq client init failed (%s): %s", label, exc)
         return None
 
 
-# ── Groq availability window ──────────────────────────────────────────────────
+def _get_groq_client():
+    """Client for Groq key 1. Deliberately zero-arg — the long-standing accessor."""
+    global _groq_client
+    if _groq_client is not None:
+        return _groq_client
+    keys = settings.groq_api_keys
+    if not keys:
+        return None
+    _groq_client = _build_groq_client(keys[0], "key 1")
+    return _groq_client
+
+
+def _get_groq_client_2():
+    """Client for the optional Groq key 2. None when only one key is configured."""
+    global _groq_client_2
+    if _groq_client_2 is not None:
+        return _groq_client_2
+    keys = settings.groq_api_keys
+    if len(keys) < 2:
+        return None
+    _groq_client_2 = _build_groq_client(keys[1], "key 2")
+    return _groq_client_2
+
+
+def _groq_client_for(index: int):
+    return _get_groq_client() if index == 0 else _get_groq_client_2()
+
+
+# ── Provider availability windows ─────────────────────────────────────────────
 #
-# A Groq 429 is NOT always the per-minute wall. When the DAILY token budget is
-# spent the 429 comes back with the minute-window counters still completely full
-# (x-ratelimit-remaining-tokens: 12000) and a retry-after measured in TENS OF
-# MINUTES. Re-probing Groq at the top of every agentic step then buys nothing and
-# costs a round trip each time — three per turn, against a 60s interactive budget
-# that a turn has already been observed to blow. Remember when Groq told us to
-# come back, and go straight to the fallback until then.
-_groq_blocked_until: float = 0.0
-_GROQ_MIN_COOLDOWN = 20.0    # floor, for a 429 carrying no usable retry-after
-_GROQ_MAX_COOLDOWN = 900.0   # ceiling, so one odd header can't park Groq for hours
-
-
-def _groq_available() -> bool:
-    return time.monotonic() >= _groq_blocked_until
-
-
-def _note_groq_rate_limit(exc: Exception) -> None:
-    """Park Groq for as long as it asked to be left alone."""
-    global _groq_blocked_until
-    delay = _GROQ_MIN_COOLDOWN
-    resp = getattr(exc, "response", None)
-    if resp is not None:
-        try:
-            delay = max(float(resp.headers.get("retry-after")), _GROQ_MIN_COOLDOWN)
-        except (TypeError, ValueError, AttributeError):
-            pass
-    delay = min(delay, _GROQ_MAX_COOLDOWN)
-    _groq_blocked_until = time.monotonic() + delay
-    logger.warning("Groq rate-limited — skipping it for %.0fs", delay)
-
-
-# ── OpenRouter availability window ────────────────────────────────────────────
+# A 429 is NOT always the per-minute wall. When Groq's DAILY token budget is spent
+# the 429 comes back with the minute-window counters still completely full
+# (x-ratelimit-remaining-tokens: 12000) and a reset measured in MINUTES TO HOURS.
+# OpenRouter's free tier likewise has a per-ACCOUNT daily request cap that every
+# model shares. Re-probing either at the top of every agentic step then buys
+# nothing and costs a round trip each time — three per turn, against a 60s
+# interactive budget a turn has already been observed to blow.
 #
-# OpenRouter's free tier has its OWN daily cap (50 requests/day across ALL free
-# models, keyed to the account — not the model), and when it is spent every
-# configured model returns 429 instantly. Tracking that matters for more than
-# saving a round trip: _use_groq below decides whether Groq's cooldown is worth
-# honouring, and that decision is only sound if "there is a fallback" means a
-# fallback that can actually answer right now, not merely one that has a key.
-_openrouter_blocked_until: float = 0.0
-_OPENROUTER_MIN_COOLDOWN = 30.0
-_OPENROUTER_MAX_COOLDOWN = 900.0
+# So each provider carries a state: when it is blocked until, WHY, and which of
+# its models have refused our payload as too large. The cooldown is driven by the
+# reset the provider itself reported — a daily wall is honoured in full (capped
+# only at 24h so a corrupt header can't park a provider forever), while a minute
+# wall keeps the old fast-recovery behaviour.
+
+_MINUTE_MIN_COOLDOWN = 15.0      # floor for a per-minute 429 with no usable reset
+_MINUTE_MAX_COOLDOWN = 300.0     # ceiling — a minute bucket never needs longer
+_DAILY_DEFAULT_COOLDOWN = 1800.0  # a daily wall that didn't say when it resets
+_DAILY_MAX_COOLDOWN = 24 * 3600.0
+_INVALID_KEY_COOLDOWN = 600.0    # a bad key won't fix itself; stop hammering it
 
 
-def _openrouter_available() -> bool:
-    return time.monotonic() >= _openrouter_blocked_until
+class _ProviderState:
+    """Live health of one provider — see the module comment above."""
+
+    def __init__(self, name: str):
+        self.name = name
+        self.blocked_until: float = 0.0
+        self.block_kind: str = ""
+        self.block_reason: str = ""
+        # Models that returned 413 for a payload this size. Cleared whenever a
+        # call to that model succeeds, so a shrunken payload re-enables it.
+        self.oversized_models: set[str] = set()
+
+    def available(self) -> bool:
+        return time.monotonic() >= self.blocked_until
+
+    def seconds_left(self) -> float:
+        return max(self.blocked_until - time.monotonic(), 0.0)
+
+    def daily_exhausted(self) -> bool:
+        return self.block_kind == QUOTA_DAILY and not self.available()
+
+    def note_failure(self, kind: str, retry_after: float | None, detail: str = "") -> None:
+        if kind == QUOTA_DAILY:
+            delay = min(retry_after or _DAILY_DEFAULT_COOLDOWN, _DAILY_MAX_COOLDOWN)
+        elif kind == QUOTA_MINUTE:
+            delay = min(
+                max(retry_after or _MINUTE_MIN_COOLDOWN, _MINUTE_MIN_COOLDOWN),
+                _MINUTE_MAX_COOLDOWN,
+            )
+        elif kind == INVALID_KEY:
+            delay = _INVALID_KEY_COOLDOWN
+        else:
+            return  # transport blips and 413s are per-request, not per-provider
+        self.blocked_until = time.monotonic() + delay
+        self.block_kind = kind
+        self.block_reason = detail[:200]
+        logger.warning(
+            "provider %s blocked kind=%s for %.0fs (%s)",
+            self.name, kind, delay, detail[:120] or "no detail",
+        )
+
+    def note_success(self, model: str | None = None) -> None:
+        self.blocked_until = 0.0
+        self.block_kind = ""
+        self.block_reason = ""
+        if model:
+            self.oversized_models.discard(model)
+
+    def note_oversized(self, model: str) -> None:
+        self.oversized_models.add(model)
 
 
-def _note_openrouter_rate_limit(resp=None) -> None:
-    """Park OpenRouter until the reset it reported (or a short default)."""
-    global _openrouter_blocked_until
-    delay = _OPENROUTER_MIN_COOLDOWN
-    reset_ms = None
-    if resp is not None:
-        try:
-            reset_ms = resp.headers.get("X-RateLimit-Reset")
-        except Exception:
-            reset_ms = None
-        if reset_ms is None:
-            # The daily-cap 429 carries the reset inside the error body instead.
-            try:
-                meta = ((resp.json().get("error") or {}).get("metadata") or {})
-                reset_ms = (meta.get("headers") or {}).get("X-RateLimit-Reset")
-            except Exception:
-                reset_ms = None
-    if reset_ms:
-        try:
-            secs = float(reset_ms) / 1000.0 - time.time()
-            if secs > 0:
-                delay = max(secs, _OPENROUTER_MIN_COOLDOWN)
-        except (TypeError, ValueError):
-            pass
-    delay = min(delay, _OPENROUTER_MAX_COOLDOWN)
-    _openrouter_blocked_until = time.monotonic() + delay
-    logger.warning("OpenRouter rate-limited — skipping it for %.0fs", delay)
+_groq_state = _ProviderState("groq")      # key 1
+_groq2_state = _ProviderState("groq2")    # key 2 (optional)
+_openrouter_state = _ProviderState("openrouter")
+_gemini_state = _ProviderState("gemini")
+
+
+def _groq_state_for(index: int) -> _ProviderState:
+    return _groq_state if index == 0 else _groq2_state
+
+
+def _provider_states() -> dict[str, _ProviderState]:
+    return {
+        "groq": _groq_state,
+        "groq2": _groq2_state,
+        "openrouter": _openrouter_state,
+        "gemini": _gemini_state,
+    }
+
+
+def _configured(name: str) -> bool:
+    """
+    Is this budget usable at all?
+
+    The two Groq slots are POSITIONS in settings.groq_api_keys, not variable
+    names — one key configured means slot 0 only, whichever variable supplied
+    it. Everything that reasons about exhaustion (all_providers_exhausted,
+    _no_provider_error, provider_health) reads this, so an absent key 2 simply
+    never counts.
+    """
+    if name == "groq":
+        return len(settings.groq_api_keys) >= 1
+    if name == "groq2":
+        return len(settings.groq_api_keys) >= 2
+    return bool({
+        "openrouter": settings.OPENROUTER_API_KEY,
+        "gemini": settings.GEMINI_API_KEY,
+    }.get(name))
+
+
+def provider_health() -> dict[str, dict]:
+    """Snapshot of every provider's state — for logging and the /chat guard."""
+    return {
+        name: {
+            "configured": _configured(name),
+            "available": state.available(),
+            "block_kind": state.block_kind if not state.available() else "",
+            "seconds_left": round(state.seconds_left()),
+        }
+        for name, state in _provider_states().items()
+    }
+
+
+def all_providers_exhausted() -> bool:
+    """
+    True when EVERY configured provider is sitting on a known DAILY quota wall.
+
+    This is the one condition where sending another request is pure waste: the
+    caller can answer honestly and instantly instead of spending a turn's budget
+    discovering the same thing three times over. A per-minute wall deliberately
+    does NOT count — those clear in seconds and are worth retrying.
+    """
+    states = [s for name, s in _provider_states().items() if _configured(name)]
+    if not states:
+        return False
+    return all(s.daily_exhausted() for s in states)
+
+
+def _reset_provider_state_for_tests() -> None:
+    """Clear all provider cooldowns and cached clients. Test-only helper."""
+    global _groq_client, _groq_client_2
+    for state in _provider_states().values():
+        state.blocked_until = 0.0
+        state.block_kind = ""
+        state.block_reason = ""
+        state.oversized_models.clear()
+    # Clients are cached per key; a test that changes the configured keys must
+    # not keep talking to the previous test's client.
+    _groq_client = None
+    _groq_client_2 = None
+
+
+def _note_provider_error(
+    state: _ProviderState,
+    text: str,
+    *,
+    status_code: int | None = None,
+    headers: Any = None,
+    model: str | None = None,
+) -> LLMError:
+    """Classify a raw provider failure, record it against the provider, return it typed."""
+    kind, retry = classify_provider_error(text, status_code=status_code, headers=headers)
+    if kind == REQUEST_TOO_LARGE and model:
+        state.note_oversized(model)
+    else:
+        state.note_failure(kind, retry, text)
+    return LLMError(
+        f"{state.name}: {text[:200]}",
+        kind=kind, provider=state.name, model=model, retry_after=retry,
+    )
 
 
 def _fallback_ready(include_gemini: bool = True) -> bool:
@@ -182,21 +656,67 @@ def _fallback_ready(include_gemini: bool = True) -> bool:
     is spent answers nothing, and treating it as a live fallback is what made the
     agent skip a perfectly healthy Groq and report "quota exhausted" instead.
     """
-    if settings.OPENROUTER_API_KEY and _openrouter_available():
+    if settings.OPENROUTER_API_KEY and _openrouter_state.available():
         return True
-    return bool(include_gemini and settings.GEMINI_API_KEY)
+    return bool(
+        include_gemini and settings.GEMINI_API_KEY and _gemini_state.available()
+    )
 
 
-def _use_groq(has_fallback: bool) -> bool:
+def _use_groq(has_fallback: bool, index: int = 0) -> bool:
     """
-    Whether to try Groq at all. A known cooldown is only worth honouring when
-    something else can serve the request — with no usable fallback, a doomed
-    attempt still beats no attempt (and Groq's per-minute window often reset
-    seconds after the 429 that parked it).
+    Whether to try this Groq key at all. A known cooldown is only worth
+    honouring when something else can serve the request — with no usable
+    fallback, a doomed attempt still beats no attempt (and Groq's per-minute
+    window often reset seconds after the 429 that parked it).
+
+    The one exception is a DAILY wall: that budget is measurably gone for the
+    reset window the provider itself quoted, so retrying it cannot succeed and
+    only burns the interactive turn budget the user is waiting on.
     """
-    if _get_groq_client() is None:
+    if _groq_client_for(index) is None:
         return False
-    return _groq_available() or not has_fallback
+    state = _groq_state_for(index)
+    if state.daily_exhausted():
+        return False
+    return state.available() or not has_fallback
+
+
+def _groq_slots_to_try(has_fallback: bool) -> list[int]:
+    """
+    Which Groq keys are worth attempting for THIS call, in order.
+
+    A slot is dropped when it has no client, when its own state says it cannot
+    serve, or when the model already refused a payload this size.
+
+    That last check reads EVERY slot's oversized set, not just this one's,
+    because a 413 is a property of the payload and the model — and both keys run
+    settings.GROQ_MODEL. Rotating the key after a 413 would resend the identical
+    request to the identical model and fail identically, having spent another
+    slice of the turn the user is waiting on.
+
+    A sibling key that is ready counts as a fallback for this one, so a key
+    parked on a per-minute wall is skipped in favour of the other key rather
+    than being attempted anyway. That is not rotation on a minute error — it is
+    the existing "don't poke a provider we know is parked" rule, now with one
+    more provider to choose from.
+    """
+    live = [i for i in range(len(settings.groq_api_keys)) if _groq_client_for(i) is not None]
+    oversized = any(
+        settings.GROQ_MODEL in _groq_state_for(i).oversized_models for i in live
+    )
+    if oversized:
+        logger.warning(
+            "skipping Groq — %s already refused a payload this size (413)",
+            settings.GROQ_MODEL,
+        )
+        return []
+    out: list[int] = []
+    for i in live:
+        sibling_ready = any(j != i and _groq_state_for(j).available() for j in live)
+        if _use_groq(has_fallback or sibling_ready, i):
+            out.append(i)
+    return out
 
 
 async def _call_groq(
@@ -205,10 +725,13 @@ async def _call_groq(
     temperature: float,
     max_output_tokens: int,
     json_mode: bool = False,
+    key_index: int = 0,
 ) -> str:
-    client = _get_groq_client()
+    client = _groq_client_for(key_index)
+    slot = _GROQ_SLOT_NAMES[key_index]
+    state = _groq_state_for(key_index)
     if client is None:
-        raise LLMError("groq_unavailable")
+        raise LLMError("groq client unavailable", kind=PROVIDER_UNAVAILABLE, provider=slot)
 
     system_text, rest = _extract_system(messages)
 
@@ -226,25 +749,51 @@ async def _call_groq(
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
 
+    est_in = estimate_request_tokens(groq_messages)
     try:
         response = await client.chat.completions.create(**kwargs)
         text = (response.choices[0].message.content or "").strip()
         if not text:
-            raise LLMError("Groq returned empty response")
-        logger.info("Groq usage — in=%s out=%s",
-                    response.usage.prompt_tokens,
-                    response.usage.completion_tokens)
+            _log_call(slot, settings.GROQ_MODEL, est_in=est_in, status="empty_response")
+            raise LLMError("groq returned empty response", kind=PROVIDER_UNAVAILABLE,
+                           provider=slot, model=settings.GROQ_MODEL)
+        state.note_success(settings.GROQ_MODEL)
+        _log_call(slot, settings.GROQ_MODEL, est_in=est_in, status="ok",
+                  actual_in=response.usage.prompt_tokens,
+                  actual_out=response.usage.completion_tokens)
         return text
     except LLMError:
         raise
     except Exception as exc:
-        err = str(exc)
-        if "429" in err or "rate_limit" in err.lower():
-            _note_groq_rate_limit(exc)
-            raise LLMError("quota_exhausted")
-        if "401" in err or "403" in err:
-            raise LLMError("invalid_key")
-        raise LLMError(f"Groq call failed: {exc}") from exc
+        raise _groq_exception_error(exc, est_in, key_index=key_index) from exc
+
+
+def _groq_exception_error(exc: Exception, est_in: int, key_index: int = 0) -> LLMError:
+    """Turn a raw Groq SDK exception into a typed, recorded LLMError."""
+    body = getattr(exc, "body", None)
+    body_text = ""
+    if isinstance(body, dict):
+        err = body.get("error")
+        if isinstance(err, dict):
+            body_text = str(err.get("message") or "")
+    text = body_text or str(exc)
+    resp = getattr(exc, "response", None)
+    headers = getattr(resp, "headers", None)
+    status = getattr(exc, "status_code", None) or getattr(resp, "status_code", None)
+    slot = _GROQ_SLOT_NAMES[key_index]
+    llm_error = _note_provider_error(
+        _groq_state_for(key_index), text, status_code=status, headers=headers,
+        model=settings.GROQ_MODEL,
+    )
+    if llm_error.kind == REQUEST_TOO_LARGE:
+        # The payload is too big for this MODEL, and both keys run the same one.
+        # Marking every slot is what stops the next step rotating the key for a
+        # request that is guaranteed to be refused again.
+        for i in range(len(_GROQ_SLOT_NAMES)):
+            _groq_state_for(i).note_oversized(settings.GROQ_MODEL)
+    _log_call(slot, settings.GROQ_MODEL, est_in=est_in, status=llm_error.kind,
+              retry_after=llm_error.retry_after, detail=text)
+    return llm_error
 
 
 # ── Gemini provider ───────────────────────────────────────────────────────────
@@ -268,6 +817,74 @@ def _get_gemini_client():
         return None
 
 
+# Google retires Gemini model ids and then serves them ONLY to accounts that were
+# already using them: a newer key gets HTTP 404 "no longer available to new users"
+# for an id that still appears in models.list(). That is exactly what silently
+# disabled this project's Gemini fallback — the configured gemini-2.5-flash 404s
+# for this key. A pinned id in .env also overrides the code default, so the
+# recovery has to live here rather than in config.
+#
+# "gemini-flash-latest" is an alias that always resolves to the current Flash
+# model. On a retirement error we switch to it once, for the life of the process,
+# and log loudly so the pinned value gets fixed properly.
+_GEMINI_MODEL_ALIAS = "gemini-flash-latest"
+_MODEL_RETIRED_RE = re.compile(
+    r"no longer available|is not found for API version|NOT_FOUND", re.IGNORECASE
+)
+_gemini_active_model: str | None = None
+
+
+def _gemini_model() -> str:
+    return _gemini_active_model or settings.GEMINI_MODEL
+
+
+def _switch_gemini_model_if_retired(text: str) -> bool:
+    """True if we just moved off a retired model id and the call is worth retrying."""
+    global _gemini_active_model
+    if not _MODEL_RETIRED_RE.search(text or ""):
+        return False
+    if _gemini_model() == _GEMINI_MODEL_ALIAS:
+        return False
+    logger.error(
+        "Gemini model %r is retired for this API key — falling back to %r for this "
+        "process. Update GEMINI_MODEL in .env to stop paying for this round trip.",
+        _gemini_model(), _GEMINI_MODEL_ALIAS,
+    )
+    _gemini_active_model = _GEMINI_MODEL_ALIAS
+    return True
+
+
+def _gemini_error(exc: Exception, est_in: int) -> LLMError:
+    """Turn a raw google-genai exception into a typed, recorded LLMError."""
+    text = str(exc)
+    status = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+    llm_error = _note_provider_error(
+        _gemini_state, text, status_code=status, model=_gemini_model(),
+    )
+    _log_call("gemini", _gemini_model(), est_in=est_in, status=llm_error.kind,
+              retry_after=llm_error.retry_after, detail=text)
+    return llm_error
+
+
+async def _gemini_call(contents, config, est_in: int):
+    """One generate_content call, retried once if the model id turns out retired."""
+    client = _get_gemini_client()
+    if client is None:
+        raise LLMError("gemini client unavailable", kind=PROVIDER_UNAVAILABLE,
+                       provider="gemini")
+    try:
+        return await client.aio.models.generate_content(
+            model=_gemini_model(), contents=contents, config=config)
+    except Exception as exc:
+        if not _switch_gemini_model_if_retired(str(exc)):
+            raise _gemini_error(exc, est_in) from exc
+    try:
+        return await client.aio.models.generate_content(
+            model=_gemini_model(), contents=contents, config=config)
+    except Exception as exc:
+        raise _gemini_error(exc, est_in) from exc
+
+
 async def _call_gemini(
     messages: list[dict],
     *,
@@ -277,7 +894,7 @@ async def _call_gemini(
 ) -> str:
     client = _get_gemini_client()
     if client is None:
-        raise LLMError("gemini_unavailable")
+        raise LLMError("gemini client unavailable", kind=PROVIDER_UNAVAILABLE, provider="gemini")
 
     from google.genai import types
 
@@ -289,7 +906,7 @@ async def _call_gemini(
         contents.append(types.Content(role=role, parts=[types.Part(text=m["content"])]))
 
     if not contents:
-        raise LLMError("No messages to send")
+        raise LLMError("no messages to send", kind=PROVIDER_UNAVAILABLE, provider="gemini")
 
     config = types.GenerateContentConfig(
         temperature=temperature,
@@ -298,30 +915,274 @@ async def _call_gemini(
         response_mime_type=response_mime_type,
     )
 
+    est_in = estimate_request_tokens(messages)
+    response = await _gemini_call(contents, config, est_in)
+    text = (response.text or "").strip()
+    if not text:
+        _log_call("gemini", _gemini_model(), est_in=est_in, status="empty_response")
+        raise LLMError("gemini returned empty response", kind=PROVIDER_UNAVAILABLE,
+                       provider="gemini", model=_gemini_model())
+    usage = getattr(response, "usage_metadata", None)
+    _gemini_state.note_success(_gemini_model())
+    _log_call("gemini", _gemini_model(), est_in=est_in, status="ok",
+              actual_in=getattr(usage, "prompt_token_count", None),
+              actual_out=getattr(usage, "candidates_token_count", None))
+    return text
+
+
+# ── Gemini native function calling ────────────────────────────────────────────
+#
+# Gemini is the THIRD independent token budget, and until now it was text-only —
+# so a tool-using turn had exactly two providers, and when both hit their daily
+# wall the agent had nothing left to try. Gemini speaks tool calling natively
+# (function declarations in, function_call parts out), just not in the OpenAI
+# shape, so the whole job here is translation:
+#
+#   OpenAI                                Gemini
+#   ----------------------------------    ----------------------------------
+#   tools[].function{name,desc,params}    Tool(function_declarations=[...])
+#   assistant{tool_calls:[{fn,args}]}     Content(role="model",
+#                                                 parts=[Part(function_call=...)])
+#   {role:"tool", tool_call_id, content}  Content(role="user",
+#                                                 parts=[Part(function_response=...)])
+#
+# Gemini has no tool_call_id, so ids are re-minted on the way out and matched back
+# by ORDER on the way in — the orchestrator only ever replies to the calls from
+# the immediately preceding turn, so order is sufficient and stable.
+# Verified live against gemini-flash-latest with the real 7-tool schema set.
+
+
+def _gemini_tool_declarations(tools: list[dict] | None):
+    """Our OpenAI tool schemas as Gemini FunctionDeclarations."""
+    from google.genai import types
+
+    decls = []
+    for t in tools or []:
+        fn = (t.get("function") or {}) if isinstance(t, dict) else {}
+        name = fn.get("name")
+        if not name:
+            continue
+        # model_validate (not the kwargs constructor) so the plain JSON-Schema dict
+        # is coerced into a genai Schema by pydantic — the constructor is typed to
+        # accept only an already-built Schema.
+        decls.append(types.FunctionDeclaration.model_validate({
+            "name": name,
+            "description": fn.get("description") or "",
+            "parameters": fn.get("parameters") or {"type": "object", "properties": {}},
+        }))
+    return decls
+
+
+# Gemini 3 requires that a function_call handed BACK to the model still carries
+# the opaque `thought_signature` it was issued with — without it the next call is
+# rejected outright ("Function call is missing a thought_signature in functionCall
+# parts"), which kills the second round of every tool loop.
+#
+# The orchestrator serialises tool calls into the provider-neutral OpenAI shape
+# (id / name / arguments), and there is nowhere in that shape to put an opaque
+# provider blob. So the signature is held here, keyed by the call id we mint, and
+# re-attached during translation. Bounded, because ids are per-request and never
+# reused; entries are only ever read on the immediately following call.
+_GEMINI_SIGNATURE_CACHE_MAX = 256
+_gemini_signatures: dict[str, bytes] = {}
+
+
+def _remember_signature(call_id: str, signature) -> None:
+    if not signature:
+        return
+    if len(_gemini_signatures) >= _GEMINI_SIGNATURE_CACHE_MAX:
+        # Plain FIFO eviction — good enough for a cache that is read once.
+        for key in list(_gemini_signatures)[: _GEMINI_SIGNATURE_CACHE_MAX // 2]:
+            _gemini_signatures.pop(key, None)
+    _gemini_signatures[call_id] = signature
+
+
+def _gemini_contents_from_openai(messages: list[dict]):
+    """
+    Translate an OpenAI-format message list (including tool_calls and tool
+    results) into Gemini Contents.
+
+    Tool results are matched to their function NAME via the assistant turn that
+    requested them, because Gemini's FunctionResponse is keyed by name, not id.
+
+    HANDOVER CASE (why this is not a straight one-to-one translation):
+    Gemini rejects — HTTP 400, "Function call is missing a thought_signature in
+    functionCall parts" — any functionCall part it did not itself produce. That
+    is precisely what a mid-turn failover hands it: Groq or OpenRouter makes the
+    tool call, then dies on the synthesis step, and Gemini inherits a history
+    full of another model's calls. Observed live: the turn ended in the generic
+    fallback message even though the data had already been fetched successfully.
+
+    So a call we have no signature for is NOT sent as a functionCall. It is
+    replayed as text — "called search_flights(...)" plus its result — which
+    carries exactly the same information, is what the synthesis step needs
+    anyway (write prose from data already gathered), and costs one extra
+    sentence of tokens. Calls Gemini did make keep their signature and stay
+    structured, so a Gemini-only turn is unchanged.
+    """
+    from google.genai import types
+
+    # tool_call_id -> function name, harvested from assistant turns as we go.
+    call_names: dict[str, str] = {}
+    # tool_call_ids replayed as text — their results must be replayed as text too,
+    # or Gemini gets an answer to a question it was never shown.
+    text_only_calls: set[str] = set()
+    contents = []
+    for m in messages:
+        role = (m.get("role") or "").lower()
+        if role == "system":
+            continue  # hoisted into system_instruction by the caller
+        if role == "assistant":
+            parts = []
+            content = m.get("content")
+            if isinstance(content, str) and content.strip():
+                parts.append(types.Part(text=content))
+            for call in m.get("tool_calls") or []:
+                fn = (call or {}).get("function") or {}
+                name = fn.get("name")
+                if not name:
+                    continue
+                call_id = str(call.get("id"))
+                call_names[call_id] = name
+                try:
+                    args = json.loads(fn.get("arguments") or "{}")
+                except (json.JSONDecodeError, TypeError):
+                    args = {}
+                signature = _gemini_signatures.get(call_id)
+                if not signature:
+                    text_only_calls.add(call_id)
+                    parts.append(types.Part(
+                        text=f"I called {name} with {json.dumps(args, default=str)}."
+                    ))
+                    continue
+                parts.append(types.Part(
+                    function_call=types.FunctionCall(
+                        name=name, args=args if isinstance(args, dict) else {},
+                    ),
+                    thought_signature=signature,
+                ))
+            if parts:
+                contents.append(types.Content(role="model", parts=parts))
+            continue
+        if role == "tool":
+            call_id = str(m.get("tool_call_id"))
+            name = call_names.get(call_id) or m.get("name") or "tool"
+            if call_id in text_only_calls:
+                contents.append(types.Content(role="user", parts=[types.Part(
+                    text=f"Result from {name}: {_as_str(m.get('content'))}"
+                )]))
+                continue
+            # The result is already a JSON string the model reads directly; wrap it
+            # rather than re-parsing, so a non-JSON error string still gets through.
+            contents.append(types.Content(role="user", parts=[types.Part(
+                function_response=types.FunctionResponse(
+                    name=name, response={"result": _as_str(m.get("content"))},
+                )
+            )]))
+            continue
+        text = _as_str(m.get("content"))
+        if text.strip():
+            contents.append(types.Content(role="user", parts=[types.Part(text=text)]))
+    return contents
+
+
+def _as_str(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    if value is None:
+        return ""
     try:
-        response = await client.aio.models.generate_content(
-            model=settings.GEMINI_MODEL,
-            contents=contents,
-            config=config,
+        return json.dumps(value)
+    except (TypeError, ValueError):
+        return str(value)
+
+
+async def _gemini_generate_with_tools(
+    messages: list[dict],
+    tools: list[dict] | None,
+    *,
+    temperature: float,
+    max_output_tokens: int,
+):
+    """
+    Tool-calling via Gemini's native function-calling API.
+
+    Returns the same duck-typed message object the Groq/OpenRouter paths return
+    (`.content` / `.tool_calls`), so the orchestrator needs no provider knowledge.
+    """
+    client = _get_gemini_client()
+    if client is None:
+        raise LLMError("gemini client unavailable", kind=PROVIDER_UNAVAILABLE, provider="gemini")
+
+    from google.genai import types
+
+    system_text, _ = _extract_system(messages)
+    contents = _gemini_contents_from_openai(messages)
+    if not contents:
+        raise LLMError("no messages to send", kind=PROVIDER_UNAVAILABLE, provider="gemini")
+
+    config_kwargs: dict = {
+        "temperature": temperature,
+        "max_output_tokens": max_output_tokens,
+        "system_instruction": system_text or None,
+    }
+    decls = _gemini_tool_declarations(tools)
+    if decls:
+        config_kwargs["tools"] = [types.Tool(function_declarations=decls)]
+        # We dispatch tools ourselves through the deterministic gates — letting the
+        # SDK auto-execute would bypass every one of them.
+        config_kwargs["automatic_function_calling"] = types.AutomaticFunctionCallingConfig(
+            disable=True
         )
-        text = (response.text or "").strip()
-        if not text:
-            raise LLMError("Gemini returned empty response")
-        usage = getattr(response, "usage_metadata", None)
-        if usage:
-            logger.info("Gemini usage — in=%s out=%s",
-                        getattr(usage, "prompt_token_count", "?"),
-                        getattr(usage, "candidates_token_count", "?"))
-        return text
-    except LLMError:
-        raise
-    except Exception as exc:
-        err = str(exc)
-        if "429" in err or "RESOURCE_EXHAUSTED" in err:
-            raise LLMError("quota_exhausted")
-        if "401" in err or "403" in err or "PERMISSION_DENIED" in err:
-            raise LLMError("invalid_key")
-        raise LLMError(f"Gemini call failed: {exc}") from exc
+
+    est_in = estimate_request_tokens(messages, tools)
+    response = await _gemini_call(
+        contents, types.GenerateContentConfig(**config_kwargs), est_in)
+
+    candidates = getattr(response, "candidates", None) or []
+    parts = []
+    if candidates:
+        content = getattr(candidates[0], "content", None)
+        parts = getattr(content, "parts", None) or []
+
+    text_chunks: list[str] = []
+    calls: list = []
+    # Ids must be unique across the whole conversation, not just this response —
+    # they key the thought-signature cache, and a repeated "gemini_call_0" would
+    # hand turn 3 the signature issued on turn 1.
+    call_prefix = f"gemini_{uuid.uuid4().hex[:8]}"
+    for i, part in enumerate(parts):
+        fc = getattr(part, "function_call", None)
+        if fc is not None and getattr(fc, "name", None):
+            try:
+                args = json.dumps(dict(fc.args or {}))
+            except (TypeError, ValueError):
+                args = "{}"
+            call_id = f"{call_prefix}_{i}"
+            _remember_signature(call_id, getattr(part, "thought_signature", None))
+            calls.append(_SalvagedToolCall(call_id, fc.name, args))
+            continue
+        chunk = getattr(part, "text", None)
+        if chunk:
+            text_chunks.append(chunk)
+
+    usage = getattr(response, "usage_metadata", None)
+    _gemini_state.note_success(_gemini_model())
+    _log_call("gemini", _gemini_model(), est_in=est_in, status="ok",
+              actual_in=getattr(usage, "prompt_token_count", None),
+              actual_out=getattr(usage, "candidates_token_count", None))
+
+    content_text = "".join(text_chunks).strip() or None
+    if calls:
+        return _SalvagedMessage(content_text, calls)
+    # No structured call — the free-tier salvage path also applies here, since a
+    # model that emits "<function=...>" as text does it on any provider.
+    if content_text:
+        salvaged = _salvage_tool_calls(content_text, _tool_names_from_schemas(tools))
+        if salvaged:
+            logger.info("Recovered %d malformed tool call(s) from Gemini content", len(salvaged))
+            return _SalvagedMessage(None, salvaged)
+    return _SalvagedMessage(content_text, [])
 
 
 # ── OpenRouter provider (OpenAI-compatible fallback) ──────────────────────────
@@ -363,10 +1224,11 @@ async def _openrouter_chat_raw(
 ) -> dict:
     """POST an OpenAI-format request to OpenRouter and return the parsed JSON body.
     Tries each model in OPENROUTER_MODEL in order, skipping any that are rate-limited
-    upstream (429). Raises LLMError (mapping 429 -> quota_exhausted) so callers treat it
-    like Groq."""
+    upstream (429). Raises a typed LLMError (see classify_provider_error) so callers
+    treat it exactly like Groq."""
     if not settings.OPENROUTER_API_KEY:
-        raise LLMError("openrouter_unavailable")
+        raise LLMError("openrouter not configured", kind=PROVIDER_UNAVAILABLE,
+                       provider="openrouter")
 
     base_payload: dict = {
         "messages": messages,
@@ -385,6 +1247,7 @@ async def _openrouter_chat_raw(
         "X-Title": "Travello AI",
     }
 
+    est_in = estimate_request_tokens(messages, tools)
     last_exc: LLMError | None = None
     deadline = time.monotonic() + _OPENROUTER_TOTAL_BUDGET
     async with httpx.AsyncClient(timeout=_OPENROUTER_REQUEST_TIMEOUT) as client:
@@ -394,54 +1257,96 @@ async def _openrouter_chat_raw(
                 # the turn past the client's timeout. Surface what we have.
                 logger.warning("OpenRouter budget spent — skipping remaining models")
                 break
+            # A model that already refused a payload this size will refuse it
+            # again; retrying it wastes the turn's clock for a guaranteed 413.
+            if model in _openrouter_state.oversized_models:
+                logger.info("OpenRouter model %s skipped — payload known too large", model)
+                last_exc = LLMError(
+                    f"openrouter: {model} rejected payload size",
+                    kind=REQUEST_TOO_LARGE, provider="openrouter", model=model,
+                )
+                continue
             payload = {**base_payload, "model": model}
             try:
                 resp = await client.post(_OPENROUTER_URL, headers=headers, json=payload)
             except Exception as exc:
                 # Transport error is the same for every model — don't hammer the list.
-                raise LLMError(f"OpenRouter request failed: {exc}") from exc
+                _log_call("openrouter", model, est_in=est_in,
+                          status=PROVIDER_UNAVAILABLE, detail=str(exc))
+                raise LLMError(f"openrouter request failed: {exc}",
+                               kind=PROVIDER_UNAVAILABLE, provider="openrouter",
+                               model=model) from exc
 
             if resp.status_code in (401, 403):
                 # Key-level problem — a different model won't help.
-                raise LLMError("invalid_key")
-            if resp.status_code == 429:
-                last_exc = LLMError("quota_exhausted")
-                # Free-tier limits on OpenRouter are per ACCOUNT, not per model, so
-                # one 429 means the next model will 429 too. Remember it, so the
-                # next turn prefers Groq instead of walking a dead model list.
-                _note_openrouter_rate_limit(resp)
-                logger.warning("OpenRouter model %s rate-limited (429) — trying next", model)
-                continue
+                err = _note_provider_error(_openrouter_state, resp.text,
+                                           status_code=resp.status_code,
+                                           headers=resp.headers, model=model)
+                _log_call("openrouter", model, est_in=est_in, status=err.kind,
+                          retry_after=err.retry_after, detail=resp.text)
+                raise err
             if resp.status_code >= 400:
-                last_exc = LLMError(f"OpenRouter HTTP {resp.status_code}: {resp.text[:200]}")
-                logger.warning("OpenRouter model %s HTTP %s — trying next", model, resp.status_code)
+                body_text = resp.text
+                # The daily-cap 429 hides its reset inside the error body, not the
+                # headers — pull it out so the cooldown matches the real window.
+                if resp.status_code == 429:
+                    try:
+                        meta = ((resp.json().get("error") or {}).get("metadata") or {})
+                        reset_ms = (meta.get("headers") or {}).get("X-RateLimit-Reset")
+                        if reset_ms:
+                            secs = float(reset_ms) / 1000.0 - time.time()
+                            if secs > 0:
+                                body_text = f"{body_text} try again in {secs:.0f}s"
+                    except Exception:
+                        pass
+                last_exc = _note_provider_error(
+                    _openrouter_state, body_text, status_code=resp.status_code,
+                    headers=resp.headers, model=model,
+                )
+                _log_call("openrouter", model, est_in=est_in, status=last_exc.kind,
+                          retry_after=last_exc.retry_after, detail=body_text)
+                # A per-account quota (OpenRouter's free tier is keyed to the
+                # ACCOUNT, not the model) means the next model fails identically.
+                if last_exc.kind in (QUOTA_DAILY, QUOTA_MINUTE):
+                    break
                 continue
 
             try:
                 data = resp.json()
             except Exception as exc:
-                last_exc = LLMError(f"OpenRouter returned non-JSON: {exc}")
+                last_exc = LLMError(f"openrouter returned non-JSON: {exc}",
+                                    kind=PROVIDER_UNAVAILABLE, provider="openrouter",
+                                    model=model)
                 logger.warning("OpenRouter model %s returned non-JSON — trying next", model)
                 continue
 
             # OpenRouter sometimes surfaces upstream provider errors inside a 200 body.
             if isinstance(data, dict) and data.get("error"):
-                err = data["error"]
-                msg = err.get("message", "") if isinstance(err, dict) else str(err)
-                if "rate" in msg.lower() or "429" in msg:
-                    last_exc = LLMError("quota_exhausted")
-                    _note_openrouter_rate_limit(resp)
-                    logger.warning("OpenRouter model %s rate-limited (body) — trying next", model)
-                else:
-                    last_exc = LLMError(f"OpenRouter error: {msg[:200]}")
-                    logger.warning("OpenRouter model %s body error — trying next", model)
+                err_body = data["error"]
+                msg = err_body.get("message", "") if isinstance(err_body, dict) else str(err_body)
+                code = err_body.get("code") if isinstance(err_body, dict) else None
+                last_exc = _note_provider_error(
+                    _openrouter_state, msg,
+                    status_code=code if isinstance(code, int) else None,
+                    headers=resp.headers, model=model,
+                )
+                _log_call("openrouter", model, est_in=est_in, status=last_exc.kind,
+                          retry_after=last_exc.retry_after, detail=msg)
+                if last_exc.kind in (QUOTA_DAILY, QUOTA_MINUTE):
+                    break
                 continue
 
+            usage = data.get("usage") or {} if isinstance(data, dict) else {}
+            _openrouter_state.note_success(model)
+            _log_call("openrouter", model, est_in=est_in, status="ok",
+                      actual_in=usage.get("prompt_tokens"),
+                      actual_out=usage.get("completion_tokens"))
             return data
 
-    # Every model failed — surface the last error (usually quota_exhausted, which the
-    # orchestrator renders as the friendly "busy for a moment" message).
-    raise last_exc or LLMError("quota_exhausted")
+    # Every model failed — surface the last typed error so the caller can choose a
+    # cooldown, a different provider, and the right message for the user.
+    raise last_exc or LLMError("openrouter exhausted", kind=QUOTA_MINUTE,
+                               provider="openrouter")
 
 
 async def _call_openrouter(
@@ -459,9 +1364,11 @@ async def _call_openrouter(
     try:
         text = (data["choices"][0]["message"]["content"] or "").strip()
     except (KeyError, IndexError, TypeError) as exc:
-        raise LLMError(f"OpenRouter malformed response: {exc}") from exc
+        raise LLMError(f"openrouter malformed response: {exc}",
+                       kind=PROVIDER_UNAVAILABLE, provider="openrouter") from exc
     if not text:
-        raise LLMError("OpenRouter returned empty response")
+        raise LLMError("openrouter returned empty response",
+                       kind=PROVIDER_UNAVAILABLE, provider="openrouter")
     return text
 
 
@@ -474,26 +1381,39 @@ async def generate_text(
     max_output_tokens: int = 1024,
 ) -> str:
     """Send chat messages, return plain-text reply. Groq → OpenRouter → Gemini."""
+    last: LLMError | None = None
     # Primary: Groq (free, fast) — its cooldown is skipped only when some other
-    # provider is genuinely able to serve right now.
-    if _use_groq(_fallback_ready()):
+    # provider is genuinely able to serve right now. Key 2 is tried only when
+    # key 1 reports its DAILY budget spent; see _groq_slots_to_try.
+    for key_index in _groq_slots_to_try(_fallback_ready()):
         try:
             return await _call_groq(messages, temperature=temperature,
-                                    max_output_tokens=max_output_tokens)
+                                    max_output_tokens=max_output_tokens,
+                                    key_index=key_index)
         except LLMError as exc:
-            logger.warning("Groq failed (%s), trying OpenRouter", exc)
+            last = exc
+            if exc.kind != QUOTA_DAILY:
+                logger.warning("Groq failed (%s), trying OpenRouter", exc.kind)
+                break
+            logger.warning("Groq key %d is out of daily quota — trying the next Groq key",
+                           key_index + 1)
 
     # Fallback 1: OpenRouter (second independent budget)
-    if settings.OPENROUTER_API_KEY:
+    if settings.OPENROUTER_API_KEY and _openrouter_state.available():
         try:
             return await _call_openrouter(messages, temperature=temperature,
                                           max_output_tokens=max_output_tokens)
         except LLMError as exc:
-            logger.warning("OpenRouter failed (%s), falling back to Gemini", exc)
+            last = exc
+            logger.warning("OpenRouter failed (%s), falling back to Gemini", exc.kind)
 
     # Fallback 2: Gemini
-    return await _call_gemini(messages, temperature=temperature,
-                               max_output_tokens=max_output_tokens)
+    if settings.GEMINI_API_KEY and _gemini_state.available():
+        return await _call_gemini(messages, temperature=temperature,
+                                  max_output_tokens=max_output_tokens)
+    # Every provider is configured-but-blocked (or none is configured). Re-raise
+    # the real cause so the caller can tell a daily wall from a minute one.
+    raise last or _no_provider_error()
 
 
 async def generate_json(
@@ -503,22 +1423,28 @@ async def generate_json(
     max_output_tokens: int = 2048,
 ) -> Any:
     """Force JSON output and parse it. Groq → OpenRouter → Gemini."""
+    last: LLMError | None = None
     # Primary: Groq with json_mode — see generate_text on the cooldown condition
-    if _use_groq(_fallback_ready()):
+    for key_index in _groq_slots_to_try(_fallback_ready()):
         try:
             raw = await _call_groq(messages, temperature=temperature,
                                    max_output_tokens=max_output_tokens,
-                                   json_mode=True)
+                                   json_mode=True, key_index=key_index)
             try:
                 return json.loads(raw)
             except json.JSONDecodeError:
                 # Groq json_mode occasionally wraps output in markdown fences — strip them
                 return json.loads(_strip_code_fences(raw))
         except LLMError as exc:
-            logger.warning("Groq JSON failed (%s), trying OpenRouter", exc)
+            last = exc
+            if exc.kind != QUOTA_DAILY:
+                logger.warning("Groq JSON failed (%s), trying OpenRouter", exc.kind)
+                break
+            logger.warning("Groq key %d is out of daily quota — trying the next Groq key",
+                           key_index + 1)
 
     # Fallback 1: OpenRouter with json_mode
-    if settings.OPENROUTER_API_KEY:
+    if settings.OPENROUTER_API_KEY and _openrouter_state.available():
         try:
             raw = await _call_openrouter(messages, temperature=temperature,
                                          max_output_tokens=max_output_tokens,
@@ -528,9 +1454,13 @@ async def generate_json(
             except json.JSONDecodeError:
                 return json.loads(_strip_code_fences(raw))
         except (LLMError, json.JSONDecodeError) as exc:
+            if isinstance(exc, LLMError):
+                last = exc
             logger.warning("OpenRouter JSON failed (%s), falling back to Gemini", exc)
 
     # Fallback 2: Gemini with native JSON mime type
+    if not (settings.GEMINI_API_KEY and _gemini_state.available()):
+        raise last or _no_provider_error()
     raw = await _call_gemini(messages, temperature=temperature,
                               max_output_tokens=max_output_tokens,
                               response_mime_type="application/json")
@@ -538,7 +1468,8 @@ async def generate_json(
         return json.loads(raw)
     except json.JSONDecodeError as exc:
         logger.error("Gemini JSON parse failed. Raw=%r", raw[:500])
-        raise LLMError(f"Invalid JSON response: {exc}") from exc
+        raise LLMError(f"invalid JSON response: {exc}",
+                       kind=PROVIDER_UNAVAILABLE, provider="gemini") from exc
 
 
 # ── Tool-calling (agentic loop) — Groq only ───────────────────────────────────
@@ -767,7 +1698,8 @@ def _openrouter_tool_message(data: dict, known: set[str] | None = None):
     try:
         message = data["choices"][0]["message"]
     except (KeyError, IndexError, TypeError) as exc:
-        raise LLMError(f"OpenRouter malformed tool response: {exc}") from exc
+        raise LLMError(f"openrouter malformed tool response: {exc}",
+                       kind=TOOL_CALL_FAILURE, provider="openrouter") from exc
 
     content = message.get("content")
     raw_calls = message.get("tool_calls") or []
@@ -794,11 +1726,20 @@ async def _groq_generate_with_tools(
     temperature: float,
     max_output_tokens: int,
     max_attempts: int,
+    key_index: int = 0,
 ):
-    """Groq tool-calling loop with malformed-call salvage + transient-error retry."""
-    client = _get_groq_client()
+    """
+    Groq tool-calling loop with malformed-call salvage + transient-error retry.
+
+    `key_index` selects which Groq account runs it. Both keys use this same
+    OpenAI-schema adapter and the same model — key 2 is another budget, not
+    another integration.
+    """
+    client = _groq_client_for(key_index)
+    slot = _GROQ_SLOT_NAMES[key_index]
+    state = _groq_state_for(key_index)
     if client is None:
-        raise LLMError("groq_unavailable")
+        raise LLMError("groq client unavailable", kind=PROVIDER_UNAVAILABLE, provider=slot)
 
     kwargs: dict = {
         "model": settings.GROQ_MODEL,
@@ -811,11 +1752,17 @@ async def _groq_generate_with_tools(
         kwargs["tool_choice"] = "auto"
 
     known_names = _tool_names_from_schemas(tools)
+    est_in = estimate_request_tokens(messages, tools)
     last_exc: Exception | None = None
     for attempt in range(max_attempts):
         try:
             response = await client.chat.completions.create(**kwargs)
             message = response.choices[0].message
+            usage = getattr(response, "usage", None)
+            state.note_success(settings.GROQ_MODEL)
+            _log_call(slot, settings.GROQ_MODEL, est_in=est_in, status="ok",
+                      actual_in=getattr(usage, "prompt_tokens", None),
+                      actual_out=getattr(usage, "completion_tokens", None))
             # Llama sometimes emits a tool call as TEXT content instead of a
             # structured call ("<function=search for flights>{...}</function>")
             # WITHOUT a 400 error. With no structured tool_calls, salvage it from
@@ -828,27 +1775,33 @@ async def _groq_generate_with_tools(
             return message
         except Exception as exc:
             err = str(exc)
-            if "429" in err or "rate_limit" in err.lower():
-                _note_groq_rate_limit(exc)
-                raise LLMError("quota_exhausted")
-            if "401" in err or "403" in err:
-                raise LLMError("invalid_key")
             if "tool_use_failed" in err or "Failed to call a function" in err:
                 salvaged = _salvage_from_exception(exc, known_names)
                 if salvaged:
-                    logger.info("Recovered %d malformed tool call(s) from Groq", len(salvaged))
+                    # Logged like any other call: the request still cost tokens, and
+                    # a rising salvage rate is the signal that the model is drifting.
+                    _log_call(slot, settings.GROQ_MODEL, est_in=est_in,
+                              status="ok_salvaged",
+                              detail=f"{len(salvaged)} malformed tool call(s) recovered")
+                    state.note_success(settings.GROQ_MODEL)
                     return _SalvagedMessage(None, salvaged)
                 last_exc = exc
                 continue  # stochastic slip — retry
+            typed = _groq_exception_error(exc, est_in, key_index=key_index)
+            # A quota wall, a bad key or an oversized payload will not improve on a
+            # retry — surface them immediately so the caller can fail over.
+            if typed.kind in (QUOTA_MINUTE, QUOTA_DAILY, INVALID_KEY, REQUEST_TOO_LARGE):
+                raise typed from exc
             # Transient server-side errors (over capacity, gateway) — back off and retry
             if any(code in err for code in ("500", "502", "503", "504")) or "over capacity" in err.lower():
                 last_exc = exc
                 if attempt < max_attempts - 1:
                     await asyncio.sleep(0.6 * (2 ** attempt))  # 0.6s, 1.2s, 2.4s
                 continue
-            raise LLMError(f"Groq tool call failed: {exc}") from exc
+            raise typed from exc
 
-    raise LLMError(f"Groq tool call failed after {max_attempts} attempts: {last_exc}")
+    raise LLMError(f"groq tool call failed after {max_attempts} attempts: {last_exc}",
+                   kind=TOOL_CALL_FAILURE, provider=slot, model=settings.GROQ_MODEL)
 
 
 async def _openrouter_generate_with_tools(
@@ -878,60 +1831,176 @@ async def generate_with_tools(
     Tool-calling chat completion. Returns an assistant message object exposing
     `.content` (str|None) and `.tool_calls` (list|None).
 
-    Groq (Llama 3.3) is primary; OpenRouter is the fallback on ANY Groq failure —
-    crucially a rate-limit (429), so a tool-using turn can still complete under
-    Groq's free-tier 12k TPM wall instead of degrading to the "try again" message.
-    Both speak the OpenAI tool schema, so the same messages + tools work on either.
-    Raises LLMError only if BOTH providers fail, so the orchestrator can degrade.
+    THREE tool-capable providers, tried in order of cost and speed:
+        1. Groq (Llama 3.3)  — OpenAI tool schema
+        2. OpenRouter        — OpenAI tool schema, second independent budget
+        3. Gemini            — NATIVE function calling (translated in
+                               _gemini_generate_with_tools), third budget
+
+    Gemini being in this chain is what stops a tool-using turn from dying when the
+    first two budgets are spent — previously it was text-only, so the agentic path
+    had exactly two lives per day and then degraded to "try again in a minute" for
+    the rest of the day.
+
+    Each provider is skipped when its own state says it cannot serve right now
+    (daily wall, bad key, or a model that already refused a payload this size).
+    Raises the last typed LLMError if every provider fails, so the orchestrator can
+    tell the user WHICH kind of failure it was.
 
     The caller passes a complete OpenAI/Groq-format message list (which may include
     'tool' role messages and assistant messages carrying tool_calls).
     """
-    # Gemini is not part of the tool-calling chain, so only OpenRouter counts as
-    # a fallback here. If its own quota is spent, Groq is tried even while it is
-    # in cooldown — a Groq per-minute wall usually clears within seconds, and an
-    # attempt that might work always beats reporting "quota exhausted" without
-    # having asked the one provider that is actually up.
-    groq_ready = _use_groq(_fallback_ready(include_gemini=False))
-    groq_error: LLMError | None = None
-    if groq_ready:
+    attempted = False
+    last_error: LLMError | None = None
+
+    # 1 — Groq, key 1 then (only on a DAILY wall) key 2. Its cooldown is only
+    # honoured when something else can actually serve; with no live fallback a
+    # doomed-but-quick attempt beats no attempt.
+    for key_index in _groq_slots_to_try(_fallback_ready()):
+        attempted = True
         try:
             return await _groq_generate_with_tools(
                 messages, tools, temperature=temperature,
                 max_output_tokens=max_output_tokens, max_attempts=max_attempts,
+                key_index=key_index,
             )
         except LLMError as exc:
-            groq_error = exc
-            if not (settings.OPENROUTER_API_KEY and _openrouter_available()):
-                raise
-            logger.warning("Groq tools failed (%s) — falling back to OpenRouter", exc)
+            last_error = exc
+            # A second key is a second DAILY budget and nothing else. A minute
+            # wall clears on its own, a 413 fails identically, and a malformed
+            # request is our bug — none of those get better on another account,
+            # so only a daily wall is worth spending the next key on.
+            if exc.kind != QUOTA_DAILY:
+                logger.warning("Groq tools failed (%s) — trying OpenRouter", exc.kind)
+                break
+            logger.warning(
+                "Groq key %d is out of daily quota — trying the next Groq key",
+                key_index + 1,
+            )
 
-    if settings.OPENROUTER_API_KEY and _openrouter_available():
+    # 2 — OpenRouter.
+    if settings.OPENROUTER_API_KEY and _openrouter_state.available():
+        attempted = True
         try:
             return await _openrouter_generate_with_tools(
                 messages, tools, temperature=temperature,
                 max_output_tokens=max_output_tokens,
             )
         except LLMError as exc:
-            # Groq was skipped for its cooldown and the fallback we skipped it for
-            # has just turned out to be dead. Groq is the only thing left worth
-            # asking, cooldown or not.
-            if not groq_ready and _get_groq_client() is not None:
-                logger.warning(
-                    "OpenRouter unusable (%s) — retrying Groq despite its cooldown", exc
-                )
-                return await _groq_generate_with_tools(
-                    messages, tools, temperature=temperature,
-                    max_output_tokens=max_output_tokens, max_attempts=max_attempts,
-                )
-            raise
+            last_error = exc
+            logger.warning("OpenRouter tools failed (%s) — trying Gemini", exc.kind)
 
-    # No usable OpenRouter. If Groq was never tried this turn, try it now.
-    if not groq_ready and _get_groq_client() is not None:
-        return await _groq_generate_with_tools(
-            messages, tools, temperature=temperature,
-            max_output_tokens=max_output_tokens, max_attempts=max_attempts,
+    # 3 — Gemini native function calling.
+    if (settings.GEMINI_API_KEY and _gemini_state.available()
+            and not _model_oversized(_gemini_state, _gemini_model())):
+        attempted = True
+        try:
+            return await _gemini_generate_with_tools(
+                messages, tools, temperature=temperature,
+                max_output_tokens=max_output_tokens,
+            )
+        except LLMError as exc:
+            last_error = exc
+            logger.warning("Gemini tools failed (%s)", exc.kind)
+
+    # Last resort: every provider was SKIPPED on state alone (all in cooldown) and
+    # none was actually asked. A per-minute wall often clears in the seconds since
+    # it was recorded, so ask the cheapest one rather than reporting a failure we
+    # never confirmed. A DAILY wall is not retried — that budget is measurably gone,
+    # and neither is a model that already refused a payload this size.
+    if not attempted:
+        candidates: list[tuple[str, str, Any]] = [
+            (_GROQ_SLOT_NAMES[i], settings.GROQ_MODEL,
+             lambda i=i: _groq_generate_with_tools(
+                 messages, tools, temperature=temperature,
+                 max_output_tokens=max_output_tokens, max_attempts=max_attempts,
+                 key_index=i))
+            for i in range(len(settings.groq_api_keys))
+        ]
+        candidates.append(
+            ("gemini", _gemini_model(), lambda: _gemini_generate_with_tools(
+                messages, tools, temperature=temperature,
+                max_output_tokens=max_output_tokens))
         )
-    if groq_error:
-        raise groq_error
-    raise LLMError("groq_unavailable")
+        for name, model, call in candidates:
+            state = _provider_states()[name]
+            if (not _configured(name) or state.daily_exhausted()
+                    or _model_oversized(state, model)):
+                continue
+            logger.warning("all providers in cooldown — retrying %s anyway", name)
+            try:
+                return await call()
+            except LLMError as exc:
+                last_error = exc
+
+    raise last_error or _no_provider_error()
+
+
+def _model_oversized(state: _ProviderState, model: str | None) -> bool:
+    """
+    True when this exact model already answered 413 for a payload this size.
+
+    A 413 is the one failure that is guaranteed to repeat: the agentic loop
+    calls generate_with_tools once per tool step, and each step's payload is
+    STRICTLY LARGER than the last (it carries the previous step's tool results).
+    So re-asking the same model after a 413 cannot succeed — it just spends
+    another slice of the turn budget the user is waiting on. Skipping it moves
+    straight to the next provider, and the marker is cleared by note_success as
+    soon as that model accepts anything again, so a shrunken payload re-enables
+    it without a restart.
+    """
+    if not model:
+        return False
+    if model not in state.oversized_models:
+        return False
+    logger.warning(
+        "skipping %s/%s — it already refused a payload this size (413)",
+        state.name, model,
+    )
+    return True
+
+
+def _no_provider_error() -> LLMError:
+    """
+    The typed error for "we never even sent a request".
+
+    Two very different situations end up here and the user-facing wording for
+    them is not the same, so they must not share a kind:
+
+      · every configured provider is sitting on a known DAILY wall — that is a
+        real, temporary quota fact, and the honest answer is "the daily budget
+        is spent, try tomorrow". Reporting it as PROVIDER_UNAVAILABLE would
+        show a generic "something went wrong", which invites the user to retry
+        immediately, forever, against a wall we already know about.
+      · nothing is configured — a deployment fault, not a quota one.
+    """
+    walled = [
+        (name, state) for name, state in _provider_states().items()
+        if _configured(name) and state.daily_exhausted()
+    ]
+    configured = [name for name in _provider_states() if _configured(name)]
+    if configured and len(walled) == len(configured):
+        soonest = min(state.seconds_left() for _, state in walled)
+        return LLMError(
+            "all providers on a daily quota wall: "
+            + ", ".join(name for name, _ in walled),
+            kind=QUOTA_DAILY,
+            provider=walled[0][0],
+            retry_after=soonest,
+        )
+    return LLMError("no tool-capable provider available", kind=PROVIDER_UNAVAILABLE)
+
+
+def tool_capable_providers() -> list[str]:
+    """
+    Configured providers that can actually run the agentic tool loop.
+
+    Every provider in the chain above is tool-capable, so this is really a
+    configuration check: it is what lets the caller say "the assistant has no
+    reasoning provider configured" instead of failing obscurely mid-turn.
+
+    Deliberately lists PROVIDERS, not budgets — a second Groq key is a second
+    daily allowance on the same provider, not a second thing that could be
+    configured wrongly, and callers use this to decide what to tell the user.
+    """
+    return [name for name in ("groq", "openrouter", "gemini") if _configured(name)]

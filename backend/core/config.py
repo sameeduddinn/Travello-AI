@@ -3,15 +3,49 @@
 #          Loaded once at startup; access anywhere via `from core.config import settings`.
 # =============================================================================
 
+import logging
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+logger = logging.getLogger(__name__)
+
+# Values pydantic already accepts for a bool, plus the build-flavour words that
+# collide with a generic DEBUG variable. Anything outside these sets is a value
+# somebody else's tooling put in the environment, not an instruction to us.
+_TRUEISH = {"1", "true", "t", "yes", "y", "on", "debug", "development", "dev"}
+_FALSEISH = {"0", "false", "f", "no", "n", "off", "release", "production", "prod", ""}
 
 
 class Settings(BaseSettings):
     # App
     APP_NAME: str = "Travello AI"
     APP_VERSION: str = "1.0.0"
+    # DEBUG is a dangerously generic environment variable name — build tools,
+    # CI runners and Android/Flutter tooling all set it, and `DEBUG=release`
+    # in the ambient environment used to abort the ENTIRE app at import time
+    # with a pydantic bool_parsing error (there is no request to fail; the
+    # container just never starts). An unparseable value now resolves to
+    # False, which is the production-safe direction: worst case we run with
+    # debug output off. It is never silent — the coercion is logged.
     DEBUG: bool = False
+
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def _tolerant_debug(cls, v):
+        if isinstance(v, str):
+            word = v.strip().lower()
+            if word in _TRUEISH:
+                return True
+            if word in _FALSEISH:
+                return False
+            logger.warning(
+                "DEBUG=%r is not a boolean — treating it as False. Set DEBUG=true "
+                "or DEBUG=false explicitly if this was meant for us.", v,
+            )
+            return False
+        return v
 
     # Supabase
     SUPABASE_URL: str = ""
@@ -38,15 +72,59 @@ class Settings(BaseSettings):
     # Google Maps Platform (Places API + Weather API + Healthcare nearby search)
     GOOGLE_PLACES_API_KEY: str = ""
     
+    # Gemini — the THIRD provider budget, and (since it speaks native function
+    # calling) a full tool-capable fallback for the agentic loop, not just a
+    # plain-text one.
+    #
+    # "gemini-flash-latest" is an alias that always resolves to the current Flash
+    # model. The old pinned "gemini-2.5-flash" returns HTTP 404 —
+    # "no longer available to new users" — for accounts created after it was
+    # superseded, which silently disabled the whole Gemini fallback. Verified live
+    # against this project's key: gemini-flash-latest works for both text and
+    # function calling; gemini-2.5-flash and gemini-2.5-flash-lite 404.
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-flash-latest"
 
     # Groq (completely free — sign up at console.groq.com)
+    #
+    # TWO keys are supported, because the free tier's limit that actually bites
+    # is per-DAY and per-ACCOUNT (TPD). A second account is a second daily
+    # budget: when key 1's day is spent, key 2 carries the rest of it. They are
+    # tried in order and their cooldowns are tracked independently in
+    # services/llm_service.py.
+    #
+    #   GROQ_API_KEY_1  — primary
+    #   GROQ_API_KEY_2  — optional second account; leave blank for one-key setup
+    #   GROQ_API_KEY    — legacy single-key name, still honoured as the value for
+    #                     key 1 when GROQ_API_KEY_1 is not set (deployments that
+    #                     predate the split keep working untouched)
+    GROQ_API_KEY: str = ""
+    GROQ_API_KEY_1: str = ""
+    GROQ_API_KEY_2: str = ""
     # Default is the demo/production model. 8B (llama-3.1-8b-instant) is cheaper for local
     # dev but follows instructions less reliably — it invents traveler counts for vague
     # group requests instead of asking (see .env comment / CHANGELOG_agent_hardening.md).
-    GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
+
+    @property
+    def groq_api_keys(self) -> list[str]:
+        """
+        Configured Groq keys, in the order they should be tried.
+
+        Deduplicated: pointing both variables at the same key would create a
+        phantom second budget — the rotation would "fail over" onto the very
+        account that just reported its day was spent, and the exhaustion checks
+        would count one dead budget twice.
+
+        The VALUES are secrets. Callers pass them to the SDK and nowhere else —
+        never to a log line, an error message or a persisted field.
+        """
+        ordered: list[str] = []
+        for raw in (self.GROQ_API_KEY_1 or self.GROQ_API_KEY, self.GROQ_API_KEY_2):
+            key = (raw or "").strip()
+            if key and key not in ordered:
+                ordered.append(key)
+        return ordered
 
     # OpenRouter — OpenAI-compatible fallback used ONLY when Groq is rate-limited
     # (free-tier 12k TPM). A second, independent budget so a tool-using turn can
@@ -89,11 +167,13 @@ class Settings(BaseSettings):
     OTP_MAX_ATTEMPTS: int = 3
 
     # AI agent
-    # Per-account cap on user messages per UTC day. This is OUR OWN throttle (it
-    # protects the Groq free-tier budget), not a provider limit — once it trips the
-    # agent refuses every message until UTC midnight. Raise it via .env for a live
-    # demo or evaluation, where rehearsal messages earlier in the day would
-    # otherwise consume the allowance before the session starts.
+    # Per-account cap on user messages per UTC day. This is an ABUSE / SAFETY
+    # limit and nothing else — it is OURS, it is not a provider quota, and the
+    # user-facing message must never imply the AI service is out of capacity
+    # (routers/agent.py words them differently for exactly that reason). Provider
+    # budgets are tracked separately and live, in services/llm_service.py.
+    # Raise it via .env for a live demo or evaluation, where rehearsal messages
+    # earlier in the day would otherwise consume the allowance beforehand.
     AGENT_DAILY_MESSAGE_LIMIT: int = 50
 
     # CORS
