@@ -1621,6 +1621,11 @@ def _components_in_summary(text: str) -> list[dict]:
                 if found:
                     date = found.group(1)
                     break
+        # Both branches are tested explicitly rather than leaving the second as a
+        # bare `else`. It would be provably reachable only with a hotel match —
+        # the `continue` above sees to that — but "provably" there means reading
+        # two branches and a guard, and the reader is being asked to trust that a
+        # regex result is non-None before calling .group on it.
         if route:
             out.append({
                 "booking_type": route.group(1).lower(),
@@ -1628,7 +1633,7 @@ def _components_in_summary(text: str) -> list[dict]:
                 "destination": route.group(3).strip(),
                 "travel_date": date,
             })
-        else:
+        elif hotel:
             out.append({
                 "booking_type": "hotel",
                 "hotel_name": hotel.group(1).strip(),
