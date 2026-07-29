@@ -16,7 +16,7 @@ from agents.master_agent import process_message_agentic
 from agents.memory_agent import save_message, start_new_conversation
 from services.booking_service import create_booking
 from services.weather_service import get_weather
-from services.llm_service import generate_text
+from services.llm_service import generate_text, all_providers_exhausted
 
 logger = logging.getLogger(__name__)
 
@@ -182,6 +182,9 @@ async def chat(request: ChatRequest, user: CurrentUser):
         .replace(hour=0, minute=0, second=0, microsecond=0)
         .isoformat()
     )
+    # OUR OWN abuse limit — deliberately worded as an account limit, not as an AI
+    # outage. Conflating the two is what made an ordinary throttle read like the
+    # assistant was broken. The provider's real budget is a separate check below.
     daily_limit = settings.AGENT_DAILY_MESSAGE_LIMIT
     count = await asyncio.to_thread(
         _count_today_messages, user.id, today_midnight, daily_limit
@@ -189,7 +192,11 @@ async def chat(request: ChatRequest, user: CurrentUser):
     if count >= daily_limit:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Daily message limit of {daily_limit} reached. Try again tomorrow.",
+            detail=(
+                f"You've reached this account's limit of {daily_limit} assistant "
+                f"messages for today. This is an account usage limit, not a fault — "
+                f"it resets at midnight UTC. Everything you've booked is unaffected."
+            ),
         )
 
     # Resolve or create conversation
@@ -209,6 +216,27 @@ async def chat(request: ChatRequest, user: CurrentUser):
                 detail="Conversation not found.",
             )
         conversation_id = request.conversation_id
+
+    # Provider-aware protection, distinct from the account limit above. When every
+    # configured AI provider has reported a DAILY quota wall — with its own reset
+    # time, read from the provider's error body — another request cannot succeed.
+    # Spending the turn's 60s clock rediscovering that three times helps nobody, so
+    # answer immediately. Returned as a normal chat message, NOT an HTTP error: the
+    # app renders it in the conversation, and no action or booking_data is attached,
+    # so nothing can look like a booking.
+    if all_providers_exhausted():
+        logger.warning(
+            "provider daily budgets exhausted — short-circuiting agent turn for user=%s",
+            user.id,
+        )
+        return ChatResponse(
+            response=(
+                "I've used up today's AI capacity, so I can't reason about new trips "
+                "right now. Nothing was lost and nothing was booked — your existing "
+                "bookings are all still in My Bookings. Please try again later today."
+            ),
+            conversation_id=conversation_id,
+        )
 
     try:
         result = await asyncio.wait_for(

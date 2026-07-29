@@ -31,6 +31,31 @@ logger = logging.getLogger(__name__)
 
 
 # ── Tool schemas (what the model sees) ────────────────────────────────────────
+#
+# These schemas are sent on EVERY tool-calling request, so their prose is a fixed
+# per-call cost — the original set was ~2,320 tokens, over a quarter of the free
+# tier's whole per-call budget. They have been cut to the parts that change the
+# model's BEHAVIOUR, with the reasoning that used to live in each `description`
+# moved to the comments here (which cost nothing at runtime).
+#
+# WHAT MUST NOT BE TRIMMED FURTHER, and why:
+#   * `passengers` on search_flights/search_trains is REQUIRED and must never read
+#     as "(default 1)". The fare is per-seat x passengers, so a silently-defaulted
+#     1 priced one seat while the answer said "2 adults" — every quoted total was
+#     wrong and the price jumped at booking.
+#   * `guests` on search_hotels must NOT say "(default 2)". That wording read as
+#     permission to fill in 2 and move on, for a user whose profile said solo —
+#     and the model then carried that 2 into prepare_booking, where it landed on
+#     the summary card and in the hotel record as the party size.
+#   * `max_budget_pkr` must stay opt-in ("only if the user gave a number"), or the
+#     model invents a ceiling and silently filters real options away.
+#   * book_car's "does not charge / driver assigned only after the user confirms"
+#     is what stops the model promising a driver that does not exist yet.
+#   * prepare_booking's "never invent a price/number" survives even though
+#     reprice_booking overrides the price, because an invented flight number is
+#     what makes repricing FAIL and the turn dead-end.
+# Everything else here is enforced by a deterministic gate (see the map in
+# prompts/master_agent.py) and does not need to be re-argued in the schema.
 
 TOOL_SCHEMAS: list[dict] = [
     {
@@ -38,41 +63,30 @@ TOOL_SCHEMAS: list[dict] = [
         "function": {
             "name": "search_flights",
             "description": (
-                "Search real domestic Pakistan flights for a route and date. "
-                "Use when the user wants to fly or is planning a trip to a city with an airport. "
-                "Northern areas like Skardu and Gilgit have airports; Hunza does not."
+                "Search live domestic Pakistan flights. Skardu and Gilgit have airports; "
+                "Hunza does not."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "origin_city": {"type": "string", "description": "Departure city, e.g. Karachi"},
                     "destination_city": {"type": "string", "description": "Arrival city, e.g. Lahore"},
-                    "travel_date": {"type": "string", "description": "Departure date as YYYY-MM-DD"},
-                    # NOT "(default 1)" — that wording read as permission to leave it out,
-                    # and the executor then priced ONE seat while the answer said "2 adults".
-                    # The party size IS the fare here (fare = per-seat x passengers), so a
-                    # silent 1 makes every quoted total wrong and the price jumps at booking.
+                    "travel_date": {"type": "string", "description": "YYYY-MM-DD"},
                     "passengers": {
                         "type": "integer",
                         "description": (
-                            "How many people are flying. REQUIRED — the fare is per-seat x "
-                            "passengers, so this number decides the price. Pass the party "
-                            "size the user actually gave; if they haven't said, ask before "
-                            "quoting a fare. Never leave it out and never guess."
+                            "How many people are flying. REQUIRED — fare is per-seat x passengers. "
+                            "Use the number the user gave; ask if they haven't. Never guess."
                         ),
                     },
                     "cabin_class": {
                         "type": "string",
                         "enum": ["ECONOMY", "BUSINESS", "FIRST"],
-                        "description": "Cabin class (default ECONOMY)",
+                        "description": "Default ECONOMY",
                     },
                     "max_budget_pkr": {
                         "type": "number",
-                        "description": (
-                            "Only set this if the user gave a specific PKR ceiling for this "
-                            "fare (e.g. 'under 20000'). Results are filtered to that price and "
-                            "sorted cheapest first. Omit entirely if no number was given."
-                        ),
+                        "description": "Only if the user gave a PKR ceiling. Omit otherwise.",
                     },
                 },
                 "required": ["origin_city", "destination_city", "travel_date", "passengers"],
@@ -84,33 +98,24 @@ TOOL_SCHEMAS: list[dict] = [
         "function": {
             "name": "search_trains",
             "description": (
-                "Search Pakistan Railways trains for a route and date. Use for intercity rail travel "
-                "between major cities. Returns road/bus guidance for northern areas with no rail line."
+                "Search Pakistan Railways trains between major cities. The far north has no rail."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "origin_city": {"type": "string", "description": "Departure city, e.g. Karachi"},
-                    "destination_city": {"type": "string", "description": "Arrival city, e.g. Lahore"},
-                    "travel_date": {"type": "string", "description": "Travel date as YYYY-MM-DD"},
-                    # Same reasoning as search_flights: the fare is per-seat x passengers,
-                    # so a silently-defaulted 1 prices one seat for a whole party.
+                    "origin_city": {"type": "string", "description": "Departure city"},
+                    "destination_city": {"type": "string", "description": "Arrival city"},
+                    "travel_date": {"type": "string", "description": "YYYY-MM-DD"},
                     "passengers": {
                         "type": "integer",
                         "description": (
-                            "How many people are travelling. REQUIRED — the fare is "
-                            "per-seat x passengers, so this number decides the price. Pass "
-                            "the party size the user actually gave; if they haven't said, "
-                            "ask before quoting a fare. Never leave it out and never guess."
+                            "How many people are travelling. REQUIRED — fare is per-seat x "
+                            "passengers. Use the number the user gave; ask if they haven't."
                         ),
                     },
                     "max_budget_pkr": {
                         "type": "number",
-                        "description": (
-                            "Only set this if the user gave a specific PKR ceiling for this fare "
-                            "class. Classes over budget are dropped and results sorted cheapest "
-                            "first. Omit entirely if no number was given."
-                        ),
+                        "description": "Only if the user gave a PKR ceiling. Omit otherwise.",
                     },
                 },
                 "required": ["origin_city", "destination_city", "travel_date", "passengers"],
@@ -121,34 +126,24 @@ TOOL_SCHEMAS: list[dict] = [
         "type": "function",
         "function": {
             "name": "search_hotels",
-            "description": "Search hotels in a city for given check-in/check-out dates. Use for accommodation.",
+            "description": "Search hotels in a city for check-in/check-out dates.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "city": {"type": "string", "description": "City to find hotels in"},
-                    "check_in": {"type": "string", "description": "Check-in date as YYYY-MM-DD"},
-                    "check_out": {"type": "string", "description": "Check-out date as YYYY-MM-DD"},
-                    # NOT "(default 2)". That wording read as permission to fill in 2
-                    # and move on — which is what happened, for a user whose saved
-                    # profile said solo. Searching with 2 is harmless, but the model
-                    # then carries that 2 into prepare_booking, where it lands on the
-                    # summary card and in the hotel record as the party size.
+                    "city": {"type": "string"},
+                    "check_in": {"type": "string", "description": "YYYY-MM-DD"},
+                    "check_out": {"type": "string", "description": "YYYY-MM-DD"},
                     "guests": {
                         "type": "integer",
                         "description": (
-                            "Number of guests staying. Pass a number the user actually "
-                            "gave you; if they haven't said, omit it rather than assuming "
-                            "a party size — and ask them before booking."
+                            "Only a number the user actually gave. If they haven't said, OMIT it "
+                            "rather than assuming a party size — and ask before booking."
                         ),
                     },
                     "rooms": {"type": "integer", "description": "Number of rooms (default 1)"},
                     "max_budget_pkr": {
                         "type": "number",
-                        "description": (
-                            "Only set this if the user gave a specific PKR ceiling for the "
-                            "per-night rate. Results are filtered to that price and sorted "
-                            "cheapest first. Omit entirely if no number was given."
-                        ),
+                        "description": "Only if the user gave a per-night PKR ceiling. Omit otherwise.",
                     },
                 },
                 "required": ["city", "check_in", "check_out"],
@@ -159,12 +154,10 @@ TOOL_SCHEMAS: list[dict] = [
         "type": "function",
         "function": {
             "name": "get_weather",
-            "description": "Get current weather and any travel warnings for a city. Use before trips or when asked about weather.",
+            "description": "Current weather and travel warnings for a city.",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "city": {"type": "string", "description": "City to check weather for"},
-                },
+                "properties": {"city": {"type": "string"}},
                 "required": ["city"],
             },
         },
@@ -173,12 +166,10 @@ TOOL_SCHEMAS: list[dict] = [
         "type": "function",
         "function": {
             "name": "find_healthcare",
-            "description": "Find nearby hospitals and pharmacies and a short safety briefing for a city. Use for medical/safety questions.",
+            "description": "Nearby hospitals and pharmacies plus a short safety briefing for a city.",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "city": {"type": "string", "description": "City to find healthcare in"},
-                },
+                "properties": {"city": {"type": "string"}},
                 "required": ["city"],
             },
         },
@@ -188,41 +179,24 @@ TOOL_SCHEMAS: list[dict] = [
         "function": {
             "name": "book_car",
             "description": (
-                "Book a standalone car with a driver for a ride WITHIN a city — the "
-                "Car-tab equivalent. This is NOT the airport/station transfer that's "
-                "offered while booking a flight or train (that one rides along on "
-                "prepare_booking); use book_car only when the user wants a car on its "
-                "own. Call it ONLY after the user has clearly asked to book a car AND "
-                "you have all four details: pickup address, drop-off address, vehicle "
-                "type, and pickup date/time. It does NOT charge a card and does NOT "
-                "finalise anything by itself — the app opens a confirmation step where "
-                "the user taps to confirm, and the driver is assigned only then. Never "
-                "invent or promise a driver name, car, or verification code — those come "
-                "back only after the real booking."
+                "Book a standalone within-city car with driver. NOT the airport transfer that "
+                "rides along on prepare_booking. Call only once you have all four fields. It does "
+                "not charge a card; the app shows a Confirm step and the driver, car and "
+                "verification code are assigned only after that tap — never promise them first."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "pickup_location": {
-                        "type": "string",
-                        "description": "Full pickup address within the city.",
-                    },
-                    "dropoff_location": {
-                        "type": "string",
-                        "description": "Full drop-off address within the city.",
-                    },
+                    "pickup_location": {"type": "string", "description": "Full pickup address"},
+                    "dropoff_location": {"type": "string", "description": "Full drop-off address"},
                     "vehicle_type": {
                         "type": "string",
                         "enum": ["Sedan", "SUV", "Van"],
-                        "description": "Sedan PKR 800 (1-3 pax), SUV PKR 1,200 (1-5 pax), Van PKR 1,500 (6-9 pax).",
+                        "description": "Sedan PKR 800 (1-3), SUV PKR 1,200 (1-5), Van PKR 1,500 (6-9)",
                     },
                     "pickup_datetime": {
                         "type": "string",
-                        "description": (
-                            "Pickup date and time as ISO 8601 (YYYY-MM-DDTHH:MM). Resolve "
-                            "relative phrases like 'tomorrow at 3pm' yourself from today's "
-                            "date before calling. Must be in the future."
-                        ),
+                        "description": "ISO 8601 YYYY-MM-DDTHH:MM, resolved by you, must be future",
                     },
                 },
                 "required": ["pickup_location", "dropoff_location", "vehicle_type", "pickup_datetime"],
@@ -234,11 +208,10 @@ TOOL_SCHEMAS: list[dict] = [
         "function": {
             "name": "prepare_booking",
             "description": (
-                "Call this ONLY when the user has clearly chosen a specific option to book "
-                "(e.g. 'book flight 2', 'reserve the Tezgam', 'book the Pearl Continental'). "
-                "Fill the fields from the EXACT option shown in earlier search results — never invent "
-                "a price, flight number, or train name. This shows the user a payment screen; it does "
-                "NOT charge them. If you are unsure which option they mean, ask instead of calling this."
+                "Call ONLY when the user picked a SPECIFIC option you already showed. Copy that "
+                "option's real details — never invent a price, flight number, train or hotel. "
+                "Opens the app's booking screen; does not charge. Unsure which option? Ask instead. "
+                "For a round trip or package, call once per piece in the SAME reply."
             ),
             "parameters": {
                 "type": "object",
@@ -247,96 +220,54 @@ TOOL_SCHEMAS: list[dict] = [
                     "origin": {"type": "string"},
                     "destination": {"type": "string"},
                     "travel_date": {"type": "string", "description": "YYYY-MM-DD"},
-                    "departure_time": {"type": "string", "description": "HH:MM, 24h"},
-                    "arrival_time": {"type": "string", "description": "HH:MM, 24h"},
+                    "departure_time": {"type": "string", "description": "HH:MM 24h"},
+                    "arrival_time": {"type": "string", "description": "HH:MM 24h"},
                     "flight_number": {"type": "string", "description": "e.g. PK304"},
-                    "cabin_class": {
-                        "type": "string",
-                        "enum": ["ECONOMY", "BUSINESS", "FIRST"],
-                        "description": "Cabin class of the chosen flight (default ECONOMY)",
-                    },
+                    "cabin_class": {"type": "string", "enum": ["ECONOMY", "BUSINESS", "FIRST"]},
                     "train_name": {"type": "string", "description": "e.g. Tezgam Express"},
                     "train_class": {
                         "type": "string",
                         "description": (
-                            "The exact fare class the user picked for this train, as shown in the "
-                            "search results (e.g. 'AC Business', 'AC Standard', 'Economy'). Required "
-                            "for trains — each class has a different price."
+                            "Exact fare class shown in the results (e.g. 'AC Business'). "
+                            "Required for trains — each class has its own price."
                         ),
                     },
                     "airline_or_train_name": {"type": "string"},
                     "hotel_name": {"type": "string"},
                     "check_in": {"type": "string", "description": "YYYY-MM-DD"},
                     "check_out": {"type": "string", "description": "YYYY-MM-DD"},
-                    "rooms": {
-                        "type": "integer",
-                        "description": "Number of hotel rooms (1-5). Required for hotels — ask if unclear.",
-                    },
-                    "guests": {
-                        "type": "integer",
-                        "description": "Total hotel guests (1-10). Required for hotels — ask if unclear.",
-                    },
-                    "room_type": {
-                        "type": "string",
-                        "description": (
-                            "Room type if the user stated a preference (e.g. 'Deluxe Room'). "
-                            "Omit if not discussed — a Standard Room is used by default."
-                        ),
-                    },
+                    "rooms": {"type": "integer", "description": "Hotel rooms 1-5, required for hotels"},
+                    "guests": {"type": "integer", "description": "Hotel guests 1-10, required for hotels"},
+                    "room_type": {"type": "string", "description": "Only if the user stated one"},
                     "adults": {
                         "type": "integer",
-                        "description": (
-                            "Number of adult travelers (12+). Required for flights and trains. "
-                            "If the user is clearly booking just for themselves, use 1 — otherwise ask."
-                        ),
+                        "description": "Adults 12+. Required for flights/trains. 1 if solo, else ask.",
                     },
-                    "children": {
-                        "type": "integer",
-                        "description": "Number of children (2-11). Default 0 if not mentioned.",
-                    },
-                    "infants": {
-                        "type": "integer",
-                        "description": "Number of infants (under 2). Default 0 if not mentioned.",
-                    },
-                    "travelers": {
-                        "type": "integer",
-                        "description": (
-                            "Legacy total traveler count — the server recomputes this from "
-                            "adults + children + infants; you do not need to set it."
-                        ),
-                    },
+                    "children": {"type": "integer", "description": "Ages 2-11, default 0"},
+                    "infants": {"type": "integer", "description": "Under 2, default 0"},
                     "transfer_vehicle_type": {
                         "type": "string",
                         "enum": ["Sedan", "SUV", "Van"],
-                        "description": (
-                            "Only if the user accepted an airport/station car transfer: "
-                            "Sedan PKR 800 (1-3 pax), SUV PKR 1,200 (1-5 pax), Van PKR 1,500 (6-9 pax)."
-                        ),
+                        "description": "Only if an airport/station transfer was accepted",
                     },
                     "transfer_pickup_location": {
                         "type": "string",
-                        "description": "Pickup address for the car transfer, if one was accepted.",
+                        "description": "Real street address for that transfer, never a placeholder",
                     },
                     "total_price_pkr": {
                         "type": "number",
                         "description": (
-                            "Your best estimate of the price from the earlier search results, as a "
-                            "PLAIN number (e.g. 46784) — never an arithmetic expression like 5848*8. "
-                            "This is advisory only — the server always re-derives the authoritative "
-                            "price from live search data before showing the payment screen."
+                            "Price from the shown option as a PLAIN number (46784, never 5848*8). "
+                            "Advisory — the server re-derives the authoritative price."
                         ),
                     },
-                    "selected_option": {"type": "string", "description": "Short human label of the chosen option"},
+                    "selected_option": {"type": "string", "description": "Short label of the chosen option"},
                     "next_step": {
                         "type": "string",
                         "description": (
-                            "ONLY when this booking is one piece of a multi-part trip the user "
-                            "asked for (e.g. they wanted flight + hotel + car): one short, plain "
-                            "sentence naming what still remains, e.g. 'your hotel in Islamabad, "
-                            "22-30 July, then the airport car'. It is shown to the user after "
-                            "this booking so the trip can continue. Purely descriptive — never "
-                            "put a price, PNR, booking reference or confirmation wording in it, "
-                            "and omit it entirely for a single standalone booking."
+                            "Only if something remains AFTER this checkout: one plain sentence, "
+                            "no price, no reference number. Omit for a single booking or when "
+                            "every piece is prepared in this same turn."
                         ),
                     },
                 },
@@ -345,6 +276,11 @@ TOOL_SCHEMAS: list[dict] = [
         },
     },
 ]
+
+# Tool name -> schema, so a turn can send only the tools it could plausibly need.
+TOOL_SCHEMAS_BY_NAME: dict[str, dict] = {
+    t["function"]["name"]: t for t in TOOL_SCHEMAS
+}
 
 
 # ── Date helper ───────────────────────────────────────────────────────────────

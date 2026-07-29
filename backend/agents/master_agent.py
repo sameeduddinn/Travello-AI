@@ -58,9 +58,25 @@ from agents.healthcare_agent import get_safety_briefing
 from agents import self_improvement
 
 from core.pk_time import pk_today
-from services.llm_service import generate_text, generate_with_tools, GeminiError, LLMError
+from services.llm_service import (
+    generate_text,
+    generate_with_tools,
+    answering_model,
+    begin_turn,
+    estimate_request_tokens,
+    error_kind,
+    all_providers_exhausted,
+    GeminiError,
+    LLMError,
+    QUOTA_MINUTE,
+    QUOTA_DAILY,
+    REQUEST_TOO_LARGE,
+    INVALID_KEY,
+)
+from agents import deterministic_reply
+from agents.conversation_state import state_hint
+from agents.prompt_builder import build_system_prompt, select_tools, select_tool_names
 from agents.agent_tools import (
-    TOOL_SCHEMAS,
     get_missing_booking_fields,
     get_booking_count_error,
     get_booking_date_error,
@@ -76,7 +92,11 @@ from agents.agent_tools import (
     user_supplied_date_signal,
     recover_booking_location,
 )
-from prompts.master_agent import MASTER_SYSTEM, MASTER_AGENTIC_SYSTEM
+# MASTER_AGENTIC_SYSTEM is deliberately NOT imported here any more — the agentic
+# path now builds its prompt through agents/prompt_builder.py, which sends the
+# compact core plus only the rule blocks the turn can use. The full constant is
+# kept in prompts/master_agent.py as the documented, complete rule set.
+from prompts.master_agent import MASTER_SYSTEM
 from prompts.knowledge import get_relevant_facts, EMERGENCY_NUMBERS
 from agents.emergency_healthcare import (
     is_medical_emergency,
@@ -85,7 +105,6 @@ from agents.emergency_healthcare import (
     build_emergency_reply,
 )
 from core.supabase_client import supabase_admin
-from core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -332,11 +351,27 @@ def _selected_indices(message: str) -> list[int]:
     return picks if len(picks) >= 2 else []
 
 
-# An offer list's labels are short identifiers ("PA-180", "Serena Hotel"); a
-# trailing "Next steps: 1. Choose your outbound flight…" list is full sentences.
-# Only offer lists may be paired with a pick, so a second pick can never be
-# resolved against instructional prose.
+# Telling an OFFER list ("1. PA-180 — PKR 17,500") apart from an instructional
+# one ("1. Choose your outbound flight") matters because only offer lists may be
+# paired with a pick — resolving "option 2" against a list of instructions would
+# book something the user never saw.
+#
+# Length alone used to be the discriminator, and it was wrong in both directions:
+# a fully-detailed offer row (airline, times, per-person price, party total, seats
+# left) is comfortably over 60 characters, so real offers were being rejected and
+# a two-leg pick silently lost its hint. A PRICE is the reliable signal — an
+# instruction never quotes one — so a priced row qualifies at any length, and the
+# old length rule stays as the fallback for terse lists that omit prices.
 _OFFER_LABEL_MAX = 60
+_PRICE_IN_LABEL_RE = re.compile(r"\bPKR\s*[\d,]+", re.IGNORECASE)
+
+
+def _looks_like_offers(lst: dict[int, str]) -> bool:
+    if not lst:
+        return False
+    if all(_PRICE_IN_LABEL_RE.search(v) for v in lst.values()):
+        return True
+    return len(lst) >= 2 and all(len(v) <= _OFFER_LABEL_MAX for v in lst.values())
 
 
 def _numbered_lists(text: str) -> list[dict[int, str]]:
@@ -370,10 +405,7 @@ def _numbered_lists(text: str) -> list[dict[int, str]]:
 
 def _offer_lists(text: str) -> list[dict[int, str]]:
     """Only the numbered lists that look like pickable offers."""
-    return [
-        lst for lst in _numbered_lists(text)
-        if len(lst) >= 2 and all(len(v) <= _OFFER_LABEL_MAX for v in lst.values())
-    ]
+    return [lst for lst in _numbered_lists(text) if _looks_like_offers(lst)]
 
 
 def _selection_hint(user_message: str, history: list[dict]) -> str | None:
@@ -673,6 +705,10 @@ async def process_message(
     Run a single turn of the multi-agent conversation.
     Returns: {"response": str, "conversation_id": str}
     """
+    # Reached either directly or as the agentic path's fallback; either way this
+    # is the start of a turn, so attribution starts here too (idempotent).
+    begin_turn()
+
     # Step 1 — load user profile + memory + conversation history IN PARALLEL
     (memory, profile), history = await asyncio.gather(
         asyncio.gather(get_user_memory(user_id), get_user_profile(user_id)),
@@ -710,7 +746,7 @@ async def process_message(
             summary = format_booking_summary(booking_data)
             await save_turn(
                 conversation_id, user_id, user_message, summary,
-                model_used=settings.GROQ_MODEL,
+                model_used=answering_model(),
             )
             asyncio.ensure_future(
                 _log_task(user_id, conversation_id, "booking", user_message, booking_data)
@@ -793,18 +829,16 @@ async def process_message(
     try:
         final_response = await generate_text(full_messages, temperature=0.6, max_output_tokens=2048)
     except GeminiError as exc:
-        err = str(exc)
-        logger.warning("master_agent final synthesis failed: %s", err)
-        if "quota_exhausted" in err:
-            final_response = (
-                "⚠️ I'm temporarily unavailable — the AI service has reached its daily quota. "
-                "Please try again in a few hours or contact the admin to refresh the API key."
-            )
-        elif "invalid_key" in err:
-            final_response = "⚠️ AI service configuration error. Please contact support."
-        else:
-            # Safe fallback — never expose raw agent context to the user
-            final_response = "I'm having trouble connecting right now. Please try again in a moment."
+        logger.warning(
+            "master_agent final synthesis failed: kind=%s %s", error_kind(exc), exc)
+        # Keyed off the typed `kind`, not the message text. The old string match
+        # on "quota_exhausted" went dead the moment errors became typed, and
+        # every provider failure silently collapsed into the generic "having
+        # trouble connecting" — including a daily wall, where that advice is wrong.
+        final_response = (
+            _provider_failure_message(exc)
+            or "I'm having trouble connecting right now. Please try again in a moment."
+        )
 
     # Backstop: strip any internal tool name the model leaked into user-facing prose.
     final_response = _redact_tool_names(final_response)
@@ -812,7 +846,7 @@ async def process_message(
     # Step 8 — persist both messages (ordered so replay stays user-then-assistant)
     await save_turn(
         conversation_id, user_id, user_message, final_response,
-        model_used=settings.GROQ_MODEL,
+        model_used=answering_model(),
     )
 
     # Step 9 — fire-and-forget background tasks (must never block or crash)
@@ -858,17 +892,59 @@ def _time_left(started: float, floor: float = 6.0) -> float:
     """
     return max(_TURN_BUDGET - (time.monotonic() - started), floor)
 
-# Shown when the LLM provider is momentarily rate-limited (free-tier TPM 429).
-# Deliberately transient and reassuring — this is a per-minute wall, not a failure.
+# ── Provider-failure messages ─────────────────────────────────────────────────
+#
+# These used to be one message for every kind of 429, which is why a user whose
+# DAILY token budget was gone for the next several hours was told to "try again
+# in a minute" — and did, every minute, to the same wall. Each cause now gets the
+# truth, because the advice differs: wait a moment / come back later / say less /
+# it's a configuration problem.
+
 _RATE_LIMIT_MESSAGE = (
     "I'm getting a burst of requests right now and hit a brief rate limit. "
     "Please try again in a minute — nothing was lost, your trip details are safe."
 )
 
+_DAILY_QUOTA_MESSAGE = (
+    "I've used up today's AI capacity on this account, so I can't reason about "
+    "new trips until it resets. Nothing was lost and nothing was booked — your "
+    "existing bookings are all still in My Bookings. Please try again later today."
+)
+
+_TOO_LARGE_MESSAGE = (
+    "That conversation has grown too long for me to process in one go. Starting "
+    "a fresh chat will fix it — your bookings and saved details stay exactly as "
+    "they are."
+)
+
+_PROVIDER_DOWN_MESSAGE = (
+    "My reasoning service isn't responding right now, so I can't work on that "
+    "this moment. Nothing was booked or charged. Please try again shortly."
+)
+
+_MISCONFIGURED_MESSAGE = (
+    "I can't reach my reasoning service — it looks like a configuration problem "
+    "on our side rather than anything you did. Nothing was booked or charged."
+)
+
+_PROVIDER_MESSAGES = {
+    QUOTA_MINUTE: _RATE_LIMIT_MESSAGE,
+    QUOTA_DAILY: _DAILY_QUOTA_MESSAGE,
+    REQUEST_TOO_LARGE: _TOO_LARGE_MESSAGE,
+    INVALID_KEY: _MISCONFIGURED_MESSAGE,
+}
+
+
+def _provider_failure_message(exc: Exception) -> str | None:
+    """The user-facing text for a typed provider failure, or None if it isn't one."""
+    if not isinstance(exc, LLMError):
+        return None
+    return _PROVIDER_MESSAGES.get(error_kind(exc), _PROVIDER_DOWN_MESSAGE)
+
 
 def _is_rate_limit_error(exc: Exception) -> bool:
-    """True for the Groq/Gemini quota (429) signal raised by llm_service."""
-    return isinstance(exc, LLMError) and "quota_exhausted" in str(exc)
+    """True for either flavour of provider quota wall raised by llm_service."""
+    return isinstance(exc, LLMError) and error_kind(exc) in (QUOTA_MINUTE, QUOTA_DAILY)
 
 
 # Shown when our OWN turn-clock (not a provider) cut a call short. Distinct wording
@@ -1194,6 +1270,63 @@ def _is_fabricated_booking(text: str) -> bool:
     return bool(_FAKE_CARD_RE.search(text) or _FAKE_CONFIRM_RE.search(text))
 
 
+# ── Atomic package failure ────────────────────────────────────────────────────
+# A round trip or a flight+hotel package is ONE checkout. If some pieces verify
+# and others don't, the only safe outcome is to commit NOTHING: a payment screen
+# for half a round trip means the user pays, flies out, and finds on the day that
+# there is no way back. These build the honest explanation that replaces it —
+# with no `action` and no `booking_data`, so the app cannot render a pay button.
+
+def _component_label(bd: dict) -> str:
+    """A short human name for a booking piece, from the model's own arguments."""
+    bd = bd if isinstance(bd, dict) else {}
+    bt = str(bd.get("booking_type") or "")
+    if bt == "hotel":
+        where = bd.get("hotel_name") or bd.get("destination") or "the hotel"
+        return f"the hotel ({where})"
+    ident = str(bd.get("flight_number") or bd.get("train_name") or "").strip()
+    route = ""
+    if bd.get("origin") or bd.get("destination"):
+        route = f"{bd.get('origin') or '?'} → {bd.get('destination') or '?'}"
+    when = str(bd.get("travel_date") or "").strip()
+    parts = [p for p in (ident, route, when) if p]
+    return " ".join(parts) if parts else "that leg"
+
+
+def _package_incomplete_message(
+    verified: list[dict], failed: list[dict], expected: int
+) -> str:
+    """Explain which piece couldn't be prepared, and that nothing was charged."""
+    ok_names = [_component_label(c) for c in verified]
+    bad_names = [_component_label(c) for c in failed]
+    # Wording note: this text must not trip _is_fabricated_booking. Phrases like
+    # "nothing has been booked" pair a booking noun with a completion word and
+    # read to that detector exactly like a fabricated confirmation, so the denial
+    # is written without them — sentence breaks keep the two apart.
+    lines = [
+        "I couldn't set this up as a single trip. Nothing was sent to payment, "
+        "and no card was charged."
+    ]
+    if ok_names:
+        lines.append(f"✅ Ready to go: {', '.join(ok_names)}.")
+    if bad_names:
+        lines.append(
+            f"❌ Not available to reserve right now: {', '.join(bad_names)}."
+        )
+    elif len(verified) < expected:
+        missing = expected - len(verified)
+        lines.append(
+            f"❌ {missing} of the {expected} pieces you asked for couldn't be set up."
+        )
+    lines.append(
+        "Going ahead with only part of it would leave you with half a trip, so I'd "
+        "rather fix it first. Tell me which alternative you'd like for the missing "
+        "part (or ask me to search that leg again) and I'll put the whole thing "
+        "together in one go."
+    )
+    return "\n\n".join(lines)
+
+
 # ── Package continuity safeguard ──────────────────────────────────────────────
 # A package is booked piece-by-piece, and the model is supposed to set `next_step`
 # on each non-final piece so the app can carry the trip forward after payment (no
@@ -1291,10 +1424,17 @@ def _has_here_cue(message: str) -> bool:
     return bool(_HERE_CUE_RE.search(message or ""))
 
 
-# How many of the most recent turns stay verbatim, and how hard older assistant
-# turns are trimmed. Tuned for the package flow, which is by far the heaviest.
-_HISTORY_RECENT_FULL = 4
-_HISTORY_MAX_CHARS = 700
+# How many of the most recent turns stay verbatim, how hard older assistant turns
+# are trimmed, and the overall ceiling on history sent to the model. Tuned for the
+# package flow, which is by far the heaviest.
+#
+# These are tighter than they used to be (was 4 turns / 700 chars / no ceiling)
+# because agents/conversation_state.py now re-states the route, dates, party size
+# and budget in ~60 tokens. The facts a booking needs survive even when the tables
+# they came from are cut, so the tables no longer have to ride along forever.
+_HISTORY_RECENT_FULL = 3
+_HISTORY_MAX_CHARS = 400
+_HISTORY_TOTAL_CHARS = 4000     # ~1,000 tokens of conversation, newest first
 
 
 def _compact_history(history: list[dict]) -> list[dict]:
@@ -1302,21 +1442,26 @@ def _compact_history(history: list[dict]) -> list[dict]:
     Shrink the history that goes to the MODEL, without touching `history` itself.
 
     A package turn emits very large assistant messages — six-row flight, hotel
-    and train tables plus a budget breakdown. All twenty of those then ride along
+    and train tables plus a budget breakdown. All twenty of those then rode along
     in EVERY later call, and on the free tier that bulk alone pushed a turn past
     the 52s budget: a plain "yes" to "shall I book the hotel?" timed out with
     nothing wrong except payload size.
 
-    Only ASSISTANT messages are trimmed, and only older ones:
-      - user turns stay verbatim — they are what the party size, dates, addresses
-        and car details are read from, and every provenance gate scans them;
-      - the last few turns stay whole, so the immediate context is never lossy.
-    The caller keeps using the untrimmed `history` for those gates.
+    Two passes:
+      1. Trim older ASSISTANT messages to _HISTORY_MAX_CHARS. User turns stay
+         verbatim — they are what the party size, dates, addresses and car
+         details are read from, and every provenance gate scans them — and the
+         last few turns stay whole so immediate context is never lossy.
+      2. Enforce a total ceiling, dropping the OLDEST turns first. Without it a
+         long conversation grows without bound and eventually trips the
+         provider's context limit as a 413 that no cooldown can fix.
+
+    The caller keeps using the untrimmed `history` for the gates.
     """
     if not history:
         return []
     cutoff = len(history) - _HISTORY_RECENT_FULL
-    out: list[dict] = []
+    trimmed: list[dict] = []
     for i, m in enumerate(history):
         content = m.get("content") or ""
         if (
@@ -1324,14 +1469,25 @@ def _compact_history(history: list[dict]) -> list[dict]:
             and i < cutoff
             and len(content) > _HISTORY_MAX_CHARS
         ):
-            out.append({
+            trimmed.append({
                 **m,
                 "content": content[:_HISTORY_MAX_CHARS].rstrip()
                 + "\n…[earlier options trimmed — re-run the search if you need them]",
             })
         else:
-            out.append(m)
-    return out
+            trimmed.append(m)
+
+    # Newest-first accumulation, so what survives is always the recent context.
+    kept: list[dict] = []
+    budget = _HISTORY_TOTAL_CHARS
+    for m in reversed(trimmed):
+        size = len(m.get("content") or "")
+        if kept and size > budget:
+            break
+        budget -= size
+        kept.append(m)
+    kept.reverse()
+    return kept
 
 
 async def process_message_agentic(
@@ -1349,6 +1505,11 @@ async def process_message_agentic(
     Falls back to the legacy process_message() on any failure so the endpoint
     never hard-fails.
     """
+    # Open attribution for this turn BEFORE any provider call, in the request's
+    # own task, so whatever ends up answering (Groq, OpenRouter or Gemini) is
+    # what gets written to the message record — see llm_service.begin_turn.
+    begin_turn()
+
     # Step 1 — load context in parallel
     (memory, profile), history = await asyncio.gather(
         asyncio.gather(get_user_memory(user_id), get_user_profile(user_id)),
@@ -1380,16 +1541,38 @@ async def process_message_agentic(
         ))
         return {"response": emergency_reply, "conversation_id": conversation_id}
 
+    # ── Provider budget guard ─────────────────────────────────────────────────
+    # Every configured provider is sitting on a KNOWN daily quota wall, reported
+    # by the provider itself with its own reset time. Sending three more requests
+    # to confirm that would burn the turn's clock to learn nothing, and the user
+    # would wait ~40s for the same answer. Say it immediately and honestly. Only
+    # a DAILY wall short-circuits here — a per-minute wall clears in seconds and
+    # is always worth retrying.
+    if all_providers_exhausted():
+        logger.warning("all providers report a daily quota wall — short-circuiting turn")
+        await save_turn(
+            conversation_id, user_id, user_message, _DAILY_QUOTA_MESSAGE,
+            model_used="quota-guard",
+        )
+        return {"response": _DAILY_QUOTA_MESSAGE, "conversation_id": conversation_id}
+
     memory_context = _format_memory(memory, profile)
     # PK date, not the host's. On a UTC server this line is what tells a
     # 2am Karachi user it is still yesterday, so their "tomorrow" books a
     # day early. Pakistan is UTC+5 — see core/pk_time.
     today = pk_today()
 
-    system_prompt = MASTER_AGENTIC_SYSTEM.format(
+    # Only the tools this turn could plausibly use, and only the rule blocks that
+    # match them. Sending all seven schemas and the full rule set cost ~8.9k tokens
+    # on every call, which on Groq's free tier is ~11 calls before the DAILY token
+    # budget refuses the next request — see agents/prompt_builder.py.
+    turn_tool_names = select_tool_names(user_message, history)
+    turn_tools = select_tools(user_message, history)
+    system_prompt = build_system_prompt(
         today=today.isoformat(),
         weekday=today.strftime("%A"),
         memory=memory_context or "(no saved preferences yet)",
+        tool_names=turn_tool_names,
     )
 
     # Grounded static facts (visa/baggage/rail-class/emergency) — only added
@@ -1406,6 +1589,14 @@ async def process_message_agentic(
     messages.extend(_compact_history(history))
     messages.append({"role": "user", "content": user_message})
 
+    # Route, dates, party size and budget pulled out of the conversation in code.
+    # This is what makes the harder history trimming above safe: the facts a
+    # booking needs survive in ~60 tokens even when the tables they came from
+    # have been cut. Purely a hint — every booking gate still runs.
+    trip_hint = state_hint(history, user_message, today=today)
+    if trip_hint:
+        messages.append({"role": "system", "content": trip_hint})
+
     # Deterministic pick-from-a-list nudge (see _selection_hint): when the user
     # answers a numbered list with "6" / "option 6" / "the second one", name the
     # exact item so the model converges in ONE prepare_booking call instead of
@@ -1420,6 +1611,12 @@ async def process_message_agentic(
     car_booking_data: dict | None = None
     # Every server-repriced component prepared this turn. 2+ => a package.
     package_components: list[dict] = []
+    # Atomicity bookkeeping — see the ATOMIC PACKAGE GATE inside the loop.
+    user_picks: list[int] = _selected_indices(user_message)
+    expected_components: int = 0
+    package_incomplete: bool = False
+    package_ok: list[dict] = []
+    package_failed: list[dict] = []
     final_text: str = ""
     tools_used: list[str] = []
     learned: dict = {}
@@ -1481,9 +1678,15 @@ async def process_message_agentic(
             # OpenRouter is exactly the case that produced a 60.7s 504 with nothing
             # logged in between — this is the call that was in flight when it happened,
             # and it was the one call in this function still missing a timeout.
+            logger.info(
+                "agent step %d — est_in=%d tokens tools=%s",
+                step + 1,
+                estimate_request_tokens(messages, turn_tools),
+                ",".join(turn_tool_names),
+            )
             msg = await asyncio.wait_for(
                 generate_with_tools(
-                    messages, tools=TOOL_SCHEMAS, temperature=0.4, max_output_tokens=1200,
+                    messages, tools=turn_tools, temperature=0.4, max_output_tokens=1200,
                 ),
                 timeout=_time_left(started),
             )
@@ -1523,6 +1726,13 @@ async def process_message_agentic(
             # silently proceeding on partial, stale, or invented data.
             booking_calls = [tc for tc in tool_calls if tc.function.name == "prepare_booking"]
             booking_gate_results: dict[str, dict] = {}
+            # Components verified IN THIS STEP. A package must be assembled in one
+            # reply (that is the rule the model is given), so this list is per-step
+            # rather than cumulative — otherwise a leg verified in step 1 and a
+            # different leg in step 3 would silently become a "package" the user
+            # never saw offered together.
+            step_components: list[dict] = []
+            step_failures: list[dict] = []
             for tc in booking_calls:
                 bd = _safe_args(tc.function.arguments)
                 # Deterministically recover a hotel's `destination` if the model
@@ -1536,16 +1746,19 @@ async def process_message_agentic(
                 missing = get_missing_booking_fields(bd)
                 if missing:
                     booking_gate_results[tc.id] = missing_fields_result(missing)
+                    step_failures.append(bd)
                     _log_gate_failure("prepare_booking", bd, booking_gate_results[tc.id])
                     continue
                 count_error = get_booking_count_error(bd)
                 if count_error:
                     booking_gate_results[tc.id] = count_error
+                    step_failures.append(bd)
                     _log_gate_failure("prepare_booking", bd, count_error)
                     continue
                 date_error = get_booking_date_error(bd)
                 if date_error:
                     booking_gate_results[tc.id] = date_error
+                    step_failures.append(bd)
                     _log_gate_failure("prepare_booking", bd, date_error)
                     continue
                 # The transfer pickup address is dispatched to a real driver
@@ -1554,25 +1767,23 @@ async def process_message_agentic(
                 transfer_error = get_transfer_error(bd)
                 if transfer_error:
                     booking_gate_results[tc.id] = transfer_error
+                    step_failures.append(bd)
                     _log_gate_failure("prepare_booking", bd, transfer_error)
                     continue
                 bd = apply_traveler_totals(bd)
                 verified = await reprice_booking(bd)
                 if verified:
                     # Collect EVERY component the model prepared this turn, not just
-                    # the first. A package ("flight + hotel + car") is exactly this:
-                    # several prepare_booking calls in one turn, each independently
-                    # gated and server-repriced by the code above. Two or more
-                    # verified components become a single package_choice with one
-                    # combined total, so the user fills passenger details once and
-                    # pays once, instead of being walked through a separate booking
-                    # and a separate payment per piece. A single component still
-                    # takes the original payment_choice path, unchanged.
-                    package_components.append(verified)
-                    if booking_data is None:
-                        booking_data = verified
+                    # the first. A package ("flight + hotel + car", or the two legs
+                    # of a round trip) is exactly this: several prepare_booking calls
+                    # in one turn, each independently gated and server-repriced by
+                    # the code above. Two or more verified components become a single
+                    # package_choice with one combined total, so the user fills
+                    # passenger details once and pays once.
+                    step_components.append(verified)
                     continue
                 booking_gate_results[tc.id] = offer_not_found_result()
+                step_failures.append(bd)
                 _log_gate_failure("prepare_booking", bd, booking_gate_results[tc.id])
 
             # book_car — standalone within-city ride. Same posture as
@@ -1602,7 +1813,50 @@ async def process_message_agentic(
                 car_booking_data = build_car_booking_data(ca)
                 break
 
-            if booking_data or car_booking_data:
+            # ── ATOMIC PACKAGE GATE ───────────────────────────────────────────
+            # How many pieces this checkout is SUPPOSED to contain: whichever is
+            # larger of what the user picked ("1 for outbound and 3 for return"
+            # = 2) and what the model actually attempted. Taking the max matters
+            # in both directions — the user's picks catch a model that only
+            # prepared one leg, and the model's calls catch a package the user
+            # described in prose rather than by numbers.
+            if booking_calls:
+                expected_components = max(len(booking_calls), len(user_picks), 1)
+                if len(step_components) >= expected_components:
+                    package_components = step_components
+                    booking_data = step_components[0]
+                    package_incomplete = False
+                    break
+                # Not every piece survived. Committing what DID verify would hand
+                # the user a payment screen for one half of a round trip — they
+                # pay, fly out, and discover on the day that there is no way back.
+                # So nothing is committed: the gate errors go back to the model,
+                # which can re-search or ask, and if the turn ends still short we
+                # return an explanation with NO payment action attached.
+                if expected_components >= 2:
+                    package_incomplete = True
+                    package_ok = step_components
+                    package_failed = step_failures
+                    logger.warning(
+                        "package incomplete — %d of %d component(s) verified; "
+                        "withholding payment action",
+                        len(step_components), expected_components,
+                    )
+                    # Tell the model what is missing. The per-call gate errors
+                    # below only cover calls that FAILED; when the model simply
+                    # never made the second call there is no error to feed back,
+                    # and that silence is how a two-leg request used to come out
+                    # as a one-leg booking.
+                    messages.append({"role": "system", "content": (
+                        f"INCOMPLETE PACKAGE: this checkout needs {expected_components} "
+                        f"pieces but only {len(step_components)} could be confirmed. "
+                        "Nothing has been sent to payment. Prepare EVERY remaining "
+                        "piece in your next reply, or — if a piece genuinely isn't "
+                        "available — tell the user plainly which one and ask them to "
+                        "pick a replacement. Never proceed with only part of it."
+                    )})
+
+            if car_booking_data:
                 break
 
             # Append the assistant tool-call turn, then run the non-booking tools in parallel
@@ -1666,6 +1920,28 @@ async def process_message_agentic(
                 gathered.append(("budget_check", budget_note))
                 messages.append({"role": "system", "content": budget_note})
 
+            # ── Deterministic answer for a plain search ───────────────────────
+            # A search turn otherwise costs a SECOND provider call whose only job
+            # is to reformat results we already have — and that second call
+            # carries the whole tool payload back up, so it is the more expensive
+            # of the two. When the turn is simple enough (see should_render), the
+            # list is formatted in code instead: half the tokens, and the prices,
+            # flight numbers and hospital phone numbers are copied rather than
+            # re-typed by a model. Anything needing judgement (a budget verdict,
+            # planning, a package, a pick) fails the gate and keeps the LLM.
+            if not booking_calls and not car_calls and deterministic_reply.should_render(
+                gathered, user_message,
+                has_budget_note=bool(budget_note), has_pick_hint=bool(pick_hint),
+            ):
+                rendered = deterministic_reply.render(gathered)
+                if rendered:
+                    logger.info(
+                        "deterministic reply for %s — skipped synthesis call",
+                        ",".join(name for name, _ in gathered),
+                    )
+                    final_text = rendered
+                    break
+
             for tc in booking_calls:
                 result = booking_gate_results.get(tc.id, offer_not_found_result())
                 messages.append({
@@ -1724,11 +2000,13 @@ async def process_message_agentic(
                     [m.get("content", "") for m in history if m.get("role") == "user"],
                     urgent=has_emergency_signal(user_message),
                 )
-            elif _is_rate_limit_error(exc):
-                # Per-minute rate limit with nothing gathered: re-running the legacy
-                # pipeline just hits the same 429 and double-spends the budget. Fail
-                # fast with an honest, transient message instead of hanging to 504.
-                final_text = _RATE_LIMIT_MESSAGE
+            elif isinstance(exc, LLMError):
+                # A typed provider failure with nothing gathered. Re-running the
+                # legacy pipeline would hit the same wall and double-spend the
+                # budget, so answer with the truth for THIS cause — a per-minute
+                # blip, a spent daily budget, an oversized conversation, or a
+                # configuration problem all need different advice from the user.
+                final_text = _provider_failure_message(exc) or _PROVIDER_DOWN_MESSAGE
             elif _is_turn_timeout(exc):
                 # Our own budget is spent, not just Groq's per-minute wall — the
                 # legacy pipeline would only get a few seconds against the router's
@@ -1737,6 +2015,26 @@ async def process_message_agentic(
             else:
                 # Nothing gathered → safe to try the legacy pipeline as a last resort.
                 return await process_message(user_id, conversation_id, user_message)
+
+    # Incomplete package → NO action, NO booking_data. The turn ends with an
+    # explanation instead of a payment button, because a partially-verified
+    # package is the one outcome that must never reach a card. This is checked
+    # BEFORE the commit paths below so a single verified leg can't slip through
+    # as an ordinary payment_choice.
+    if package_incomplete and not package_components:
+        summary = _package_incomplete_message(
+            package_ok, package_failed, expected_components
+        )
+        await save_turn(
+            conversation_id, user_id, user_message, summary,
+            model_used=answering_model(),
+        )
+        asyncio.ensure_future(_log_task(
+            user_id, conversation_id, "booking", user_message,
+            {"package_incomplete": True, "expected": expected_components,
+             "verified": len(package_ok)},
+        ))
+        return {"response": summary, "conversation_id": conversation_id}
 
     # Package path → package_choice. Two or more components were prepared and each
     # one already passed the same gates and the same server-side reprice a single
@@ -1749,7 +2047,7 @@ async def process_message_agentic(
         summary = format_package_summary(package_data)
         await save_turn(
             conversation_id, user_id, user_message, summary,
-            model_used=settings.GROQ_MODEL,
+            model_used=answering_model(),
         )
         asyncio.ensure_future(_log_task(
             user_id, conversation_id, "booking", user_message, package_data,
@@ -1777,7 +2075,7 @@ async def process_message_agentic(
         summary = format_booking_summary(booking_data)
         await save_turn(
             conversation_id, user_id, user_message, summary,
-            model_used=settings.GROQ_MODEL,
+            model_used=answering_model(),
         )
         asyncio.ensure_future(_log_task(user_id, conversation_id, "booking", user_message, booking_data))
         return {
@@ -1792,7 +2090,7 @@ async def process_message_agentic(
         summary = format_car_booking_summary(car_booking_data)
         await save_turn(
             conversation_id, user_id, user_message, summary,
-            model_used=settings.GROQ_MODEL,
+            model_used=answering_model(),
         )
         asyncio.ensure_future(_log_task(user_id, conversation_id, "booking", user_message, car_booking_data))
         return {
@@ -1829,7 +2127,7 @@ async def process_message_agentic(
     # Persist both messages (ordered so replay stays user-then-assistant)
     await save_turn(
         conversation_id, user_id, user_message, final_text,
-        model_used=settings.GROQ_MODEL,
+        model_used=answering_model(),
     )
 
     # Fire-and-forget: learn preferences, set a meaningful title, log the task
