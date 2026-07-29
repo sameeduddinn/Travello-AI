@@ -118,14 +118,38 @@ def should_render(
 
 # ── Renderers ─────────────────────────────────────────────────────────────────
 
+def _multiplies_exactly(unit, count: int, total) -> bool:
+    """
+    Does `unit × count` really come to `total`, in whole rupees?
+
+    It often doesn't. The services round the party total, and the per-unit
+    figure is then derived as round(total / count) — two independent roundings
+    that need not reconcile. A live example: Tezgam AC Standard for 3 came back
+    as total 8,378 with a per-seat of 2,793, and 2,793 × 3 is 8,379.
+
+    One rupee is nothing to pay and everything to read. The total is the
+    server-verified amount that gets charged, so the arithmetic on screen is
+    what has to give — see _price_breakdown in booking_agent, which has taken
+    the same line since the booking summary was written: a breakdown that
+    doesn't add up on screen is worse than no breakdown at all.
+    """
+    try:
+        return round(float(unit)) * int(count) == round(float(total))
+    except (TypeError, ValueError):
+        return False
+
+
 def _price_pair(row: dict, payload: dict) -> str:
     """
     'PKR 16,341 per person × 2 = **PKR 32,682 total**' when there are 2+
     travellers, otherwise the single fare.
 
-    The multiplication is always shown for a party, because a bare total sitting
-    next to "2 passengers" reads as though the head count was ignored — the exact
-    complaint that produced this rule.
+    The multiplication is shown for a party wherever it is exact, because a bare
+    total sitting next to "2 passengers" reads as though the head count was
+    ignored — the exact complaint that produced this rule. Where it is NOT
+    exact, both figures still appear (the head count stays visible) but the
+    per-person fare is marked approximate instead of asserting a sum that a
+    reader checking it would find wrong.
     """
     total = _money(row.get("total_price_pkr"))
     per_seat = _money(row.get("price_per_seat_pkr"))
@@ -134,7 +158,10 @@ def _price_pair(row: dict, payload: dict) -> str:
     except (TypeError, ValueError):
         pax = 1
     if pax > 1 and per_seat and total:
-        return f"{per_seat} per person × {pax} = **{total} total**"
+        if _multiplies_exactly(row.get("price_per_seat_pkr"), pax,
+                               row.get("total_price_pkr")):
+            return f"{per_seat} per person × {pax} = **{total} total**"
+        return f"**{total} total** for {pax} (≈ {per_seat} each)"
     return f"**{total}**" if total else (per_seat or "price on request")
 
 
@@ -202,7 +229,13 @@ def _render_hotels(payload: dict, label: str = "") -> str:
         # total_stay_pkr is quoted verbatim — it is exactly what will be charged.
         total = _money(h.get("total_stay_pkr"))
         if per_night and total and nights > 1:
-            price = f"{per_night}/night × {nights} nights = **{total}**"
+            # Same rule as the fares above: a nightly rate that doesn't multiply
+            # back to the stay total is shown as approximate, never as a sum.
+            if _multiplies_exactly(h.get("price_per_night_pkr"), nights,
+                                   h.get("total_stay_pkr")):
+                price = f"{per_night}/night × {nights} nights = **{total}**"
+            else:
+                price = f"**{total}** for {nights} nights (≈ {per_night}/night)"
         elif total:
             price = f"**{total}** total"
         else:

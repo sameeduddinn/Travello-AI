@@ -373,3 +373,78 @@ def test_rendering_never_leaks_a_tool_name():
 def test_render_returns_empty_on_unparseable_input_so_the_caller_falls_back():
     assert dr.render([("search_flights", "not json")]) == ""
     assert dr.render([]) == ""
+
+
+# ── The displayed arithmetic has to survive a reader checking it ─────────────
+#
+# The services round the party total, and the per-unit figure is derived as
+# round(total / count). Two independent roundings need not reconcile: Tezgam
+# AC Standard for 3 came back as total 8,378 with a per-seat of 2,793, and
+# 2,793 x 3 is 8,379. The total is the server-verified amount that gets
+# charged, so it is the on-screen arithmetic that has to give.
+
+import re
+
+
+def _claims(text):
+    """Every 'PKR a ... x n ... PKR b' the renderer asserts, as (a, n, b)."""
+    return [(int(a.replace(",", "")), int(n), int(b.replace(",", "")))
+            for a, n, b in re.findall(r"PKR ([\d,]+)[^\n]*?× (\d+)[^\n]*?PKR ([\d,]+)", text)]
+
+
+def test_an_exact_fare_still_shows_the_multiplication():
+    payload = {"passengers": 3, "flights": [{
+        "airline": "AirSial", "flight_number": "ER618",
+        "price_per_seat_pkr": 14102, "total_price_pkr": 42306}]}
+    out = dr.render([("search_flights", json.dumps(payload))])
+    assert "PKR 14,102 per person × 3 = **PKR 42,306 total**" in out
+
+
+def test_a_fare_that_does_not_multiply_back_is_not_asserted_as_a_sum():
+    """The live Tezgam AC Standard case, verbatim."""
+    payload = {"passengers": 3, "trains": [{
+        "train_name": "Tezgam Express", "depart": "2026-09-15 00:00",
+        "classes": [{"class": "AC Standard",
+                     "price_per_seat_pkr": 2793, "total_price_pkr": 8378}]}]}
+    out = dr.render([("search_trains", json.dumps(payload))])
+
+    assert "2,793 per person × 3" not in out          # the false claim
+    assert "PKR 8,378" in out                          # what is actually charged
+    assert "3" in out and "2,793" in out               # head count and per-seat kept
+    assert not [c for c in _claims(out) if c[0] * c[1] != c[2]]
+
+
+def test_a_nightly_rate_that_does_not_multiply_back_is_not_asserted_either():
+    payload = {"nights": 3, "hotels": [{
+        "name": "Park Lane Hotel", "price_per_night_pkr": 24529,
+        "total_stay_pkr": 73586}]}                     # 24,529 x 3 = 73,587
+    out = dr.render([("search_hotels", json.dumps(payload))])
+
+    assert "24,529/night × 3 nights" not in out
+    assert "PKR 73,586" in out
+    assert not [c for c in _claims(out) if c[0] * c[1] != c[2]]
+
+
+def test_an_exact_stay_still_shows_the_multiplication():
+    payload = {"nights": 3, "hotels": [{
+        "name": "Park Lane Hotel", "price_per_night_pkr": 24529,
+        "total_stay_pkr": 73587}]}
+    out = dr.render([("search_hotels", json.dumps(payload))])
+    assert "PKR 24,529/night × 3 nights = **PKR 73,587**" in out
+
+
+def test_a_single_traveller_never_gets_a_multiplication():
+    payload = {"passengers": 1, "flights": [{
+        "airline": "AirSial", "flight_number": "ER618",
+        "price_per_seat_pkr": 14102, "total_price_pkr": 14102}]}
+    out = dr.render([("search_flights", json.dumps(payload))])
+    assert "×" not in out
+
+
+def test_the_exactness_check_itself():
+    exact = dr._multiplies_exactly
+    assert exact(2793, 3, 8379) is True
+    assert exact(2793, 3, 8378) is False
+    assert exact(14102, 3, 42306) is True
+    assert exact(None, 3, 8378) is False
+    assert exact("junk", 3, 8378) is False
