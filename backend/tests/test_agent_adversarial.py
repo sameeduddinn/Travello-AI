@@ -407,17 +407,36 @@ def part_b_multi_domain() -> None:
     check("three-domain turn returns a well-formed reply", well_formed(res), detail=repr(res)[:120])
 
     # A car booking mixed in with a search in the same turn must not crash the loop.
+    #
+    # The drop-off is quoted from the user's own message on purpose. Since this
+    # suite was written, book_car grew a PROVENANCE gate on top of the shape
+    # gate (get_car_provenance_error): a drop-off the user never said is refused
+    # outright, because a real driver is dispatched to exactly what goes in. So
+    # "book me a Sedan there" plus an invented "Blue Area" is — correctly — not
+    # a valid car request any more, and the case below now proves the gate lets
+    # a genuinely grounded one through. The invented variant is asserted right
+    # after, so the distinction stays covered rather than quietly dropped.
     mixed = _Msg(tool_calls=[
         _TC("get_weather", {"city": "Islamabad"}),
         _TC("book_car", {"pickup_location": "F-7 Markaz, Islamabad",
                          "dropoff_location": "Blue Area, Islamabad",
                          "vehicle_type": "Sedan", "pickup_datetime": "2030-06-01T09:00"}),
     ])
-    res2 = run_turn("weather in Islamabad and book me a Sedan there tomorrow 9am",
-                    [mixed])
+    res2 = run_turn(
+        "weather in Islamabad and book me a Sedan from F-7 Markaz to Blue Area "
+        "tomorrow 9am",
+        [mixed],
+    )
     check("weather+car mixed turn is well-formed", well_formed(res2), detail=repr(res2)[:120])
     check("valid car request becomes a car_booking_choice",
           res2.get("action") == "car_booking_choice", detail=str(res2.get("action")))
+
+    # ...and the same tool call, where the user never named that drop-off, must
+    # NOT become a confirmable ride.
+    res3 = run_turn("weather in Islamabad and book me a Sedan there tomorrow 9am",
+                    [mixed, _Msg(content="Where should the ride drop you off?")])
+    check("invented drop-off is refused, not confirmed",
+          res3.get("action") != "car_booking_choice", detail=str(res3.get("action")))
 
 
 def part_b_adversarial_tool_calls() -> None:
@@ -532,6 +551,59 @@ def main() -> int:
         print(f"{_fails} FAILURE(S) out of {_total} checks")
     print("=" * 70)
     return 1 if _fails else 0
+
+
+# Everything install_mocks() rebinds. As a standalone script that is fine — the
+# process exits straight after. Under pytest it is NOT: this module sorts first,
+# so a leaked mock would silently answer for every later test module. The
+# wrapper below puts each attribute back exactly as it was, including deleting
+# ones that did not exist.
+_PATCHED: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("agents.master_agent", (
+        "generate_with_tools", "generate_text", "get_user_memory", "get_user_profile",
+        "get_conversation_history", "save_turn", "save_message",
+        "_auto_save_preferences", "_update_conversation_title", "_log_task",
+        "process_message",
+    )),
+    ("agents.agent_tools", (
+        "search_flights", "search_hotels", "search_trains", "get_weather",
+    )),
+    ("agents.healthcare_agent", ("get_safety_briefing",)),
+)
+_MISSING = object()
+
+
+def test_adversarial_suite() -> None:
+    """
+    pytest entry point.
+
+    The suite predates the pytest suite and runs as a standalone script, which
+    meant `pytest tests` silently skipped all 53 of its checks — a regression
+    gate nobody runs is not a gate. This wrapper makes one pytest test out of
+    the whole run; the per-check detail still prints (use -s to watch it) and
+    the script form keeps working unchanged.
+    """
+    global _fails, _total
+    import importlib
+
+    saved = []
+    for mod_name, attrs in _PATCHED:
+        mod = importlib.import_module(mod_name)
+        for attr in attrs:
+            saved.append((mod, attr, getattr(mod, attr, _MISSING)))
+
+    _fails, _total = 0, 0
+    try:
+        rc = main()
+    finally:
+        for mod, attr, original in saved:
+            if original is _MISSING:
+                if hasattr(mod, attr):
+                    delattr(mod, attr)
+            else:
+                setattr(mod, attr, original)
+
+    assert rc == 0, f"{_fails} adversarial check(s) failed — see output above"
 
 
 if __name__ == "__main__":

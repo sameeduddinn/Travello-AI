@@ -1,0 +1,16 @@
+# Test + lint tooling. Deliberately SEPARATE from requirements.txt, which is
+# what Render installs — the deployed image has no reason to carry a test
+# runner.
+#
+# Install both to run the suite:
+#     pip install -r requirements.txt -r requirements-dev.txt
+#     python -m pytest tests -q
+#
+# The suite needs no API keys and no network: every provider call is mocked,
+# and tests/conftest.py pins fake credentials so a real .env can never change a
+# result. It passes on a clean checkout with no .env at all.
+
+-r requirements.txt
+
+pytest==9.1.1                      # the version these tests were verified on
+pyflakes==3.4.0                    # unused imports / undefined names
