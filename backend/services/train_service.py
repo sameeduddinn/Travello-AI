@@ -222,15 +222,54 @@ _CLASS_NAMES: dict[str, str] = {
 
 # Core search logic
 
+def _is_reverse(train: dict, origin_code: str, dest_code: str) -> bool:
+    """
+    Is this journey running against the stored stop order?
+
+    Every route in _TRAINS is written once, south-to-north (Karachi first), but
+    the trains themselves run both ways — the numbers say so: "7-Up/8-Dn" is
+    Pakistan Railways' notation for the two directions of one service.
+    """
+    route = train["route"]
+    return route.index(origin_code) > route.index(dest_code)
+
+
+def _hours_from_departure(train: dict, station_code: str, reverse: bool) -> float:
+    """
+    When this train calls at `station_code`, in hours from ITS OWN departure.
+
+    The stored schedule is the Dn direction only. Running Up, the timetable is
+    mirrored end to end: the last stop becomes hour 0 and the first becomes the
+    arrival. `first + last - hours` does exactly that, which keeps every leg's
+    duration identical in both directions — Lahore→Islamabad and
+    Islamabad→Lahore are both 4h on the Tezgam, as they should be.
+
+    It does NOT claim the Up service departs at the same clock time as the Dn
+    one; real Up/Dn timings differ, and we have no data for that. Mirroring
+    invents nothing beyond what the Dn timetable already states.
+    """
+    schedule = train["schedule"]
+    if not reverse:
+        return schedule[station_code]
+    route = train["route"]
+    return schedule[route[0]] + schedule[route[-1]] - schedule[station_code]
+
+
 def _trains_for_route(origin_code: str, dest_code: str) -> list[dict]:
-    """Return trains that serve both origin and destination in the correct order."""
-    results = []
-    for train in _TRAINS:
-        route = train["route"]
-        if origin_code in route and dest_code in route:
-            if route.index(origin_code) < route.index(dest_code):
-                results.append(train)
-    return results
+    """
+    Return trains serving both stations, in EITHER direction.
+
+    This used to require route.index(origin) < route.index(dest), which meant
+    only the Dn direction ever matched. Since every route is stored
+    Karachi-first, that made the entire southbound network invisible: Karachi →
+    Lahore returned 11 trains and Lahore → Karachi returned none, and no return
+    journey was bookable anywhere on the network.
+    """
+    return [
+        train for train in _TRAINS
+        if origin_code in train["route"] and dest_code in train["route"]
+        and origin_code != dest_code
+    ]
 
 
 def _calculate_price(
@@ -248,7 +287,9 @@ def _calculate_price(
     o_idx = route.index(origin_code)
     d_idx = route.index(dest_code)
     total_stops = len(route) - 1
-    journey_stops = d_idx - o_idx
+    # abs(): the same rails cost the same in either direction. Without it a
+    # southbound journey produced a negative fraction and undercut the base fare.
+    journey_stops = abs(d_idx - o_idx)
     fraction = journey_stops / max(total_stops, 1)
 
     band = _BASE_PRICES.get(class_code, _BASE_PRICES["EC"])
@@ -275,9 +316,9 @@ def _build_offer(
     travel_date: datetime,
     passengers: int,
 ) -> TrainOffer:
-    schedule = train["schedule"]
-    dep_hours = schedule[origin_code]
-    arr_hours = schedule[dest_code]
+    reverse = _is_reverse(train, origin_code, dest_code)
+    dep_hours = _hours_from_departure(train, origin_code, reverse)
+    arr_hours = _hours_from_departure(train, dest_code, reverse)
 
     departure_at = travel_date + timedelta(hours=dep_hours)
     arrival_at = travel_date + timedelta(hours=arr_hours)
