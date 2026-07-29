@@ -178,9 +178,11 @@ def part_a_junk_never_crashes() -> None:
     check("all booking gates survive junk input", ok)
 
     # Regression: check_budget_feasibility used to crash on non-numeric counts.
+    # The wrong types below are the test — a model can emit any of them, so the
+    # gate has to survive them rather than trust the annotation.
     try:
-        v = T.check_budget_feasibility("abc", flight_pkr="x", travelers="y",
-                                       nights=None, rooms=-3, hotel_per_night_pkr="?")
+        v = T.check_budget_feasibility("abc", flight_pkr="x", travelers="y",  # type: ignore[arg-type]
+                                       nights=None, rooms=-3, hotel_per_night_pkr="?")  # type: ignore[arg-type]
         check("check_budget_feasibility survives all-junk args", isinstance(v, dict))
     except Exception as exc:  # noqa: BLE001
         check("check_budget_feasibility survives all-junk args", False, str(exc))

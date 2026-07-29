@@ -47,7 +47,8 @@ def test_the_tolerance_is_scoped_to_debug_only():
     nobody is listening for.
     """
     with pytest.raises(ValidationError):
-        Settings(SMTP_PORT="not-a-port")
+        # The bad type is the point — this asserts pydantic still rejects it.
+        Settings(SMTP_PORT="not-a-port")  # type: ignore[arg-type]
 
 
 def test_provider_defaults_are_the_ones_verified_against_the_live_keys():
