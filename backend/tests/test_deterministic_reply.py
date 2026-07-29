@@ -13,6 +13,8 @@ The payload shapes below are exactly what agents/agent_tools.py serialises.
 """
 import json
 
+import pytest
+
 from agents import deterministic_reply as dr
 
 FLIGHTS = json.dumps({
@@ -197,11 +199,37 @@ def test_a_flight_with_no_airline_shows_the_number_alone():
     assert "XY123" in out
 
 
-def test_empty_flight_results_relay_the_no_availability_note():
-    out = dr.render([("search_flights", FLIGHTS_EMPTY)])
-    assert "NO AVAILABILITY" in out
-    assert "Skardu" in out
-    assert "tell me the number" not in out.lower()   # nothing to pick
+def test_an_empty_search_is_handed_to_the_model_not_rendered():
+    """
+    This test used to assert the opposite — that the note was relayed to the
+    user — and that is exactly what shipped: the traveller was shown
+
+        NO AVAILABILITY: the live search returned ZERO trains for
+        Islamabad -> Lahore on 2026-08-02. Tell the user plainly and
+        specifically... Do NOT invent, recall from memory...
+
+    as the assistant's reply. The note is an INSTRUCTION, addressed to the
+    model. An empty search is the turn that most needs a human sentence written
+    for it, so the deterministic path must decline and let the model answer.
+    """
+    assert dr.can_render("search_flights", FLIGHTS_EMPTY) is False
+    assert dr.should_render([("search_flights", FLIGHTS_EMPTY)], "flights to skardu") is False
+    assert dr.render([("search_flights", FLIGHTS_EMPTY)]) == ""
+
+
+@pytest.mark.parametrize("tool,payload", [
+    ("search_flights", FLIGHTS_EMPTY),
+    ("search_trains", json.dumps({"trains": [], "passengers": 2,
+                                  "note": "NO AVAILABILITY: ... Do NOT invent ..."})),
+    ("search_hotels", json.dumps({"hotels": [], "nights": 3,
+                                  "note": "NO AVAILABILITY: ... Do NOT invent ..."})),
+])
+def test_no_internal_instruction_can_reach_the_user(tool, payload):
+    """Whatever a `note` says, it is never the reply."""
+    out = dr.render([(tool, payload)])
+    assert "NO AVAILABILITY" not in out
+    assert "Do NOT" not in out
+    assert out == ""
 
 
 def test_departure_time_is_shown_without_the_date_prefix():
@@ -354,7 +382,6 @@ def test_no_rendered_reply_ever_looks_like_a_booking_confirmation():
         [("get_weather", WEATHER_OK)],
         [("get_weather", WEATHER_UNAVAILABLE)],
         [("find_healthcare", HEALTHCARE)],
-        [("search_flights", FLIGHTS_EMPTY)],
     ):
         out = dr.render(gathered)
         assert out, gathered[0][0]

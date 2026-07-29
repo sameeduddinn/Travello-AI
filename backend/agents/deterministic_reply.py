@@ -73,12 +73,18 @@ def can_render(tool_name: str, result: str) -> bool:
     data = _parse(result)
     if data is None or data.get("error"):
         return False
+    # Rows, and ONLY rows. A `note` is written for the MODEL, not the traveller —
+    # _no_availability_note is a set of instructions ("Tell the user plainly...",
+    # "Do NOT invent...") — and treating its presence as something we could render
+    # put that instruction on screen verbatim as the assistant's reply. An empty
+    # search is exactly the turn that needs a human sentence written for it, so
+    # this declines and the note goes to the model, which is what it is for.
     if tool_name == "search_flights":
-        return bool(_rows(data, "flights")) or bool(data.get("note"))
+        return bool(_rows(data, "flights"))
     if tool_name == "search_trains":
-        return bool(_rows(data, "trains")) or bool(data.get("note"))
+        return bool(_rows(data, "trains"))
     if tool_name == "search_hotels":
-        return bool(_rows(data, "hotels")) or bool(data.get("note"))
+        return bool(_rows(data, "hotels"))
     if tool_name == "get_weather":
         # A "weather_available: false" payload is still renderable — saying we
         # don't have live weather is exactly the honest answer required.
@@ -168,7 +174,10 @@ def _price_pair(row: dict, payload: dict) -> str:
 def _render_flights(payload: dict, label: str = "") -> str:
     rows = _rows(payload, "flights")[:_MAX_ROWS]
     if not rows:
-        return str(payload.get("note") or "").strip()
+        # No rows: nothing to format, and `note` is an instruction for the
+        # model, never prose for the traveller. can_render already declines this,
+        # so reaching here means an empty reply is the honest answer.
+        return ""
     head = f"**{label}**" if label else ""
     lines = [head] if head else []
     for i, f in enumerate(rows, start=1):
@@ -191,7 +200,10 @@ def _render_flights(payload: dict, label: str = "") -> str:
 def _render_trains(payload: dict, label: str = "") -> str:
     rows = _rows(payload, "trains")[:_MAX_ROWS]
     if not rows:
-        return str(payload.get("note") or "").strip()
+        # No rows: nothing to format, and `note` is an instruction for the
+        # model, never prose for the traveller. can_render already declines this,
+        # so reaching here means an empty reply is the honest answer.
+        return ""
     lines = [f"**{label}**"] if label else []
     for i, t in enumerate(rows, start=1):
         name = str(t.get("train_name") or t.get("name") or "Train").strip()
@@ -215,7 +227,10 @@ def _render_trains(payload: dict, label: str = "") -> str:
 def _render_hotels(payload: dict, label: str = "") -> str:
     rows = _rows(payload, "hotels")[:_MAX_ROWS]
     if not rows:
-        return str(payload.get("note") or "").strip()
+        # No rows: nothing to format, and `note` is an instruction for the
+        # model, never prose for the traveller. can_render already declines this,
+        # so reaching here means an empty reply is the honest answer.
+        return ""
     try:
         nights = int(payload.get("nights") or 0)
     except (TypeError, ValueError):
