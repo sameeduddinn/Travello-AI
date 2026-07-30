@@ -34,13 +34,62 @@ from prompts.master_agent import (
     AGENTIC_CAR_BLOCK,
 )
 
-# Sent when a message carries travel intent but names no specific mode. Broad on
-# purpose: "get me to Skardu on the 5th" must be able to reach any of them.
-_DEFAULT_TOOLS = ("search_flights", "search_trains", "search_hotels", "get_weather")
+# Sent when the message matched NOTHING — the unknown-request case, which is
+# most of what real users type. This is the safety net, so it has to hold
+# everything the agent might need to serve a request we failed to recognise.
+#
+# The regexes above catch what they were written for, and travellers write in
+# Roman Urdu, English and a mix: "mausam kaisa hai" matches, "mujhe Lahore jana
+# hai" does not. That second one lands here and is served fine. But "gari
+# chahiye airport se" also landed here and was NOT served, because book_car
+# wasn't in this list — the agent was asked for a car and handed no way to
+# arrange one. find_healthcare had the same hole, and it is the one tool where
+# failing to serve a request can actually matter.
+#
+# Both are cheap (285 and 75 tokens). prepare_booking stays out at 793 tokens:
+# it is the most expensive schema by far, it is meaningless before a search has
+# produced something to book, and it is selected explicitly on a pick.
+_DEFAULT_TOOLS = (
+    "search_flights", "search_trains", "search_hotels", "get_weather",
+    "find_healthcare", "book_car",
+)
 
 # NOTE: "airport" is deliberately NOT here. A car ride "to the airport" is the
 # commonest standalone-car request in this app, and treating it as a flight
 # signal dragged the flight schema (and the whole booking block) into every one.
+# Pure small talk with nothing else in it — matched against the WHOLE message,
+# not a keyword inside it, so "hi, book me a flight to lahore" is untouched.
+# Gated on there being no history at all (see select_tool_names): a greeting
+# mid-conversation ("thanks!") is a real turn that still needs whatever tool
+# the conversation was already using, and this must never strand it.
+#
+# Deliberately a small closed list. A false NEGATIVE (a greeting not matched)
+# costs nothing — it falls through to the ordinary fallback tools, unused but
+# harmless. A false POSITIVE (a real request matched as a greeting) costs a
+# whole extra turn: no tools, the agent has to ask, the user answers, and only
+# then does a real search happen. That asymmetry is why this stays narrow
+# rather than trying to catch every possible greeting.
+_PURE_GREETING_RE = re.compile(
+    r"^\s*(?:"
+    r"hi|hello|hey|hiya|yo|"
+    r"salam|assalam(?:u|o)?\s*[o0]?\s*alaikum|as-?salamu?\s*alaikum|"
+    r"good\s?(?:morning|afternoon|evening|night)|"
+    r"how\s+are\s+you|what'?s\s+up|kaise\s+ho|kya\s+haal\s+hai|"
+    r"who\s+are\s+you|what\s+can\s+you\s+do|what\s+do\s+you\s+do|"
+    r"thanks?|thank\s+you|shukriya|"
+    r"ok|okay|k|great|cool|nice|good|awesome"
+    r")\s*[.!?]*\s*$",
+    re.I,
+)
+
+
+def _is_pure_greeting(message: str, history: list[dict] | None) -> bool:
+    """True only for small talk with no travel content, as the FIRST turn."""
+    if history:
+        return False
+    return bool(_PURE_GREETING_RE.match(message or ""))
+
+
 _FLIGHT_RE = re.compile(
     r"\b(flight|flights|fly|flying|flew|plane|air\s?line|airline|"
     r"pia|airblue|air\s?sial|serene|jazeera|boarding|one\s?way|round\s?trip|"
@@ -178,6 +227,14 @@ def select_tool_names(
     the tool the previous turn used.
     """
     message = user_message if isinstance(user_message, str) else ""
+
+    # Pure small talk as the very first turn needs no tool at all — there is no
+    # trip in progress yet for the agent to be tool-less FOR. See
+    # _is_pure_greeting for why this is a narrow, whole-message match gated on
+    # empty history rather than a keyword scan.
+    if _is_pure_greeting(message, history):
+        return []
+
     chosen = _signals(message)
 
     # Recent context — the last few turns of what was actually discussed.
@@ -260,7 +317,14 @@ def build_system_prompt(
     prompt = MASTER_AGENTIC_CORE.format(
         today=today, weekday=weekday, memory=memory or "(no saved preferences yet)"
     )
-    names = set(tool_names or [n["function"]["name"] for n in TOOL_SCHEMAS])
+    # `is None` and not `or`: an EMPTY list means "this turn needs no tools",
+    # and `tool_names or [...]` treated that as "send every tool" — the exact
+    # opposite — because an empty list is falsy. It made a no-tool prompt
+    # measure LARGER (3,047 tokens) than a four-tool one (2,824), since both
+    # rule blocks came along with the tools nobody asked for.
+    if tool_names is None:
+        tool_names = [n["function"]["name"] for n in TOOL_SCHEMAS]
+    names = set(tool_names)
     if "prepare_booking" in names:
         prompt += AGENTIC_BOOKING_BLOCK
     if "book_car" in names:

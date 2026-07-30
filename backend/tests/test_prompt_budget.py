@@ -9,6 +9,8 @@ cost creeps back.
 """
 import json
 
+import pytest
+
 from agents.agent_tools import TOOL_SCHEMAS
 from agents.conversation_state import derive_state, state_hint
 from agents.master_agent import _compact_history
@@ -161,9 +163,91 @@ def test_car_inside_a_booking_conversation_stays_a_transfer():
     assert "book_car" not in names
 
 
-def test_unrecognised_message_falls_back_to_the_search_set():
-    names = select_tool_names("hmm")
-    assert set(names) == {"search_flights", "search_trains", "search_hotels", "get_weather"}
+def test_unrecognised_message_falls_back_to_everything_servable():
+    """
+    The fallback is the UNKNOWN-request case, so it has to hold whatever the
+    agent might need to serve a request the regexes failed to recognise.
+
+    It used to be the four search tools only. "gari chahiye airport se" landed
+    here — the agent was asked for a car and handed no way to arrange one.
+    find_healthcare had the same hole, and that is the one tool where failing
+    to serve a request can actually matter.
+
+    prepare_booking stays out: 793 tokens, the most expensive schema by far,
+    meaningless before a search has produced something to book, and selected
+    explicitly on a pick.
+    """
+    names = set(select_tool_names("hmm"))
+    assert names == {
+        "search_flights", "search_trains", "search_hotels",
+        "get_weather", "find_healthcare", "book_car",
+    }
+    assert "prepare_booking" not in names
+
+
+def test_an_unrecognised_car_request_can_still_be_served():
+    """Roman Urdu the regexes don't cover must not leave the agent tool-less."""
+    for message in ("gari chahiye airport se", "mujhe koi gaari chahiye"):
+        assert "book_car" in select_tool_names(message), message
+
+
+@pytest.mark.parametrize("message", [
+    "Hi", "hello", "Hey!", "hi.", "Salam", "assalam o alaikum",
+    "Assalamualaikum", "good morning", "thanks", "thank you", "ok", "okay",
+    "who are you?", "what can you do?", "how are you",
+])
+def test_pure_greetings_get_no_tools_at_all(message):
+    """
+    "Hi" is not a request for anything, so there is no trip in progress for the
+    agent to be tool-less FOR. Costs the full 6-tool fallback (3,340 tokens)
+    before this: now 2,021, a 39% cut on the cheapest possible turn.
+    """
+    assert select_tool_names(message, []) == []
+
+
+@pytest.mark.parametrize("message", [
+    "hi, book me a flight to lahore",   # greeting word, but not ALL it says
+    "mujhe Lahore jana hai",            # real travel intent, no greeting match
+    "gari chahiye airport se",          # real request, must reach book_car
+    "sab se sasti ticket chahiye",
+    "ok book PA401",                    # "ok" alone would match; this doesn't
+])
+def test_a_real_request_is_never_mistaken_for_a_greeting(message):
+    """
+    The asymmetry that keeps this list narrow: missing a greeting costs
+    nothing (falls through to the ordinary fallback), but wrongly matching a
+    real request costs a whole extra turn — no tools, the agent has to ask,
+    the user answers, only then does a real search happen.
+    """
+    assert select_tool_names(message, []) != []
+
+
+def test_a_greeting_mid_conversation_keeps_the_running_tool():
+    """
+    "thanks" after a real turn is not the same turn as "thanks" cold — the
+    conversation is already about something, and the greeting short-circuit is
+    gated on empty history specifically so it can never strand a live request.
+    """
+    history = [
+        {"role": "user", "content": "find me a train from Lahore to Karachi"},
+        {"role": "assistant", "content": "Here are the trains..."},
+    ]
+    assert "search_trains" in select_tool_names("thanks", history)
+
+
+def test_an_empty_tool_list_means_no_tools_not_every_tool():
+    """
+    `tool_names or [...all...]` treated an empty list as "send everything",
+    because an empty list is falsy — so a no-tool prompt measured LARGER than
+    a four-tool one.
+    """
+    from agents.prompt_builder import build_system_prompt
+
+    empty = build_system_prompt(today="2026-07-31", weekday="Friday",
+                                memory="", tool_names=[])
+    everything = build_system_prompt(today="2026-07-31", weekday="Friday",
+                                     memory="", tool_names=None)
+    assert len(empty) < len(everything)
 
 
 def test_recent_context_is_carried_forward():
