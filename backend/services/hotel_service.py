@@ -13,6 +13,8 @@ from __future__ import annotations
 import hashlib
 import logging
 import random
+import re
+import time
 import urllib.parse
 from datetime import date
 from typing import Any
@@ -154,6 +156,46 @@ def _merge_hotel_lists(
     return merged
 
 
+# ── RapidAPI quota state ──────────────────────────────────────────────────────
+#
+# TripAdvisor is the PRIMARY hotel source and the only one that returns real
+# nightly rates, so it must keep its place at the front of the chain. But when
+# its quota is spent it answers 429 to everything, and the plan quotas are
+# per-MONTH: the next call, and every call for days afterwards, is guaranteed
+# to fail the same way.
+#
+# Left alone that costs two doomed round trips on EVERY hotel search — pure
+# latency in front of a user waiting for a reply, for a result we already know.
+# So a quota refusal parks the source, exactly as a provider cooldown does in
+# services/llm_service.py. The park expires on its own, so a renewed or
+# upgraded plan is picked up automatically without a restart or a code change.
+_RAPIDAPI_QUOTA_COOLDOWN = 6 * 3600.0     # re-probe a few times a day, not every search
+_rapidapi_blocked_until: float = 0.0
+_RAPIDAPI_QUOTA_RE = re.compile(r"exceeded the (?:MONTHLY|DAILY|HOURLY) quota", re.I)
+
+
+def _rapidapi_available() -> bool:
+    """False while a quota refusal is still in force."""
+    return time.monotonic() >= _rapidapi_blocked_until
+
+
+def _note_rapidapi_quota_spent(detail: str) -> None:
+    global _rapidapi_blocked_until
+    if not _rapidapi_available():
+        return                                    # already parked; don't re-log
+    _rapidapi_blocked_until = time.monotonic() + _RAPIDAPI_QUOTA_COOLDOWN
+    logger.warning(
+        "RapidAPI quota spent — skipping it for %.0fh and serving hotels from "
+        "Google Places instead (%s)",
+        _RAPIDAPI_QUOTA_COOLDOWN / 3600, detail[:120],
+    )
+
+
+def _reset_rapidapi_state_for_tests() -> None:
+    global _rapidapi_blocked_until
+    _rapidapi_blocked_until = 0.0
+
+
 async def _rapidapi_get_json(
     endpoint_candidates: list[str],
     params: dict[str, Any],
@@ -161,6 +203,9 @@ async def _rapidapi_get_json(
     timeout: float,
 ) -> dict[str, Any] | None:
     """Try multiple endpoint paths and return the first successful JSON payload."""
+    if not _rapidapi_available():
+        return None
+
     async with httpx.AsyncClient(timeout=timeout) as client:
         for endpoint in endpoint_candidates:
             url = f"{RAPIDAPI_BASE}{endpoint}"
@@ -168,11 +213,18 @@ async def _rapidapi_get_json(
                 response = await client.get(url, params=params, headers=_get_headers())
                 if response.status_code == 200:
                     return response.json()
+                body = response.text[:200]
+                # 429 alone is not enough to park it — a per-second throttle
+                # clears in a moment and is worth retrying. Only a spent QUOTA
+                # is known to persist.
+                if response.status_code == 429 and _RAPIDAPI_QUOTA_RE.search(body):
+                    _note_rapidapi_quota_spent(body)
+                    return None
                 logger.warning(
                     "RapidAPI request failed for %s: %s %s",
                     endpoint,
                     response.status_code,
-                    response.text[:140],
+                    body[:140],
                 )
             except Exception as exc:
                 logger.warning("RapidAPI request error for %s: %s", endpoint, exc)
