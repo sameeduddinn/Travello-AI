@@ -1438,6 +1438,45 @@ _HISTORY_MAX_CHARS = 400
 _HISTORY_TOTAL_CHARS = 4000     # ~1,000 tokens of conversation, newest first
 
 
+def _last_assistant_text(history: list[dict] | None) -> str:
+    for m in reversed(list(history or [])):
+        if (m.get("role") or "").lower() == "assistant":
+            text = m.get("content")
+            return text.strip() if isinstance(text, str) else ""
+    return ""
+
+
+def _repeat_guard(history: list[dict] | None) -> str:
+    """
+    A nudge sent only when the previous reply ended in a question.
+
+    Observed on device: asked "Round-trip available?" twice, the agent replied
+    with the byte-identical sentence three times — "Can you please tell me what
+    date you're planning to travel and how many passengers are traveling,
+    bhai?". It had nothing to answer the question with and no search it could
+    legally run without a date, so it fell back to the only script it had.
+    Whatever the cause, sending the same sentence again reads like a broken bot
+    rather than someone listening.
+
+    Phrased CONDITIONALLY on purpose. Code cannot tell whether this turn
+    answered the question — "2 August, 2 people" does, "is it available?" does
+    not — so the note must not assert either. A hint that states a false
+    premise is how it starts causing the behaviour it was added to prevent.
+    """
+    previous = _last_assistant_text(history)
+    if not previous.endswith("?"):
+        return ""
+    return (
+        "CONVERSATION CHECK: your previous reply ended by asking the user "
+        "something. If their new message does NOT answer it, do not send that "
+        "same question again — repeating a sentence word for word reads like a "
+        "broken bot. Answer what they actually asked this turn first, in your "
+        "own words, then ask for the missing detail differently and more "
+        "briefly. If their message DOES answer it, simply carry on. Never "
+        "mention this note."
+    )
+
+
 def _compact_history(history: list[dict]) -> list[dict]:
     """
     Shrink the history that goes to the MODEL, without touching `history` itself.
@@ -1597,6 +1636,10 @@ async def process_message_agentic(
     trip_hint = state_hint(history, user_message, today=today)
     if trip_hint:
         messages.append({"role": "system", "content": trip_hint})
+
+    repeat_hint = _repeat_guard(history)
+    if repeat_hint:
+        messages.append({"role": "system", "content": repeat_hint})
 
     # Deterministic pick-from-a-list nudge (see _selection_hint): when the user
     # answers a numbered list with "6" / "option 6" / "the second one", name the
