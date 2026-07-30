@@ -1201,8 +1201,23 @@ _OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 # rate-limit message could ever be delivered, and the user got the raw error path
 # instead. Bound both the single request and the total across the model list, so
 # the whole turn still lands inside the client's window with room to spare.
+#
+# The total is sized against the TURN budget, not just the client's window. That
+# distinction is what the 35s original missed: OpenRouter sits AHEAD of Gemini,
+# so whatever it spends, Gemini does without. With both Groq keys on a daily
+# wall and OpenRouter's free models queuing, 35s left Gemini ~15s of a 52s turn
+# — less once a tool call had run — and "roundtrip available?", a question
+# needing no tools at all, came back as "that's taking longer than it should".
+# The fastest provider in the chain was starved by the slowest.
+#
+# At 20s a hung model costs one timeout and then OpenRouter yields, leaving
+# Gemini ~30s. It must stay >= _OPENROUTER_REQUEST_TIMEOUT, or a healthy-but-
+# slow request would be cut off by this deadline before its own timeout fired,
+# which would make OpenRouter useless rather than bounded. The model list still
+# works as intended: a model rate-limited upstream answers 429 in under a
+# second, so the next one is still tried with its full timeout.
 _OPENROUTER_REQUEST_TIMEOUT = 20.0
-_OPENROUTER_TOTAL_BUDGET = 35.0
+_OPENROUTER_TOTAL_BUDGET = 20.0
 
 
 def _openrouter_models() -> list[str]:

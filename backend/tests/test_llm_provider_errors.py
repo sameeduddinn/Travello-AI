@@ -808,3 +808,45 @@ def test_provider_state_is_clean_again(monkeypatch):
     assert svc.all_providers_exhausted() is False
     assert svc._groq_state.available() is True
     assert svc._groq_state.oversized_models == set()
+
+
+# ── OpenRouter must not starve the provider behind it ────────────────────────
+#
+# OpenRouter sits AHEAD of Gemini, so whatever it spends, Gemini does without.
+# At the original 35s total, both Groq keys on a daily wall plus queuing ':free'
+# models left Gemini ~15s of a 52s turn — less once a tool call had run — and
+# "roundtrip available?", a question needing no tools at all, came back as
+# "that's taking longer than it should". The fastest provider in the chain was
+# being starved by the slowest.
+#
+# These are arithmetic invariants rather than behaviour: the failure mode is a
+# constant drifting upward again, which no behavioural test would catch.
+
+def test_openrouter_leaves_gemini_a_usable_share_of_the_turn():
+    from agents.master_agent import _TURN_BUDGET
+
+    worst_case_openrouter = (
+        svc._OPENROUTER_TOTAL_BUDGET + svc._OPENROUTER_REQUEST_TIMEOUT
+    )  # a fast 429 on the first model, then the second one hangs
+    left_for_gemini = _TURN_BUDGET - worst_case_openrouter
+    assert left_for_gemini >= 10.0, (
+        f"OpenRouter can spend {worst_case_openrouter}s of a {_TURN_BUDGET}s turn, "
+        f"leaving Gemini {left_for_gemini}s"
+    )
+
+
+def test_the_budget_still_admits_one_complete_request():
+    """
+    Below the per-request timeout, a healthy-but-slow model would be cut off by
+    the outer deadline before its own timeout fired — bounding OpenRouter into
+    uselessness rather than bounding its worst case.
+    """
+    assert svc._OPENROUTER_TOTAL_BUDGET >= svc._OPENROUTER_REQUEST_TIMEOUT
+
+
+def test_a_whole_openrouter_attempt_fits_inside_the_client_window():
+    """The Flutter client gives up at 60s; the turn budget must beat it."""
+    from agents.master_agent import _TURN_BUDGET
+
+    assert _TURN_BUDGET < 60.0
+    assert svc._OPENROUTER_TOTAL_BUDGET < _TURN_BUDGET
