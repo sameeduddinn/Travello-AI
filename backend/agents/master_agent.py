@@ -1438,6 +1438,25 @@ _HISTORY_MAX_CHARS = 400
 _HISTORY_TOTAL_CHARS = 4000     # ~1,000 tokens of conversation, newest first
 
 
+# A return journey asked for anywhere in the recent conversation. Scanned over
+# several turns because the request and the dates arrive separately: "round-trip
+# Karachi to Hunza" then, two turns later, "5 August".
+_ROUND_TRIP_RE = re.compile(
+    r"\bround[\s-]?trip\b|\breturn\s+(?:flight|ticket|leg|journey|trip)\b"
+    r"|\bcoming\s+back\b|\band\s+back\b|\bboth\s+ways\b|\btwo[\s-]way\b",
+    re.I,
+)
+_ROUND_TRIP_LOOKBACK = 4
+
+
+def _wants_round_trip(user_texts: list[str] | None) -> bool:
+    return any(
+        _ROUND_TRIP_RE.search(t)
+        for t in (user_texts or [])[-_ROUND_TRIP_LOOKBACK:]
+        if isinstance(t, str)
+    )
+
+
 def _last_assistant_text(history: list[dict] | None) -> str:
     for m in reversed(list(history or [])):
         if (m.get("role") or "").lower() == "assistant":
@@ -1994,9 +2013,15 @@ async def process_message_agentic(
             # flight numbers and hospital phone numbers are copied rather than
             # re-typed by a model. Anything needing judgement (a budget verdict,
             # planning, a package, a pick) fails the gate and keeps the LLM.
+            # A round trip that only got one leg searched must not be rendered
+            # as a finished list — see should_render. The model needs the turn so
+            # it can ask for the return date.
+            one_leg = (len(gathered) == 1
+                       and gathered[0][0] in ("search_flights", "search_trains"))
             if not booking_calls and not car_calls and deterministic_reply.should_render(
                 gathered, user_message,
                 has_budget_note=bool(budget_note), has_pick_hint=bool(pick_hint),
+                round_trip_incomplete=one_leg and _wants_round_trip(conversation_user_texts),
             ):
                 rendered = deterministic_reply.render(gathered, user_message)
                 if rendered:

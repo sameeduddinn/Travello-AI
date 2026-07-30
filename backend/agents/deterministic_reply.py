@@ -124,6 +124,7 @@ def should_render(
     *,
     has_budget_note: bool = False,
     has_pick_hint: bool = False,
+    round_trip_incomplete: bool = False,
 ) -> bool:
     """
     Whether this turn is simple enough to answer without the LLM.
@@ -134,9 +135,19 @@ def should_render(
         (a flight + hotel pair is a package and needs prose);
       - no budget verdict is outstanding (that needs stating in words);
       - the user isn't picking an option (that turn books, it doesn't list);
-      - the message isn't asking for advice, comparison or a plan.
+      - the message isn't asking for advice, comparison or a plan;
+      - a round trip was asked for and BOTH legs are present.
+
+    That last one: a round-trip request with a single leg searched is an
+    incomplete answer, not a simple search. Rendered, it comes out as a bare
+    outbound list ending "just tell me the number" — no return leg, no mention
+    of one, and the traveller picks a one-way believing they booked a return.
+    The model has to take that turn, because what it needs to do is ASK for the
+    return date. A false positive here costs one extra LLM call and nothing else.
     """
     if not gathered or len(gathered) > 2 or has_budget_note or has_pick_hint:
+        return False
+    if round_trip_incomplete:
         return False
     names = [name for name, _ in gathered]
     if len(gathered) == 2 and names[0] != names[1]:

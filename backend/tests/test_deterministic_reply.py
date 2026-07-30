@@ -545,3 +545,63 @@ def test_when_everything_found_is_already_shown_it_says_so():
     out = dr.render([("search_hotels", json.dumps(payload))], "show me more")
     assert "everything the search turned up" in out
     assert "out of" not in out
+
+
+# ── A round trip with only one leg searched ──────────────────────────────────
+#
+# Asked for "round-trip Karachi to Hunza" and given one date, the agent listed
+# only the outbound and closed with "just tell me the number" — no return leg,
+# no mention of one. The traveller picks, believing they booked a return.
+#
+# Worse, before the prompt rule it reused the outbound date for the return and
+# offered five flights home that all departed BEFORE the outbound landed.
+#
+# So a round-trip request with a single leg is not a simple search: the model
+# has to take the turn, because what it needs to do is ask for the return date.
+
+def test_a_round_trip_with_one_leg_is_not_rendered():
+    assert not dr.should_render(
+        [("search_flights", FLIGHTS)], "5 August 2026", round_trip_incomplete=True)
+
+
+def test_a_round_trip_with_both_legs_still_renders():
+    assert dr.should_render(
+        [("search_flights", FLIGHTS), ("search_flights", FLIGHTS_RETURN)],
+        "5 to 12 August", round_trip_incomplete=False)
+
+
+def test_an_ordinary_one_way_search_is_unaffected():
+    assert dr.should_render([("search_flights", FLIGHTS)], "flights to Karachi")
+
+
+@pytest.mark.parametrize("text", [
+    "i want flight round-trip from Karachi to Hunza",
+    "round trip please",
+    "book a return flight to Skardu",
+    "Lahore to Karachi and back",
+    "I need both ways",
+])
+def test_round_trip_intent_is_recognised(text):
+    from agents.master_agent import _wants_round_trip
+    assert _wants_round_trip([text])
+
+
+@pytest.mark.parametrize("text", [
+    "flights to Karachi on 5 August",
+    "one way to Lahore",
+    "book me a hotel in Multan",
+    "what is the weather in Skardu",
+])
+def test_a_one_way_request_is_not_mistaken_for_a_round_trip(text):
+    from agents.master_agent import _wants_round_trip
+    assert not _wants_round_trip([text])
+
+
+def test_the_intent_survives_the_turns_between_it_and_the_dates():
+    """The request and the dates arrive separately — that is the whole problem."""
+    from agents.master_agent import _wants_round_trip
+    assert _wants_round_trip([
+        "i want flight round-trip from Karachi to Hunza",
+        "1 passenger",
+        "5 August 2026",
+    ])
