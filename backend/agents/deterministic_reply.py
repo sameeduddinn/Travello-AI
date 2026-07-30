@@ -40,6 +40,30 @@ _NEEDS_PROSE_RE = re.compile(
     re.I,
 )
 
+# "Show me more options" — the request that produced an identical list twice.
+#
+# It is answered HERE, in code, and deliberately not by handing the turn to the
+# model. That was tried: given `total_found: 20` but only six rows, the model
+# padded the list with "Amer Hotel — PKR 18,000/night" and "Hotel One Gulberg",
+# neither of which exists in the payload or in Lahore's results. Telling a model
+# that more exist while showing it fewer is an invitation to invent the rest,
+# and an invented hotel with an invented price can be picked and booked.
+#
+# So the honest answer is written in code, from numbers we hold: how many were
+# found, how many are shown, and what would narrow them. Nothing to fabricate.
+#
+# Deliberately requires a plural/option noun nearby: a bare "more" is usually
+# about party size ("2 more passengers"), which is not this.
+_WANTS_MORE_RE = re.compile(
+    r"\b(?:more|other|another|different|cheaper|alternative|alternatives)\b"
+    r"[^.?!]{0,24}?"
+    r"\b(?:option|options|choice|choices|hotel|hotels|flight|flights|train|trains|"
+    r"place|places|one|ones)\b"
+    r"|\bshow\s+(?:me\s+)?more\b"
+    r"|\bany(?:thing)?\s+(?:else|other)\b",
+    re.I,
+)
+
 _MAX_ROWS = 6
 
 
@@ -350,9 +374,12 @@ _RENDERERS = {
 }
 
 
-def render(gathered: list[tuple[str, str]]) -> str:
+def render(gathered: list[tuple[str, str]], user_message: str = "") -> str:
     """
     Format one or two verified tool results into the final chat reply.
+
+    `user_message` only shapes the closing line (see _more_options_tail); the
+    listed rows always come from the payload and nowhere else.
 
     Two results of the same search tool are rendered as two clearly labelled
     numbered lists (Outbound, then Return) — the shape the booking rules require
@@ -397,4 +424,30 @@ def render(gathered: list[tuple[str, str]]) -> str:
     if not rows:
         return body  # a "no availability" note stands on its own
     tail = "\n\nJust tell me the number of the one you want and I'll set it up."
+    if _WANTS_MORE_RE.search(user_message or ""):
+        tail = _more_options_tail(payload, len(rows)) + tail
     return body + tail
+
+
+def _more_options_tail(payload: dict, shown: int) -> str:
+    """
+    The honest answer to "show me more", built only from numbers we hold.
+
+    Says how many the search found and how many are listed, then names the
+    filters that genuinely work — a price ceiling maps to max_budget_pkr on the
+    next search, which really does return a different set. It never implies
+    there are extra rows to reveal, because there is no pagination behind this.
+    """
+    try:
+        total = int(payload.get("total_found") or 0)
+    except (TypeError, ValueError):
+        total = 0
+    if total > shown:
+        head = (f"\n\nThose are the {shown} closest matches out of {total} I found"
+                f" — the rest are similar or further out.")
+    else:
+        head = f"\n\nThose {shown} are everything the search turned up for this one."
+    return head + (
+        " Tell me a price ceiling, an area, or a star rating and I'll search again"
+        " with it."
+    )

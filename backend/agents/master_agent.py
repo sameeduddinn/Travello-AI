@@ -1998,7 +1998,7 @@ async def process_message_agentic(
                 gathered, user_message,
                 has_budget_note=bool(budget_note), has_pick_hint=bool(pick_hint),
             ):
-                rendered = deterministic_reply.render(gathered)
+                rendered = deterministic_reply.render(gathered, user_message)
                 if rendered:
                     logger.info(
                         "deterministic reply for %s — skipped synthesis call",

@@ -1238,6 +1238,9 @@ async def _exec_flights(args: dict) -> dict:
             f"search_flights with the correct `passengers` first: booking prices the "
             f"real party size, so quoting the wrong basis makes the total jump later."
         ),
+        # See _exec_hotels: the serializer sends the top few, so "show me more"
+        # would otherwise re-render the identical list.
+        "total_found": len(offers),
         "flights": flights,
     }
     flights, note = _filter_by_budget(flights, "total_price_pkr", args.get("max_budget_pkr"))
@@ -1311,6 +1314,13 @@ async def _exec_hotels(args: dict) -> dict:
         "check_out": co.isoformat(),
         "nights": nights,
         "rooms": rooms,
+        # How many the search actually found, versus how many are listed here.
+        # Without this the model cannot answer "show me more options": the
+        # serializer sends the top few, so re-searching returns the identical
+        # set and the same list gets rendered twice, which reads as a stuck bot.
+        # Knowing 20 exist lets it offer a real narrowing (cheaper, an area, a
+        # star rating) instead — and max_budget_pkr makes that actionable.
+        "total_found": len(resp.hotels or []),
         "hotels": hotels,
     }
     # Same posture as _exec_flights/_exec_trains — an empty result must say so

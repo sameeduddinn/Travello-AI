@@ -475,3 +475,73 @@ def test_the_exactness_check_itself():
     assert exact(14102, 3, 42306) is True
     assert exact(None, 3, 8378) is False
     assert exact("junk", 3, 8378) is False
+
+
+# ── "Show me more options" ───────────────────────────────────────────────────
+#
+# Answered in code on purpose. Handing this turn to the model was tried: given
+# total_found=20 but only six rows, it padded the list with "Amer Hotel — PKR
+# 18,000/night" and "Hotel One Gulberg", neither of which was in the payload.
+# An invented hotel with an invented price can be picked and booked, so the
+# answer is built from numbers we hold and nothing else.
+
+MORE_PAYLOAD = json.dumps({
+    "city": "Lahore", "nights": 2, "rooms": 1, "total_found": 20,
+    "hotels": [
+        {"name": "Park Lane Hotel", "stars": 4,
+         "price_per_night_pkr": 24529, "total_stay_pkr": 49058},
+        {"name": "Indus Hotel", "stars": 4,
+         "price_per_night_pkr": 15412, "total_stay_pkr": 30824},
+    ],
+})
+
+
+def test_asking_for_more_says_how_many_exist_and_how_to_narrow():
+    out = dr.render([("search_hotels", MORE_PAYLOAD)], "I want more hotels option")
+    assert "out of 20" in out
+    assert "price ceiling" in out
+
+
+def test_asking_for_more_never_invents_a_row():
+    """The listed rows come from the payload and nowhere else."""
+    out = dr.render([("search_hotels", MORE_PAYLOAD)], "show me more")
+    listed = re.findall(r"^\d+\.\s+\*\*(.+?)\*\*", out, re.M)
+    assert listed == ["Park Lane Hotel", "Indus Hotel"]
+
+
+def test_a_normal_search_is_unchanged():
+    plain = dr.render([("search_hotels", MORE_PAYLOAD)], "hotels in Lahore")
+    assert "out of 20" not in plain
+    assert "closest matches" not in plain
+
+
+def test_more_is_still_answered_in_code_not_by_the_model():
+    """
+    should_render must stay True for this turn. Routing it to the model is what
+    produced the fabricated hotels.
+    """
+    assert dr.should_render([("search_hotels", MORE_PAYLOAD)], "I want more hotels option")
+
+
+@pytest.mark.parametrize("message", [
+    "I want more hotels option", "show me more", "any other options?",
+    "more choices please", "other flights?", "anything else?",
+])
+def test_more_phrasings_are_recognised(message):
+    assert dr._WANTS_MORE_RE.search(message)
+
+
+@pytest.mark.parametrize("message", [
+    "2 more passengers", "I need one more room", "hotels in Lahore",
+    "book the first one",
+])
+def test_a_bare_more_about_party_size_is_not_a_request_for_options(message):
+    assert not dr._WANTS_MORE_RE.search(message)
+
+
+def test_when_everything_found_is_already_shown_it_says_so():
+    payload = json.loads(MORE_PAYLOAD)
+    payload["total_found"] = 2
+    out = dr.render([("search_hotels", json.dumps(payload))], "show me more")
+    assert "everything the search turned up" in out
+    assert "out of" not in out
