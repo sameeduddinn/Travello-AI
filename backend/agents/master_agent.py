@@ -959,6 +959,24 @@ _TIMEOUT_MESSAGE = (
     "again in a moment."
 )
 
+# Hand-written, not model output — _is_fabricated_booking must never scan these.
+# _DAILY_QUOTA_MESSAGE's own reassurance ("nothing was booked — your existing
+# bookings are all still in My Bookings") shape-matches _FAKE_CONFIRM_RE (a
+# booking noun + a completion word), so without this exemption the turn's own
+# honest "I'm out of capacity" message gets discarded and replaced with the
+# unrelated _BOOKING_NOT_DONE_MSG — confirmed via direct regex testing and a
+# live reproduction. The other five are exempted defensively: none currently
+# match either regex, but they're equally code-authored, so a future wording
+# tweak to any of them can't silently reopen this same failure.
+_SCRIPTED_FALLBACK_MESSAGES = frozenset({
+    _RATE_LIMIT_MESSAGE,
+    _DAILY_QUOTA_MESSAGE,
+    _TOO_LARGE_MESSAGE,
+    _PROVIDER_DOWN_MESSAGE,
+    _MISCONFIGURED_MESSAGE,
+    _TIMEOUT_MESSAGE,
+})
+
 
 def _is_turn_timeout(exc: Exception) -> bool:
     """
@@ -2408,8 +2426,10 @@ async def process_message_agentic(
     # We only reach here when NO real booking was produced this turn. If the model
     # nonetheless faked the booking card or claimed a booking is done, replace the
     # whole reply — the user must never see a summary/confirmation with no real
-    # booking (and no payment buttons) behind it.
-    if _is_fabricated_booking(final_text):
+    # booking (and no payment buttons) behind it. Scripted fallback text (a
+    # provider outage, a spent quota) is never model output, so it's exempt from
+    # this scan — see _SCRIPTED_FALLBACK_MESSAGES.
+    if final_text not in _SCRIPTED_FALLBACK_MESSAGES and _is_fabricated_booking(final_text):
         logger.warning(
             "Neutralized a fabricated booking reply (no booking_data this turn): %r",
             final_text[:160],
