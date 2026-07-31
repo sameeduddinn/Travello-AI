@@ -158,6 +158,36 @@ _PICK_RE = re.compile(
 # A numbered list in an assistant turn = offers are on the table, so the very next
 # message may be a pick even if it looks like nothing ("2", "the cheapest").
 _OFFER_LIST_RE = re.compile(r"^\s*\|?\s*\d{1,2}\s*[.)\-:|]\s*\S", re.M)
+# A numbered SHAPE isn't enough on its own — the assistant's own clarifying
+# questions are numbered too ("1. Outbound date... 2. Return date..."), and
+# _OFFER_LIST_RE alone can't tell that apart from a real numbered list of
+# flights/trains/hotels. A genuine offer always carries a real price
+# somewhere in the message; a numbered QUESTION does not. Same shape of fix as
+# master_agent.py's _looks_like_offers/_PRICE_IN_LABEL_RE, applied here too —
+# that one guards the atomic-package/already-booked checks, this one guards
+# which tool schemas ship. Deliberately checked against the WHOLE message, not
+# the matched line itself: a train listing puts the number+name on one line
+# and each class's price on an indented line below it, which must still count.
+#
+# Adversarial review (see the currency-notation cases below) found this was
+# originally too narrow: it required the literal string "PKR", which is what
+# the deterministic renderer always uses, but a free-form LLM reply (the
+# budget/planning/package turns this whole gate exists for) may write "Rs."
+# or the Rupee sign instead — both plausible, neither previously covered — and
+# that regression would have silently dropped prepare_booking on a real offer
+# list, exactly the opposite failure from the one this file was built to fix.
+# "Rs" alone is short enough to risk false hits, so it stays \b-anchored and
+# digit-adjacent — verified clear of "8 hrs", "Mrs. Khan", "2 yrs", "ERS204".
+#
+# Two currency-notation gaps were found and NOT closed here, on purpose: a
+# message that states the currency once in an intro and gives bare numbers
+# after, and one with no currency marker anywhere. Closing those with a bare
+# "any 4+ digit number" fallback was tested and rejected — it flags a
+# clarifying question list as an offer the moment a date in it has a 4-digit
+# year ("25 August 2026"), reopening the exact bug this file exists to fix.
+_PRICE_IN_LABEL_RE = re.compile(
+    r"\b(?:PKR|Rs\.?|Rupees?)\s*[\d,]+|₨\s*[\d,]+", re.IGNORECASE
+)
 
 # Tool ids we can detect in an earlier assistant/tool turn, to carry forward.
 _CARRY_FORWARD_LOOKBACK = 6
@@ -169,7 +199,9 @@ _CONFIRMED_RE = re.compile(r"(?:booking|package)\s+confirmed|\*\*PNR:\*\*", re.I
 
 
 def _looks_like_offer_list(text: str) -> bool:
-    return bool(_OFFER_LIST_RE.search(text or ""))
+    """A numbered list of PRICED options — not just any numbered list."""
+    text = text or ""
+    return bool(_OFFER_LIST_RE.search(text)) and bool(_PRICE_IN_LABEL_RE.search(text))
 
 
 def _recent_assistant_offers(history: list[dict] | None) -> bool:

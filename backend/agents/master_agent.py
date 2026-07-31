@@ -21,6 +21,7 @@ import re
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
+from typing import cast
 
 from agents.memory_agent import (
     get_user_memory,
@@ -74,7 +75,7 @@ from services.llm_service import (
     INVALID_KEY,
 )
 from agents import deterministic_reply
-from agents.conversation_state import state_hint
+from agents.conversation_state import derive_state, state_hint
 from agents.prompt_builder import build_system_prompt, select_tools, select_tool_names
 from agents.agent_tools import (
     get_missing_booking_fields,
@@ -1328,6 +1329,24 @@ def _package_incomplete_message(
     return "\n\n".join(lines)
 
 
+def _car_booking_note(car_booking_data: dict | None) -> str:
+    """
+    A standalone car booking gated successfully this same turn, but a package
+    or single booking is about to be returned instead — the response contract
+    carries only one action per turn (see the ATOMIC PACKAGE GATE), so
+    car_booking_data would otherwise be discarded with no trace at all. Say so
+    plainly instead of silently dropping it; the user still has to ask again
+    next turn to get the actual car_booking_choice confirm button, since this
+    turn's action slot is already spoken for.
+    """
+    if not car_booking_data:
+        return ""
+    return (
+        "\n\nI've also got your cab request ready — just ask me to confirm "
+        "it and I'll set that up too."
+    )
+
+
 # ── Package continuity safeguard ──────────────────────────────────────────────
 # A package is booked piece-by-piece, and the model is supposed to set `next_step`
 # on each non-final piece so the app can carry the trip forward after payment (no
@@ -1351,6 +1370,24 @@ def _components_in(text: str) -> set[str]:
     if _PKG_CAR_RE.search(text):
         found.add("car")
     return found
+
+
+def _outstanding_other_components(
+    conversation_user_texts: list[str], gathered: list[tuple[str, str]],
+) -> set[str]:
+    """
+    Components besides transport (stay/car) the conversation asked for that
+    AREN'T already covered by this turn's gathered results — used to decide
+    whether rendering just the transport legs would silently drop the rest of
+    a package. A hotel mentioned anywhere is only "still outstanding" if
+    nothing has actually searched it yet in THIS turn; a car mention never
+    clears (book_car is gated separately and never lands in `gathered`, so its
+    presence should always hold off a transport-only render).
+    """
+    other = _components_in(" ".join(conversation_user_texts)) - {"transport"}
+    if any(name == "search_hotels" for name, _ in gathered):
+        other -= {"stay"}
+    return other
 
 
 def _infer_package_next_step(
@@ -1455,6 +1492,48 @@ def _wants_round_trip(user_texts: list[str] | None) -> bool:
         for t in (user_texts or [])[-_ROUND_TRIP_LOOKBACK:]
         if isinstance(t, str)
     )
+
+
+# ── Deterministic round-trip prefetch ─────────────────────────────────────────
+#
+# A round trip with BOTH dates already known ("round trip flight, Lahore to
+# Karachi, 2026-08-20 to 2026-08-25, 2 people") still cost two full LLM steps
+# just to search each leg before a third step could even look at a booking —
+# the model has to be asked for the tool call, read the result, then be asked
+# again for the return leg. Every fact needed to run both searches is already
+# sitting in the conversation in code-derivable form (agents/conversation_state
+# .derive_state) once _wants_round_trip is true, so the searches themselves
+# never need to wait on a reasoning step: run them here, deterministically, and
+# hand the model (or the existing renderer, for a plain search) both legs
+# already in hand.
+#
+# Mode words specific enough to name flights or trains without colliding with
+# generic round-trip language. Deliberately narrower than prompt_builder's
+# _FLIGHT_RE, which folds "round trip" / "one way" / "return flight" into its
+# own flight signal — exactly the phrases _wants_round_trip fires on, so
+# reusing it here would call every round-trip TRAIN request a flight. Ambiguous
+# (neither, or both) means "don't guess" — the prefetch simply doesn't run, and
+# the model resolves it exactly as it does today.
+_TRAIN_MODE_RE = re.compile(
+    r"\b(train|trains|rail|railway|railways|tezgam|khyber|green\s?line|"
+    r"business\s?express|awam|jaffar|bogie|berth|coach)\b", re.I,
+)
+_FLIGHT_MODE_RE = re.compile(
+    r"\b(flight|flights|fly|flying|flew|plane|air\s?line|airline|air\s?ticket|"
+    r"pia|airblue|air\s?sial|serene|jazeera)\b", re.I,
+)
+
+
+def _round_trip_prefetch_mode(user_texts: list[str] | None) -> str | None:
+    """'search_flights' / 'search_trains' / None (ambiguous — don't prefetch)."""
+    text = " ".join(t for t in (user_texts or []) if isinstance(t, str))
+    has_train = bool(_TRAIN_MODE_RE.search(text))
+    has_flight = bool(_FLIGHT_MODE_RE.search(text))
+    if has_train and not has_flight:
+        return "search_trains"
+    if has_flight and not has_train:
+        return "search_flights"
+    return None
 
 
 def _last_assistant_text(history: list[dict] | None) -> str:
@@ -1728,8 +1807,117 @@ async def process_message_agentic(
         ))
 
     started = time.monotonic()
+
+    # See _round_trip_prefetch_mode above. Skipped whenever pick_hint is set —
+    # a pick must resolve against the EXACT list the user is replying to by
+    # position ("1 for outbound and 2 for return"), and a fresh search can come
+    # back reordered or re-priced, which would silently point the pick at the
+    # wrong flight. Every other round trip with both dates already known is
+    # fair game, including a follow-up refinement ("actually make it 3
+    # people") — re-running the search is exactly what the model would have
+    # done itself, just without spending a step to do it.
+    prefetch_mode = (
+        _round_trip_prefetch_mode(conversation_user_texts[-_ROUND_TRIP_LOOKBACK:])
+        if _wants_round_trip(conversation_user_texts) and not pick_hint
+        else None
+    )
+    trip_state = None
+    if prefetch_mode:
+        trip_state = derive_state(history, user_message, today=today)
+        mode_prepared = "flight" if prefetch_mode == "search_flights" else "train"
+        if not (
+            trip_state.origin and trip_state.destination
+            and trip_state.travel_date and trip_state.return_date
+            and mode_prepared not in trip_state.prepared
+        ):
+            prefetch_mode = None
+            trip_state = None
+
+    if prefetch_mode and trip_state is not None:
+        pax = trip_state.passengers or 1
+        outbound_args = {
+            "origin_city": trip_state.origin, "destination_city": trip_state.destination,
+            "travel_date": trip_state.travel_date, "passengers": pax,
+        }
+        return_args = {
+            "origin_city": trip_state.destination, "destination_city": trip_state.origin,
+            "travel_date": trip_state.return_date, "passengers": pax,
+        }
+        try:
+            prefetch_raw = await asyncio.wait_for(
+                asyncio.gather(
+                    self_improvement.dispatch_tool_with_retry(
+                        user_id=user_id, conversation_id=conversation_id, user_message=user_message,
+                        name=prefetch_mode, args=outbound_args, has_user_date=user_dates_known,
+                    ),
+                    self_improvement.dispatch_tool_with_retry(
+                        user_id=user_id, conversation_id=conversation_id, user_message=user_message,
+                        name=prefetch_mode, args=return_args, has_user_date=user_dates_known,
+                    ),
+                    return_exceptions=True,
+                ),
+                timeout=_time_left(started),
+            )
+        except Exception:
+            logger.warning("round-trip prefetch timed out — falling back to the normal loop", exc_info=True)
+            prefetch_raw = None
+
+        if prefetch_raw is not None and not any(isinstance(r, BaseException) for r in prefetch_raw):
+            _absorb_learned(learned, outbound_args)
+            # Every element was just proven not a BaseException above — the
+            # isinstance check itself is what dispatch_tool_with_retry's
+            # return_exceptions=True union requires; cast narrows the type,
+            # not the value.
+            prefetch_results = cast("list[str]", prefetch_raw)
+            prefetched: list[tuple[str, str]] = [(prefetch_mode, r) for r in prefetch_results]
+            tools_used.append(prefetch_mode)
+            gathered.extend(prefetched)
+            # Same shape the real loop produces after a genuine tool-calling
+            # step (assistant tool_calls message, then one tool result per
+            # call) — see below — so the model reads this exactly like its
+            # own earlier tool round, and nothing downstream (history replay,
+            # provider request shape) needs to know it never actually asked.
+            prefetch_tool_calls = [
+                {"id": f"prefetch-out-{uuid.uuid4().hex[:8]}", "type": "function",
+                 "function": {"name": prefetch_mode, "arguments": json.dumps(outbound_args)}},
+                {"id": f"prefetch-ret-{uuid.uuid4().hex[:8]}", "type": "function",
+                 "function": {"name": prefetch_mode, "arguments": json.dumps(return_args)}},
+            ]
+            messages.append({"role": "assistant", "content": None, "tool_calls": prefetch_tool_calls})
+            for (_, content), tc in zip(prefetched, prefetch_tool_calls):
+                messages.append({"role": "tool", "tool_call_id": tc["id"], "content": content})
+
+            # The plain-search case: nothing left to decide, so answer straight
+            # from these two results exactly as the in-loop renderer would —
+            # same should_render/render, just reached before any LLM call runs
+            # instead of after one or two of them. Anything needing judgement
+            # (a budget verdict, planning/package prose) declines here exactly
+            # as it always has, and the model takes the turn with both legs
+            # already in context instead of needing to search for them itself.
+            # A hotel or car mentioned anywhere in the conversation means this
+            # is a package, not a plain search — the two transport legs are
+            # only PART of the answer, and rendering just those two would
+            # silently drop the rest of what the user asked for. should_render
+            # can't see that on its own (it only ever sees the transport
+            # results), so it's checked here before the fast path is even
+            # attempted. See _outstanding_other_components — shared with the
+            # equivalent guard on the general in-loop renderer below.
+            other_components = _outstanding_other_components(conversation_user_texts, prefetched)
+            if not other_components and deterministic_reply.should_render(
+                prefetched, user_message,
+                has_budget_note=False, has_pick_hint=bool(pick_hint),
+                round_trip_incomplete=False,
+            ):
+                rendered = deterministic_reply.render(prefetched, user_message)
+                if rendered:
+                    logger.info(
+                        "deterministic reply for prefetched round trip (%s) — "
+                        "skipped the tool-calling loop entirely", prefetch_mode,
+                    )
+                    final_text = rendered
+
     try:
-        for step in range(_MAX_TOOL_STEPS):
+        for step in range(_MAX_TOOL_STEPS if not final_text else 0):
             # Never skip the FIRST call — a slow warm-up must still produce a turn.
             if step and time.monotonic() - started > _TURN_SOFT_DEADLINE:
                 logger.warning(
@@ -2018,7 +2206,20 @@ async def process_message_agentic(
             # it can ask for the return date.
             one_leg = (len(gathered) == 1
                        and gathered[0][0] in ("search_flights", "search_trains"))
-            if not booking_calls and not car_calls and deterministic_reply.should_render(
+            # A hotel or car also asked for anywhere in this conversation means
+            # the two transport legs are only PART of the answer — rendering
+            # just those and breaking the loop silently drops the rest of a
+            # "round trip flight AND hotel" request with no acknowledgement
+            # that anything is still missing. Reachable whenever the model
+            # searches both legs across two separate steps before ever
+            # reaching the hotel (see agents/deterministic_reply.should_render:
+            # two same-tool renderable results is otherwise sufficient to
+            # render). Same guard as the round-trip prefetch's own fast path —
+            # see _outstanding_other_components, which also correctly stops
+            # objecting once a hotel search actually IS among this turn's
+            # results (a plain hotel-only search must still render).
+            other_components = _outstanding_other_components(conversation_user_texts, gathered)
+            if not other_components and not booking_calls and not car_calls and deterministic_reply.should_render(
                 gathered, user_message,
                 has_budget_note=bool(budget_note), has_pick_hint=bool(pick_hint),
                 round_trip_incomplete=one_leg and _wants_round_trip(conversation_user_texts),
@@ -2053,7 +2254,14 @@ async def process_message_agentic(
                 })
 
         # Loop ended with tools called but no final prose → synthesize one answer.
-        if not final_text and not booking_data:
+        # A completed standalone car booking already broke the loop above with
+        # car_booking_data set (see "if car_booking_data: break") and needs no
+        # prose at all — format_car_booking_summary builds the whole reply from
+        # car_booking_data further down. Checking only booking_data here missed
+        # that car bookings use a SEPARATE variable, so every successful car
+        # booking paid for one more generate_with_tools call whose output was
+        # then thrown away unread.
+        if not final_text and not booking_data and not car_booking_data:
             try:
                 # Bounded: a fallback provider that queues rather than 429s can sit
                 # here for its full 35s budget, which on a late turn is exactly what
@@ -2115,6 +2323,7 @@ async def process_message_agentic(
         summary = _package_incomplete_message(
             package_ok, package_failed, expected_components
         )
+        summary += _car_booking_note(car_booking_data)
         await save_turn(
             conversation_id, user_id, user_message, summary,
             model_used=answering_model(),
@@ -2135,6 +2344,7 @@ async def process_message_agentic(
     if len(package_components) >= 2:
         package_data = build_package_data(package_components)
         summary = format_package_summary(package_data)
+        summary += _car_booking_note(car_booking_data)
         await save_turn(
             conversation_id, user_id, user_message, summary,
             model_used=answering_model(),
@@ -2163,6 +2373,7 @@ async def process_message_agentic(
             )
         booking_data["next_step"] = safe_next
         summary = format_booking_summary(booking_data)
+        summary += _car_booking_note(car_booking_data)
         await save_turn(
             conversation_id, user_id, user_message, summary,
             model_used=answering_model(),
