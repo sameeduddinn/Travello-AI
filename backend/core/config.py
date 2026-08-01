@@ -76,14 +76,12 @@ class Settings(BaseSettings):
     # calling) a full tool-capable fallback for the agentic loop, not just a
     # plain-text one.
     #
-    # "gemini-flash-latest" is an alias that always resolves to the current Flash
     # model. The old pinned "gemini-2.5-flash" returns HTTP 404 —
     # "no longer available to new users" — for accounts created after it was
     # superseded, which silently disabled the whole Gemini fallback. Verified live
-    # against this project's key: gemini-flash-latest works for both text and
     # function calling; gemini-2.5-flash and gemini-2.5-flash-lite 404.
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-flash-latest"
+    GEMINI_MODEL: str = "gemini-2.5-flash"
 
     # Groq (completely free — sign up at console.groq.com)
     #

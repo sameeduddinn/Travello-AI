@@ -63,6 +63,6 @@ def test_provider_defaults_are_the_ones_verified_against_the_live_keys():
     these tests exist to stamp out.
     """
     defaults = Settings.model_fields
-    assert defaults["GEMINI_MODEL"].default == "gemini-flash-latest"
+    assert defaults["GEMINI_MODEL"].default == "gemini-2.5-flash"
     assert defaults["GROQ_MODEL"].default == "llama-3.3-70b-versatile"
     assert defaults["DEBUG"].default is False

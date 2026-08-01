@@ -756,7 +756,7 @@ def test_answering_model_reports_the_provider_that_really_served_the_turn(monkey
         raise LLMError("tpd", kind=QUOTA_DAILY, provider="groq", retry_after=300)
 
     async def gemini_ok(*a, **k):
-        svc._log_call("gemini", "gemini-flash-latest", est_in=100, status="ok")
+        svc._log_call("gemini", "gemini-2.5-flash", est_in=100, status="ok")
         return _FakeMessage("from gemini")
 
     monkeypatch.setattr(svc, "_groq_generate_with_tools", fail)
@@ -775,7 +775,7 @@ def test_answering_model_reports_the_provider_that_really_served_the_turn(monkey
         return svc.answering_model(), svc.answering_provider()
 
     model, provider = _run(one_turn())
-    assert model == "gemini-flash-latest"
+    assert model == "gemini-2.5-flash"
     assert provider == "gemini"
 
 

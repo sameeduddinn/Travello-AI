@@ -64,7 +64,7 @@ def _pinned_provider_config(monkeypatch):
     for name, value in _FAKE_KEYS.items():
         monkeypatch.setattr(settings, name, value, raising=False)
     monkeypatch.setattr(settings, "GROQ_MODEL", "llama-3.3-70b-versatile", raising=False)
-    monkeypatch.setattr(settings, "GEMINI_MODEL", "gemini-flash-latest", raising=False)
+    monkeypatch.setattr(settings, "GEMINI_MODEL", "gemini-2.5-flash", raising=False)
     monkeypatch.setattr(
         settings, "OPENROUTER_MODEL", "openai/gpt-oss-20b:free", raising=False
     )

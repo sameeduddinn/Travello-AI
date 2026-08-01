@@ -949,7 +949,6 @@ async def _call_gemini(
 # Gemini has no tool_call_id, so ids are re-minted on the way out and matched back
 # by ORDER on the way in — the orchestrator only ever replies to the calls from
 # the immediately preceding turn, so order is sufficient and stable.
-# Verified live against gemini-flash-latest with the real 7-tool schema set.
 
 
 def _gemini_tool_declarations(tools: list[dict] | None):
