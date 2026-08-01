@@ -2424,7 +2424,7 @@ class _PaymentStatusState extends State<PaymentStatus>
             _detailRow(
               _bookingData['bookingType'] == 'train'
                   ? 'Reservation Fee:'
-                  : 'Taxes (12%):',
+                  : 'Taxes & Fees:',
               _formatPKR(_bookingData['tax']),
             ),
             if ((_bookingData['serviceFee'] ?? 0) > 0) ...[
@@ -4443,7 +4443,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'TK$eTicketNumber',
+                  eTicketNumber,
                   style: TextStyle(
                     fontSize: 9,
                     color: Colors.grey.shade700,
@@ -4496,7 +4496,7 @@ class _PaymentStatusState extends State<PaymentStatus>
             'ISSUED BY / DATE',
             isRailway
                 ? 'PAKISTAN RAILWAYS / TRAVELLO AI\n($issuedDate/${DateFormat('HHmm').format(DateTime.now())}hr)'
-                : 'DUBAI / EMIRATES EZM\n($issuedDate/${DateFormat('HHmm').format(DateTime.now())}hr)'
+                : '${(_bookingData['flightDetails']?['airline'] as String?) ?? 'AIRLINE'} / TRAVELLO AI\n($issuedDate/${DateFormat('HHmm').format(DateTime.now())}hr)'
           ],
         ]),
 
@@ -4906,11 +4906,15 @@ class _PaymentStatusState extends State<PaymentStatus>
           if (serviceFee > 0)
             _buildTaxRow('Service Fee', 'PKR ${serviceFee.toStringAsFixed(2)}'),
         ] else ...[
-          // Flight-specific tax codes
-          _buildTaxRow('MYR2.0QH', 'MYR47.0YR'),
-          _buildTaxRow('PD100.0EG', 'PD187.0AX'),
-          _buildTaxRow('AE11.0ET', 'PO127.0MY'),
-          _buildTaxRow('PD7.0EQ', 'PD50.0UK'),
+          // Flight-specific charges — the actual FED/airport/security fee
+          // total already charged (see booking_payment.dart's _taxes), not
+          // invented IATA-style tax codes.
+          if ((_bookingData['tax'] ?? 0.0) > 0)
+            _buildTaxRow('Taxes & Government Fees',
+                'PKR ${(_bookingData['tax'] ?? 0.0).toStringAsFixed(2)}'),
+          if ((_bookingData['insuranceFee'] ?? 0.0) > 0)
+            _buildTaxRow('Travel Insurance',
+                'PKR ${(_bookingData['insuranceFee'] ?? 0.0).toStringAsFixed(2)}'),
         ],
         const SizedBox(height: 8),
         Divider(color: Colors.grey.shade400, thickness: 1),
@@ -4939,7 +4943,7 @@ class _PaymentStatusState extends State<PaymentStatus>
           style: const TextStyle(fontSize: 10),
         ),
         Text(
-          '*1 CHQOUR YOU MAY NEED TO PRESENT THE CREDIT CARD USED FOR PAYMENT OF THIS TICKET*',
+          '*You may be asked to present the card used for this payment at check-in.*',
           style: TextStyle(fontSize: 8, color: Colors.grey.shade600),
         ),
       ],
@@ -5000,11 +5004,11 @@ class _PaymentStatusState extends State<PaymentStatus>
         const SizedBox(height: 8),
         if (!isRailway) ...[
           const Text(
-            '* NONREF NON-ENDORSKYWARDS',
+            '* NON-REFUNDABLE. NON-ENDORSABLE TO ANOTHER CARRIER.',
             style: TextStyle(fontSize: 9),
           ),
           const Text(
-            'SAVER/NO ON ENDPENALTIES APPLY',
+            'FARE RULES AND CHANGE/CANCELLATION PENALTIES APPLY AS PER AIRLINE POLICY.',
             style: TextStyle(fontSize: 9),
           ),
         ] else ...[
@@ -5071,12 +5075,21 @@ class _PaymentStatusState extends State<PaymentStatus>
     } else {
       // Flight fare calculation
       final flightDetails = _bookingData['flightDetails'];
-      final from = flightDetails?['from'] ?? 'N/A';
+      final from = flightDetails?['from']?.toString() ?? 'N/A';
+      final to = flightDetails?['to']?.toString() ?? 'N/A';
       final fromCode =
           RegExp(r'\(([A-Z]{3})\)').firstMatch(from)?.group(1) ?? 'XXX';
+      final toCode =
+          RegExp(r'\(([A-Z]{3})\)').firstMatch(to)?.group(1) ?? 'XXX';
+      final classType = flightDetails?['class'] ?? 'Economy';
+      final passengerCount = _bookingData['passengerCount'] ?? 1;
+      final baseFare = _bookingData['amount'] ?? 0.0;
+      final perPaxFare =
+          passengerCount > 0 ? baseFare / passengerCount : baseFare;
 
-      return 'CAI EK X/DXB Q85.00EK KUL 192.53JUEE1/'
-          'EGHEKF X/$fromCode NUC857.74963';
+      return '$fromCode X $toCode / $classType\n'
+          'BASE FARE: PKR ${perPaxFare.toStringAsFixed(2)} x $passengerCount PAX\n'
+          'TOTAL BASE: PKR ${baseFare.toStringAsFixed(2)}';
     }
   }
 
@@ -5708,6 +5721,8 @@ class _PaymentStatusState extends State<PaymentStatus>
   // ── Download Invoice PDF ──
   Future<void> _downloadInvoicePdf() async {
     try {
+      final bookingType = _bookingData['bookingType'] as String? ?? 'flight';
+      final isRailway = bookingType == 'train';
       final invoiceNumber = _bookingData['pnr'] ?? 'N/A';
       final eTicketNumber = _bookingData['transactionId'] ?? 'N/A';
       final issuedDate =
@@ -5722,7 +5737,7 @@ class _PaymentStatusState extends State<PaymentStatus>
         title: 'Tax Invoice - $invoiceNumber',
         author: 'Travello AI',
         creator: 'Travello AI',
-        subject: 'e-Ticket Receipt & Itinerary',
+        subject: isRailway ? 'Railway E-Ticket' : 'e-Ticket Receipt & Itinerary',
         theme: pw.ThemeData.withFont(
           base: font,
           bold: fontBold,
@@ -5775,7 +5790,9 @@ class _PaymentStatusState extends State<PaymentStatus>
                         ),
                         pw.SizedBox(height: 4),
                         pw.Text(
-                          'e-Ticket Receipt & Itinerary',
+                          isRailway
+                              ? 'Railway E-Ticket'
+                              : 'e-Ticket Receipt & Itinerary',
                           style: pw.TextStyle(
                             fontSize: 16,
                             fontWeight: pw.FontWeight.bold,
@@ -5807,7 +5824,7 @@ class _PaymentStatusState extends State<PaymentStatus>
                       ),
                       pw.SizedBox(height: 4),
                       pw.Text(
-                        'TK$eTicketNumber',
+                        eTicketNumber,
                         style: const pw.TextStyle(
                           fontSize: 10,
                           color: PdfColors.grey700,
@@ -5822,7 +5839,9 @@ class _PaymentStatusState extends State<PaymentStatus>
 
               // Introduction text
               pw.Text(
-                'Your electronic ticket is stored in our computer reservations system. This e-Ticket receipt/itinerary is your record of your electronic ticket and where applicable, your contract of carriage. You may need to show this receipt to enter the airport and/or to prove this booking to customs and immigration officials.',
+                isRailway
+                    ? 'Your railway e-ticket is stored in our computer reservations system. This booking receipt is your official record of your train journey. Please keep this receipt for the duration of your travel. You may need to show this to railway staff during travel or at the station.'
+                    : 'Your electronic ticket is stored in our computer reservations system. This e-Ticket receipt/itinerary is your record of your electronic ticket and where applicable, your contract of carriage. You may need to show this receipt to enter the airport and/or to prove this booking to customs and immigration officials.',
                 style: const pw.TextStyle(
                   fontSize: 11,
                   color: PdfColors.grey800,
@@ -5831,7 +5850,9 @@ class _PaymentStatusState extends State<PaymentStatus>
               ),
               pw.SizedBox(height: 8),
               pw.Text(
-                'Your attention is drawn to the Conditions of Contract and Other Important Notices set out in the attached document. Please visit us on www.travelloai.com to check-in online and for more information.',
+                isRailway
+                    ? 'Your attention is drawn to the Pakistan Railways Terms and Conditions. Please visit us on www.travelloai.com for journey updates and station information.'
+                    : 'Your attention is drawn to the Conditions of Contract and Other Important Notices set out in the attached document. Please visit us on www.travelloai.com to check-in online and for more information.',
                 style: const pw.TextStyle(
                   fontSize: 11,
                   color: PdfColors.grey800,
@@ -5851,7 +5872,9 @@ class _PaymentStatusState extends State<PaymentStatus>
                 ['E-TICKET NUMBER', eTicketNumber],
                 [
                   'ISSUED BY / DATE',
-                  'DUBAI / EMIRATES EZM\n($issuedDate/${issuedTime}hr)'
+                  (_bookingData['bookingType'] == 'train')
+                      ? 'PAKISTAN RAILWAYS / TRAVELLO AI\n($issuedDate/${issuedTime}hr)'
+                      : '${(_bookingData['flightDetails']?['airline'] as String?) ?? 'AIRLINE'} / TRAVELLO AI\n($issuedDate/${issuedTime}hr)'
                 ],
               ]),
 
@@ -6227,14 +6250,26 @@ class _PaymentStatusState extends State<PaymentStatus>
   }
 
   pw.Widget _buildPdfFareBreakdown() {
+    final bookingType = _bookingData['bookingType'] as String? ?? 'flight';
+    final isRailway = bookingType == 'train';
     final passengerCount = _bookingData['passengerCount'] ?? 1;
     final amount = _bookingData['amount'] ?? 0.0;
     final perPassengerFare =
         passengerCount > 0 ? amount / passengerCount : amount;
     final serviceFee = _bookingData['serviceFee'] ?? 0.0;
+    final tax = _bookingData['tax'] ?? 0.0;
+    final insuranceFee = _bookingData['insuranceFee'] ?? 0.0;
     final total = _bookingData['total'] ?? 0.0;
     final currency = _bookingData['currency'] ?? 'PKR';
     final paymentMethod = _bookingData['paymentMethod'] ?? 'N/A';
+
+    // RABTA fee for trains (Rs. 10 per adult passenger) — mirrors the
+    // in-app breakdown in _buildFareBreakdown().
+    final passengers = _bookingData['allPassengers'] as List<dynamic>? ?? [];
+    final adultCount = passengers
+        .where((p) => (p['concessionType'] ?? 'ADULT') == 'ADULT')
+        .length;
+    final rabtaFee = isRailway ? (adultCount * 10.0) : 0.0;
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -6259,9 +6294,16 @@ class _PaymentStatusState extends State<PaymentStatus>
           style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 6),
-        _buildPdfTaxRow('MYR2.0QH', 'MYR47.0YR'),
-        _buildPdfTaxRow('PD100.0EG', 'PD187.0AX'),
-        _buildPdfTaxRow('F6200.0ZZ', ''),
+        if (isRailway) ...[
+          if (rabtaFee > 0)
+            _buildPdfFareRow('RABTA Database', rabtaFee, currency),
+          _buildPdfFareRow('Reservation (Online)', 0.0, currency),
+        ] else ...[
+          if (tax > 0)
+            _buildPdfFareRow('Taxes & Government Fees', tax, currency),
+          if (insuranceFee > 0)
+            _buildPdfFareRow('Travel Insurance', insuranceFee, currency),
+        ],
         pw.SizedBox(height: 10),
         pw.Divider(color: const PdfColor(0.7, 0.7, 0.7), thickness: 1),
         pw.SizedBox(height: 6),
@@ -6289,7 +6331,7 @@ class _PaymentStatusState extends State<PaymentStatus>
         ),
         pw.SizedBox(height: 4),
         pw.Text(
-          '*1 CHQOUR YOU MAY NEED TO PRESENT THE CREDIT CARD USED FOR PAYMENT OF THIS TICKET*',
+          '*You may be asked to present the card used for this payment at check-in.*',
           style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
         ),
       ],
@@ -6297,6 +6339,8 @@ class _PaymentStatusState extends State<PaymentStatus>
   }
 
   pw.Widget _buildPdfAdditionalInfo() {
+    final bookingType = _bookingData['bookingType'] as String? ?? 'flight';
+    final isRailway = bookingType == 'train';
     final passengerCount = _bookingData['passengerCount'] ?? 1;
     final isRoundTrip = _bookingData['isRoundTrip'] == true;
     final transactionId = _bookingData['transactionId'] ?? 'N/A';
@@ -6310,14 +6354,25 @@ class _PaymentStatusState extends State<PaymentStatus>
           style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 6),
-        pw.Text(
-          '* NONREF NON-ENDORSKYWARDS',
-          style: const pw.TextStyle(fontSize: 9),
-        ),
-        pw.Text(
-          'SAVER/NO ON ENDPENALTIES APPLY',
-          style: const pw.TextStyle(fontSize: 9),
-        ),
+        if (isRailway) ...[
+          pw.Text(
+            '* NON-REFUNDABLE',
+            style: const pw.TextStyle(fontSize: 9),
+          ),
+          pw.Text(
+            'TICKET VALID FOR SPECIFIED TRAIN ONLY',
+            style: const pw.TextStyle(fontSize: 9),
+          ),
+        ] else ...[
+          pw.Text(
+            '* NON-REFUNDABLE. NON-ENDORSABLE TO ANOTHER CARRIER.',
+            style: const pw.TextStyle(fontSize: 9),
+          ),
+          pw.Text(
+            'FARE RULES AND CHANGE/CANCELLATION PENALTIES APPLY AS PER AIRLINE POLICY.',
+            style: const pw.TextStyle(fontSize: 9),
+          ),
+        ],
         pw.SizedBox(height: 12),
         pw.Text(
           'Trip Type: ${isRoundTrip ? "ROUND TRIP" : "ONE-WAY"}',
@@ -6360,16 +6415,6 @@ class _PaymentStatusState extends State<PaymentStatus>
             style: const pw.TextStyle(fontSize: 10),
           ),
         ],
-      ),
-    );
-  }
-
-  pw.Widget _buildPdfTaxRow(String code1, String code2) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(vertical: 2),
-      child: pw.Text(
-        code2.isNotEmpty ? '$code1    $code2' : code1,
-        style: const pw.TextStyle(fontSize: 9, letterSpacing: 0.5),
       ),
     );
   }
