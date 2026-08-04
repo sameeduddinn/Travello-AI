@@ -1,8 +1,6 @@
-# =============================================================================
 # PURPOSE: asyncpg connection pool for raw SQL queries.
 #          Used when the supabase-py client is too limiting
 #          (e.g., complex JOINs, transactions, bulk inserts).
-# =============================================================================
 
 from __future__ import annotations
 
@@ -60,7 +58,7 @@ def get_db_pool() -> Pool | None:
     return _pool
 
 
-# Helper functions — thin wrappers so routers don't import asyncpg directly
+# Helper functions: thin wrappers so routers don't import asyncpg directly
 
 async def fetch_one(query: str, *args: Any) -> Record | None:
     """Execute query and return the first row, or None."""

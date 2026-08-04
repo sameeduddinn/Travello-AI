@@ -1,8 +1,4 @@
-# =============================================================================
 # PURPOSE: Pydantic schemas for hotel search, detail, and booking.
-# =============================================================================
-
-
 
 from datetime import date
 from typing import Any, Optional

@@ -140,8 +140,10 @@ def test_retry_after_header_used_when_body_says_nothing():
 
 def test_openrouter_epoch_reset_header_converted_to_seconds():
     future_ms = str(int((time.time() + 600) * 1000))
+    headers = _Headers()
+    headers["X-RateLimit-Reset"] = future_ms
     _, retry = classify_provider_error(
-        "rate limit", status_code=429, headers=_Headers({"X-RateLimit-Reset": future_ms})
+        "rate limit", status_code=429, headers=headers
     )
     assert retry is not None and 550 < retry < 650
 

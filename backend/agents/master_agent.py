@@ -1,5 +1,4 @@
 from __future__ import annotations
-# =============================================================================
 # PURPOSE: Top-level orchestrator for the multi-agent system.
 #
 #   process_message(user_id, conversation_id, user_message) is the ONLY
@@ -12,7 +11,6 @@ from __future__ import annotations
 #       6. Hands all agent output to Gemini to synthesize the final reply
 #       7. Persists user + assistant messages
 #       8. Fire-and-forget logs the work to agent_tasks
-# =============================================================================
 
 import asyncio
 import json
@@ -94,10 +92,7 @@ from agents.agent_tools import (
     user_supplied_date_signal,
     recover_booking_location,
 )
-# MASTER_AGENTIC_SYSTEM is deliberately NOT imported here any more — the agentic
-# path now builds its prompt through agents/prompt_builder.py, which sends the
-# compact core plus only the rule blocks the turn can use. The full constant is
-# kept in prompts/master_agent.py as the documented, complete rule set.
+
 from prompts.master_agent import MASTER_SYSTEM
 from prompts.knowledge import get_relevant_facts, EMERGENCY_NUMBERS
 from agents.emergency_healthcare import (

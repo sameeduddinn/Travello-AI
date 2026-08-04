@@ -1,8 +1,4 @@
-# =============================================================================
 # PURPOSE: Pydantic schemas for the payments endpoints.
-# =============================================================================
-
-
 
 from datetime import datetime
 from typing import Any, Optional

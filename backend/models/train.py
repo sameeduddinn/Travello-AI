@@ -1,9 +1,4 @@
-# =============================================================================
 # PURPOSE: Pydantic schemas for Pakistan Railways train search and booking.
-# =============================================================================
-
-
-
 from datetime import date as Date, datetime
 from typing import Optional
 

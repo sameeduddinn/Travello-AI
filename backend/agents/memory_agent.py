@@ -1,5 +1,4 @@
 from __future__ import annotations
-# =============================================================================
 # PURPOSE: Persistence layer for the multi-agent system.
 #
 #   - user_preferences  : long-lived per-user travel profile (read/write/upsert)
@@ -8,7 +7,6 @@ from __future__ import annotations
 #
 # All Supabase calls are wrapped in asyncio.to_thread because supabase-py v2 is
 # synchronous and we don't want to block the event loop in async agent code.
-# =============================================================================
 
 import asyncio
 import logging

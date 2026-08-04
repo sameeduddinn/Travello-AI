@@ -1,11 +1,9 @@
-# =============================================================================
 # PURPOSE: FastAPI application entry point.
 #          - Registers all routers
 #          - Configures CORS (allow all origins for Flutter dev)
 #          - Lifespan: init/close asyncpg pool
 #          - Global exception handlers
 #          - Health check endpoint
-# =============================================================================
 
 from __future__ import annotations
 

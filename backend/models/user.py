@@ -1,8 +1,4 @@
-# =============================================================================
 # PURPOSE: Pydantic schemas for user profile and preferences endpoints.
-# =============================================================================
-
-
 
 from datetime import date, datetime
 from typing import Optional

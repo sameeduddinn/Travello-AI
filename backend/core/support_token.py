@@ -1,19 +1,11 @@
-# =============================================================================
 # FILE: core/support_token.py
 # PURPOSE: Short-lived, message-scoped, signed tokens for the support reply link.
 #
 # The support notification email used to carry the raw ADMIN_SECRET_KEY in the
 # URL (?secret=...). That put a long-lived master key into the email body, the
-# server access logs, and browser history — and, being the same key for every
+# server access logs, and browser history: and, being the same key for every
 # message, one leaked link could reply to ANY message.
-#
-# These tokens replace it. Each is:
-#   - scoped to ONE message_id (a leaked link can't touch another message),
-#   - time-limited (expires),
-#   - HMAC-signed with ADMIN_SECRET_KEY (unforgeable without the key),
-#   - stateless (self-contained; no DB row to store or clean up).
-# The raw ADMIN_SECRET_KEY itself never leaves the server.
-# =============================================================================
+
 
 from __future__ import annotations
 

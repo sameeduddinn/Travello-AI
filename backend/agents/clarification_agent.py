@@ -1,5 +1,4 @@
 from __future__ import annotations
-# =============================================================================
 # PURPOSE: Turn free-text travel requests into structured data.
 #
 #   - detect_query_type        : classifies the user's intent
@@ -8,8 +7,6 @@ from __future__ import annotations
 #   - get_clarification_question : asks for ONE missing field at a time
 #   - is_complete              : True when nothing required is missing
 #
-# Gemini is used for NLU; IATA mapping is a local lookup (no LLM cost).
-# =============================================================================
 
 import logging
 import re

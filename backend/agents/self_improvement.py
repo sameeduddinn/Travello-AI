@@ -1,31 +1,5 @@
 from __future__ import annotations
-# =============================================================================
 # PURPOSE: The project's "self-improvement mechanism" — NOT model fine-tuning.
-#
-#   This is explicitly two things, and only two things:
-#
-#   1. LOGGING — every failed tool call, failed slot-fill (a deterministic gate
-#      rejected the model's attempt), and detected user correction is written
-#      to agent_failure_log (sql/13_agent_failure_log.sql) with enough context
-#      for a HUMAN to review later and decide whether a prompt or gate needs
-#      updating. Nothing here reads its own log back into a prompt, retrains,
-#      or fine-tunes any model — that is explicitly out of scope.
-#
-#   2. RETRY — a single, IN-CONVERSATION, deterministic retry. If a tool call
-#      fails in a way that's fixable WITHOUT asking the user — a transient
-#      downstream error, or a city name close enough to a real known place
-#      that it's almost certainly a typo — the loop corrects the call and
-#      retries it ONCE before the model ever has to tell the user it failed.
-#      If the retry also fails, that result goes back to the model exactly
-#      like any other tool result — every existing gate and guarantee
-#      (never invent a date, a party size, a price, a PNR) is completely
-#      unchanged; this layer sits in front of execute_tool, not inside it.
-#
-#   Nothing here invents a fact the user didn't provide: a typo-correction
-#   maps a garbled city back to a REAL place already in CITY_TO_IATA /
-#   CITY_ALIASES, and a transient retry replays the EXACT same call. Neither
-#   guesses a date, a passenger count, or a price.
-# =============================================================================
 
 import asyncio
 import json

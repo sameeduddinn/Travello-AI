@@ -1,23 +1,5 @@
 from __future__ import annotations
-# =============================================================================
 # PURPOSE: Deterministic emergency / healthcare responder.
-#
-# A medical emergency must NEVER depend on the LLM chain (Groq -> OpenRouter ->
-# Gemini) being up. When every provider is rate-limited or the turn clock runs
-# out, the agentic loop degrades a query like "emergency, nearest hospital in
-# Skardu" to "try again in a minute" — the single worst reply when someone is
-# hurt. Everything needed to answer such a query is already deterministic:
-#   - _CITY_COORDS      : city name -> lat/lng (no geocoding call)
-#   - _MOCK_HOSPITALS   : curated, city-tagged facilities with real phone numbers
-#   - _mock_nearby       : pure haversine ranking, no network
-#   - EMERGENCY_NUMBERS : the curated national numbers (Rescue 1122 / Edhi 115)
-#
-# So this module answers straight from that data — instant, offline, and immune
-# to the quota wall. By construction it can NEVER invent a facility or phone
-# number (a wrong medical number is dangerous), which also satisfies the
-# healthcare-safety rules baked into the prompts.
-# =============================================================================
-
 import re
 
 from routers.healthcare import (
@@ -26,16 +8,6 @@ from routers.healthcare import (
     _MOCK_PHARMACIES,
     _mock_nearby,
 )
-
-
-# --- Intent detection --------------------------------------------------------
-# Two branches, deliberately conservative so this never hijacks a booking turn:
-#   1. an emergency SIGNAL ("emergency", "severe", "asap") next to a MEDICAL word
-#      ("injury", "hospital", "bleeding"), or
-#   2. a LOCATION request ("nearest", "closest") next to a FACILITY word
-#      ("hospital", "clinic", "pharmacy").
-# "urgent flight" (signal, no medical word) and "nearest hotel" (location, no
-# facility word) both fall through — exactly what we want.
 
 _EMERGENCY_RE = re.compile(
     r"\b(emergenc(?:y|ies)|urgent(?:ly)?|asap|severe(?:ly)?|critical(?:ly)?|"

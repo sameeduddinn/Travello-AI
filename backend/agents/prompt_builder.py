@@ -1,28 +1,11 @@
 from __future__ import annotations
-# =============================================================================
 # PURPOSE: Decide what actually goes into a tool-calling request.
 #
 #   select_tools()        — which tool schemas this turn could plausibly need
 #   build_system_prompt() — the compact core prompt plus only the rule blocks
 #                           that apply to this turn
 #   estimate_fixed_tokens()— what that combination costs, for logging
-#
-# WHY THIS EXISTS
-# The agent used to send all 7 tool schemas and the full 6,570-token rule set on
-# every single call — ~8.9k tokens before a word of conversation. Groq's free
-# tier allows 100,000 tokens per DAY, so the agent ran out after roughly eleven
-# calls (about five tool-using turns) and then answered "quota exhausted" for the
-# rest of the day. A weather question does not need the booking rules or the
-# prepare_booking schema; paying for them on every turn is what made the agent
-# unusable for a demo.
-#
-# SAFETY POSTURE: selection is deliberately GENEROUS. Omitting a tool the model
-# needed costs the user a whole turn, so every ambiguous signal adds tools rather
-# than removing them, tools used earlier in the conversation are carried forward,
-# and an unrecognised message falls back to the full search set. The booking
-# gates in agent_tools.py are unaffected either way — this only decides what the
-# model is OFFERED, never what it is allowed to do.
-# =============================================================================
+
 
 import re
 

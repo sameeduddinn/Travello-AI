@@ -1,16 +1,10 @@
 from __future__ import annotations
-# =============================================================================
 # PURPOSE: Tool layer for the agentic orchestrator.
 #
 #   - TOOL_SCHEMAS : OpenAI/Groq function-calling schemas the LLM can call
 #   - execute_tool : dispatches a tool call to the REAL service and returns a
 #                    COMPACT JSON string the LLM reasons over directly.
-#
-# Design principle (the Tier 2 win): tools return STRUCTURED DATA, not prose.
-# The orchestrator LLM writes the single final reply — no per-agent LLM
-# summarisation. This kills the old double-LLM cost and preserves data fidelity
-# (exact prices, flight numbers, seat counts survive into the answer).
-# =============================================================================
+
 
 import asyncio
 import difflib
@@ -29,33 +23,6 @@ from agents.clarification_agent import CITY_TO_IATA, _parse_relative_date
 
 logger = logging.getLogger(__name__)
 
-
-# ── Tool schemas (what the model sees) ────────────────────────────────────────
-#
-# These schemas are sent on EVERY tool-calling request, so their prose is a fixed
-# per-call cost — the original set was ~2,320 tokens, over a quarter of the free
-# tier's whole per-call budget. They have been cut to the parts that change the
-# model's BEHAVIOUR, with the reasoning that used to live in each `description`
-# moved to the comments here (which cost nothing at runtime).
-#
-# WHAT MUST NOT BE TRIMMED FURTHER, and why:
-#   * `passengers` on search_flights/search_trains is REQUIRED and must never read
-#     as "(default 1)". The fare is per-seat x passengers, so a silently-defaulted
-#     1 priced one seat while the answer said "2 adults" — every quoted total was
-#     wrong and the price jumped at booking.
-#   * `guests` on search_hotels must NOT say "(default 2)". That wording read as
-#     permission to fill in 2 and move on, for a user whose profile said solo —
-#     and the model then carried that 2 into prepare_booking, where it landed on
-#     the summary card and in the hotel record as the party size.
-#   * `max_budget_pkr` must stay opt-in ("only if the user gave a number"), or the
-#     model invents a ceiling and silently filters real options away.
-#   * book_car's "does not charge / driver assigned only after the user confirms"
-#     is what stops the model promising a driver that does not exist yet.
-#   * prepare_booking's "never invent a price/number" survives even though
-#     reprice_booking overrides the price, because an invented flight number is
-#     what makes repricing FAIL and the turn dead-end.
-# Everything else here is enforced by a deterministic gate (see the map in
-# prompts/master_agent.py) and does not need to be re-argued in the schema.
 
 TOOL_SCHEMAS: list[dict] = [
     {
@@ -526,20 +493,11 @@ def get_booking_date_error(booking_data: dict) -> dict | None:
     return None
 
 
-# ── Standalone car booking (book_car) — deterministic gate ────────────────────
-#
-# book_car mirrors the manual Car-tab flow (POST /cars/book → book_standalone_car):
-# a within-city ride, instant on the user's confirm tap, no payment. Like
-# prepare_booking, the model NEVER commits it directly — the tool call only
-# prepares a car_booking_choice the app confirms. This gate is the code-level
-# source of truth for "is this car request bookable", so a half-specified or
-# past-dated ride can never reach the confirm screen.
+
 
 _CAR_VEHICLES = ("Sedan", "SUV", "Van")
 
-# Mirrors services.car_service._VEHICLE_PRICES. Display-only here — the real
-# charge is re-derived server-side by book_standalone_car when the app confirms,
-# so this can't desync the actual booked amount even if it drifted.
+
 _CAR_VEHICLE_PRICES: dict[str, int] = {"Sedan": 800, "SUV": 1200, "Van": 1500}
 
 _CAR_REQUIRED_FIELDS = ["pickup_location", "dropoff_location", "vehicle_type", "pickup_datetime"]
@@ -659,31 +617,9 @@ def build_car_booking_data(args: dict) -> dict:
         "price_pkr": _CAR_VEHICLE_PRICES.get(vehicle, 800),
     }
 
-
-# ── Car booking provenance: the sensitive details must come from the USER ──────
-#
-# get_car_booking_error validates SHAPE (present, valid vehicle, future time) but
-# not PROVENANCE — it cannot tell a detail the user actually gave from one the
-# model invented. Observed live: "book car for me too" (the entire request, no
-# other detail) produced a fully-specified, confirmable ride — Sedan,
-# hotel -> "Islamabad Airport", checkout-day 10:00 — none of which the user said,
-# and confirming it dispatched a real driver to an invented destination at an
-# invented time. Same failure class as the date-provenance gate: an
-# invented-but-valid value clears every shape check.
-#
-# So the three sensitive fields must additionally be traceable to the user's own
-# words: the drop-off (where a real driver is sent), the vehicle (the prompt says
-# offer Sedan/SUV/Van and let the user choose — a silent default is a guess), and
-# the pickup time. PICKUP is deliberately exempt — inferring it from the hotel /
-# booking the user just made is a reasonable convenience, and it's the least
-# consequential of the four. Fires only when a field is genuinely ungrounded, so
-# a real "Sedan from my hotel to the airport at 3pm tomorrow" passes untouched.
-
 _CAR_VEHICLE_RE = re.compile(r"\b(?:sedan|suv|van)\b", re.IGNORECASE)
 
-# Clock-time signals user_supplied_date_signal doesn't cover (it handles the
-# date/day half — "tomorrow", weekdays, "tonight"). Together they answer "did the
-# user say WHEN".
+
 _CLOCK_TIME_RE = re.compile(
     r"\b\d{1,2}:\d{2}\b"                                   # 10:00, 3:30
     r"|\b\d{1,2}\s*(?:a\.?m\.?|p\.?m\.?)\b"                # 3pm, 10 a.m.
@@ -691,28 +627,14 @@ _CLOCK_TIME_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Pure connectors — never distinctive enough to ground a drop-off on their own.
-# A place-type word ("airport", "mall", "station") is NOT here: it's exactly the
-# token that must have come from the user.
+
 _LOC_STOPWORDS: frozenset[str] = frozenset({
     "the", "near", "from", "drop", "pick", "pickup", "dropoff", "please",
     "road", "street", "avenue", "block", "sector", "phase", "town", "city",
 })
 
-
-# Words that start (or continue) a car request. Used to scope provenance to the
-# car sub-conversation: a hotel's check-in dates or a flight's date, given turns
-# earlier, must NOT count as the car's pickup time — the "when" has to come from
-# the car discussion itself.
 _CAR_INTENT_RE = re.compile(r"\b(?:car|ride|driver|cab|taxi|sedan|suv|van)\b", re.IGNORECASE)
 
-# A "fresh" car request pairs a car word with an actual request verb ("book a
-# car", "need a van", "reserve another SUV"). This is what STARTS a new ride,
-# versus a bare follow-up answer ("sedan", "3pm") that only continues the one in
-# progress. Scoping to the LAST fresh request is what stops a SECOND car booking
-# in the same session from inheriting the FIRST ride's drop-off / vehicle / time
-# as though the user had re-stated them — an evaluator booking two cars back to
-# back was otherwise handed car #1's "Sedan"/"9am" to ground car #2's invented ride.
 _CAR_REQUEST_VERB_RE = re.compile(
     r"\b(?:book|reserve|need|want|arrange|hire|order|get|rent)\b", re.IGNORECASE
 )
@@ -759,14 +681,6 @@ def _user_said_time(texts: list[str]) -> bool:
 
 
 def _location_grounded(location: str, texts: list[str]) -> bool:
-    """
-    True if the drop-off traces back to the user's own words — either the whole
-    phrase appears, or a distinctive token does. A bare city name is NOT
-    distinctive (the user said "Islamabad" when booking a hotel, but never said
-    "airport"), so the city is stripped before matching — which is precisely what
-    catches the invented "Islamabad Airport" while still grounding a real
-    "Centaurus Mall" or "the airport" the user actually typed.
-    """
     loc = _norm(location)
     joined = _joined_user_text(texts)
     if not loc or not joined:
@@ -789,17 +703,7 @@ _CAR_PROVENANCE_LABELS: dict[str, str] = {
 
 
 def get_car_provenance_error(args: dict, user_texts: list[str]) -> dict | None:
-    """
-    Provenance gate for book_car — the companion to get_car_booking_error. Run it
-    AFTER the shape gate (so genuinely-missing fields are caught first) and before
-    build_car_booking_data. Returns a structured clarify error naming the details
-    the user never actually gave (so the model asks instead of inventing), or None
-    when the drop-off, vehicle and pickup time all trace back to the user's words.
 
-    `user_texts` MUST be the user's messages in CHRONOLOGICAL order (oldest first,
-    current message last) — the scan is scoped to the car sub-conversation, so an
-    earlier hotel/flight date can't masquerade as the car's pickup time.
-    """
     a = args or {}
     texts = _scope_to_car([t for t in (user_texts or []) if isinstance(t, str) and t.strip()])
 
@@ -840,19 +744,13 @@ def _serialize_flights(offers: list) -> list[dict]:
         out.append({
             "flight_number": seg.flight_number,
             "airline_code": seg.carrier_code,
-            # The real airline name, so the model never has to translate the
-            # 2-letter code from memory. It got this wrong in practice (ER is
-            # AirSial, not Airblue; PA is Airblue, not PIA) and the invented
-            # name was carried onto a paid booking's ticket and email.
+
             "airline": getattr(seg, "carrier_name", None) or seg.carrier_code,
             "from": seg.departure_airport,
             "to": seg.arrival_airport,
             "depart": seg.departure_time.strftime("%Y-%m-%d %H:%M"),
             "arrive": seg.arrival_time.strftime("%H:%M"),
             "cabin": seg.cabin_class,
-            # Whole-party fare (the service already multiplied per-seat × passengers).
-            # Named total_price_pkr so the model never mistakes it for a per-seat price
-            # and re-multiplies by the head-count. _exec_flights adds price_per_seat_pkr.
             "total_price_pkr": round(o.total_price_pkr),
             "seats_left": o.seats_available,
             "refundable": o.is_refundable,
@@ -866,8 +764,7 @@ def _serialize_trains(resp) -> dict:
     trains: list[dict] = []
     for t in (resp.trains or [])[:5]:
         classes = [
-            # total_price_pkr = whole-party fare (service already ×passengers).
-            # _exec_trains adds price_per_seat_pkr alongside it.
+
             {"class": c.class_name, "total_price_pkr": round(c.price_pkr), "seats_left": c.seats_available}
             for c in t.classes
         ]
@@ -897,16 +794,6 @@ def _serialize_hotels(resp) -> list[dict]:
         })
     return out
 
-
-# ── No-availability notice ────────────────────────────────────────────────────
-#
-# A search that legitimately returns ZERO results is not an error, and the model
-# must not paper over it. Left to itself a free-tier model fills the silence —
-# it recalls "PK-301 usually departs 07:00" from training data, or quietly widens
-# the date. Both put a flight on screen that nobody can sell. So an empty result
-# carries an explicit, deterministic notice instead of just an empty list: state
-# plainly that nothing runs on that date, and offer to check nearby dates.
-
 def _no_availability_note(kind: str, where: str, when: str) -> str:
     return (
         f"NO AVAILABILITY: the live search returned ZERO {kind} for {where} on {when}. "
@@ -917,17 +804,7 @@ def _no_availability_note(kind: str, where: str, when: str) -> str:
         f"different departure city / mode of travel, and ask which they'd like."
     )
 
-
-# ── Budget filter — deterministic, applied only when the model passes a number ─
-
 def _filter_by_budget(items: list[dict], price_key: str, budget) -> tuple[list[dict], str | None]:
-    """
-    Filter a serialized result list to items at or under `budget`, sorted
-    cheapest first. If nothing qualifies, returns the FULL list (still sorted
-    cheapest first) rather than an empty one, so the user sees how far off the
-    nearest option is instead of a dead end. Returns (items, note) — note is
-    None if no budget was given (so the caller doesn't need special-casing).
-    """
     try:
         budget_val = float(budget)
     except (TypeError, ValueError):
@@ -942,12 +819,6 @@ def _filter_by_budget(items: list[dict], price_key: str, budget) -> tuple[list[d
 
 
 def _filter_train_classes_by_budget(trains: list[dict], budget) -> tuple[list[dict], str | None]:
-    """
-    Same principle as _filter_by_budget, but trains nest a `classes` list —
-    trim each train's classes to those at or under budget (dropping trains left
-    with none), sorted cheapest class first. Falls back to the full, unfiltered
-    list (classes sorted cheapest first) if nothing anywhere qualifies.
-    """
     try:
         budget_val = float(budget)
     except (TypeError, ValueError):
@@ -984,20 +855,7 @@ def check_budget_feasibility(
     rooms: int = 1,
     transfer_pkr: float = 0,
 ) -> dict:
-    """
-    Deterministic whole-trip budget check. Given the real per-component prices the
-    agent already gathered, compute the total trip cost (flights × travelers +
-    hotel/night × nights × rooms + transfer) and compare it to the user's stated
-    budget. Pure function — no LLM, no I/O — so the "can they afford it" verdict is
-    grounded in real numbers, not model arithmetic. All money is PKR.
 
-    Returns the numbers plus a ready-to-read `verdict` string.
-    """
-    # Every argument here can arrive non-numeric — the counts come from model
-    # tool-call args and the prices from serialized results — so each coercion is
-    # guarded. An unparseable value degrades to a sane default rather than raising:
-    # this function only produces an advisory verdict string, and a crash would
-    # abort the whole tool loop for a number that was never going to be shown.
     def _money(v) -> float:
         try:
             return max(float(v or 0), 0.0)

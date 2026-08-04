@@ -1,7 +1,5 @@
-# =============================================================================
 # PURPOSE: Email sender via Gmail SMTP.
 # Setup: Enable 2-Step Verification on Google Account
-# =============================================================================
 
 from __future__ import annotations
 
@@ -27,7 +25,7 @@ def _parse_sender_address(from_field: str) -> str:
 
 
 def _send_via_smtp(recipients: list[str], subject: str, html: str, reply_to: str | None) -> dict:
-    """Blocking SMTP send — run inside asyncio.to_thread."""
+    """Blocking SMTP send : run inside asyncio.to_thread."""
     sender_address = _parse_sender_address(settings.EMAIL_FROM)
 
     msg = MIMEMultipart("alternative")
@@ -59,9 +57,7 @@ async def _send_smtp(recipients: list[str], subject: str, html: str, reply_to: s
         return {"id": "failed", "reason": str(exc)}
 
 
-# ---------------------------------------------------------------------------
 # Public API
-# ---------------------------------------------------------------------------
 
 async def send_email(
     to: str | Sequence[str],

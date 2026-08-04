@@ -1,8 +1,4 @@
-# =============================================================================
 # PURPOSE: Pydantic schemas for flight search, offer detail, and booking.
-# =============================================================================
-
-
 
 from datetime import date as Date, datetime
 from typing import Any, Optional

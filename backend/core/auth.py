@@ -1,8 +1,8 @@
-# =============================================================================
+
 # FILE: core/auth.py
 # PURPOSE: FastAPI dependency that verifies Supabase JWTs on every protected
 #          route and returns the authenticated user's ID + email.
-# =============================================================================
+
 
 from __future__ import annotations
 

@@ -10,7 +10,6 @@ from __future__ import annotations
 # NOTE: the live booking flow is agent summary -> POST /agent/book (pending) ->
 # POST /payments/initiate (pays + emails). There is intentionally NO function
 # here that creates a booking and emails before payment.
-# =============================================================================
 
 import logging
 import re
@@ -23,7 +22,6 @@ from prompts.booking import BOOKING_SYSTEM, BOOKING_CONFIRMATION_PROMPT
 
 logger = logging.getLogger(__name__)
 
-# ── Booking intent extraction ────────────────────────────────────────────────
 
 _EXTRACTION_SYSTEM = """You are a booking data extractor for a Pakistan travel app.
 Extract structured booking details from conversation history. Return ONLY valid JSON."""
@@ -117,20 +115,6 @@ def _stay_nights(check_in, check_out) -> int:
 
 
 def _price_breakdown(bd: dict) -> str | None:
-    """
-    Explain a multi-unit total in words: "PKR 16,341 per person x 2 passengers".
-
-    Display only. This is DERIVED from the already server-verified
-    total_price_pkr — it never feeds back into pricing and cannot change what is
-    charged. It exists because the summary previously showed only the final
-    total next to "Passengers: 2 adult(s)", which gave the user no way to see
-    that the per-person fare had in fact been multiplied — a correct total that
-    reads as though the multiplication never happened.
-
-    Returns None when there is nothing to explain (one traveler, no total) or
-    when the figures would not multiply back out exactly, since a breakdown that
-    doesn't add up on screen is worse than none at all.
-    """
     total = _as_float(bd.get("total_price_pkr"))
     if total is None or total <= 0:
         return None

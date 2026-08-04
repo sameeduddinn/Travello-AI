@@ -1,7 +1,5 @@
-# =============================================================================
 # FILE: models/booking.py
 # PURPOSE: Pydantic schemas for the bookings and passengers endpoints.
-# =============================================================================
 
 
 

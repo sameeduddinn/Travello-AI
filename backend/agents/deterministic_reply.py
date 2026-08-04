@@ -2,26 +2,6 @@ from __future__ import annotations
 # =============================================================================
 # PURPOSE: Write the user-facing answer for a SIMPLE search turn in code, from
 #          the tool results we already verified — no second LLM call.
-#
-# WHY IT EXISTS
-#   1. COST. A search turn costs two provider calls: one to decide the tool, one
-#      to write the answer from its results. The second call carries the whole
-#      tool payload back up, so it is the more expensive of the two. On Groq's
-#      free tier that doubled the number of turns per day. Rendering the list in
-#      code halves it.
-#   2. FIDELITY. Everything here is safety-critical to state exactly: prices,
-#      flight numbers, airline names, hospital phone numbers. Rendering them in
-#      code makes it impossible for the model to round a fare, translate "PA"
-#      into the wrong airline, or add a hospital that wasn't in the results —
-#      the three failures this codebase has actually had to fix.
-#   3. ROBUSTNESS. It still produces a full answer when every provider is out of
-#      quota, as long as the search itself succeeded.
-#
-# WHEN IT DOES *NOT* APPLY (see can_render): anything needing judgement — a
-# budget verdict, multi-day planning, a package, an error result, or a mixed set
-# of tools. Those keep the LLM, because summarising them is genuine reasoning,
-# not formatting. `should_render` is the caller's gate.
-# =============================================================================
 
 import json
 import re
@@ -40,20 +20,6 @@ _NEEDS_PROSE_RE = re.compile(
     re.I,
 )
 
-# "Show me more options" — the request that produced an identical list twice.
-#
-# It is answered HERE, in code, and deliberately not by handing the turn to the
-# model. That was tried: given `total_found: 20` but only six rows, the model
-# padded the list with "Amer Hotel — PKR 18,000/night" and "Hotel One Gulberg",
-# neither of which exists in the payload or in Lahore's results. Telling a model
-# that more exist while showing it fewer is an invitation to invent the rest,
-# and an invented hotel with an invented price can be picked and booked.
-#
-# So the honest answer is written in code, from numbers we hold: how many were
-# found, how many are shown, and what would narrow them. Nothing to fabricate.
-#
-# Deliberately requires a plural/option noun nearby: a bare "more" is usually
-# about party size ("2 more passengers"), which is not this.
 _WANTS_MORE_RE = re.compile(
     r"\b(?:more|other|another|different|cheaper|alternative|alternatives)\b"
     r"[^.?!]{0,24}?"
