@@ -41,6 +41,40 @@ EMERGENCY_NUMBERS = (
     "Motorway Police 130."
 )
 
+# Real nearest-hub facts for the four northern destinations this app plans
+# multi-modal trips to. Skardu already has its own airport (no substitution);
+# the other three need a hub flight/train leg plus Car for the final stretch.
+NORTHERN_HUB_FACTS: dict[str, str] = {
+    "Naran": (
+        "Naran/Kaghan has no airport or railway station. Nearest real hub: "
+        "Islamabad (flight) or Rawalpindi (train), then ~190km / 6-7 hours by "
+        "road. Use Car for that road leg — real route fare, not the flat "
+        "in-city rate."
+    ),
+    "Hunza": (
+        "Hunza (Karimabad/Aliabad) has no airport or railway station. Nearest "
+        "real hub: Gilgit (flight), then ~100km / 2.5-3 hours by road. Use Car "
+        "for that road leg — real route fare, not the flat in-city rate."
+    ),
+    "Swat": (
+        "Swat/Mingora has no airport or railway station. Nearest real hub: "
+        "Islamabad (flight) or Rawalpindi (train), then ~160km / 4-5 hours by "
+        "road. Use Car for that road leg — real route fare, not the flat "
+        "in-city rate."
+    ),
+    "Skardu": (
+        "Skardu already has its own real airport — search flights directly "
+        "there, no hub substitution needed. Only the ordinary airport-to-hotel "
+        "Car transfer applies."
+    ),
+}
+_NORTHERN_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "Naran": ("naran", "kaghan"),
+    "Hunza": ("hunza", "karimabad", "aliabad"),
+    "Swat": ("swat", "mingora"),
+    "Skardu": ("skardu", "skardo"),
+}
+
 # Keyword triggers — deliberately include natural phrasings a real user would
 # type ("do i need a visa", "how much luggage can i bring", "what's AC Standard"),
 # not just the literal category word, so the match isn't overly literal.
@@ -65,14 +99,20 @@ _HEALTHCARE_KEYWORDS = (
 )
 
 
-def get_relevant_facts(user_message: str) -> str:
+def get_relevant_facts(user_message: str, destination: str = "") -> str:
     """
     Return the concatenation of any curated fact blocks relevant to this
     message, or '' if none match. Cheap keyword match — deliberately covers
     common natural phrasings, not just the literal category word, so it
     doesn't miss the way people actually ask.
+
+    `destination` (from the already-derived TripState) is checked against the
+    northern-hub facts too, so the fact survives even when the current turn's
+    own text doesn't re-mention the city — e.g. a follow-up "what about the
+    car?" after Naran was named a few turns earlier.
     """
     msg = (user_message or "").lower()
+    dest = (destination or "").lower()
     blocks: list[str] = []
     if any(k in msg for k in _VISA_KEYWORDS):
         blocks.append(VISA_BASICS)
@@ -82,4 +122,7 @@ def get_relevant_facts(user_message: str) -> str:
         blocks.append(RAILWAY_CLASSES)
     if any(k in msg for k in _HEALTHCARE_KEYWORDS):
         blocks.append(EMERGENCY_NUMBERS)
+    for name, keywords in _NORTHERN_KEYWORDS.items():
+        if any(k in msg for k in keywords) or (dest and any(k in dest for k in keywords)):
+            blocks.append(NORTHERN_HUB_FACTS[name])
     return "\n\n".join(blocks)

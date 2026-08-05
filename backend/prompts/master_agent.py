@@ -315,6 +315,14 @@ AGENTIC_CAR_BLOCK = """
 A request to book a CAR, DRIVER or RIDE on its own is NOT trip planning — don't ask which city or how many days. It is separate from the airport transfer that rides along on a flight/train booking. Gather four things: pickup address, drop-off address, vehicle type (Sedan PKR 800 / SUV PKR 1,200 / Van PKR 1,500) and a FUTURE pickup date & time, then call book_car. There is NO card payment — the fare is paid to the driver — and the app shows a single Confirm step. The driver, car and 4-digit verification code are assigned ONLY after that tap, so never invent them or say a driver is booked before it."""
 
 
+# Appended only when Naran, Hunza, Skardu or Swat is named this turn or recently.
+AGENTIC_TRIP_PLANNER_BLOCK = """
+## Naran, Hunza, Skardu, Swat — multi-modal planning
+Skardu has its own airport — search it directly, ordinary transfer only. Naran, Hunza and Swat have NO airport or station — never search_flights/search_trains straight to them. A NORTHERN HUB FACT note (when present) names the real hub, mode, distance and route fare — trust it, never invent your own.
+Build it as: search the hub(s) (both, when two exist, so the traveler can compare) + search_hotels at the destination + book_car for the hub -> destination leg (real route fare, ask which vehicle). Flight/train + hotel book as ONE package; the car leg is a separate book_car confirm (no card, paid to the driver) — say so once ready.
+State the whole trip's total using the BUDGET CHECK note when present. Nothing available? Say so and offer the real alternative; if nothing feasible exists, say the trip can't be planned rather than forcing one."""
+
+
 MASTER_ROUTING_PROMPT = """Based on the user message and conversation history, determine what the user wants and which agents to activate.
 
 User message: {user_message}

@@ -10,11 +10,14 @@ from __future__ import annotations
 import re
 
 from services.llm_service import estimate_request_tokens
+from services.hotel_service import CITY_ALIASES
+from services.northern_routes import NORTHERN_DESTINATIONS
 from agents.agent_tools import TOOL_SCHEMAS, TOOL_SCHEMAS_BY_NAME
 from prompts.master_agent import (
     MASTER_AGENTIC_CORE,
     AGENTIC_BOOKING_BLOCK,
     AGENTIC_CAR_BLOCK,
+    AGENTIC_TRIP_PLANNER_BLOCK,
 )
 
 # Sent when the message matched NOTHING — the unknown-request case, which is
@@ -93,6 +96,21 @@ _HEALTH_RE = re.compile(
 _CAR_RE = re.compile(
     r"\b(car|cars|driver|ride|taxi|cab|rickshaw|vehicle|sedan|suv|van|"
     r"pick\s?up|pickup|drop\s?off|dropoff|transfer)\b", re.I)
+# Naran/Hunza/Swat/Skardu need hub transport + a real car leg + a hotel
+# search, whatever words were actually used — a bare "a hotel in Naran" only
+# matches _HOTEL_RE, which used to silently withhold book_car exactly on the
+# turns that need it most (multi-modal itineraries always end in a car leg).
+_NORTHERN_ALIASES: list[str] = sorted(
+    {alias for alias, canon in CITY_ALIASES.items() if canon in NORTHERN_DESTINATIONS},
+    key=len, reverse=True,
+)
+_NORTHERN_DEST_RE = re.compile(
+    r"\b(" + "|".join(re.escape(a) for a in _NORTHERN_ALIASES) + r")\b", re.I
+) if _NORTHERN_ALIASES else None
+
+
+def _mentions_northern_destination(text: str) -> bool:
+    return bool(_NORTHERN_DEST_RE and _NORTHERN_DEST_RE.search(text or ""))
 # An explicit request for a car AS THE BOOKING, which is what book_car is for.
 # "yes add a car transfer" mentions a car but means the transfer FIELD on
 # prepare_booking — sending book_car for it offers the model a way to split one
@@ -212,21 +230,33 @@ def _recent_assistant_offers(history: list[dict] | None) -> bool:
 def _signals(text: str) -> set[str]:
     """Tool names a single piece of text argues for."""
     found: set[str] = set()
-    if _FLIGHT_RE.search(text):
+    flight = bool(_FLIGHT_RE.search(text))
+    train = bool(_TRAIN_RE.search(text))
+    hotel = bool(_HOTEL_RE.search(text))
+    car = bool(_CAR_RE.search(text))
+    planning = bool(_PLANNING_RE.search(text))
+    if flight:
         found.add("search_flights")
-    if _TRAIN_RE.search(text):
+    if train:
         found.add("search_trains")
-    if _HOTEL_RE.search(text):
+    if hotel:
         found.add("search_hotels")
     if _WEATHER_RE.search(text):
         found.add("get_weather")
     if _HEALTH_RE.search(text):
         found.add("find_healthcare")
-    if _CAR_RE.search(text):
+    if car:
         found.add("book_car")
-    if _PLANNING_RE.search(text) or (_DURATION_RE.search(text) and not found):
+    if planning or (_DURATION_RE.search(text) and not found):
         # A multi-day trip is transport + stay + weather, whatever words were used.
         found.update(("search_flights", "search_trains", "search_hotels", "get_weather"))
+    # Naran/Hunza/Swat/Skardu need hub transport + a real car leg + a hotel
+    # search, whatever words were actually used — a bare "a hotel in Naran"
+    # only matched _HOTEL_RE, silently withholding book_car exactly on the
+    # turns that need it most. Gated on some travel signal already firing so
+    # a pure info lookup ("what's the weather in Skardu?") stays untouched.
+    if (flight or train or hotel or car or planning) and _mentions_northern_destination(text):
+        found.update(("search_flights", "search_trains", "search_hotels", "get_weather", "book_car"))
     return found
 
 
@@ -315,12 +345,25 @@ def select_tools(
     return [TOOL_SCHEMAS_BY_NAME[n] for n in names if n in TOOL_SCHEMAS_BY_NAME]
 
 
+def mentions_northern_destination(user_message: str, history: list[dict] | None = None) -> bool:
+    """True if this message or a recent turn named Naran, Hunza, Skardu or Swat —
+    used to gate AGENTIC_TRIP_PLANNER_BLOCK, mirrors the carry-forward window
+    select_tool_names already uses for tool signals."""
+    if _mentions_northern_destination(user_message if isinstance(user_message, str) else ""):
+        return True
+    return any(
+        _mentions_northern_destination(m.get("content") or "")
+        for m in list(history or [])[-_CARRY_FORWARD_LOOKBACK:]
+    )
+
+
 def build_system_prompt(
     *,
     today: str,
     weekday: str,
     memory: str,
     tool_names: list[str] | None = None,
+    trip_planner: bool = False,
 ) -> str:
     """
     The compact core prompt plus only the rule blocks this turn can use.
@@ -344,6 +387,8 @@ def build_system_prompt(
         prompt += AGENTIC_BOOKING_BLOCK
     if "book_car" in names:
         prompt += AGENTIC_CAR_BLOCK
+    if trip_planner:
+        prompt += AGENTIC_TRIP_PLANNER_BLOCK
     return prompt
 
 

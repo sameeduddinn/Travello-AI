@@ -17,6 +17,7 @@ from agents.master_agent import _compact_history
 from agents.prompt_builder import (
     build_system_prompt,
     estimate_fixed_tokens,
+    mentions_northern_destination,
     select_tool_names,
     select_tools,
 )
@@ -127,6 +128,56 @@ def test_hotel_search_is_not_expanded_into_a_whole_trip_plan():
 def test_trip_planning_gets_the_full_search_set():
     names = select_tool_names("plan me a 4 day trip to Hunza")
     assert {"search_flights", "search_trains", "search_hotels", "get_weather"} <= set(names)
+
+
+# ── Northern destinations (Naran/Hunza/Skardu/Swat) need book_car too ────────
+
+def test_a_bare_hotel_search_in_naran_still_gets_book_car():
+    """
+    The gap this closes: "a hotel in Naran" only matched _HOTEL_RE before, so
+    book_car (needed for the hub->Naran road leg) was silently withheld exactly
+    on the turn that needs it most.
+    """
+    names = select_tool_names("a hotel in Naran please")
+    assert "book_car" in names
+    assert "search_hotels" in names
+
+
+def test_a_bare_flight_search_to_hunza_via_gilgit_still_gets_book_car():
+    assert "book_car" in select_tool_names("fly me to gilgit for hunza")
+
+
+def test_a_pure_weather_question_about_skardu_is_not_expanded():
+    """
+    The over-triggering bug caught during implementation: a bare northern-city
+    NAME must not by itself drag in the whole toolset — only when some other
+    travel signal (flight/train/hotel/car/planning) is already present. A pure
+    weather lookup must stay weather-only, same as any other city.
+    """
+    assert select_tool_names("what's the weather in Skardu?") == ["get_weather"]
+
+
+def test_northern_destination_mention_is_detected_for_prompt_gating():
+    assert mentions_northern_destination("a hotel in Naran please")
+    assert mentions_northern_destination("plan a trip to Hunza")
+    assert not mentions_northern_destination("a hotel in Lahore please")
+
+
+def test_northern_trip_planning_turn_still_fits_the_5k_target():
+    """
+    The real wired shape once trip_planner is threaded through
+    build_system_prompt — book_car (new signal) + AGENTIC_CAR_BLOCK +
+    AGENTIC_TRIP_PLANNER_BLOCK all land on this exact turn.
+    """
+    message = "plan me a 4 day trip to Hunza with a budget of 150000"
+    names = select_tool_names(message)
+    tools = select_tools(message)
+    prompt = build_system_prompt(
+        today="2026-07-29", weekday="Wednesday", memory=MEMORY,
+        tool_names=names, trip_planner=mentions_northern_destination(message),
+    )
+    tokens = estimate_fixed_tokens(prompt, tools)
+    assert tokens < 5000, tokens
 
 
 def test_a_pick_gets_prepare_booking():

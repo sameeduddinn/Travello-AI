@@ -73,8 +73,11 @@ from services.llm_service import (
     INVALID_KEY,
 )
 from agents import deterministic_reply
-from agents.conversation_state import derive_state, state_hint
-from agents.prompt_builder import build_system_prompt, select_tools, select_tool_names
+from agents.conversation_state import derive_state
+from agents.prompt_builder import (
+    build_system_prompt, select_tools, select_tool_names, mentions_northern_destination,
+)
+from services.northern_routes import estimate_hub_car_fare
 from agents.agent_tools import (
     get_missing_booking_fields,
     get_booking_count_error,
@@ -985,7 +988,13 @@ def _is_turn_timeout(exc: Exception) -> bool:
     return isinstance(exc, asyncio.TimeoutError)
 
 
-def _budget_verdict_note(other_calls: list, results: list) -> str | None:
+def _budget_verdict_note(
+    other_calls: list,
+    results: list,
+    *,
+    hub_car_pkr: float = 0.0,
+    hub_car_label: str = "",
+) -> str | None:
     """
     Deterministic whole-trip budget verdict, computed from the prices the search
     tools ACTUALLY returned this turn.
@@ -995,9 +1004,13 @@ def _budget_verdict_note(other_calls: list, results: list) -> str | None:
     were over, and never noticed the flight alone was ~50x the stated budget.
     The numbers here come from the tool results, so the verdict can't be wrong or
     quietly skipped. Returns None when there's no budget or nothing priced.
+
+    `hub_car_pkr`/`hub_car_label` fold in the estimated hub->destination Car
+    leg for a northern-destination trip (Naran/Hunza/Swat) — real transport
+    still means flight/train AND car for these, so the total must too.
     """
     budget = None
-    flight_pkr = hotel_per_night = 0.0
+    flight_pkr = train_pkr = hotel_per_night = 0.0
     travelers = rooms = 1
     nights = 0
 
@@ -1024,6 +1037,16 @@ def _budget_verdict_note(other_calls: list, results: list) -> str | None:
             if prices:
                 flight_pkr = min(prices)
                 travelers = max(int(data.get("passengers") or 1), 1)
+        elif name == "search_trains" and data.get("trains"):
+            # Same per-seat basis as flights (see above), one level deeper —
+            # each train offers several classes, so the cheapest is over ALL
+            # of them, not just the first train returned.
+            prices = [c.get("price_per_seat_pkr") or 0
+                      for t in data["trains"] for c in t.get("classes", [])]
+            prices = [p for p in prices if p > 0]
+            if prices:
+                train_pkr = min(prices)
+                travelers = max(int(data.get("passengers") or 1), 1)
         elif name == "search_hotels" and data.get("hotels"):
             prices = [h.get("price_per_night_pkr") or 0 for h in data["hotels"]]
             prices = [p for p in prices if p > 0]
@@ -1032,22 +1055,31 @@ def _budget_verdict_note(other_calls: list, results: list) -> str | None:
                 nights = max(int(data.get("nights") or 1), 1)
                 rooms = max(int(args.get("rooms") or 1), 1)
 
-    if budget is None or budget <= 0 or (flight_pkr <= 0 and hotel_per_night <= 0):
+    # Train is a substitute for flight, not additive — a trip only ever
+    # travels by one of them, whichever was actually searched/cheaper.
+    transport_pkr = flight_pkr or train_pkr
+
+    if budget is None or budget <= 0 or (transport_pkr <= 0 and hotel_per_night <= 0):
         return None
 
     verdict = check_budget_feasibility(
         budget,
-        flight_pkr=flight_pkr,
+        flight_pkr=transport_pkr,
         travelers=travelers,
         hotel_per_night_pkr=hotel_per_night,
         nights=nights,
         rooms=rooms,
+        transfer_pkr=hub_car_pkr,
+    )
+    car_part = (
+        f" plus an estimated PKR {round(hub_car_pkr):,} car leg ({hub_car_label})"
+        if hub_car_pkr else ""
     )
     return (
         "BUDGET CHECK (computed from the real prices above — state this verdict "
         "plainly to the user before offering options, and never contradict it): "
-        f"{verdict['verdict']} Cheapest flight PKR {round(flight_pkr):,} x {travelers} "
-        f"traveler(s); cheapest hotel PKR {round(hotel_per_night):,}/night x {nights} "
+        f"{verdict['verdict']} Cheapest transport PKR {round(transport_pkr):,} x {travelers} "
+        f"traveler(s){car_part}; cheapest hotel PKR {round(hotel_per_night):,}/night x {nights} "
         f"night(s) x {rooms} room(s). If it does not fit, say so directly and offer to "
         "trim the trip — do NOT proceed as though the budget works."
     )
@@ -1724,11 +1756,21 @@ async def process_message_agentic(
         weekday=today.strftime("%A"),
         memory=memory_context or "(no saved preferences yet)",
         tool_names=turn_tool_names,
+        trip_planner=mentions_northern_destination(user_message, history),
     )
 
-    # Grounded static facts (visa/baggage/rail-class/emergency) — only added
-    # for turns where they're actually relevant, to stay within Groq's TPM budget.
-    facts = get_relevant_facts(user_message)
+    # Route, dates, party size and budget pulled out of the conversation in code.
+    # This is what makes the harder history trimming above safe: the facts a
+    # booking needs survive in ~60 tokens even when the tables they came from
+    # have been cut. Purely a hint — every booking gate still runs. Derived once
+    # here so its `destination` can also ground the northern-hub fact below,
+    # even on a follow-up turn that doesn't re-name the city.
+    _trip_state = derive_state(history, user_message, today=today)
+
+    # Grounded static facts (visa/baggage/rail-class/emergency/northern-hub) —
+    # only added for turns where they're actually relevant, to stay within
+    # Groq's TPM budget.
+    facts = get_relevant_facts(user_message, _trip_state.destination)
     if facts:
         system_prompt += (
             "\n\n## Grounded facts for this turn — use these, don't contradict them\n"
@@ -1740,11 +1782,7 @@ async def process_message_agentic(
     messages.extend(_compact_history(history))
     messages.append({"role": "user", "content": user_message})
 
-    # Route, dates, party size and budget pulled out of the conversation in code.
-    # This is what makes the harder history trimming above safe: the facts a
-    # booking needs survive in ~60 tokens even when the tables they came from
-    # have been cut. Purely a hint — every booking gate still runs.
-    trip_hint = state_hint(history, user_message, today=today)
+    trip_hint = _trip_state.render()
     if trip_hint:
         messages.append({"role": "system", "content": trip_hint})
 
@@ -2200,7 +2238,14 @@ async def process_message_agentic(
             # Ground the affordability claim in code, not model arithmetic — same
             # posture as reprice_booking. Appended after the tool results so the
             # model sees the verdict before it writes the answer.
-            budget_note = _budget_verdict_note(other_calls, results)
+            hub_fare = (
+                estimate_hub_car_fare(_trip_state.destination) if _trip_state.destination else None
+            )
+            budget_note = _budget_verdict_note(
+                other_calls, results,
+                hub_car_pkr=(hub_fare[0] if hub_fare else 0),
+                hub_car_label=(hub_fare[1] if hub_fare else ""),
+            )
             if budget_note:
                 gathered.append(("budget_check", budget_note))
                 messages.append({"role": "system", "content": budget_note})

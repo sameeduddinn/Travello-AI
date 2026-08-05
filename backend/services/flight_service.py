@@ -47,7 +47,8 @@ PAKISTAN_ROUTES: dict[str, dict] = {
             {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
             {"code": "ER", "name": "AirSial", "aircraft": "Airbus A320"},
         ],
-        "duration_minutes": 85, "price_min_pkr": 8000, "price_max_pkr": 22000,
+        # bookme.pk one-way, Aug 2026: Airblue ~27,100 to PIA ~48,500
+        "duration_minutes": 85, "price_min_pkr": 14500, "price_max_pkr": 48500,
         "departure_times": ["06:00", "09:30", "13:00", "17:30", "21:00"],
     },
     "KHI-ISB": {
@@ -55,21 +56,24 @@ PAKISTAN_ROUTES: dict[str, dict] = {
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "Boeing 737"},
             {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
         ],
-        "duration_minutes": 110, "price_min_pkr": 10000, "price_max_pkr": 28000,
+        # bookme.pk one-way: ~16,300 low season to PIA ~49,200 peak
+        "duration_minutes": 110, "price_min_pkr": 16500, "price_max_pkr": 49000,
         "departure_times": ["07:00", "11:00", "15:00", "19:30"],
     },
     "KHI-SKD": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 150, "price_min_pkr": 18000, "price_max_pkr": 45000,
+        # No direct bookme.pk listing (route mostly connects via ISB/LHE) —
+        # estimated above ISB-SKD/KHI-ISB given the added distance and Skardu premium.
+        "duration_minutes": 150, "price_min_pkr": 34000, "price_max_pkr": 68000,
         "departure_times": ["08:00", "14:00"],
     },
     "KHI-GIL": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 160, "price_min_pkr": 20000, "price_max_pkr": 48000,
+        "duration_minutes": 160, "price_min_pkr": 35000, "price_max_pkr": 69500,
         "departure_times": ["07:30", "13:30"],
     },
     "KHI-PEW": {
@@ -77,14 +81,14 @@ PAKISTAN_ROUTES: dict[str, dict] = {
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "Boeing 737"},
             {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
         ],
-        "duration_minutes": 115, "price_min_pkr": 11000, "price_max_pkr": 30000,
+        "duration_minutes": 115, "price_min_pkr": 19000, "price_max_pkr": 43500,
         "departure_times": ["06:30", "10:00", "14:30", "18:00"],
     },
     "KHI-MUX": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 70, "price_min_pkr": 7000, "price_max_pkr": 18000,
+        "duration_minutes": 70, "price_min_pkr": 12000, "price_max_pkr": 26000,
         "departure_times": ["09:00", "15:00"],
     },
     "LHE-ISB": {
@@ -93,7 +97,8 @@ PAKISTAN_ROUTES: dict[str, dict] = {
             {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
             {"code": "ER", "name": "AirSial", "aircraft": "Airbus A320"},
         ],
-        "duration_minutes": 55, "price_min_pkr": 6000, "price_max_pkr": 16000,
+        # bookme.pk: Fly Jinnah round-trip 20,872 -> ~10,400 one-way at the low end
+        "duration_minutes": 55, "price_min_pkr": 10500, "price_max_pkr": 25000,
         "departure_times": ["07:00", "10:30", "14:00", "18:30", "21:30"],
     },
     "LHE-KHI": {
@@ -102,42 +107,46 @@ PAKISTAN_ROUTES: dict[str, dict] = {
             {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
             {"code": "ER", "name": "AirSial", "aircraft": "Airbus A320"},
         ],
-        "duration_minutes": 85, "price_min_pkr": 8000, "price_max_pkr": 22000,
+        # bookme.pk one-way: Airblue ~27,100 to PIA ~48,500
+        "duration_minutes": 85, "price_min_pkr": 14500, "price_max_pkr": 48500,
         "departure_times": ["06:00", "09:30", "13:00", "17:30", "21:00"],
     },
     "LHE-SKD": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 130, "price_min_pkr": 16000, "price_max_pkr": 40000,
+        # Trip.com/general guides: round-trip starts ~57,000 (~28,500 one-way), up to ~55,000 one-way peak
+        "duration_minutes": 130, "price_min_pkr": 28500, "price_max_pkr": 55000,
         "departure_times": ["08:30", "14:30"],
     },
     "LHE-GIL": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 140, "price_min_pkr": 17000, "price_max_pkr": 42000,
+        "duration_minutes": 140, "price_min_pkr": 30000, "price_max_pkr": 61000,
         "departure_times": ["09:00", "15:00"],
     },
     "LHE-PEW": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "Boeing 737"},
         ],
-        "duration_minutes": 60, "price_min_pkr": 6500, "price_max_pkr": 17000,
+        "duration_minutes": 60, "price_min_pkr": 11500, "price_max_pkr": 24500,
         "departure_times": ["08:00", "12:00", "16:30"],
     },
     "ISB-SKD": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 75, "price_min_pkr": 12000, "price_max_pkr": 32000,
+        # bookme.pk round-trip: Airblue 51,150 / AirSial 62,765 / PIA 80,000-88,500
+        # -> one-way ~25,600 to ~44,200
+        "duration_minutes": 75, "price_min_pkr": 25500, "price_max_pkr": 44500,
         "departure_times": ["07:00", "11:00", "15:00"],
     },
     "ISB-GIL": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 60, "price_min_pkr": 10000, "price_max_pkr": 28000,
+        "duration_minutes": 60, "price_min_pkr": 17500, "price_max_pkr": 40500,
         "departure_times": ["07:30", "11:30", "15:30"],
     },
     "ISB-PEW": {
@@ -145,7 +154,7 @@ PAKISTAN_ROUTES: dict[str, dict] = {
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "Boeing 737"},
             {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
         ],
-        "duration_minutes": 40, "price_min_pkr": 5000, "price_max_pkr": 14000,
+        "duration_minutes": 40, "price_min_pkr": 9000, "price_max_pkr": 20500,
         "departure_times": ["06:00", "09:00", "13:00", "17:00", "20:00"],
     },
     "ISB-KHI": {
@@ -153,7 +162,8 @@ PAKISTAN_ROUTES: dict[str, dict] = {
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "Boeing 737"},
             {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
         ],
-        "duration_minutes": 110, "price_min_pkr": 10000, "price_max_pkr": 28000,
+        # bookme.pk one-way: Fly Jinnah ~25,100 to PIA ~49,200
+        "duration_minutes": 110, "price_min_pkr": 16500, "price_max_pkr": 49000,
         "departure_times": ["07:00", "11:00", "15:00", "19:30"],
     },
     "ISB-LHE": {
@@ -162,14 +172,15 @@ PAKISTAN_ROUTES: dict[str, dict] = {
             {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
             {"code": "ER", "name": "AirSial", "aircraft": "Airbus A320"},
         ],
-        "duration_minutes": 55, "price_min_pkr": 6000, "price_max_pkr": 16000,
+        # bookme.pk: Fly Jinnah round-trip 20,872 -> ~10,400 one-way at the low end
+        "duration_minutes": 55, "price_min_pkr": 10500, "price_max_pkr": 25000,
         "departure_times": ["07:00", "10:30", "14:00", "18:30", "21:30"],
     },
     "PEW-KHI": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "Boeing 737"},
         ],
-        "duration_minutes": 115, "price_min_pkr": 11000, "price_max_pkr": 30000,
+        "duration_minutes": 115, "price_min_pkr": 19000, "price_max_pkr": 43500,
         "departure_times": ["07:00", "11:30", "16:00"],
     },
     "PEW-ISB": {
@@ -177,84 +188,86 @@ PAKISTAN_ROUTES: dict[str, dict] = {
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "Boeing 737"},
             {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
         ],
-        "duration_minutes": 40, "price_min_pkr": 5000, "price_max_pkr": 14000,
+        "duration_minutes": 40, "price_min_pkr": 9000, "price_max_pkr": 20500,
         "departure_times": ["06:00", "09:00", "13:00", "17:00", "20:00"],
     },
     "MUX-KHI": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 70, "price_min_pkr": 7000, "price_max_pkr": 18000,
+        "duration_minutes": 70, "price_min_pkr": 12000, "price_max_pkr": 26000,
         "departure_times": ["08:00", "14:00", "18:00"],
     },
     "MUX-LHE": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 55, "price_min_pkr": 6000, "price_max_pkr": 15000,
+        "duration_minutes": 55, "price_min_pkr": 10500, "price_max_pkr": 22000,
         "departure_times": ["09:00", "15:00"],
     },
     "SKD-ISB": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 75, "price_min_pkr": 12000, "price_max_pkr": 32000,
+        # bookme.pk round-trip: Airblue 51,150 / AirSial 62,765 / PIA 80,000-88,500
+        # -> one-way ~25,600 to ~44,200
+        "duration_minutes": 75, "price_min_pkr": 25500, "price_max_pkr": 44500,
         "departure_times": ["10:00", "16:00"],
     },
     "GIL-ISB": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 60, "price_min_pkr": 10000, "price_max_pkr": 28000,
+        "duration_minutes": 60, "price_min_pkr": 17500, "price_max_pkr": 40500,
         "departure_times": ["10:30", "16:30"],
     },
     "UET-KHI": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 90, "price_min_pkr": 9000, "price_max_pkr": 24000,
+        "duration_minutes": 90, "price_min_pkr": 16000, "price_max_pkr": 35000,
         "departure_times": ["09:00", "15:00"],
     },
     "LYP-KHI": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 95, "price_min_pkr": 9500, "price_max_pkr": 25000,
+        "duration_minutes": 95, "price_min_pkr": 16500, "price_max_pkr": 36000,
         "departure_times": ["08:30", "14:30"],
     },
     "SKT-LHE": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 42"},
         ],
-        "duration_minutes": 30, "price_min_pkr": 4000, "price_max_pkr": 10000,
+        "duration_minutes": 30, "price_min_pkr": 7000, "price_max_pkr": 14500,
         "departure_times": ["08:00", "14:00", "18:00"],
     },
     "LHE-UET": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 120, "price_min_pkr": 12000, "price_max_pkr": 32000,
+        "duration_minutes": 120, "price_min_pkr": 21000, "price_max_pkr": 46500,
         "departure_times": ["08:00", "14:00"],
     },
     "UET-LHE": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 120, "price_min_pkr": 12000, "price_max_pkr": 32000,
+        "duration_minutes": 120, "price_min_pkr": 21000, "price_max_pkr": 46500,
         "departure_times": ["09:00", "15:00"],
     },
     "ISB-UET": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 90, "price_min_pkr": 10000, "price_max_pkr": 28000,
+        "duration_minutes": 90, "price_min_pkr": 17500, "price_max_pkr": 40500,
         "departure_times": ["07:30", "13:30"],
     },
     "UET-ISB": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 90, "price_min_pkr": 10000, "price_max_pkr": 28000,
+        "duration_minutes": 90, "price_min_pkr": 17500, "price_max_pkr": 40500,
         "departure_times": ["09:00", "15:00"],
     },
     "ISB-MUX": {
@@ -262,7 +275,7 @@ PAKISTAN_ROUTES: dict[str, dict] = {
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
             {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
         ],
-        "duration_minutes": 55, "price_min_pkr": 6000, "price_max_pkr": 16000,
+        "duration_minutes": 55, "price_min_pkr": 10500, "price_max_pkr": 23000,
         "departure_times": ["08:00", "12:00", "17:00"],
     },
     "MUX-ISB": {
@@ -270,49 +283,49 @@ PAKISTAN_ROUTES: dict[str, dict] = {
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
             {"code": "PA", "name": "Airblue", "aircraft": "Airbus A320"},
         ],
-        "duration_minutes": 55, "price_min_pkr": 6000, "price_max_pkr": 16000,
+        "duration_minutes": 55, "price_min_pkr": 10500, "price_max_pkr": 23000,
         "departure_times": ["09:30", "14:00", "19:00"],
     },
     "KHI-SWN": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 60, "price_min_pkr": 6500, "price_max_pkr": 17000,
+        "duration_minutes": 60, "price_min_pkr": 11500, "price_max_pkr": 24500,
         "departure_times": ["08:30", "14:30"],
     },
     "SWN-KHI": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 60, "price_min_pkr": 6500, "price_max_pkr": 17000,
+        "duration_minutes": 60, "price_min_pkr": 11500, "price_max_pkr": 24500,
         "departure_times": ["10:00", "16:00"],
     },
     "KHI-BHV": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 75, "price_min_pkr": 7500, "price_max_pkr": 20000,
+        "duration_minutes": 75, "price_min_pkr": 13000, "price_max_pkr": 29000,
         "departure_times": ["09:00", "15:00"],
     },
     "BHV-KHI": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 72"},
         ],
-        "duration_minutes": 75, "price_min_pkr": 7500, "price_max_pkr": 20000,
+        "duration_minutes": 75, "price_min_pkr": 13000, "price_max_pkr": 29000,
         "departure_times": ["10:30", "16:30"],
     },
     "LHE-LYP": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 42"},
         ],
-        "duration_minutes": 30, "price_min_pkr": 4000, "price_max_pkr": 10000,
+        "duration_minutes": 30, "price_min_pkr": 7000, "price_max_pkr": 14500,
         "departure_times": ["08:30", "13:00", "17:30"],
     },
     "LYP-LHE": {
         "airlines": [
             {"code": "PK", "name": "Pakistan International Airlines", "aircraft": "ATR 42"},
         ],
-        "duration_minutes": 30, "price_min_pkr": 4000, "price_max_pkr": 10000,
+        "duration_minutes": 30, "price_min_pkr": 7000, "price_max_pkr": 14500,
         "departure_times": ["09:30", "14:00", "18:30"],
     },
 }
@@ -320,11 +333,17 @@ PAKISTAN_ROUTES: dict[str, dict] = {
 
 # Cabin class configuration
 
+# Multipliers calibrated against real PIA domestic fares (bookme.pk / apnaticket.pk):
+# Karachi-Lahore "Executive Economy" (the closest real tier to a domestic
+# business cabin) runs ~25,000-34,200 against a same-route economy band of
+# ~14,500-48,500 — roughly 1.3-1.6x, not the 2.8x an international business
+# cabin would command. Pakistan's domestic carriers don't sell a true first
+# class at all; FIRST is kept as a plausible top tier, not a researched fare.
 _CABIN_CONFIG: dict[str, dict] = {
     "ECONOMY":         {"multiplier": 1.0,  "baggage": "23kg", "refundable": False},
-    "PREMIUM_ECONOMY": {"multiplier": 1.6,  "baggage": "30kg", "refundable": True},
-    "BUSINESS":        {"multiplier": 2.8,  "baggage": "40kg", "refundable": True},
-    "FIRST":           {"multiplier": 4.5,  "baggage": "50kg", "refundable": True},
+    "PREMIUM_ECONOMY": {"multiplier": 1.25, "baggage": "30kg", "refundable": True},
+    "BUSINESS":        {"multiplier": 1.6,  "baggage": "40kg", "refundable": True},
+    "FIRST":           {"multiplier": 2.0,  "baggage": "50kg", "refundable": True},
 }
 
 def _cabin_cfg(cabin_class: str) -> dict:
@@ -509,7 +528,7 @@ def _generate_domestic_generic_mock(
         seed = _stable_seed(f"DOM-{origin}-{destination}-{date_str}-{carrier['code']}-{dep_time}-{cabin}")
         rng = random.Random(seed)
         duration_min = rng.randint(50, 140)
-        base_price = round(rng.randint(6000, 22000) * cfg["multiplier"])
+        base_price = round(rng.randint(10500, 32000) * cfg["multiplier"])
         seats = rng.randint(4, 20) if cabin != "ECONOMY" else rng.randint(6, 55)
         flight_number = f"{carrier['code']}{rng.randint(100, 999)}"
 
@@ -568,7 +587,7 @@ _AS_UNBOOKABLE_STATUSES = {"landed", "cancelled", "diverted", "incident"}
 # Same band as _generate_domestic_offers, deliberately. These offers now sit in
 # ONE table beside seeded mock rows, so a different range would make every real
 # flight the most expensive option on screen purely as an artifact of its source.
-_AS_PRICE_RANGE = (6000, 22000)
+_AS_PRICE_RANGE = (10500, 32000)
 
 
 def _aviationstack_is_configured() -> bool:

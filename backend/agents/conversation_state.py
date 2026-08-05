@@ -1,26 +1,8 @@
 from __future__ import annotations
-# =============================================================================
 # PURPOSE: A small, deterministic summary of what this conversation has already
-#          established — route, dates, party size, budget, which options were
-#          shown, and which pieces have been prepared.
-#
-# WHY IT EXISTS
-# The model used to re-derive all of that by re-reading the raw history on every
-# turn, so the history had to be sent nearly verbatim: a package turn emits
-# six-row flight, hotel and train tables, and all of them rode along in every
-# later call. That bulk is what pushed turns past both the token budget and the
-# 52s turn clock — a plain "yes" to "shall I book the hotel?" could time out with
-# nothing wrong except payload size.
-#
-# This module extracts the facts in CODE, renders them in ~60 tokens, and lets
-# _compact_history trim the old tables much harder without losing anything the
-# model needs to finish a booking.
-#
-# It is a HINT, not an authority. Every booking gate (missing fields, party size,
-# date provenance, transfer address) and the server-side reprice still run on the
-# model's actual tool arguments, so a wrong reading here cannot misbook — at
-# worst the model asks a question it could have skipped.
-# =============================================================================
+#          established — transport mode, route, dates, party size, budget, which
+#          options were shown, and which pieces have been prepared.
+
 
 import re
 from dataclasses import dataclass, field
@@ -37,6 +19,15 @@ _KNOWN_CITIES: list[str] = sorted(
 )
 _CITY_RE = re.compile(
     r"\b(" + "|".join(re.escape(c) for c in _KNOWN_CITIES) + r")\b", re.I
+) if _KNOWN_CITIES else None
+# "from <city>" / "to <city>" — lets derive_state tell origin from destination
+# by preposition rather than by which one happens to be typed first ("trip to
+# Naran from Karachi" names the destination before the origin).
+_FROM_CITY_RE = re.compile(
+    r"\bfrom\s+(" + "|".join(re.escape(c) for c in _KNOWN_CITIES) + r")\b", re.I
+) if _KNOWN_CITIES else None
+_TO_CITY_RE = re.compile(
+    r"\bto\s+(" + "|".join(re.escape(c) for c in _KNOWN_CITIES) + r")\b", re.I
 ) if _KNOWN_CITIES else None
 
 _ISO_DATE_RE = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
@@ -56,6 +47,16 @@ _BUDGET_RE = re.compile(
     re.I,
 )
 
+_TRAIN_MODE_RE = re.compile(
+    r"\b(train|trains|rail|railway|railways|tezgam|khyber|green\s?line|"
+    r"business\s?express|awam|jaffar|bogie|berth|coach)\b", re.I)
+_FLIGHT_MODE_RE = re.compile(
+    r"\b(flight|flights|fly|flying|flew|plane|air\s?line|airline|"
+    r"pia|airblue|air\s?sial|serene|jazeera|boarding|air\s?ticket)\b", re.I)
+_HOTEL_MODE_RE = re.compile(
+    r"\b(hotel|hotels|room|rooms|stay|staying|accommodation|lodging|lodge|"
+    r"guest\s?house|resort|check\s?in|check\s?out)\b", re.I)
+
 # Markers the app's OWN summary writer emits — the most reliable signal that a
 # component was actually prepared, because only format_booking_summary /
 # format_package_summary produce them.
@@ -73,6 +74,7 @@ _MAX_STATE_CHARS = 400
 class TripState:
     """What the conversation has already pinned down. All fields optional."""
 
+    mode: str = ""  # "train" | "flight" | "hotel" | ""
     origin: str = ""
     destination: str = ""
     travel_date: str = ""
@@ -85,8 +87,9 @@ class TripState:
 
     def is_empty(self) -> bool:
         return not any((
-            self.origin, self.destination, self.travel_date, self.return_date,
-            self.passengers, self.rooms, self.nights, self.budget_pkr, self.prepared,
+            self.mode, self.origin, self.destination, self.travel_date,
+            self.return_date, self.passengers, self.rooms, self.nights,
+            self.budget_pkr, self.prepared,
         ))
 
     def render(self) -> str:
@@ -94,6 +97,8 @@ class TripState:
         if self.is_empty():
             return ""
         parts: list[str] = []
+        if self.mode:
+            parts.append(f"{self.mode.upper()} search")
         if self.origin and self.destination:
             parts.append(f"{self.origin} -> {self.destination}")
         elif self.destination:
@@ -132,6 +137,26 @@ def _cities_in(text: str) -> list[str]:
         if name not in seen:
             seen.append(name)
     return seen
+
+
+def _origin_destination_in(text: str) -> tuple[str, str] | None:
+    """Preposition-aware route, or None if 'from'/'to' don't both name a city.
+
+    Falls back to appearance order in the caller when this returns None — but
+    when both are present it wins even if 'to' is typed before 'from' (e.g.
+    "trip to Naran from Karachi" must not swap origin/destination just because
+    the destination was named first).
+    """
+    if not _FROM_CITY_RE or not _TO_CITY_RE or not text:
+        return None
+    from_m = _FROM_CITY_RE.search(text)
+    to_m = _TO_CITY_RE.search(text)
+    if not from_m or not to_m:
+        return None
+    origin, destination = from_m.group(1).title(), to_m.group(1).title()
+    if origin == destination:
+        return None
+    return origin, destination
 
 
 def _int_or_none(raw: str | None) -> int | None:
@@ -215,9 +240,22 @@ def derive_state(
     for text in user_texts:
         if not isinstance(text, str):
             continue
+        modes_named = {
+            name for name, rx in (
+                ("train", _TRAIN_MODE_RE),
+                ("flight", _FLIGHT_MODE_RE),
+                ("hotel", _HOTEL_MODE_RE),
+            ) if rx.search(text)
+        }
+        # Only act on an UNAMBIGUOUS mention. A message naming two modes at once
+        # ("flight and hotel package") says nothing about which one replaces the
+        # other, so it's safer to leave whatever was already established alone.
+        if len(modes_named) == 1:
+            state.mode = next(iter(modes_named))
         cities = _cities_in(text)
         if len(cities) >= 2:
-            state.origin, state.destination = cities[0], cities[1]
+            routed = _origin_destination_in(text)
+            state.origin, state.destination = routed or (cities[0], cities[1])
         elif len(cities) == 1 and not state.destination:
             state.destination = cities[0]
         dates = _future_iso_dates(text, today)

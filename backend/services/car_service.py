@@ -14,6 +14,7 @@ import uuid
 from typing import Any
 
 from core.supabase_client import supabase_admin
+from services.northern_routes import price_for_route
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,22 @@ _VEHICLE_PRICES: dict[str, int] = {
 
 def _price_for(vehicle_type: str) -> int:
     return _VEHICLE_PRICES.get(vehicle_type, 800)
+
+
+def estimate_fare(vehicle_type: str, pickup_location: str = "", dropoff_location: str = "") -> int:
+    """
+    Route-aware fare: a known hub<->northern-destination route (Islamabad/
+    Rawalpindi->Naran, Gilgit->Hunza, Islamabad/Rawalpindi->Swat) prices by
+    real distance; everything else — an ordinary in-city ride or an airport/
+    station transfer — keeps the flat rate. Called with no addresses (as
+    every existing transfer-leg call site does), this behaves exactly like
+    `_price_for` always has.
+    """
+    if pickup_location or dropoff_location:
+        routed = price_for_route(pickup_location, dropoff_location, vehicle_type)
+        if routed is not None:
+            return routed
+    return _price_for(vehicle_type)
 
 
 def _generate_verification_code() -> str:
@@ -219,7 +236,7 @@ async def book_standalone_car(
     code            = _generate_verification_code()
     booking_uuid    = str(uuid.uuid4())
     email_to_use    = contact_email or user_email or ""
-    price           = _price_for(vehicle_type)
+    price           = estimate_fare(vehicle_type, pickup_location, dropoff_location)
 
     row = {
         "id":                booking_uuid,

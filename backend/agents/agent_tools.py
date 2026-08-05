@@ -19,6 +19,8 @@ from services.flight_service import search_flights
 from services.train_service import search_trains
 from services.hotel_service import search_hotels, CITY_ALIASES
 from services.weather_service import get_weather
+from services.car_service import estimate_fare as _estimate_car_fare
+from services.northern_routes import hub_options_for
 from agents.clarification_agent import CITY_TO_IATA, _parse_relative_date
 
 logger = logging.getLogger(__name__)
@@ -603,18 +605,21 @@ def build_car_booking_data(args: dict) -> dict:
     """
     Assemble the car_booking_choice payload the app renders and then confirms.
     Assumes get_car_booking_error already returned None. `price_pkr` is advisory
-    (see _CAR_VEHICLE_PRICES); book_standalone_car sets the authoritative amount.
+    (route-aware via car_service.estimate_fare); book_standalone_car re-derives
+    and sets the authoritative amount.
     """
     a = args or {}
     vehicle = str(a.get("vehicle_type") or "").strip()
+    pickup = str(a.get("pickup_location") or "").strip()
+    dropoff = str(a.get("dropoff_location") or "").strip()
     parsed = _parse_datetime_strict(a.get("pickup_datetime"))
     return {
         "booking_type": "car",
-        "pickup_location": str(a.get("pickup_location") or "").strip(),
-        "dropoff_location": str(a.get("dropoff_location") or "").strip(),
+        "pickup_location": pickup,
+        "dropoff_location": dropoff,
         "vehicle_type": vehicle,
         "pickup_datetime": parsed.isoformat() if parsed else str(a.get("pickup_datetime") or "").strip(),
-        "price_pkr": _CAR_VEHICLE_PRICES.get(vehicle, 800),
+        "price_pkr": _estimate_car_fare(vehicle, pickup, dropoff),
     }
 
 _CAR_VEHICLE_RE = re.compile(r"\b(?:sedan|suv|van)\b", re.IGNORECASE)
@@ -1042,6 +1047,12 @@ def _no_airport_error(city: str) -> dict:
     it hid the real reason (Travello has no international inventory).
     """
     if _is_pakistani_place(city):
+        hubs = hub_options_for(city)
+        if hubs:
+            names = " or ".join(h.hub_city for h in hubs)
+            return {"error": f"No domestic airport at '{city}'. Nearest real hub(s): {names} — "
+                             f"search flights/trains there, then use book_car for the road leg "
+                             f"to {city}."}
         return {"error": f"No domestic airport at '{city}'. It may be reachable only by "
                          f"road or via a nearby airport (e.g. Hunza via Gilgit)."}
     return {"error": f"'{city}' is outside Pakistan. Travello covers domestic Pakistan "
