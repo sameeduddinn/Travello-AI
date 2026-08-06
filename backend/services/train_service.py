@@ -150,6 +150,7 @@ _TRAIN_TOTAL_KM: dict[str, float] = {
     "TR-014": 1030,  # Faisalabad Express: Karachi-Faisalabad
     "TR-015": 1214,  # Bahauddin Zakaria Express: Karachi-Lahore
     "TR-016": 500,   # NATCO KKH Bus: Islamabad-Gilgit (road distance)
+    "TR-017": 575,   # Faisalabad Link Express: Peshawar-Faisalabad
 }
 
 # Which official fare tier each train belongs to — trains named explicitly in
@@ -173,6 +174,7 @@ _TRAIN_TIER: dict[str, str] = {
     "TR-014": "legacy",       # Faisalabad Express (plain express, unnamed)
     "TR-015": "legacy",       # Bahauddin Zakaria Express (named as "Bahauddin Zakria")
     "TR-016": "bus",          # NATCO KKH Bus — not a Pakistan Railways service
+    "TR-017": "legacy",      # Faisalabad Link Express (plain express, unnamed)
 }
 
 # Seat amenities per class
@@ -291,6 +293,15 @@ _TRAINS: list[dict[str, Any]] = [
         "classes": ["BUS-STD", "BUS-AC"],
         "bus_only": True,
     },
+    {
+        # Faisalabad sits on its own spur off the Lahore-Multan line, not on
+        # any other train's route above — this is the only service that
+        # actually reaches it from Peshawar/Rawalpindi/Lahore.
+        "id": "TR-017", "name": "Faisalabad Link Express", "number": "51-Up/52-Dn",
+        "route": ["PEW", "RWP", "LHE", "LYP"],
+        "schedule": {"PEW": 0, "RWP": 3, "LHE": 7.5, "LYP": 9.5},
+        "classes": ["EC", "AC"],
+    },
 ]
 
 _CLASS_NAMES: dict[str, str] = {
@@ -316,6 +327,34 @@ def _is_reverse(train: dict, origin_code: str, dest_code: str) -> bool:
     """
     route = train["route"]
     return route.index(origin_code) > route.index(dest_code)
+
+
+# Real clock time (hour of day, 24h) each train leaves its Dn-direction first
+# station — the "schedule" dict above is all relative-to-0 hours-into-journey,
+# which otherwise renders as a literal 00:00 departure for every single train.
+# Sourced from Pakistan Railways timetables (urdupoint.com/pakinformation.com)
+# where available; the rest are estimated slots spread across the day so they
+# at least don't all collide at midnight, same conservative-estimate approach
+# used for the northern-route car fares.
+_TRAIN_DEPARTURE_CLOCK_HOUR: dict[str, float] = {
+    "TR-001": 17.5,    # Tezgam Express 7UP — Karachi Cantt 17:30 (urdupoint)
+    "TR-002": 15.0,    # Karakoram Express 41UP — Karachi Cantt ~15:00 (Wikipedia)
+    "TR-003": 22.0,    # Green Line Express 5UP — Karachi Cantt 22:00 (pakinformation/urdupoint)
+    "TR-004": 22.25,   # Khyber Mail 1UP — Karachi Cantt 22:15 (urdupoint)
+    "TR-005": 7.0,     # Awam Express 13UP — Karachi Cantt 07:00 (urdupoint)
+    "TR-006": 16.0,    # Business Express 33UP — Karachi Cantt 16:00 (urdupoint)
+    "TR-007": 14.75,   # Islamabad Express — estimated (no published time found)
+    "TR-008": 6.5,     # Shalimar Express 27UP — Karachi Cantt ~06:30 (urdupoint)
+    "TR-009": 9.0,     # Shah Hussain Express (Lahore-origin) — estimated
+    "TR-010": 11.0,    # Sukkur Express — estimated
+    "TR-011": 6.0,     # Jaffar Express (Rawalpindi-origin) — estimated
+    "TR-012": 20.0,    # Bolan Mail — estimated overnight-mail slot
+    "TR-013": 13.0,    # Lahore Express — estimated
+    "TR-014": 10.0,    # Faisalabad Express — estimated
+    "TR-015": 18.5,    # Bahauddin Zakaria Express — estimated
+    "TR-016": 8.0,     # NATCO KKH Bus (Islamabad-origin) — estimated
+    "TR-017": 9.0,     # Faisalabad Link Express (Peshawar-origin) — estimated
+}
 
 
 def _hours_from_departure(train: dict, station_code: str, reverse: bool) -> float:
@@ -432,9 +471,10 @@ def _build_offer(
     reverse = _is_reverse(train, origin_code, dest_code)
     dep_hours = _hours_from_departure(train, origin_code, reverse)
     arr_hours = _hours_from_departure(train, dest_code, reverse)
+    clock_offset = _TRAIN_DEPARTURE_CLOCK_HOUR.get(train["id"], 0.0)
 
-    departure_at = travel_date + timedelta(hours=dep_hours)
-    arrival_at = travel_date + timedelta(hours=arr_hours)
+    departure_at = travel_date + timedelta(hours=clock_offset + dep_hours)
+    arrival_at = travel_date + timedelta(hours=clock_offset + arr_hours)
 
     total_minutes = int((arr_hours - dep_hours) * 60)
     h, m = divmod(total_minutes, 60)

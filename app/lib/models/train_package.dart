@@ -44,7 +44,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '11:00 PM',
     duration: '13h 30m',
     trainClass: 'AC Sleeper',
-    price: 4200,
+    price: 9800,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -60,7 +60,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '06:00 AM',
     duration: '15h',
     trainClass: 'AC Business',
-    price: 3950,
+    price: 10800,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Business', 'Meals'],
@@ -76,7 +76,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '03:00 PM',
     duration: '13h',
     trainClass: 'AC Business',
-    price: 4800,
+    price: 9800,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Business', 'Premium Meals'],
@@ -93,7 +93,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '07:30 PM',
     duration: '13h 45m',
     trainClass: 'AC Sleeper',
-    price: 3800,
+    price: 9700,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -109,7 +109,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '02:00 PM',
     duration: '18h 30m',
     trainClass: 'AC Lower',
-    price: 4500,
+    price: 9800,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Lower', 'Meals'],
@@ -126,7 +126,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '10:30 PM',
     duration: '13h 30m',
     trainClass: 'AC Sleeper',
-    price: 4100,
+    price: 9900,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -144,7 +144,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '08:00 AM',
     duration: '8h 30m',
     trainClass: 'AC Sleeper',
-    price: 2800,
+    price: 5900,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -160,7 +160,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '08:30 AM',
     duration: '2h 15m',
     trainClass: 'AC Seater',
-    price: 850,
+    price: 1200,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Seater', 'Snacks'],
@@ -177,7 +177,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '06:30 PM',
     duration: '5h 45m',
     trainClass: 'AC Lower',
-    price: 1650,
+    price: 2800,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Lower', 'Meals'],
@@ -195,7 +195,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '07:00 AM',
     duration: '4h 30m',
     trainClass: 'AC Seater',
-    price: 1350,
+    price: 2600,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Seater', 'Snacks'],
@@ -211,7 +211,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '09:00 AM',
     duration: '5h 45m',
     trainClass: 'AC Sleeper',
-    price: 2200,
+    price: 4200,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -228,7 +228,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '06:00 PM',
     duration: '3h 30m',
     trainClass: 'AC Business',
-    price: 1800,
+    price: 3300,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Business', 'Premium Meals'],
@@ -244,7 +244,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '08:00 AM',
     duration: '2h 15m',
     trainClass: 'AC Seater',
-    price: 650,
+    price: 830,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Seater', 'Snacks'],
@@ -261,7 +261,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '11:30 PM',
     duration: '6h 15m',
     trainClass: 'AC Sleeper',
-    price: 2400,
+    price: 4400,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -277,7 +277,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '11:00 AM',
     duration: '5h 30m',
     trainClass: 'AC Business',
-    price: 2100,
+    price: 4200,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Business', 'Premium Meals'],
@@ -294,7 +294,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '08:30 PM',
     duration: '18h 30m',
     trainClass: 'AC Sleeper',
-    price: 4800,
+    price: 7500,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -312,7 +312,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '03:00 PM',
     duration: '15h',
     trainClass: 'AC Business',
-    price: 4200,
+    price: 10900,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Business', 'Meals'],
@@ -328,7 +328,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '06:30 AM',
     duration: '4h 30m',
     trainClass: 'AC Seater',
-    price: 1300,
+    price: 2800,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Seater', 'Snacks'],
@@ -345,7 +345,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '09:00 AM',
     duration: '2h 30m',
     trainClass: 'AC Seater',
-    price: 900,
+    price: 1400,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Seater', 'Snacks'],
@@ -361,7 +361,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '07:00 PM',
     duration: '5h 30m',
     trainClass: 'AC Sleeper',
-    price: 1800,
+    price: 4300,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -378,7 +378,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '10:00 AM',
     duration: '4h',
     trainClass: 'AC Seater',
-    price: 1100,
+    price: 2200,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Seater', 'Snacks'],
@@ -396,7 +396,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '07:30 AM',
     duration: '18h 30m',
     trainClass: 'AC Lower',
-    price: 4500,
+    price: 9900,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Lower', 'Meals'],
@@ -412,7 +412,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '06:00 AM',
     duration: '5h 45m',
     trainClass: 'AC Sleeper',
-    price: 2100,
+    price: 4300,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -429,7 +429,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '09:30 AM',
     duration: '2h 30m',
     trainClass: 'AC Seater',
-    price: 920,
+    price: 1400,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Seater', 'Snacks'],
@@ -445,7 +445,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '11:00 AM',
     duration: '7h 30m',
     trainClass: 'AC Sleeper',
-    price: 2500,
+    price: 4600,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -462,7 +462,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '02:00 PM',
     duration: '5h',
     trainClass: 'AC Seater',
-    price: 1500,
+    price: 3100,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Seater', 'Snacks'],
@@ -480,7 +480,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '10:00 PM',
     duration: '9h',
     trainClass: 'AC Sleeper',
-    price: 2900,
+    price: 6000,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -496,7 +496,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '08:00 AM',
     duration: '3h 30m',
     trainClass: 'AC Business',
-    price: 1750,
+    price: 2800,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Business', 'Premium Meals'],
@@ -513,7 +513,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '03:00 PM',
     duration: '5h 15m',
     trainClass: 'AC Sleeper',
-    price: 1850,
+    price: 4000,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -531,7 +531,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '07:00 AM',
     duration: '2h 15m',
     trainClass: 'AC Seater',
-    price: 650,
+    price: 820,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Seater', 'Snacks'],
@@ -547,7 +547,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '09:00 PM',
     duration: '11h',
     trainClass: 'AC Sleeper',
-    price: 3200,
+    price: 4400,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -564,7 +564,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '05:30 PM',
     duration: '3h 30m',
     trainClass: 'AC Seater',
-    price: 1100,
+    price: 2270,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Seater', 'Snacks'],
@@ -582,7 +582,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '06:00 PM',
     duration: '11h',
     trainClass: 'AC Sleeper',
-    price: 3500,
+    price: 8200,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -598,7 +598,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '08:30 AM',
     duration: '2h 15m',
     trainClass: 'AC Seater',
-    price: 800,
+    price: 1200,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Seater', 'Snacks'],
@@ -615,7 +615,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '10:00 PM',
     duration: '13h 30m',
     trainClass: 'AC Sleeper',
-    price: 3800,
+    price: 10300,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -633,7 +633,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '08:00 PM',
     duration: '5h 30m',
     trainClass: 'AC Lower',
-    price: 1600,
+    price: 2700,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Lower', 'Meals'],
@@ -649,7 +649,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '10:00 AM',
     duration: '7h 30m',
     trainClass: 'AC Sleeper',
-    price: 2800,
+    price: 4700,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
@@ -666,7 +666,7 @@ final List<TrainPackage> featuredTrainPackages = [
     departureTime: '07:00 PM',
     duration: '9h',
     trainClass: 'AC Sleeper',
-    price: 3100,
+    price: 5300,
     imageUrl:
         'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80',
     amenities: ['AC Sleeper', 'Meals'],
