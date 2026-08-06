@@ -84,6 +84,7 @@ from agents.agent_tools import (
     get_already_booked_error,
     get_booking_date_error,
     get_transfer_error,
+    get_trip_planner_incomplete_error,
     apply_traveler_totals,
     reprice_booking,
     missing_fields_result,
@@ -2147,38 +2148,51 @@ async def process_message_agentic(
                 expected_components = max(
                     len(booking_calls) - already_booked, len(user_picks), 1
                 )
-                if len(step_components) >= expected_components:
+                # Trip Planner mode (a recognised northern destination): transport,
+                # hotel, and — for a hub-less destination — the car transfer must
+                # ALL be prepared together. A single verified leg that happens to
+                # satisfy expected_components (e.g. the user only picked one item
+                # this turn because a hotel was never even searched) must still
+                # not reach payment on its own.
+                trip_planner_error = get_trip_planner_incomplete_error(
+                    step_components, history, _trip_state.destination,
+                )
+                if len(step_components) >= expected_components and not trip_planner_error:
                     package_components = step_components
                     booking_data = step_components[0]
                     package_incomplete = False
                     break
-                # Not every piece survived. Committing what DID verify would hand
-                # the user a payment screen for one half of a round trip — they
-                # pay, fly out, and discover on the day that there is no way back.
-                # So nothing is committed: the gate errors go back to the model,
-                # which can re-search or ask, and if the turn ends still short we
-                # return an explanation with NO payment action attached.
-                if expected_components >= 2:
+                # Not every piece survived, or (Trip Planner mode) not every
+                # REQUIRED piece was even attempted. Committing what DID verify
+                # would hand the user a payment screen for part of the trip —
+                # they pay, then discover the rest still isn't booked. So nothing
+                # is committed: the gate errors go back to the model, which can
+                # re-search or ask, and if the turn ends still short we return an
+                # explanation with NO payment action attached.
+                if expected_components >= 2 or trip_planner_error:
                     package_incomplete = True
                     package_ok = step_components
                     package_failed = step_failures
                     logger.warning(
-                        "package incomplete — %d of %d component(s) verified; "
-                        "withholding payment action",
-                        len(step_components), expected_components,
+                        "package incomplete — %d of %d component(s) verified "
+                        "(trip_planner_error=%s); withholding payment action",
+                        len(step_components), expected_components, bool(trip_planner_error),
                     )
                     # Tell the model what is missing. The per-call gate errors
                     # below only cover calls that FAILED; when the model simply
-                    # never made the second call there is no error to feed back,
-                    # and that silence is how a two-leg request used to come out
-                    # as a one-leg booking.
+                    # never made the second call (or never searched a required
+                    # piece at all, in Trip Planner mode) there is no error to
+                    # feed back, and that silence is how a partial booking used
+                    # to slip through.
                     messages.append({"role": "system", "content": (
-                        f"INCOMPLETE PACKAGE: this checkout needs {expected_components} "
-                        f"pieces but only {len(step_components)} could be confirmed. "
-                        "Nothing has been sent to payment. Prepare EVERY remaining "
-                        "piece in your next reply, or — if a piece genuinely isn't "
-                        "available — tell the user plainly which one and ask them to "
-                        "pick a replacement. Never proceed with only part of it."
+                        trip_planner_error["instruction"] if trip_planner_error else (
+                            f"INCOMPLETE PACKAGE: this checkout needs {expected_components} "
+                            f"pieces but only {len(step_components)} could be confirmed. "
+                            "Nothing has been sent to payment. Prepare EVERY remaining "
+                            "piece in your next reply, or — if a piece genuinely isn't "
+                            "available — tell the user plainly which one and ask them to "
+                            "pick a replacement. Never proceed with only part of it."
+                        )
                     )})
 
             if car_booking_data:

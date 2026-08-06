@@ -1605,6 +1605,70 @@ def get_already_booked_error(booking_data: dict, history: list[dict] | None) -> 
     return None
 
 
+# ── Trip Planner completeness gate: a northern-destination package must
+# finalize ALL required components together, never one at a time ────────────
+#
+# The bug this closes: a user planning a Hunza trip got shown flight options
+# only — a hotel was never even searched — picked one, and the model turned
+# that single flight into its own "Booking Summary" and Pay button, promising
+# to book the hotel and car transfer "next". That is three separate charges
+# for one trip, exactly what this feature exists to prevent. The ATOMIC
+# PACKAGE GATE above cannot catch this on its own: it only defends a package
+# that IS being assembled against coming up short against what the user
+# picked THIS turn — it has no notion that a hotel (and, for a hub-less
+# destination, a car transfer) belong in the trip at all when the model never
+# searched for one. This gate supplies that notion directly, deterministically.
+
+def get_trip_planner_incomplete_error(
+    step_components: list[dict],
+    history: list[dict] | None,
+    trip_destination: str,
+) -> dict | None:
+    """
+    None outside Trip Planner mode (trip_destination isn't a recognised
+    northern destination — hub_options_for returns None), or once every
+    required component type is covered by this turn's verified components
+    plus whatever this same conversation has already paid for. Required:
+    transport (flight/train) + hotel always; the car transfer too, for a
+    destination with no airport/station of its own (Naran/Hunza/Swat — the
+    only way to physically complete that leg). Otherwise a structured error:
+    nothing may go to payment for only part of the trip.
+    """
+    if not step_components:
+        return None
+    hubs = hub_options_for(trip_destination) if trip_destination else None
+    if hubs is None:
+        return None  # not a recognised northern destination — ordinary booking
+
+    have = list(step_components) + confirmed_components(history)
+    transport = [c for c in have if c.get("booking_type") in ("flight", "train")]
+    has_hotel = any(c.get("booking_type") == "hotel" for c in have)
+    has_transfer = any(c.get("transfer_vehicle_type") for c in transport)
+
+    missing = []
+    if not transport:
+        missing.append("transport to the hub")
+    if not has_hotel:
+        missing.append("a hotel")
+    if hubs and not has_transfer:
+        missing.append("the car transfer to the destination")
+    if not missing:
+        return None
+
+    return {
+        "error": "trip_planner_incomplete",
+        "missing": missing,
+        "instruction": (
+            f"This is a {trip_destination} Trip Planner package, not an "
+            f"individual booking — it still needs {', '.join(missing)}. Do "
+            "NOT send what you have to payment. Search/gather the missing "
+            "piece(s) now, let the user pick, then call prepare_booking for "
+            "transport, hotel AND the transfer together in the SAME reply "
+            "so the whole trip becomes one package with one payment."
+        ),
+    }
+
+
 def _transfer_error(problem: str, ask_for: str) -> dict:
     return {
         "error": "invalid_transfer_pickup",

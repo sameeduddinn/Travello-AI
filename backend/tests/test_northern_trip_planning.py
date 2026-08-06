@@ -200,3 +200,54 @@ def test_missing_dropoff_blocks_the_whole_package_instead_of_undercharging(agent
     assert result.get("action") is None, "an undercharged package must never reach payment"
     assert result.get("booking_data") is None
     assert "no card was charged" in result["response"].lower()
+
+
+# ── Trip Planner mode: a single leg must never finalize on its own ───────────
+
+HUNZA_FLIGHT_OFFERS = {"role": "assistant", "content": (
+    "1. Pakistan International Airlines PK107 · 07:00 → 08:11 — PKR 11,033\n"
+    "2. Pakistan International Airlines PK379 · 07:30 → 10:10 — PKR 64,995\n"
+)}
+
+FLIGHT_TO_GILGIT_ONLY = {
+    "booking_type": "flight", "origin": "Karachi", "destination": "Gilgit",
+    "travel_date": "2026-08-14", "flight_number": "PK379", "adults": 4,
+    "cabin_class": "ECONOMY", "total_price_pkr": 259980,
+}
+
+
+def test_a_single_leg_pick_never_becomes_its_own_payment_in_trip_planner_mode(agent, monkeypatch):
+    """
+    Real bug reproduction: the user asked to plan a Hunza trip, only flight
+    options were ever searched/shown (no hotel), and picking one used to turn
+    that single flight into its own "Booking Summary" + Pay button, with the
+    hotel and car transfer deferred to "next" — three separate charges for
+    one trip. A Hunza/Naran/Skardu/Swat trip must never finalize a single
+    piece on its own; nothing may reach payment until transport, hotel, and
+    (for a hub-less destination like Hunza) the car transfer are ALL prepared
+    together in one reply.
+    """
+    agent.history = [
+        {"role": "user", "content": "Plan a trip to Hunza Valley"},
+        {"role": "assistant", "content": (
+            "Sure thing! Could you share your travel dates, number of "
+            "travelers, and budget?"
+        )},
+        {"role": "user", "content": (
+            "Outbound date 14 Aug 2026, return date 25 August 2026. "
+            "2 adults and 2 children. 1 lac budget."
+        )},
+        HUNZA_FLIGHT_OFFERS,
+    ]
+    agent.reprice_ok = {"PK379"}
+    monkeypatch.setattr(ma, "generate_with_tools", _script(
+        _Msg(tool_calls=[_Call("a", "prepare_booking", FLIGHT_TO_GILGIT_ONLY)]),
+        _Msg(tool_calls=[_Call("b", "prepare_booking", FLIGHT_TO_GILGIT_ONLY)]),
+        _Msg(tool_calls=[_Call("c", "prepare_booking", FLIGHT_TO_GILGIT_ONLY)]),
+    ))
+
+    result = agent.run("2")
+
+    assert result.get("action") is None, "a single leg must never become its own payment in Trip Planner mode"
+    assert result.get("booking_data") is None
+    assert "no card was charged" in result["response"].lower()
