@@ -161,7 +161,7 @@ TOOL_SCHEMAS: list[dict] = [
                     "vehicle_type": {
                         "type": "string",
                         "enum": ["Sedan", "SUV", "Van"],
-                        "description": "Sedan PKR 800 (1-3), SUV PKR 1,200 (1-5), Van PKR 1,500 (6-9)",
+                        "description": "Sedan PKR 3,000 (1-3), SUV PKR 6,000 (1-5), Van PKR 9,000 (6-9)",
                     },
                     "pickup_datetime": {
                         "type": "string",
@@ -222,6 +222,10 @@ TOOL_SCHEMAS: list[dict] = [
                     "transfer_pickup_location": {
                         "type": "string",
                         "description": "Real street address for that transfer, never a placeholder",
+                    },
+                    "transfer_dropoff_location": {
+                        "type": "string",
+                        "description": "Only for a northern hub->destination car leg — the real destination, never invented. Omit otherwise.",
                     },
                     "total_price_pkr": {
                         "type": "number",
@@ -500,7 +504,7 @@ def get_booking_date_error(booking_data: dict) -> dict | None:
 _CAR_VEHICLES = ("Sedan", "SUV", "Van")
 
 
-_CAR_VEHICLE_PRICES: dict[str, int] = {"Sedan": 800, "SUV": 1200, "Van": 1500}
+_CAR_VEHICLE_PRICES: dict[str, int] = {"Sedan": 3000, "SUV": 6000, "Van": 9000}
 
 _CAR_REQUIRED_FIELDS = ["pickup_location", "dropoff_location", "vehicle_type", "pickup_datetime"]
 
@@ -568,8 +572,8 @@ def get_car_booking_error(args: dict, *, now: datetime | None = None) -> dict | 
         return {
             "error": "invalid_vehicle_type",
             "instruction": (
-                f"'{vehicle}' isn't a bookable vehicle. Offer only Sedan (PKR 800), SUV "
-                "(PKR 1,200) or Van (PKR 1,500) and ask which one they'd like. Do not call "
+                f"'{vehicle}' isn't a bookable vehicle. Offer only Sedan (PKR 3,000), SUV "
+                "(PKR 6,000) or Van (PKR 9,000) and ask which one they'd like. Do not call "
                 "book_car again until the user picks one of these three."
             ),
         }
@@ -702,7 +706,7 @@ def _location_grounded(location: str, texts: list[str]) -> bool:
 
 _CAR_PROVENANCE_LABELS: dict[str, str] = {
     "dropoff": "where they want to be dropped off (a real destination address)",
-    "vehicle": "which vehicle they'd like — Sedan (PKR 800), SUV (PKR 1,200) or Van (PKR 1,500)",
+    "vehicle": "which vehicle they'd like — Sedan (PKR 3,000), SUV (PKR 6,000) or Van (PKR 9,000)",
     "time": "what date and time they want to be picked up",
 }
 
@@ -1615,15 +1619,25 @@ def _transfer_error(problem: str, ask_for: str) -> dict:
     }
 
 
-def get_transfer_error(booking_data: dict) -> dict | None:
+def get_transfer_error(
+    booking_data: dict,
+    *,
+    user_texts: list[str] | None = None,
+    trip_destination: str = "",
+) -> dict | None:
     """
     Validate the optional car-transfer fields on a prepare_booking call.
     Returns a structured error dict (hard stop, like the date and count gates)
     or None when there is no transfer, or the transfer is properly specified.
+
+    `user_texts`/`trip_destination` are optional and default to "no check" —
+    every pre-existing call site that doesn't pass them behaves exactly as
+    before this field was added.
     """
     bd = booking_data if isinstance(booking_data, dict) else {}
     vehicle = str(bd.get("transfer_vehicle_type") or "").strip()
     pickup = str(bd.get("transfer_pickup_location") or "").strip()
+    dropoff = str(bd.get("transfer_dropoff_location") or "").strip()
 
     # No transfer on this booking — nothing to validate.
     if not vehicle and not pickup:
@@ -1660,6 +1674,35 @@ def get_transfer_error(booking_data: dict) -> dict | None:
             f"'{pickup}' is just a city, not an address a driver can reach.",
             "their full pickup address within the city — house/street/area",
         )
+
+    if dropoff:
+        if _TRANSFER_PLACEHOLDER_RE.search(dropoff):
+            return _transfer_error(
+                f"'{dropoff}' is a placeholder, not a destination the user gave you.",
+                "their actual destination",
+            )
+        texts = user_texts or []
+        if not _location_grounded(dropoff, texts):
+            return _transfer_error(
+                f"'{dropoff}' as the transfer destination doesn't trace back to "
+                "anything the user actually said.",
+                "which destination the car is actually taking them to",
+            )
+
+    # Money-correctness: a hub->northern-destination leg priced without its
+    # real dropoff would silently fall back to the flat in-city rate and
+    # undercharge by tens of thousands of rupees, with no visible error.
+    hubs = hub_options_for(trip_destination) if trip_destination else None
+    if hubs:
+        pickup_names_hub = any(_norm(h.hub_city) in _norm(pickup) for h in hubs)
+        if pickup_names_hub and _norm(trip_destination) not in _norm(dropoff):
+            return _transfer_error(
+                f"This is a hub->{trip_destination} car leg, but the transfer's "
+                "destination isn't set to (or doesn't match) "
+                f"'{trip_destination}' — without it the fare defaults to the "
+                "flat in-city rate instead of the real route fare.",
+                f"confirmation that the car is going to {trip_destination}",
+            )
 
     return None
 
@@ -1953,7 +1996,7 @@ def _add_transfer_fare(verified: dict) -> dict:
 
     The manual checkout charges it — booking_checkout.dart's `_subtotal` is
     ticket + baggage + seats + `_transferFee` — so the agent path has to as
-    well, or the same Sedan costs PKR 800 through the form and nothing through
+    well, or the same Sedan costs PKR 3,000 through the form and nothing through
     chat. Deliberately applied AFTER the per-type reprice so it stacks on the
     server-derived price and never on the model's advisory figure.
 
@@ -1961,12 +2004,19 @@ def _add_transfer_fare(verified: dict) -> dict:
     both vehicle and pickup must be present, because that is precisely when the
     app sends the transfer on to be booked. Charging on any looser condition
     would bill for a driver who is never dispatched.
+
+    Priced via the same route-aware `estimate_fare` book_car already uses: a
+    known hub<->northern-destination pickup/dropoff pair (e.g. Islamabad
+    Airport -> Naran) gets the real route fare; everything else — an
+    ordinary airport/station transfer — falls back to the flat rate exactly
+    as before this function became dropoff-aware.
     """
     vehicle = str(verified.get("transfer_vehicle_type") or "").strip()
     pickup = str(verified.get("transfer_pickup_location") or "").strip()
-    fare = _CAR_VEHICLE_PRICES.get(vehicle)
-    if not fare or not pickup:
+    dropoff = str(verified.get("transfer_dropoff_location") or "").strip()
+    if vehicle not in _CAR_VEHICLE_PRICES or not pickup:
         return verified
+    fare = _estimate_car_fare(vehicle, pickup, dropoff)
 
     # This is a payment amount, so it gets a guard rather than an assumption:
     # today reprice_booking has exactly one call site and runs once per booking,

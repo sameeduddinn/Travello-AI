@@ -92,6 +92,6 @@ def test_estimate_fare_uses_the_routed_price_for_a_known_hub_route():
 
 
 def test_estimate_fare_falls_back_to_the_flat_rate_for_ordinary_rides():
-    assert estimate_fare("Sedan", "DHA Phase 5", "Jinnah International Airport") == 800
-    assert estimate_fare("SUV") == 1200          # no addresses at all — old call shape
-    assert estimate_fare("Van", "", "") == 1500  # empty addresses behave the same
+    assert estimate_fare("Sedan", "DHA Phase 5", "Jinnah International Airport") == 3000
+    assert estimate_fare("SUV") == 6000          # no addresses at all — old call shape
+    assert estimate_fare("Van", "", "") == 9000  # empty addresses behave the same

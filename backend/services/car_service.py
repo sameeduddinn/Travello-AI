@@ -27,14 +27,14 @@ _TRANSFER_LABELS = {
 }
 
 _VEHICLE_PRICES: dict[str, int] = {
-    "Sedan": 800,
-    "SUV":   1200,
-    "Van":   1500,
+    "Sedan": 3000,
+    "SUV":   6000,
+    "Van":   9000,
 }
 
 
 def _price_for(vehicle_type: str) -> int:
-    return _VEHICLE_PRICES.get(vehicle_type, 800)
+    return _VEHICLE_PRICES.get(vehicle_type, 3000)
 
 
 def estimate_fare(vehicle_type: str, pickup_location: str = "", dropoff_location: str = "") -> int:
@@ -84,6 +84,7 @@ def _create_car_booking_row(
     vehicle_type: str,
     contact_email: str,
     verification_code: str,
+    dropoff_location: str = "",
 ) -> dict[str, Any] | None:
     row = {
         "id": str(uuid.uuid4()),
@@ -92,11 +93,12 @@ def _create_car_booking_row(
         "driver_id": str(driver["id"]),
         "transfer_type": transfer_type,
         "pickup_location": pickup_location,
+        "dropoff_location": dropoff_location or None,
         "vehicle_type": vehicle_type,
         "verification_code": verification_code,
         "contact_email": contact_email,
         "status": "confirmed",
-        "total_amount": _price_for(vehicle_type),
+        "total_amount": estimate_fare(vehicle_type, pickup_location, dropoff_location),
         "currency": "PKR",
     }
     try:
@@ -135,22 +137,25 @@ async def book_car_transfers(booking_uuid: str) -> None:
     user_id = booking.get("user_id", "")
     contact_email = booking.get("contact_email", "")
 
-    # Each transfer leg: flag key, vehicle type key, pickup location key, DB type value
+    # Each transfer leg: flag key, vehicle type key, pickup location key,
+    # dropoff location key (northern-trip legs only — empty for an ordinary
+    # airport/station transfer), DB type value.
     legs = [
-        ("transferAdded",            "transferVehicleType",            "transferPickupLocation",            "departure"),
-        ("arrivalTransferAdded",     "arrivalTransferVehicleType",     "arrivalTransferPickupLocation",     "arrival"),
-        ("returnTransferAdded",      "returnTransferVehicleType",      "returnTransferPickupLocation",      "return_departure"),
-        ("finalArrivalTransferAdded","finalArrivalTransferVehicleType","finalArrivalTransferPickupLocation","return_arrival"),
+        ("transferAdded",            "transferVehicleType",            "transferPickupLocation",            "transferDropoffLocation",            "departure"),
+        ("arrivalTransferAdded",     "arrivalTransferVehicleType",     "arrivalTransferPickupLocation",     "arrivalTransferDropoffLocation",     "arrival"),
+        ("returnTransferAdded",      "returnTransferVehicleType",      "returnTransferPickupLocation",      "returnTransferDropoffLocation",      "return_departure"),
+        ("finalArrivalTransferAdded","finalArrivalTransferVehicleType","finalArrivalTransferPickupLocation","finalArrivalTransferDropoffLocation","return_arrival"),
     ]
 
     confirmed_legs: list[dict] = []
 
-    for added_key, type_key, location_key, transfer_type in legs:
+    for added_key, type_key, location_key, dropoff_key, transfer_type in legs:
         if not raw.get(added_key):
             continue
 
-        vehicle_type    = raw.get(type_key, "Sedan")
-        pickup_location = raw.get(location_key, "").strip()
+        vehicle_type     = raw.get(type_key, "Sedan")
+        pickup_location  = raw.get(location_key, "").strip()
+        dropoff_location = raw.get(dropoff_key, "").strip()
 
         if not pickup_location:
             logger.warning("book_car_transfers: no pickup location for %s in booking %s", transfer_type, booking_uuid)
@@ -172,14 +177,16 @@ async def book_car_transfers(booking_uuid: str) -> None:
             vehicle_type=vehicle_type,
             contact_email=contact_email,
             verification_code=code,
+            dropoff_location=dropoff_location,
         )
 
         confirmed_legs.append({
-            "transfer_type":   transfer_type,
-            "vehicle_type":    vehicle_type,
-            "pickup_location": pickup_location,
-            "driver":          driver,
-            "code":            code,
+            "transfer_type":    transfer_type,
+            "vehicle_type":     vehicle_type,
+            "pickup_location":  pickup_location,
+            "dropoff_location": dropoff_location,
+            "driver":           driver,
+            "code":             code,
         })
 
         logger.info(

@@ -313,8 +313,19 @@ def select_tool_names(
     # field on prepare_booking — not a standalone ride. Offering book_car there
     # hands the model a way to split one checkout into two bookings, which the
     # package rules explicitly forbid.
-    if "book_car" in chosen and "prepare_booking" in chosen and not _STANDALONE_CAR_RE.search(message):
-        chosen.discard("book_car")
+    #
+    # Naran/Hunza/Skardu/Swat raises the stakes: the hub->destination car leg
+    # is REQUIRED to ride on those same transfer fields (see
+    # AGENTIC_TRIP_PLANNER_BLOCK) so the whole trip stays ONE package and ONE
+    # payment. But natural phrasing for that leg ("get me a sedan to Naran")
+    # reads exactly like a genuine standalone-car request to
+    # _STANDALONE_CAR_RE — so while a Trip Planner package is actively being
+    # built, that escape hatch is not honoured: book_car is withheld
+    # unconditionally rather than left to the model's tool choice.
+    if "book_car" in chosen and "prepare_booking" in chosen:
+        trip_planner_active = mentions_northern_destination(message, history)
+        if trip_planner_active or not _STANDALONE_CAR_RE.search(message):
+            chosen.discard("book_car")
     # Conversely, a clear standalone-car request ("book a sedan from A to B") has
     # no flight/train/hotel to commit to, so the booking and search schemas are
     # dead weight.

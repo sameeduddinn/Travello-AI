@@ -2081,7 +2081,9 @@ async def process_message_agentic(
                 # The transfer pickup address is dispatched to a real driver
                 # after payment, so it gets the same hard gate as the date and
                 # party size — a placeholder must never reach car_bookings.
-                transfer_error = get_transfer_error(bd)
+                transfer_error = get_transfer_error(
+                    bd, user_texts=conversation_user_texts, trip_destination=_trip_state.destination,
+                )
                 if transfer_error:
                     booking_gate_results[tc.id] = transfer_error
                     step_failures.append(bd)
@@ -2609,7 +2611,7 @@ async def _route_to_agents(
     if query_type == "car_booking":
         return (
             "Car booking is available in the Car tab on the Home screen. "
-            "You can book a Sedan (PKR 800), SUV (PKR 1,200), or Van (PKR 1,500) "
+            "You can book a Sedan (PKR 3,000), SUV (PKR 6,000), or Van (PKR 9,000) "
             "with a verified driver for pickup and dropoff within your city. "
             "A 4-digit verification code will be assigned to your driver for security."
         )

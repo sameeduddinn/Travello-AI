@@ -1,11 +1,13 @@
 """
 Multi-modal northern-destination itinerary (Islamabad flight + Naran hotel,
-via book_car for the hub->destination road leg) rides entirely on the
-existing package/car machinery — this locks in that shape end to end.
+with the hub->destination car leg riding along as a route-aware transfer on
+the flight's OWN prepare_booking call) is ONE package, ONE payment — this
+locks in that shape end to end.
 
-Same harness as test_car_alongside_package.py: drives the REAL
-process_message_agentic loop with a scripted model, so the response is what
-the real loop actually produces, not a hand-written expectation.
+Same harness as test_car_alongside_package.py / test_package_atomicity.py:
+drives the REAL process_message_agentic loop with a scripted model, so the
+response is what the real loop actually produces, not a hand-written
+expectation.
 """
 import asyncio
 import json
@@ -32,6 +34,18 @@ class _Msg:
     def __init__(self, content=None, tool_calls=None):
         self.content = content
         self.tool_calls = tool_calls or []
+
+
+def _script(*turns):
+    """A generate_with_tools stand-in that replays `turns` one per loop step."""
+    state = {"i": 0}
+
+    async def _fake(messages, tools=None, **kwargs):
+        i = state["i"]
+        state["i"] += 1
+        return turns[i] if i < len(turns) else _Msg("(nothing more to say)")
+
+    return _fake
 
 
 @pytest.fixture
@@ -89,20 +103,22 @@ def agent(monkeypatch):
     return agent
 
 
-FLIGHT_TO_HUB = {
+FLIGHT_TO_HUB_WITH_TRANSFER = {
     "booking_type": "flight", "origin": "Karachi", "destination": "Islamabad",
     "travel_date": "2026-09-01", "flight_number": "PK304", "adults": 2,
     "cabin_class": "ECONOMY", "total_price_pkr": 32000,
+    "transfer_vehicle_type": "Sedan",
+    "transfer_pickup_location": "Islamabad International Airport",
+    "transfer_dropoff_location": "Naran",
+}
+# Adversarial: the transfer is set up but the dropoff was forgotten — must
+# never silently fall back to the flat in-city rate for a real 190km route.
+FLIGHT_TO_HUB_NO_DROPOFF = {
+    k: v for k, v in FLIGHT_TO_HUB_WITH_TRANSFER.items() if k != "transfer_dropoff_location"
 }
 NARAN_HOTEL = {
     "booking_type": "hotel", "hotel_name": "PTDC Motel Naran",
     "check_in": "2026-09-01", "check_out": "2026-09-04", "rooms": 1, "guests": 2,
-}
-HUB_CAR_ARGS = {
-    "pickup_location": "Islamabad Airport",
-    "dropoff_location": "Naran",
-    "vehicle_type": "Sedan",
-    "pickup_datetime": "2026-09-01 14:00",
 }
 
 OFFERS = {"role": "assistant", "content": (
@@ -110,62 +126,77 @@ OFFERS = {"role": "assistant", "content": (
     "**Hotels in Naran**\n1. PTDC Motel Naran · PKR 12,000/night\n"
 )}
 
+USER_MESSAGE = (
+    "book flight option 1 and the hotel, and get me a sedan from Islamabad "
+    "airport to Naran at 2pm on 1 sept"
+)
 
-# ── Happy path: flight+hotel package, with the hub->Naran car leg alongside ──
 
-def test_islamabad_flight_and_naran_hotel_package_with_hub_car_leg(agent, monkeypatch):
+# ── Happy path: flight(+transfer)+hotel is ONE package, ONE payment ──────────
+
+def test_islamabad_flight_and_naran_hotel_package_includes_the_routed_car_fare(agent, monkeypatch):
     """
     The exact shape this feature adds: Karachi -> flight -> Islamabad (the real
     nearest hub, since Naran has no airport) -> Car -> Naran, plus a hotel in
-    Naran itself, in one turn.
+    Naran itself — ALL as one package, one payment. (The routed-fare math
+    itself — that this same pickup/dropoff pair prices at PKR 18,000 instead
+    of the flat in-city rate — is covered precisely by
+    test_transfer_route_pricing.py; this test's fixture mocks reprice_booking
+    itself, so it only exercises the orchestration shape, same as this file
+    always has.)
     """
     agent.history = [OFFERS]
     agent.reprice_ok = {"PK304", "PTDC Motel Naran"}
     monkeypatch.setattr(ma, "generate_with_tools", lambda messages, tools=None, **kw: (
         asyncio.sleep(0, result=_Msg(tool_calls=[
-            _Call("a", "prepare_booking", FLIGHT_TO_HUB),
+            _Call("a", "prepare_booking", FLIGHT_TO_HUB_WITH_TRANSFER),
             _Call("b", "prepare_booking", NARAN_HOTEL),
-            _Call("c", "book_car", HUB_CAR_ARGS),
         ]))
     ))
 
-    result = agent.run(
-        "book flight option 1 and the hotel, and get me a sedan from Islamabad "
-        "airport to Naran at 2pm on 1 sept"
-    )
+    result = agent.run(USER_MESSAGE)
 
     # The flight+hotel package books as one checkout, same contract as any package.
     assert result["action"] == "package_choice"
     assert result["booking_data"]["component_count"] == 2
-    # The hub->destination car leg is a separate book_car confirm — acknowledged,
-    # not silently dropped, exactly like every other car-alongside-a-package case.
-    assert "cab request ready" in result["response"]
+    # No separate book_car confirm anymore — the car leg is INSIDE this package.
+    assert "cab request ready" not in result["response"]
+    # The transfer fields survived gating and rode along on the flight piece.
+    flight_component = next(
+        c for c in result["booking_data"]["components"] if c.get("booking_type") == "flight"
+    )
+    assert flight_component["transfer_vehicle_type"] == "Sedan"
+    assert flight_component["transfer_dropoff_location"] == "Naran"
 
 
-# ── Adversarial: the user never named a vehicle -> book_car must be withheld ──
+# ── Adversarial: missing dropoff must block the package, never undercharge ───
 
-def test_car_leg_is_withheld_when_the_user_never_named_a_vehicle(agent, monkeypatch):
+def test_missing_dropoff_blocks_the_whole_package_instead_of_undercharging(agent, monkeypatch):
     """
-    The provenance gate (get_car_provenance_error) must still block a car the
-    model tries to construct without the user ever having said Sedan/SUV/Van —
-    a real driver is dispatched to whatever's confirmed, so this must never be
-    guessed just because it's part of a northern-trip itinerary.
+    If the model sets up the transfer but forgets transfer_dropoff_location,
+    get_transfer_error must reject that WHOLE prepare_booking call — the
+    package must never reach payment priced at the flat in-city rate for
+    what is actually a real ~190km route.
     """
     agent.history = [OFFERS]
     agent.reprice_ok = {"PK304", "PTDC Motel Naran"}
-    monkeypatch.setattr(ma, "generate_with_tools", lambda messages, tools=None, **kw: (
-        asyncio.sleep(0, result=_Msg(tool_calls=[
-            _Call("a", "prepare_booking", FLIGHT_TO_HUB),
+    monkeypatch.setattr(ma, "generate_with_tools", _script(
+        _Msg(tool_calls=[
+            _Call("a", "prepare_booking", FLIGHT_TO_HUB_NO_DROPOFF),
             _Call("b", "prepare_booking", NARAN_HOTEL),
-            _Call("c", "book_car", HUB_CAR_ARGS),
-        ]))
+        ]),
+        _Msg(tool_calls=[
+            _Call("c", "prepare_booking", FLIGHT_TO_HUB_NO_DROPOFF),
+            _Call("d", "prepare_booking", NARAN_HOTEL),
+        ]),
+        _Msg(tool_calls=[
+            _Call("e", "prepare_booking", FLIGHT_TO_HUB_NO_DROPOFF),
+            _Call("f", "prepare_booking", NARAN_HOTEL),
+        ]),
     ))
 
-    # No vehicle word anywhere in the user's own turn.
-    result = agent.run("book flight option 1 and the hotel, and arrange transport to Naran too")
+    result = agent.run(USER_MESSAGE)
 
-    assert result["action"] == "package_choice"
-    assert result["booking_data"]["component_count"] == 2
-    # The car request must NOT be confirmed — the model never got the user's
-    # own confirmation of the vehicle type, so book_car stays withheld.
-    assert "cab request ready" not in result["response"]
+    assert result.get("action") is None, "an undercharged package must never reach payment"
+    assert result.get("booking_data") is None
+    assert "no card was charged" in result["response"].lower()

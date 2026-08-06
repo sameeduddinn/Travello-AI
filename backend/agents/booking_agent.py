@@ -214,12 +214,14 @@ def format_booking_summary(booking_data: dict) -> str:
 
     if booking_data.get("transfer_vehicle_type"):
         pickup = booking_data.get("transfer_pickup_location") or "pickup to be confirmed"
+        dropoff = booking_data.get("transfer_dropoff_location")
+        route = f"{pickup} → {dropoff}" if dropoff else pickup
         # transfer_pkr is set by _add_transfer_fare during repricing and is already
         # inside the total below — show it so the total adds up on screen.
         fare = booking_data.get("transfer_pkr")
         fare_part = f" (PKR {int(fare):,})" if fare else ""
         lines.append(
-            f"🚗  **Car transfer:** {booking_data['transfer_vehicle_type']}{fare_part} — {pickup}"
+            f"🚗  **Car transfer:** {booking_data['transfer_vehicle_type']}{fare_part} — {route}"
         )
 
     if price:
@@ -333,11 +335,13 @@ def format_package_summary(package_data: dict) -> str:
     for component in components:
         if component.get("transfer_vehicle_type"):
             pickup = component.get("transfer_pickup_location") or "pickup to be confirmed"
+            dropoff = component.get("transfer_dropoff_location")
+            route = f"{pickup} → {dropoff}" if dropoff else pickup
             fare = component.get("transfer_pkr")
             fare_part = f" (PKR {int(fare):,})" if fare else ""
             lines.append(
                 f"🚗  **Car transfer:** {component['transfer_vehicle_type']}"
-                f"{fare_part} — {pickup}"
+                f"{fare_part} — {route}"
             )
             break
 

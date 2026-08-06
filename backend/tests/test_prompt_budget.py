@@ -214,6 +214,65 @@ def test_car_inside_a_booking_conversation_stays_a_transfer():
     assert "book_car" not in names
 
 
+# ── Trip Planner package: the hub->destination car leg must never escape
+# into a standalone book_car call, even when phrased naturally ──────────────
+#
+# The regression this closes: "get me a sedan to Naran" reads exactly like a
+# genuine standalone-car request to _STANDALONE_CAR_RE, so on a turn that is
+# ALSO building a northern package (prepare_booking active), book_car used to
+# survive right alongside it — handing the model a way to split one checkout
+# into a package payment plus a second, separate, no-card car booking. The
+# fix makes exclusion of book_car deterministic instead of relying on the
+# model reading AGENTIC_TRIP_PLANNER_BLOCK correctly.
+
+TRAIN_OFFER_LIST = {"role": "assistant", "content": (
+    "Here are your train options to Rawalpindi:\n"
+    "1. Karakoram Express · 07:00 → 14:30 — PKR 2,200\n"
+    "2. Awam Express · 09:15 → 17:00 — PKR 1,800\n"
+)}
+
+NARAN_HOTEL_OFFER_LIST = {"role": "assistant", "content": (
+    "Here are hotels in Naran:\n"
+    "1. PTDC Motel Naran — PKR 12,000/night\n"
+    "2. Naran Continental — PKR 9,500/night\n"
+)}
+
+
+def test_northern_flight_and_hotel_pick_with_a_car_leg_excludes_book_car():
+    names = select_tool_names(
+        "Book flight option 1 and the hotel, and get me a sedan from "
+        "Islamabad airport to Naran."
+    )
+    assert "prepare_booking" in names
+    assert "book_car" not in names
+
+
+def test_northern_train_package_with_a_car_leg_excludes_book_car():
+    names = select_tool_names(
+        "Book my train and arrange a car to Hunza.", [TRAIN_OFFER_LIST],
+    )
+    assert "prepare_booking" in names
+    assert "book_car" not in names
+
+
+def test_completing_a_northern_trip_with_a_car_excludes_book_car():
+    names = select_tool_names(
+        "Complete my Naran trip with a car from Islamabad.", [NARAN_HOTEL_OFFER_LIST],
+    )
+    assert "prepare_booking" in names
+    assert "book_car" not in names
+
+
+def test_standalone_car_to_a_northern_destination_still_works_outside_a_package():
+    """
+    Preserve genuine standalone car bookings: with no package being built
+    this turn (no pick, no offers on the table), a Naran mention alone must
+    not suppress book_car — the exclusion above only fires alongside an
+    active prepare_booking.
+    """
+    assert select_tool_names("book me a sedan to Naran for tomorrow 9am") == ["book_car"]
+
+
 def test_unrecognised_message_falls_back_to_everything_servable():
     """
     The fallback is the UNKNOWN-request case, so it has to hold whatever the

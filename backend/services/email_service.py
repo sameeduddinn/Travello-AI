@@ -916,6 +916,11 @@ async def send_consolidated_car_booking_email(
         transfer_label = _TRANSFER_LABELS.get(leg["transfer_type"], leg["transfer_type"].replace("_", " ").title())
         d = leg["driver"]
         vehicle_full = f"{d.get('vehicle_color', '')} {d.get('vehicle_make', '')} {d.get('vehicle_model', '')}".strip() or "—"
+        dropoff = leg.get("dropoff_location")
+        dropoff_line = (
+            f'<p style="margin:2px 0 0;color:rgba(255,255,255,.75);font-size:12px">'
+            f'🏁 {dropoff}</p>'
+        ) if dropoff else ""
         return f"""
     <div style="margin-bottom:28px;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden">
       <!-- Leg header -->
@@ -926,6 +931,7 @@ async def send_consolidated_car_booking_email(
         <p style="margin:4px 0 0;color:rgba(255,255,255,.75);font-size:12px">
           📍 {leg["pickup_location"]}
         </p>
+        {dropoff_line}
       </div>
       <!-- Verification code -->
       <div style="background:#e3f0ff;padding:14px 18px;text-align:center;border-bottom:1px solid #e0e0e0">
@@ -1020,11 +1026,17 @@ async def send_internal_car_booking_summary(
         transfer_label = _TRANSFER_LABELS.get(leg["transfer_type"], leg["transfer_type"].replace("_", " ").title())
         d = leg["driver"]
         vehicle_full = f"{d.get('vehicle_color', '')} {d.get('vehicle_make', '')} {d.get('vehicle_model', '')}".strip()
+        dropoff = leg.get("dropoff_location")
+        dropoff_row = (
+            f'<tr style="background:#f9f9f9"><td style="padding:4px 10px;color:#555;'
+            f'font-weight:600">Dropoff</td><td style="padding:4px 10px">{dropoff}</td></tr>'
+        ) if dropoff else ""
         return f"""
         <div style="border:1px solid #e0e0e0;border-radius:8px;padding:16px;margin-bottom:16px">
           <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#1a237e;text-transform:uppercase;letter-spacing:.6px">{transfer_label}</p>
           <table style="width:100%;border-collapse:collapse">
             <tr><td style="padding:4px 10px;color:#555;font-weight:600;width:40%">Pickup</td><td style="padding:4px 10px">{leg["pickup_location"]}</td></tr>
+            {dropoff_row}
             <tr style="background:#f9f9f9"><td style="padding:4px 10px;color:#555;font-weight:600">Vehicle</td><td style="padding:4px 10px">{leg["vehicle_type"]} — {vehicle_full}</td></tr>
             <tr><td style="padding:4px 10px;color:#555;font-weight:600">Plate</td><td style="padding:4px 10px;font-weight:700">{d.get("vehicle_plate", "—")}</td></tr>
             <tr style="background:#f9f9f9"><td style="padding:4px 10px;color:#555;font-weight:600">Driver</td><td style="padding:4px 10px">{d.get("name", "—")} · {d.get("phone", "—")} · ★ {d.get("rating", "—")}</td></tr>
