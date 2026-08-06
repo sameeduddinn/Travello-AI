@@ -144,15 +144,6 @@ class PassenggerClass extends StatelessWidget {
                       onPressed: () {
                         setClass('Business');
                       })),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: TagButton(
-                      text: 'First Class',
-                      size: BtnSize.big,
-                      selected: classType == 'First Class',
-                      onPressed: () {
-                        setClass('First Class');
-                      })),
             ],
           ),
           const VSpace(),

@@ -732,6 +732,9 @@ class ApiClient {
     final depTime = _parseTime(firstSeg['departure_time']?.toString());
     final arrTime = _parseTime(lastSeg['arrival_time']?.toString());
     final carrierCode = firstSeg['carrier_code']?.toString() ?? 'XX';
+    // The backend's flight_number already carries the carrier prefix (e.g.
+    // "PA420", or AviationStack's own IATA designator) — don't prepend it
+    // again here, or it renders as "PAPA420".
     final flightNum = firstSeg['flight_number']?.toString() ?? '';
 
     final stopCities = segments.length > 1
@@ -742,22 +745,18 @@ class ApiClient {
             .toList()
         : <String>[];
 
-    // Assign badge: first = Fastest, cheapest index = Cheapest
-    String badge = '';
-    if (index == 0) badge = 'Fastest';
-
     return {
       'id': offer['offer_id']?.toString() ?? 'offer-$index',
       'airlineName': _airlineName(carrierCode),
       'airlineCode': carrierCode,
-      'flightNumber': flightNum.isNotEmpty ? '$carrierCode$flightNum' : null,
+      'flightNumber': flightNum.isNotEmpty ? flightNum : null,
       'departureTime': depTime,
       'arrivalTime': arrTime,
       'duration': firstItin['duration']?.toString() ?? '',
       'stops': segments.length - 1,
       'stopCities': stopCities,
       'price': (offer['total_price_pkr'] as num?)?.toDouble() ?? 0.0,
-      'badge': badge,
+      'badge': '',
       'isRefundable': offer['is_refundable'] == true,
       // Normalize backend ECONOMY → Flutter 'Economy' so cabin-class filter works
       'cabinClass': _mapBackendCabinClass(

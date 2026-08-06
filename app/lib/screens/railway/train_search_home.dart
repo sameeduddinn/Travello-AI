@@ -43,14 +43,6 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
   String _trainClass = 'Economy (Seat)';
   String? _selectedRank;
 
-  // Seat types with prices
-  static const Map<String, double> _seatTypePrices = {
-    'Economy (Seat)': 3550.0,
-    'Economy (Berth)': 3650.0,
-    'AC Lower / Standard (Berth)': 6900.0,
-    'AC Business': 9950.0,
-  };
-
   final List<String> _trainClasses = [
     'Economy (Seat)',
     'Economy (Berth)',
@@ -301,13 +293,6 @@ class _TrainSearchHomeState extends State<TrainSearchHome>
                                         ? FontWeight.bold
                                         : FontWeight.normal,
                                   ),
-                                ),
-                              ),
-                              Text(
-                                'Rs.${(_seatTypePrices[seatType] ?? 0).toStringAsFixed(0)}',
-                                style: TravelloTheme.subtitle.copyWith(
-                                  color: const Color(0xFFD4AF37),
-                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],

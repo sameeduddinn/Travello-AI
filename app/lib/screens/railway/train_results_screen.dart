@@ -64,7 +64,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
   late DateTime _selectedDate;
 
   // Sort option
-  String _sortBy = 'Recommended'; // Recommended, Cheapest, Fastest
+  String _sortBy = 'Recommended';
   late String _selectedTrainClass;
   RangeValues _priceRange = const RangeValues(0, 100000);
   RangeValues _departureTimeRange = const RangeValues(0, 24);
@@ -777,23 +777,7 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
         return true;
       }).toList();
 
-      switch (_sortBy) {
-        case 'Cheapest':
-          _trains.sort((a, b) {
-            final priceA = a.classPrices[cls] ?? 0.0;
-            final priceB = b.classPrices[cls] ?? 0.0;
-            return priceA.compareTo(priceB);
-          });
-          break;
-        case 'Fastest':
-          _trains.sort((a, b) =>
-              _parseDuration(a.duration).compareTo(_parseDuration(b.duration)));
-          break;
-        case 'Recommended':
-        default:
-          // Keep original order for recommended
-          break;
-      }
+      // Recommended (only sort left): keep the backend's original order.
     });
   }
 
@@ -1068,19 +1052,6 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
     );
   }
 
-  int _parseDuration(String duration) {
-    final parts = duration.split(' ');
-    int minutes = 0;
-    for (var part in parts) {
-      if (part.contains('h')) {
-        minutes += int.parse(part.replaceAll('h', '')) * 60;
-      } else if (part.contains('m')) {
-        minutes += int.parse(part.replaceAll('m', ''));
-      }
-    }
-    return minutes;
-  }
-
   @override
   Widget build(BuildContext context) {
     final fromStation = searchParams['fromStation'] as RailwayStation?;
@@ -1255,10 +1226,6 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
                     child: Row(
                       children: [
                         _buildSortChip('Recommended'),
-                        const SizedBox(width: 8),
-                        _buildSortChip('Cheapest'),
-                        const SizedBox(width: 8),
-                        _buildSortChip('Fastest'),
                       ],
                     ),
                   ),
@@ -3536,25 +3503,6 @@ class _TrainResultsScreenState extends State<TrainResultsScreen> {
   String _getBadge(TrainResult train) {
     if (_trains.isEmpty) return '';
 
-    // Get cheapest train for selected class
-    final cls = _backendClassName;
-    final cheapestTrain = _trains.reduce((a, b) {
-      final priceA = a.classPrices[cls] ??
-          a.classPrices[_selectedTrainClass] ??
-          double.infinity;
-      final priceB = b.classPrices[cls] ??
-          b.classPrices[_selectedTrainClass] ??
-          double.infinity;
-      return priceA < priceB ? a : b;
-    });
-
-    // Get fastest train
-    final fastestTrain = _trains.reduce((a, b) {
-      return _parseDuration(a.duration) < _parseDuration(b.duration) ? a : b;
-    });
-
-    if (train.id == cheapestTrain.id) return 'Cheapest';
-    if (train.id == fastestTrain.id) return 'Fastest';
     if (_trains.indexOf(train) == 0 && _sortBy == 'Recommended') {
       return 'Recommended';
     }

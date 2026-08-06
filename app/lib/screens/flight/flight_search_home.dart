@@ -46,7 +46,6 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
     'Economy',
     'Premium Economy',
     'Business',
-    'First Class'
   ];
 
   @override
@@ -956,11 +955,6 @@ class _FlightSearchHomeState extends State<FlightSearchHome>
                                           case 'Business':
                                             classIcon = Icons.airline_seat_flat;
                                             classColor = Colors.orange;
-                                            break;
-                                          case 'First Class':
-                                            classIcon =
-                                                Icons.airline_seat_flat_angled;
-                                            classColor = Colors.amber;
                                             break;
                                           default:
                                             classIcon = Icons.event_seat;

@@ -74,12 +74,10 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
   late DateTime _selectedDate;
 
   // Filters
-  final bool _directFlightsOnly = false;
-  final int _maxStops = 3; // 0 = direct, 1 = 1 stop, 2 = 2+ stops, 3 = any
   RangeValues _priceRange = const RangeValues(0, 100000);
   RangeValues _departureTimeRange = const RangeValues(0, 24);
   bool _refundableOnly = false;
-  String _sortBy = 'Recommended'; // Recommended, Cheapest, Fastest
+  String _sortBy = 'Recommended';
   late String _selectedCabinClass;
 
   // Passenger counts
@@ -195,8 +193,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
             stops: m['stops'],
             stopCities: List<String>.from(m['stopCities'] ?? []),
             price: m['price'],
-            badge:
-                entry.key == 0 ? 'Cheapest' : (entry.key == 1 ? 'Fastest' : ''),
+            badge: '',
             isRefundable: m['isRefundable'],
             cabinClass: m['cabinClass'],
             seatsAvailable: m['seatsAvailable'] as int?,
@@ -248,9 +245,6 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
       case 'Business':
         cabinMultiplier = 2.5;
         break;
-      case 'First Class':
-        cabinMultiplier = 4.0;
-        break;
       default:
         cabinMultiplier = 1.0;
     }
@@ -268,7 +262,6 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
         stops: 0,
         stopCities: [],
         price: (15000 * priceMultiplier * cabinMultiplier).roundToDouble(),
-        badge: 'Fastest',
         isRefundable: true,
         cabinClass: _selectedCabinClass,
       ),
@@ -283,7 +276,6 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
         stops: 0,
         stopCities: [],
         price: (12500 * priceMultiplier * cabinMultiplier).roundToDouble(),
-        badge: 'Cheapest',
         isRefundable: false,
         cabinClass: _selectedCabinClass,
       ),
@@ -360,12 +352,6 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
         // Cabin class filter - only show flights matching selected cabin class
         if (flight.cabinClass != _selectedCabinClass) return false;
 
-        // Direct flights filter
-        if (_directFlightsOnly && flight.stops > 0) return false;
-
-        // Max stops filter
-        if (_maxStops < 3 && flight.stops > _maxStops) return false;
-
         // Price range filter
         if (flight.price < _priceRange.start ||
             flight.price > _priceRange.end) {
@@ -385,37 +371,9 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
         return true;
       }).toList();
 
-      // Sort
-      if (_sortBy == 'Cheapest') {
-        _filteredFlights.sort((a, b) => a.price.compareTo(b.price));
-      } else if (_sortBy == 'Fastest') {
-        _filteredFlights.sort((a, b) {
-          final aDuration = _parseDuration(a.duration);
-          final bDuration = _parseDuration(b.duration);
-          return aDuration.compareTo(bDuration);
-        });
-      } else {
-        // Recommended: badge flights first, then by price
-        _filteredFlights.sort((a, b) {
-          if (a.badge.isNotEmpty && b.badge.isEmpty) return -1;
-          if (a.badge.isEmpty && b.badge.isNotEmpty) return 1;
-          return a.price.compareTo(b.price);
-        });
-      }
+      // Recommended (only sort left): cheapest first.
+      _filteredFlights.sort((a, b) => a.price.compareTo(b.price));
     });
-  }
-
-  int _parseDuration(String duration) {
-    final parts = duration.split(' ');
-    int minutes = 0;
-    for (var part in parts) {
-      if (part.contains('h')) {
-        minutes += int.parse(part.replaceAll('h', '')) * 60;
-      } else if (part.contains('m')) {
-        minutes += int.parse(part.replaceAll('m', ''));
-      }
-    }
-    return minutes;
   }
 
   void _showFiltersBottomSheet() {
@@ -898,10 +856,6 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                             child: Row(
                               children: [
                                 _buildSortChip('Recommended'),
-                                SizedBox(width: 8.w),
-                                _buildSortChip('Cheapest'),
-                                SizedBox(width: 8.w),
-                                _buildSortChip('Fastest'),
                               ],
                             ),
                           ),
@@ -917,10 +871,6 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                               child: Row(
                                 children: [
                                   _buildSortChip('Recommended'),
-                                  SizedBox(width: 8.w),
-                                  _buildSortChip('Cheapest'),
-                                  SizedBox(width: 8.w),
-                                  _buildSortChip('Fastest'),
                                 ],
                               ),
                             ),
@@ -2362,18 +2312,6 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                           setModalState(() => selectedClass = 'Business'),
                     ),
 
-                    SizedBox(height: 12.h),
-
-                    // First Class
-                    _buildClassOption(
-                      label: 'First Class',
-                      icon: Icons.airline_seat_flat_angled,
-                      iconColor: const Color(0xFFD4AF37),
-                      isSelected: selectedClass == 'First Class',
-                      onTap: () =>
-                          setModalState(() => selectedClass = 'First Class'),
-                    ),
-
                     SizedBox(height: 24.h),
 
                     // Done button
@@ -3006,9 +2944,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
                                 ),
                               ),
                               Text(
-                                flight.isRefundable
-                                    ? 'Refundable'
-                                    : 'Non-refundable',
+                                'Refundable',
                                 style: TextStyle(
                                   fontSize: 11.sp,
                                   color: flight.isRefundable
