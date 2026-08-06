@@ -140,11 +140,11 @@ class _BookingCheckoutState extends State<BookingCheckout> {
     };
     _transferFee = _transferAdded
         ? (const {
-              'Sedan': 800.0,
-              'SUV': 1200.0,
-              'Van': 1500.0
+              'Sedan': 3000.0,
+              'SUV': 6000.0,
+              'Van': 9000.0
             }[_transferVehicleType] ??
-            800.0)
+            3000.0)
         : 0.0;
 
     // Read contact details passed directly from BookingPassengers

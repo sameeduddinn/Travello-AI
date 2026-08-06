@@ -21,9 +21,9 @@ class _CarBookingFormState extends State<CarBookingForm> {
   bool _isLoading = false;
 
   static const _vehicles = [
-    {'type': 'Sedan', 'price': 800,  'icon': CupertinoIcons.car_detailed},
-    {'type': 'SUV',   'price': 1200, 'icon': CupertinoIcons.car_detailed},
-    {'type': 'Van',   'price': 1500, 'icon': CupertinoIcons.bus},
+    {'type': 'Sedan', 'price': 3000, 'icon': CupertinoIcons.car_detailed},
+    {'type': 'SUV',   'price': 6000, 'icon': CupertinoIcons.car_detailed},
+    {'type': 'Van',   'price': 9000, 'icon': CupertinoIcons.bus},
   ];
 
   @override

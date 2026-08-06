@@ -2070,10 +2070,12 @@ Map<String, dynamic>? _agentTransferFacilities(Map<String, dynamic> data) {
   if (vehicle == null || vehicle.isEmpty || pickup == null || pickup.isEmpty) {
     return null;
   }
+  final dropoff = (data['transfer_dropoff_location'] as String?)?.trim();
   return {
     'transferAdded': true,
     'transferVehicleType': vehicle,
     'transferPickupLocation': pickup,
+    if (dropoff != null && dropoff.isNotEmpty) 'transferDropoffLocation': dropoff,
   };
 }
 

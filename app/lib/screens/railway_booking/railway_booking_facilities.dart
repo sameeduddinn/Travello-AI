@@ -698,9 +698,9 @@ class _RailwayBookingFacilitiesState extends State<RailwayBookingFacilities> {
   }) {
     const Color primaryColor = Color(0xFFD4AF37);
     const List<Map<String, dynamic>> vehicles = [
-      {'type': 'Sedan', 'desc': '1–3 passengers', 'price': 800},
-      {'type': 'SUV', 'desc': '1–5 passengers', 'price': 1200},
-      {'type': 'Van', 'desc': '6–9 passengers', 'price': 1500},
+      {'type': 'Sedan', 'desc': '1–3 passengers', 'price': 3000},
+      {'type': 'SUV', 'desc': '1–5 passengers', 'price': 6000},
+      {'type': 'Van', 'desc': '6–9 passengers', 'price': 9000},
     ];
 
     return Container(
