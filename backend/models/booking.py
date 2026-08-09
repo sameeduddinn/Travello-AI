@@ -42,6 +42,7 @@ class BookingOut(BaseModel):
     user_id:       str
     booking_id:    str             # human-readable: TRV-FL-20240417-A1B2
     booking_type:  str             # flight | train | hotel
+    package_id:    Optional[str]   = None  # shared across N rows for one Trip Package
     pnr:           Optional[str]   = None
     transaction_id: Optional[str]  = None
     contact_email: str

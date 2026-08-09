@@ -110,4 +110,12 @@ class AppLink {
   static const colorCollection = '/color-collection';
   static const formSample = '/form-sample';
   static const cardCollection = '/card-collection';
+
+  // TRIP PACKAGE — native flight+hotel(+transfer) package builder, distinct
+  // from the static promotional "package" screens above (flightDetailPackage,
+  // hotelPackageAll, etc.) and from the AI Assistant's own package flow.
+  static const tripPackageRequirements = '/trip-package-requirements';
+  static const tripPackageOptions = '/trip-package-options';
+  static const tripPackageTransferDetails = '/trip-package-transfer-details';
+  static const tripPackageReview = '/trip-package-review';
 }

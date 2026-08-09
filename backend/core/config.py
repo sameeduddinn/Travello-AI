@@ -111,7 +111,7 @@ class Settings(BaseSettings):
     OTP_MAX_ATTEMPTS: int = 3
 
   
-    AGENT_DAILY_MESSAGE_LIMIT: int = 50
+    AGENT_DAILY_MESSAGE_LIMIT: int = 100
 
    
     CORS_ORIGINS: str = "*"

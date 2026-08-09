@@ -93,6 +93,12 @@ def _common_patches(monkeypatch):
     async def _history(_cid, limit=20):
         return []
 
+    async def _no_planner_state(_cid):
+        return None
+
+    async def _noop_save_planner_state(*a, **k):
+        pass
+
     async def _save_turn(cid, uid, user_msg, reply, **kw):
         pass
 
@@ -106,6 +112,8 @@ def _common_patches(monkeypatch):
     monkeypatch.setattr(ma, "get_user_profile", _profile)
     monkeypatch.setattr(ma, "get_conversation_history", _history)
     monkeypatch.setattr(ma, "save_turn", _save_turn)
+    monkeypatch.setattr(ma, "get_active_planner_state", _no_planner_state)
+    monkeypatch.setattr(ma, "save_planner_state", _noop_save_planner_state)
     monkeypatch.setattr(ma, "_log_task", _log_task)
     monkeypatch.setattr(ma, "all_providers_exhausted", lambda: False)
     monkeypatch.setattr(ma.self_improvement, "detect_user_correction", lambda _m: False)

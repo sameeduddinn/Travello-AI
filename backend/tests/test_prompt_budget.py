@@ -163,6 +163,53 @@ def test_northern_destination_mention_is_detected_for_prompt_gating():
     assert not mentions_northern_destination("a hotel in Lahore please")
 
 
+# ── A generic "northern areas/Pakistan" mention is NOT a destination ─────────
+#
+# Naran/Hunza/Skardu/Swat each need a different search — searching anything
+# for a bare region mention means silently guessing which one. "Budget trip
+# to Northern Pakistan" is one of the app's own six homepage suggestion chips
+# (see AIAssistantData.getSuggestions in ai_chat.dart), so this is a common
+# entry point, not an edge case.
+
+def test_a_generic_northern_region_mention_withholds_every_search_and_booking_tool():
+    names = select_tool_names("Plan a trip to northern areas")
+    assert not {"search_flights", "search_trains", "search_hotels", "book_car", "prepare_booking"} & set(names)
+
+
+def test_the_homepage_northern_pakistan_chip_withholds_every_search_and_booking_tool():
+    names = select_tool_names("Budget trip to Northern Pakistan")
+    assert not {"search_flights", "search_trains", "search_hotels", "book_car", "prepare_booking"} & set(names)
+
+
+def test_a_specific_northern_destination_still_gets_the_full_trip_planner_toolset():
+    """Regression guard: the generic-region check must never fire once a real
+    destination (Naran/Hunza/Skardu/Swat) has actually been named."""
+    names = select_tool_names("Plan a trip to Hunza")
+    assert {"search_flights", "search_trains", "search_hotels", "book_car"} <= set(names)
+
+
+def test_a_specific_destination_named_alongside_the_region_is_not_blocked():
+    names = select_tool_names("Plan a trip to Hunza Valley in northern Pakistan")
+    assert {"search_flights", "search_trains", "search_hotels", "book_car"} <= set(names)
+
+
+def test_a_generic_region_mention_earlier_in_history_still_blocks_a_bare_followup():
+    names = select_tool_names(
+        "ok what next",
+        [{"role": "user", "content": "Budget trip to Northern Pakistan"}],
+    )
+    assert not {"search_flights", "search_trains", "search_hotels", "book_car", "prepare_booking"} & set(names)
+
+
+def test_naming_the_destination_after_the_generic_mention_unblocks_the_flow():
+    names = select_tool_names(
+        "Hunza please",
+        [{"role": "user", "content": "Budget trip to Northern Pakistan"},
+         {"role": "assistant", "content": "Which northern destination — Naran, Hunza, Skardu, or Swat?"}],
+    )
+    assert {"search_flights", "search_trains", "search_hotels"} <= set(names)
+
+
 def test_northern_trip_planning_turn_still_fits_the_5k_target():
     """
     The real wired shape once trip_planner is threaded through

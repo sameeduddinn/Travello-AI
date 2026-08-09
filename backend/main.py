@@ -169,6 +169,7 @@ from routers import reviews as reviews_router
 from routers import support as support_router
 from routers import cars as cars_router
 from routers import agent as agent_router
+from routers import trip_packages as trip_packages_router
 
 app.include_router(auth.router)
 app.include_router(flights.router)
@@ -187,6 +188,7 @@ app.include_router(reviews_router.router)
 app.include_router(support_router.router)
 app.include_router(cars_router.router)
 app.include_router(agent_router.router)
+app.include_router(trip_packages_router.router)
 
 
 # Health check — no auth required (used by Render.com health checks)

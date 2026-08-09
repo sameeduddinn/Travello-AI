@@ -6,7 +6,7 @@ The transcript this file exists to prevent, observed on-device:
     ... flight Karachi -> Lahore, 7 Aug, booked, PNR 78C78D, PKR 45,783 paid
     user:  "now i want driver at lahore airport"
     agent: Booking Summary
-           Flight: Karachi -> Lahore  Date: 2026-08-07  Airline: AirSial
+           Flight: Karachi -> Lahore  Date: 2027-08-07  Airline: AirSial
            Car transfer: Sedan (PKR 800) - Lahore Airport
            Total: PKR 46,583
            Next, tap Add Passenger Details ...
@@ -41,7 +41,7 @@ from agents.prompt_builder import select_tool_names
 SUMMARY = (
     "**Booking Summary**\n\n"
     "✈️  **Flight:** Karachi → Lahore\n"
-    "\U0001f4c5  **Date:** 2026-08-07\n"
+    "\U0001f4c5  **Date:** 2027-08-07\n"
     "\U0001f6eb  **Airline:** AirSial\n"
     "\U0001f4ba  **Class:** Business\n"
     "\U0001f465  **Passengers:** 1 adult(s)\n\n"
@@ -75,7 +75,7 @@ PAID_FLIGHT_HISTORY = [
 
 PAID_FLIGHT = {
     "booking_type": "flight", "origin": "Karachi", "destination": "Lahore",
-    "travel_date": "2026-08-07", "flight_number": "ER204", "adults": 1,
+    "travel_date": "2027-08-07", "flight_number": "ER204", "adults": 1,
     "cabin_class": "BUSINESS", "total_price_pkr": 45783,
 }
 
@@ -121,7 +121,7 @@ def test_offers_are_still_live_before_payment():
 def test_the_paid_flight_is_parsed_out_of_the_confirmed_summary():
     assert confirmed_components(PAID_FLIGHT_HISTORY) == [{
         "booking_type": "flight", "origin": "Karachi",
-        "destination": "Lahore", "travel_date": "2026-08-07",
+        "destination": "Lahore", "travel_date": "2027-08-07",
     }]
 
 
@@ -138,7 +138,7 @@ def test_a_summary_that_was_never_paid_does_not_block():
 
 
 @pytest.mark.parametrize("changed", [
-    {"travel_date": "2026-08-10"},                          # different day
+    {"travel_date": "2027-08-10"},                          # different day
     {"origin": "Lahore", "destination": "Karachi"},         # the return leg
     {"destination": "Islamabad"},                           # different city
     {"booking_type": "train"},                              # different mode
@@ -170,14 +170,14 @@ def test_a_paid_hotel_is_recognised():
         {"role": "assistant", "content": (
             "**Booking Summary**\n\n"
             "\U0001f3e8  **Hotel:** Pearl Continental\n"
-            "\U0001f4c5  **Check-in:** 2026-08-07\n"
-            "\U0001f4c5  **Check-out:** 2026-08-09\n")},
+            "\U0001f4c5  **Check-in:** 2027-08-07\n"
+            "\U0001f4c5  **Check-out:** 2027-08-09\n")},
         {"role": "assistant", "content": CONFIRMED},
     ]
     same = {"booking_type": "hotel", "hotel_name": "Pearl Continental",
-            "check_in": "2026-08-07", "check_out": "2026-08-09"}
+            "check_in": "2027-08-07", "check_out": "2027-08-09"}
     assert get_already_booked_error(same, history)
-    assert get_already_booked_error({**same, "check_in": "2026-08-20"}, history) is None
+    assert get_already_booked_error({**same, "check_in": "2027-08-20"}, history) is None
 
 
 def test_both_legs_of_a_paid_package_are_recognised():
@@ -189,21 +189,21 @@ def test_both_legs_of_a_paid_package_are_recognised():
     history = [
         {"role": "assistant", "content": (
             "**Your Package**\n\n"
-            "1. ✈️  **Flight:** Lahore → Karachi, 2026-08-20 — **PKR 21,210**\n"
-            "2. ✈️  **Flight:** Karachi → Lahore, 2026-08-25 — **PKR 29,052**\n\n"
+            "1. ✈️  **Flight:** Lahore → Karachi, 2027-08-20 — **PKR 21,210**\n"
+            "2. ✈️  **Flight:** Karachi → Lahore, 2027-08-25 — **PKR 29,052**\n\n"
             "\U0001f4b0  **Package total: PKR 50,262**\n")},
         {"role": "assistant", "content": "✅ **Package Confirmed!**\n\n**PNR:** AB12CD"},
     ]
     legs = confirmed_components(history)
     assert [(c["origin"], c["destination"], c["travel_date"]) for c in legs] == [
-        ("Lahore", "Karachi", "2026-08-20"),
-        ("Karachi", "Lahore", "2026-08-25"),
+        ("Lahore", "Karachi", "2027-08-20"),
+        ("Karachi", "Lahore", "2027-08-25"),
     ]
     out = {"booking_type": "flight", "origin": "Lahore", "destination": "Karachi",
-           "travel_date": "2026-08-20"}
+           "travel_date": "2027-08-20"}
     assert get_already_booked_error(out, history)
     # ...but not a third leg on a date neither of them covers.
-    assert get_already_booked_error({**out, "travel_date": "2026-09-01"}, history) is None
+    assert get_already_booked_error({**out, "travel_date": "2027-09-01"}, history) is None
 
 
 # ── B, end to end through the real loop ──────────────────────────────────────
@@ -247,6 +247,12 @@ def agent(monkeypatch):
     async def _history(_cid, limit=20):
         return list(agent.history)
 
+    async def _no_planner_state(_cid):
+        return None
+
+    async def _noop_save_planner_state(*a, **k):
+        pass
+
     async def _save_turn(*a, **k):
         return None
 
@@ -271,6 +277,8 @@ def agent(monkeypatch):
     monkeypatch.setattr(ma, "get_user_profile", _profile)
     monkeypatch.setattr(ma, "get_conversation_history", _history)
     monkeypatch.setattr(ma, "save_turn", _save_turn)
+    monkeypatch.setattr(ma, "get_active_planner_state", _no_planner_state)
+    monkeypatch.setattr(ma, "save_planner_state", _noop_save_planner_state)
     monkeypatch.setattr(ma, "_log_task", _noop)
     monkeypatch.setattr(ma, "all_providers_exhausted", lambda: False)
     monkeypatch.setattr(ma.self_improvement, "detect_user_correction", lambda _m: False)
@@ -326,8 +334,8 @@ def test_a_new_piece_still_books_when_a_paid_one_is_re_proposed(agent, monkeypat
     agent.reprice_ok = {"ER204", "Pearl Continental"}
     new_hotel = {
         "booking_type": "hotel", "destination": "Lahore",
-        "hotel_name": "Pearl Continental", "check_in": "2026-08-07",
-        "check_out": "2026-08-09", "guests": 1, "rooms": 1,
+        "hotel_name": "Pearl Continental", "check_in": "2027-08-07",
+        "check_out": "2027-08-09", "guests": 1, "rooms": 1,
         "total_price_pkr": 24000,
     }
     monkeypatch.setattr(ma, "generate_with_tools", _script(

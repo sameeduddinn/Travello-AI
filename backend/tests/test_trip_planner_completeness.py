@@ -12,6 +12,7 @@ test_northern_trip_planning.py, which already drives the real
 process_message_agentic loop with a scripted model.
 """
 from agents.agent_tools import get_trip_planner_incomplete_error
+from agents.master_agent import _package_incomplete_message
 
 FLIGHT_TO_GILGIT = {
     "booking_type": "flight", "origin": "Karachi", "destination": "Gilgit",
@@ -90,6 +91,26 @@ def test_skardu_flight_alone_is_still_incomplete_without_a_hotel():
     assert err["missing"] == ["a hotel"]
 
 
+def test_missing_labels_use_friendly_names_and_the_real_transfer_route():
+    """
+    Friendly, user-facing labels — not the internal prose used for the
+    model-facing `instruction` — and the transfer's real hub route, read off
+    the already-verified flight component's own `destination` field (the hub
+    city it actually flew to), not guessed or recalculated.
+    """
+    err = get_trip_planner_incomplete_error([FLIGHT_TO_GILGIT], None, "Hunza")
+    assert err is not None
+    assert err["missing_labels"] == ["Hotel", "Car Transfer (Gilgit → Hunza)"]
+
+
+def test_missing_labels_omit_the_route_when_transport_itself_is_missing():
+    """With no flight/train verified at all, there's no hub city to name yet
+    — the label degrades to a plain "Car Transfer", never a fabricated route."""
+    err = get_trip_planner_incomplete_error([HUNZA_HOTEL], None, "Hunza")
+    assert err is not None
+    assert err["missing_labels"] == ["Flight/Train", "Car Transfer"]
+
+
 def test_a_component_already_paid_for_earlier_counts_toward_completeness():
     """
     A flight confirmed and paid for earlier in this SAME conversation must not
@@ -108,3 +129,35 @@ def test_a_component_already_paid_for_earlier_counts_toward_completeness():
     ]
     err = get_trip_planner_incomplete_error([SKARDU_HOTEL], history, "Skardu")
     assert err is None
+
+
+# ── _package_incomplete_message: the fallback shown once retries are ─────────
+# exhausted — reuses the SAME missing_labels computed above, no recalculation.
+
+def test_fallback_message_lists_every_missing_component_by_name():
+    msg = _package_incomplete_message(
+        [], [], 1, ["Hotel", "Car Transfer (Islamabad → Swat)"],
+    )
+    assert "Missing:" in msg
+    assert "- Hotel" in msg
+    assert "- Car Transfer (Islamabad → Swat)" in msg
+    assert "no card has been charged" in msg.lower()
+    assert "sent to payment" in msg.lower()
+
+
+def test_fallback_message_without_missing_labels_keeps_the_original_wording():
+    """
+    Every OTHER caller of this function — an ordinary incomplete round trip,
+    where there's no fixed "required set" to name — must see EXACTLY the
+    pre-existing generic wording. This feature only touches the Trip Planner
+    path (missing_labels is only ever populated by
+    get_trip_planner_incomplete_error).
+    """
+    verified = [{
+        "booking_type": "flight", "origin": "Karachi", "destination": "Lahore",
+        "travel_date": "2026-08-20",
+    }]
+    msg = _package_incomplete_message(verified, [], 2)
+    assert "Missing:" not in msg
+    assert "half a trip" in msg
+    assert "no card was charged" in msg.lower()

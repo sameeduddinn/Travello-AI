@@ -20,7 +20,7 @@ from services.train_service import search_trains
 from services.hotel_service import search_hotels, CITY_ALIASES
 from services.weather_service import get_weather
 from services.car_service import estimate_fare as _estimate_car_fare
-from services.northern_routes import hub_options_for
+from services.northern_routes import canonical_destination, hub_options_for, names_destination
 from agents.clarification_agent import CITY_TO_IATA, _parse_relative_date
 
 logger = logging.getLogger(__name__)
@@ -38,8 +38,8 @@ TOOL_SCHEMAS: list[dict] = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "origin_city": {"type": "string", "description": "Departure city, e.g. Karachi"},
-                    "destination_city": {"type": "string", "description": "Arrival city, e.g. Lahore"},
+                    "origin_city": {"type": "string", "description": "Departure city"},
+                    "destination_city": {"type": "string", "description": "Arrival city (northern trip: the HUB, not the destination)"},
                     "travel_date": {"type": "string", "description": "YYYY-MM-DD"},
                     "passengers": {
                         "type": "integer",
@@ -73,7 +73,7 @@ TOOL_SCHEMAS: list[dict] = [
                 "type": "object",
                 "properties": {
                     "origin_city": {"type": "string", "description": "Departure city"},
-                    "destination_city": {"type": "string", "description": "Arrival city"},
+                    "destination_city": {"type": "string", "description": "Arrival city (northern trip: the HUB, not the destination)"},
                     "travel_date": {"type": "string", "description": "YYYY-MM-DD"},
                     "passengers": {
                         "type": "integer",
@@ -110,6 +110,10 @@ TOOL_SCHEMAS: list[dict] = [
                         ),
                     },
                     "rooms": {"type": "integer", "description": "Number of rooms (default 1)"},
+                    "min_stars": {
+                        "type": "number",
+                        "description": "Star rating the user asked for. Omit if they didn't.",
+                    },
                     "max_budget_pkr": {
                         "type": "number",
                         "description": "Only if the user gave a per-night PKR ceiling. Omit otherwise.",
@@ -447,6 +451,112 @@ def date_provenance_error(name: str, *, has_user_date: bool) -> dict | None:
             f"or any assumed date, and do NOT state a date as if they chose it. Ask "
             f"for their {label} (with anything else still missing) in ONE short, warm "
             f"question, then search once they answer."
+        ),
+    }
+
+
+def transport_mode_missing_error(
+    name: str, *, is_trip_planner: bool, has_transport_mode: bool,
+) -> dict | None:
+    """
+    Block search_flights/search_trains for a Trip Planner turn (a
+    recognised northern destination — see prompt_builder.
+    mentions_northern_destination) until the traveller has actually said
+    which they want. AGENTIC_TRIP_PLANNER_BLOCK already instructs the model
+    to gather "flight or train, cabin/class" in its one clarifying question,
+    but a free-tier model doesn't reliably comply — observed in practice:
+    it searched trains outright, on a message that named a destination,
+    party size, dates and budget but never mentioned a mode, without ever
+    asking. This is the same "ask, don't guess" posture as
+    date_provenance_error, applied to mode instead of date. Every other
+    tool, and an ordinary (non-Trip-Planner) flight/train search, is
+    unaffected.
+    """
+    if not is_trip_planner or has_transport_mode:
+        return None
+    if name not in ("search_flights", "search_trains"):
+        return None
+    return {
+        "error": "transport_mode_not_chosen",
+        "instruction": (
+            "Do not call search_flights or search_trains yet. The traveller "
+            "has not said whether they want to fly or take the train for "
+            "this trip. Ask them, in one short question, whether they'd "
+            "like to fly or take the train, and which cabin/class they'd "
+            "prefer — then search only that one, once they answer. Do not "
+            "guess or default to either."
+        ),
+    }
+
+
+def hub_mismatch_error(
+    name: str, args: dict, *, is_trip_planner: bool, trip_destination: str,
+) -> dict | None:
+    """
+    Block search_flights/search_trains/search_hotels on a Trip Planner turn
+    when the city named doesn't match the real hub (or the destination
+    itself, for hotels and for Skardu which has its own airport).
+    AGENTIC_TRIP_PLANNER_BLOCK already tells the model to "search the HUB"
+    and trust the NORTHERN HUB FACT note, but that's advisory only — observed
+    in practice: asked for a Naran trip, the model searched flights and
+    hotels for Karachi -> Lahore instead, a city pair the traveller never
+    named. (The old schema examples literally read "e.g. Karachi" / "e.g.
+    Lahore" for origin/destination — a likely anchor for exactly this
+    hallucination, fixed alongside this gate.) Same "ask/retry, don't guess"
+    posture as date_provenance_error and transport_mode_missing_error. Every
+    other tool, and an ordinary (non-Trip-Planner) search, is unaffected.
+    """
+    if not is_trip_planner or not trip_destination:
+        return None
+    if name not in ("search_flights", "search_trains", "search_hotels"):
+        return None
+    hubs = hub_options_for(trip_destination)
+    if hubs is None:  # not one of the four recognised northern destinations
+        return None
+    canonical = canonical_destination(trip_destination)
+
+    if name == "search_hotels":
+        city = str((args or {}).get("city") or "").strip()
+        if not city or names_destination(city, canonical):
+            return None
+        return {
+            "error": "wrong_hotel_city",
+            "instruction": (
+                f"'{city}' doesn't match the traveller's destination, {canonical}. "
+                f"Hotels for this trip must be searched in {canonical} itself, not "
+                "a different city. Search again with the correct city — do not "
+                "invent or substitute another one."
+            ),
+        }
+
+    mode = "flight" if name == "search_flights" else "train"
+    dest = str((args or {}).get("destination_city") or "").strip()
+    if not dest:
+        return None
+    if not hubs:
+        # Skardu: has its own airport, search it directly — no hub substitution.
+        if names_destination(dest, canonical):
+            return None
+        return {
+            "error": "wrong_destination_city",
+            "instruction": (
+                f"'{dest}' doesn't match the traveller's destination, {canonical}. "
+                f"{canonical} has its own airport/station — search {canonical} "
+                "directly, not a different city. Search again with the correct "
+                "destination — do not invent or substitute another one."
+            ),
+        }
+    expected = [h.hub_city for h in hubs if h.mode == mode]
+    if not expected or any(_names_match(_norm(dest), _norm(h)) for h in expected):
+        return None
+    hub_list = " or ".join(expected)
+    return {
+        "error": "wrong_hub_city",
+        "instruction": (
+            f"'{dest}' is not the right hub for a {canonical} trip by {mode}. "
+            f"{canonical} has no airport/station of its own — search {hub_list} "
+            f"instead, then use the transfer fields on prepare_booking for the "
+            f"road leg to {canonical}. Do not invent or substitute another city."
         ),
     }
 
@@ -790,9 +900,34 @@ def _serialize_trains(resp) -> dict:
     return {"trains": trains, "notes": resp.notes}
 
 
+def _stars_filter(hotels: list, min_stars) -> tuple[list, bool]:
+    """
+    Hotels at or above the rating the user asked for, plus whether that ask was
+    actually satisfiable. Applied to the WHOLE result set before it's trimmed to
+    the top few — filtering after the trim would report "no 4-star hotels" when
+    several exist just outside the first six.
+
+    Returns (hotels, honoured). When nothing meets the bar the full set comes
+    back with honoured=False, so the caller can say so plainly and show the
+    closest alternatives instead of passing a 3-star off as a 4-star.
+    """
+    try:
+        wanted = float(min_stars)
+    except (TypeError, ValueError):
+        return hotels, True
+    if wanted <= 0:
+        return hotels, True
+    matching = [h for h in hotels if (getattr(h, "star_rating", 0) or 0) >= wanted]
+    return (matching, True) if matching else (hotels, False)
+
+
 def _serialize_hotels(resp) -> list[dict]:
     out: list[dict] = []
     for h in (resp.hotels or [])[:6]:
+        # The quoted price is the CHEAPEST room's, so any per-room fact shown
+        # beside it has to come from that same room or it describes a room the
+        # traveller isn't being quoted for.
+        cheapest = min(h.rooms, key=lambda r: r.price_per_night_pkr) if h.rooms else None
         out.append({
             "name": h.name,
             "stars": h.star_rating,
@@ -800,6 +935,7 @@ def _serialize_hotels(resp) -> list[dict]:
             "price_per_night_pkr": round(h.min_price_per_night_pkr),
             "review_score": h.review_score,
             "amenities": (h.amenities or [])[:5],
+            "breakfast_included": bool(cheapest.breakfast_included) if cheapest else False,
         })
     return out
 
@@ -1172,6 +1308,12 @@ async def _exec_hotels(args: dict) -> dict:
     guests = _as_count(args.get("guests"), default=2) or 2
     rooms = _as_count(args.get("rooms"), default=1) or 1
     resp = await search_hotels(city, ci, co, guests, rooms)
+    # The star preference is honoured against the WHOLE result set, before the
+    # serializer trims to the top few. A traveller who asked for 4-star and is
+    # shown a 3-star as though it qualified is being quietly sold something
+    # else; stars_honoured=False says so instead.
+    matching, stars_honoured = _stars_filter(list(resp.hotels or []), args.get("min_stars"))
+    resp.hotels = matching
     hotels = _serialize_hotels(resp)
     nights = max((co - ci).days, 1)
     # Precompute the whole-stay total the SAME way reprice_booking will
@@ -1196,6 +1338,16 @@ async def _exec_hotels(args: dict) -> dict:
         "total_found": len(resp.hotels or []),
         "hotels": hotels,
     }
+    if not stars_honoured:
+        result["stars_requested"] = args.get("min_stars")
+        result["stars_honoured"] = False
+        result["note"] = (
+            f"NO {args.get('min_stars')}-STAR HOTEL: nothing at that rating was found in "
+            f"{city.title() or 'that city'} for these dates. The hotels listed are the "
+            f"closest available alternatives and are NOT that rating — say so plainly, "
+            f"show them as alternatives, and let the user decide. Never present a lower "
+            f"rating as if it met the request."
+        )
     # Same posture as _exec_flights/_exec_trains — an empty result must say so
     # rather than leaving the model to fill the gap with a remembered hotel.
     if not hotels:
@@ -1645,19 +1797,34 @@ def get_trip_planner_incomplete_error(
     has_hotel = any(c.get("booking_type") == "hotel" for c in have)
     has_transfer = any(c.get("transfer_vehicle_type") for c in transport)
 
+    # The hub city a chosen flight/train already flew/rode into (its OWN
+    # `destination` field is the hub, not the northern destination — see
+    # FLIGHT_TO_HUB_WITH_TRANSFER in test_northern_trip_planning.py) — used
+    # only to label a still-missing transfer with its real route when that's
+    # already known; never guessed when transport itself is also missing.
+    hub_city = transport[0].get("destination") if transport else None
+
     missing = []
+    missing_labels = []  # friendly, user-facing labels for the same gaps
     if not transport:
         missing.append("transport to the hub")
+        missing_labels.append("Flight/Train")
     if not has_hotel:
         missing.append("a hotel")
+        missing_labels.append("Hotel")
     if hubs and not has_transfer:
         missing.append("the car transfer to the destination")
+        missing_labels.append(
+            f"Car Transfer ({hub_city} → {trip_destination})" if hub_city
+            else "Car Transfer"
+        )
     if not missing:
         return None
 
     return {
         "error": "trip_planner_incomplete",
         "missing": missing,
+        "missing_labels": missing_labels,
         "instruction": (
             f"This is a {trip_destination} Trip Planner package, not an "
             f"individual booking — it still needs {', '.join(missing)}. Do "
@@ -1759,7 +1926,9 @@ def get_transfer_error(
     hubs = hub_options_for(trip_destination) if trip_destination else None
     if hubs:
         pickup_names_hub = any(_norm(h.hub_city) in _norm(pickup) for h in hubs)
-        if pickup_names_hub and _norm(trip_destination) not in _norm(dropoff):
+        # Alias-aware: a dropoff of "Kaghan" DOES name a Naran trip, so this
+        # must not read as a mismatch and block a correct booking.
+        if pickup_names_hub and not names_destination(dropoff, trip_destination):
             return _transfer_error(
                 f"This is a hub->{trip_destination} car leg, but the transfer's "
                 "destination isn't set to (or doesn't match) "

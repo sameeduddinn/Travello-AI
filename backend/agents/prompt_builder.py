@@ -13,6 +13,7 @@ from services.llm_service import estimate_request_tokens
 from services.hotel_service import CITY_ALIASES
 from services.northern_routes import NORTHERN_DESTINATIONS
 from agents.agent_tools import TOOL_SCHEMAS, TOOL_SCHEMAS_BY_NAME
+from agents.conversation_state import transport_preference
 from prompts.master_agent import (
     MASTER_AGENTIC_CORE,
     AGENTIC_BOOKING_BLOCK,
@@ -111,6 +112,18 @@ _NORTHERN_DEST_RE = re.compile(
 
 def _mentions_northern_destination(text: str) -> bool:
     return bool(_NORTHERN_DEST_RE and _NORTHERN_DEST_RE.search(text or ""))
+
+
+# "Northern Pakistan" / "northern areas" / "north Pakistan" name a REGION, not
+# a destination — Naran/Hunza/Skardu/Swat each have a different hub, fare and
+# hotel, so searching anything here would mean silently guessing which one the
+# user meant. This is the app's own homepage suggestion chip text ("Budget
+# trip to Northern Pakistan"), so it is a common, not edge-case, way in.
+_GENERIC_NORTHERN_RE = re.compile(r"\bnorth(?:ern)?\s+(?:pakistan|areas?|region)\b", re.I)
+
+
+def _mentions_generic_northern_region(text: str) -> bool:
+    return bool(_GENERIC_NORTHERN_RE.search(text or ""))
 # An explicit request for a car AS THE BOOKING, which is what book_car is for.
 # "yes add a car transfer" mentions a car but means the transfer FIELD on
 # prepare_booking — sending book_car for it offers the model a way to split one
@@ -342,6 +355,36 @@ def select_tool_names(
     if not chosen:
         chosen = set(_DEFAULT_TOOLS)
 
+    # A generic northern-region mention ("northern areas", "Budget trip to
+    # Northern Pakistan" — the app's own homepage suggestion chip) names a
+    # REGION, not a destination, unless a SPECIFIC one (Naran/Hunza/Skardu/
+    # Swat) has ALSO been named this turn or recently — in which case the
+    # normal flow already has what it needs. Otherwise every search/booking
+    # tool is withheld so the model's only option is to ask which
+    # destination — it can never silently search or book toward a guess.
+    # Runs LAST, after the _DEFAULT_TOOLS fallback above, so it can't be
+    # undone by it.
+    generic_northern = _mentions_generic_northern_region(message) or any(
+        _mentions_generic_northern_region(m.get("content") or "") for m in recent
+    )
+    if generic_northern and not mentions_northern_destination(message, history):
+        chosen -= {"search_flights", "search_trains", "search_hotels", "book_car", "prepare_booking"}
+
+    # A stated transport preference is the traveller's decision, not a hint.
+    # The northern expansion in _signals adds BOTH transport searches whatever
+    # was asked for, so a model that reached for the wrong one could quietly
+    # rebuild the trip around the other mode — and with it the other hub, which
+    # is a different transfer and a different price (Gilgit PKR 7,000 vs
+    # Rawalpindi PKR 38,000 for the same Hunza trip). Withholding the tool is
+    # what makes that impossible rather than merely discouraged.
+    #
+    # Scoped to the northern planner: a standalone "fly Lahore to Karachi"
+    # already selects search_flights alone, so nothing here changes it, and a
+    # message naming BOTH modes sets no preference — comparison still works.
+    preference = transport_preference(message, history)
+    if preference and mentions_northern_destination(message, history):
+        chosen.discard("search_trains" if preference == "flight" else "search_flights")
+
     # Preserve TOOL_SCHEMAS order so the payload is byte-stable turn to turn,
     # which keeps provider-side prompt caching effective.
     return [t["function"]["name"] for t in TOOL_SCHEMAS if t["function"]["name"] in chosen]
@@ -352,8 +395,18 @@ def select_tools(
     history: list[dict] | None = None,
 ) -> list[dict]:
     """The tool SCHEMAS for this turn. See select_tool_names."""
-    names = select_tool_names(user_message, history)
-    return [TOOL_SCHEMAS_BY_NAME[n] for n in names if n in TOOL_SCHEMAS_BY_NAME]
+    return select_tools_by_name(select_tool_names(user_message, history))
+
+
+def select_tools_by_name(names: list[str]) -> list[dict]:
+    """Schemas for an explicit tool list, in TOOL_SCHEMAS order.
+
+    Needed where the turn's tools are decided by something the message itself
+    can't show — a Trip Planner confirmation is the word "yes", which carries
+    no booking signal at all, yet that turn is the one that books.
+    """
+    ordered = [n for n in TOOL_SCHEMAS_BY_NAME if n in set(names)]
+    return [TOOL_SCHEMAS_BY_NAME[n] for n in ordered]
 
 
 def mentions_northern_destination(user_message: str, history: list[dict] | None = None) -> bool:

@@ -64,6 +64,16 @@ def agent(monkeypatch):
     async def _save_turn(cid, uid, user_msg, reply, **kw):
         saved["turns"].append(reply)
 
+    # Structured planner-state persistence — unmocked, this hits a real
+    # Supabase client and either times out or errors, adding real latency to
+    # every test even though it fails safely either way. Stubbed the same as
+    # every other I/O edge here for a fast, deterministic run.
+    async def _no_planner_state(_cid):
+        return None
+
+    async def _noop_save_planner_state(*a, **k):
+        pass
+
     async def _log_task(*a, **k):
         pass
 
@@ -74,6 +84,8 @@ def agent(monkeypatch):
     monkeypatch.setattr(ma, "get_user_profile", _profile)
     monkeypatch.setattr(ma, "get_conversation_history", _history)
     monkeypatch.setattr(ma, "save_turn", _save_turn)
+    monkeypatch.setattr(ma, "get_active_planner_state", _no_planner_state)
+    monkeypatch.setattr(ma, "save_planner_state", _noop_save_planner_state)
     monkeypatch.setattr(ma, "_log_task", _log_task)
     monkeypatch.setattr(ma, "all_providers_exhausted", lambda: False)
     monkeypatch.setattr(ma.self_improvement, "detect_user_correction", lambda _m: False)

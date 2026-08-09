@@ -5,6 +5,7 @@ import 'package:flight_app/app/routes_payment.dart';
 import 'package:flight_app/app/routes_profile.dart';
 import 'package:flight_app/app/routes_ui_collection.dart';
 import 'package:flight_app/app/routes_professional.dart';
+import 'package:flight_app/app/routes_trip_package.dart';
 import 'package:flight_app/screens/auth/email_verification.dart';
 import 'package:flight_app/screens/explore/explore_main.dart';
 import 'package:flight_app/screens/intro/intro_screen.dart';
@@ -206,4 +207,7 @@ final List<GetPage> appRoutes = [
 
   /// PROFESSIONAL BOOKING FLOWS
   ...routesProfessional,
+
+  /// TRIP PACKAGE
+  ...routesTripPackage,
 ];

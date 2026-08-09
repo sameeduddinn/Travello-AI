@@ -357,6 +357,9 @@ class ApiClient {
     required double amount,
     String? phone,
     String? email,
+    // When set, this ONE call pays for every component of the package and the
+    // server verifies `amount` against the component rows before charging.
+    String? packageId,
   }) async {
     final res = await http
         .post(
@@ -368,6 +371,7 @@ class ApiClient {
             'amount': amount,
             if (phone != null && phone.isNotEmpty) 'phone': phone,
             if (email != null && email.isNotEmpty) 'email': email,
+            if (packageId != null) 'package_id': packageId,
           }),
         )
         .timeout(const Duration(seconds: 20));
@@ -1233,6 +1237,10 @@ class ApiClient {
   static Future<Map<String, dynamic>> agentBook({
     required String bookingType,
     required String conversationId,
+    // Trip Planner package: every component of one selected package sends the
+    // SAME id, which is what links them into a single payment/confirmation.
+    // Null for standalone bookings, which keeps package_id NULL server-side.
+    String? packageId,
     String? origin,
     String? destination,
     String? travelDate,
@@ -1292,6 +1300,7 @@ class ApiClient {
             if (hotelStars != null) 'hotel_stars': hotelStars,
             if (hotelAddress != null) 'hotel_address': hotelAddress,
             if (facilities != null) 'facilities': facilities,
+            if (packageId != null) 'package_id': packageId,
             'description': description,
           }),
         )
@@ -1324,6 +1333,73 @@ class ApiClient {
         )
         .timeout(const Duration(seconds: 60)); // agents can take a few seconds
     _throwIfError(res, 'Agent chat');
+    return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+  }
+
+  // ── TRIP PACKAGES ─────────────────────────────────────────────────────────
+  // The native Trip Package UI's two calls — thin wrappers around the SAME
+  // backend engine (agents/trip_selection.py, the deterministic booking
+  // engine) the AI Assistant chat flow drives. See routers/trip_packages.py.
+
+  /// Trip Requirements -> Package Options. Returns `{conversation_id, options}`
+  /// — `options` holds real, server-priced transport/hotel/transfer rows, no
+  /// LLM involved. Pass `conversationId` back to refine (e.g. new dates)
+  /// without losing the session; omit it to start a fresh one.
+  static Future<Map<String, dynamic>> searchTripPackage({
+    required String origin,
+    required String destination,
+    required String travelDate,
+    String? returnDate,
+    int? nights,
+    required int travelers,
+    required String preferredMode,   // 'flight' | 'train'
+    String? cabinClass,
+    int? minHotelStars,
+    String? conversationId,
+  }) async {
+    final res = await http
+        .post(
+          Uri.parse('$_baseUrl/trip-packages/search'),
+          headers: _headers,
+          body: jsonEncode({
+            'origin': origin,
+            'destination': destination,
+            'travel_date': travelDate,
+            if (returnDate != null) 'return_date': returnDate,
+            if (nights != null) 'nights': nights,
+            'travelers': travelers,
+            'preferred_mode': preferredMode,
+            if (cabinClass != null) 'cabin_class': cabinClass,
+            if (minHotelStars != null) 'min_hotel_stars': minHotelStars,
+            if (conversationId != null) 'conversation_id': conversationId,
+          }),
+        )
+        .timeout(const Duration(seconds: 30));
+    _throwIfError(res, 'Trip package search');
+    return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+  }
+
+  /// The traveller's confirmed picks -> server verification, repricing and
+  /// package assembly. Returns the same package_choice-shaped payload
+  /// (`action`, `booking_data`, `summary`) the chat flow produces — feed
+  /// `booking_data` straight into [CardPaymentSheet], unchanged.
+  static Future<Map<String, dynamic>> confirmTripPackage({
+    required String conversationId,
+    required Map<String, int> picks,
+    String? pickupLocation,
+  }) async {
+    final res = await http
+        .post(
+          Uri.parse('$_baseUrl/trip-packages/confirm'),
+          headers: _headers,
+          body: jsonEncode({
+            'conversation_id': conversationId,
+            'picks': picks,
+            if (pickupLocation != null) 'pickup_location': pickupLocation,
+          }),
+        )
+        .timeout(const Duration(seconds: 30));
+    _throwIfError(res, 'Trip package confirm');
     return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
   }
 
@@ -1401,8 +1477,17 @@ class ApiClient {
 
   static void _throwIfError(http.Response res, String context) {
     if (res.statusCode < 200 || res.statusCode >= 300) {
-      _logDebug('$context failed with HTTP ${res.statusCode}: ${res.body}');
-      throw ApiException(res.statusCode, '$context failed: HTTP ${res.statusCode} — ${res.body}');
+      // utf8.decode(bodyBytes), not res.body: the server doesn't declare
+      // charset=utf-8 on its JSON responses, so Dart's http package falls
+      // back to a non-UTF-8 encoding for res.body and any non-ASCII
+      // character (an em dash, a curly quote) comes out as mojibake
+      // ("â€\"") in the exception text every caller of this surfaces to
+      // the user. Every other successful response in this file already
+      // decodes this way (see e.g. agentBook/agentChat) — only this error
+      // path didn't.
+      final body = utf8.decode(res.bodyBytes, allowMalformed: true);
+      _logDebug('$context failed with HTTP ${res.statusCode}: $body');
+      throw ApiException(res.statusCode, '$context failed: HTTP ${res.statusCode} — $body');
     }
   }
 }

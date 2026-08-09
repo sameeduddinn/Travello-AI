@@ -141,6 +141,17 @@ async def start_new_conversation(
 
 # ai_messages
 
+class ConversationHistoryUnavailable(Exception):
+    """
+    The history read itself failed — a network/DB error, not "no messages
+    yet". Deliberately distinct from a genuine empty result: a caller that
+    treats both the same cannot tell a brand-new conversation apart from an
+    existing one whose history just failed to load, which is exactly the
+    trap a trip-planner selection turn ("Flight 2, Hotel 3, Transfer 1") can
+    fall into — see process_message_agentic.
+    """
+
+
 async def get_conversation_history(
     conversation_id: str,
     limit: int = 20,
@@ -151,6 +162,13 @@ async def get_conversation_history(
 
     System messages are never returned — they belong in system_instruction, not
     contents.
+
+    Raises ConversationHistoryUnavailable if the read itself fails, rather than
+    silently standing in a genuine empty history — every existing caller in
+    this codebase already wraps this call in whatever handling it wants
+    (process_message keeps the old swallow-to-[] behaviour locally;
+    process_message_agentic distinguishes the two cases). This function no
+    longer decides that on their behalf.
     """
     def _query():
         # Pull DESC + limit, then reverse — gives us the *last* N messages.
@@ -166,15 +184,15 @@ async def get_conversation_history(
 
     try:
         result = await asyncio.to_thread(_query)
-        rows = list(result.data or [])
-        rows.reverse()  # oldest first
-        return [
-            {"role": r["role"], "content": r["content"] or ""}
-            for r in rows
-        ]
     except Exception as exc:
         logger.warning("get_conversation_history failed for conv=%s: %s", conversation_id, exc)
-        return []
+        raise ConversationHistoryUnavailable(str(exc)) from exc
+    rows = list(result.data or [])
+    rows.reverse()  # oldest first
+    return [
+        {"role": r["role"], "content": r["content"] or ""}
+        for r in rows
+    ]
 
 
 async def save_message(
@@ -215,17 +233,118 @@ async def save_message(
     if created_at is not None:
         payload["created_at"] = created_at
 
-    def _insert():
+    def _insert_message():
         supabase_admin.table("ai_messages").insert(payload).execute()
+
+    def _touch_conversation():
         # Keep conversation updated_at current so list ordering stays correct.
         supabase_admin.table("ai_conversations").update(
             {"updated_at": datetime.now(timezone.utc).isoformat()}
         ).eq("id", conversation_id).execute()
 
+    # The message insert is the one write whose loss is unrecoverable — a
+    # missing assistant turn here is exactly how a later selection ("Flight
+    # 2, Hotel 3, Transfer 1") loses the option list it's answering. Most
+    # failures at this layer are transient (a network blip, a brief
+    # connection-pool hiccup), so one immediate retry recovers most of them.
+    # Kept separate from the conversation-metadata touch below so a retry
+    # here can never insert the message twice.
+    try:
+        await asyncio.to_thread(_insert_message)
+    except Exception as exc:
+        logger.warning(
+            "save_message: ai_messages insert failed for conv=%s, retrying once: %s",
+            conversation_id, exc,
+        )
+        try:
+            await asyncio.to_thread(_insert_message)
+        except Exception as exc2:
+            logger.warning("save_message failed for conv=%s: %s", conversation_id, exc2)
+            return
+
+    try:
+        await asyncio.to_thread(_touch_conversation)
+    except Exception as exc:
+        logger.warning("save_message failed for conv=%s: %s", conversation_id, exc)
+
+
+# ── Interactive Trip Planner structured state ─────────────────────────────────
+#
+# The planner's active options+picks, stored as a role="system" ai_messages
+# row rather than through save_message (which only ever accepts "user"/
+# "assistant" — deliberately left untouched here, so no ordinary caller can
+# accidentally start writing system rows). get_conversation_history() already
+# filters to role IN ("user", "assistant"), so this row is invisible to the
+# LLM-facing conversation and never competes with its limit=20 window —
+# confirmed by reading that query, not assumed. Retrieval is a targeted,
+# single-row, conversation_id-scoped lookup, independent of any window size.
+
+async def save_planner_state(conversation_id: str, user_id: str, state: dict) -> None:
+    """
+    Persist the Trip Planner's current options+picks for this conversation.
+
+    Same never-raises, log-and-swallow posture as save_message: a failed
+    write here must never surface as a turn failure — the caller
+    (process_message_agentic) already falls back to the existing
+    find_options(history) text parser whenever structured state is absent,
+    and a failed write is indistinguishable from "never written" to that
+    fallback, which is exactly the safe behaviour wanted.
+    """
+    payload = {
+        "conversation_id": conversation_id,
+        "user_id": user_id,
+        "role": "system",
+        "content": "[trip planner state]",  # never displayed — role="system" is
+                                             # excluded from get_conversation_history
+        "message_type": "text",
+        "metadata": state,
+    }
+
+    def _insert():
+        supabase_admin.table("ai_messages").insert(payload).execute()
+
     try:
         await asyncio.to_thread(_insert)
     except Exception as exc:
-        logger.warning("save_message failed for conv=%s: %s", conversation_id, exc)
+        logger.warning("save_planner_state failed for conv=%s: %s", conversation_id, exc)
+
+
+async def get_active_planner_state(conversation_id: str) -> dict | None:
+    """
+    The most recently saved structured Trip Planner state for this
+    conversation, or None if none exists or the read itself fails.
+
+    A targeted, single-row query — NOT get_conversation_history(), and not
+    bounded by its limit=20, so this survives arbitrarily long conversations.
+    Filtered on conversation_id AND role="system" together, so a state row
+    can never be returned for — or leak into — a different conversation.
+
+    Deliberately does not distinguish "no state yet" from "read failed": both
+    return None, and the caller already has one safe response to that —
+    fall back to find_options(history) — so there is nothing a second signal
+    would let it do differently.
+    """
+    def _query():
+        return (
+            supabase_admin.table("ai_messages")
+            .select("metadata")
+            .eq("conversation_id", conversation_id)
+            .eq("role", "system")
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+
+    try:
+        result = await asyncio.to_thread(_query)
+    except Exception as exc:
+        logger.warning("get_active_planner_state failed for conv=%s: %s", conversation_id, exc)
+        return None
+    rows = list(result.data or [])
+    if not rows:
+        return None
+    metadata = rows[0].get("metadata")
+    return metadata if isinstance(metadata, dict) else None
 
 
 async def save_turn(

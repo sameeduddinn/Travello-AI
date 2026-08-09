@@ -293,7 +293,7 @@ class _CarBookingFormState extends State<CarBookingForm> {
                             ),
                           ),
                           Text(
-                            'PKR ${fmt.format(price)}',
+                            'From PKR ${fmt.format(price)}',
                             style: TextStyle(
                               fontSize: 10,
                               color: isActive
@@ -307,6 +307,23 @@ class _CarBookingFormState extends State<CarBookingForm> {
                   ),
                 );
               }).toList(),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(CupertinoIcons.info_circle,
+                    size: 13, color: Colors.grey.shade400),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Standard rate applies for nearby rides. Longer, '
+                    'out-of-city routes are priced by distance and the '
+                    'final fare is confirmed after booking.',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 18),
@@ -379,7 +396,7 @@ class _CarBookingFormState extends State<CarBookingForm> {
                               color: Colors.white, size: 18),
                           const SizedBox(width: 8),
                           Text(
-                            'Book Now  —  PKR ${fmt.format(_currentPrice)}',
+                            'Book Now  —  From PKR ${fmt.format(_currentPrice)}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 15,

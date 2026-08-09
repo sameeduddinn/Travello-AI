@@ -62,6 +62,12 @@ def agent(monkeypatch):
     async def _history(_cid, limit=20):
         return list(agent.history)
 
+    async def _no_planner_state(_cid):
+        return None
+
+    async def _noop_save_planner_state(*a, **k):
+        pass
+
     async def _save_turn(cid, uid, user_msg, reply, **kw):
         saved["turns"].append(reply)
 
@@ -75,6 +81,8 @@ def agent(monkeypatch):
     monkeypatch.setattr(ma, "get_user_profile", _profile)
     monkeypatch.setattr(ma, "get_conversation_history", _history)
     monkeypatch.setattr(ma, "save_turn", _save_turn)
+    monkeypatch.setattr(ma, "get_active_planner_state", _no_planner_state)
+    monkeypatch.setattr(ma, "save_planner_state", _noop_save_planner_state)
     monkeypatch.setattr(ma, "_log_task", _log_task)
     monkeypatch.setattr(ma, "all_providers_exhausted", lambda: False)
     monkeypatch.setattr(ma.self_improvement, "detect_user_correction", lambda _m: False)
@@ -199,7 +207,7 @@ def test_missing_dropoff_blocks_the_whole_package_instead_of_undercharging(agent
 
     assert result.get("action") is None, "an undercharged package must never reach payment"
     assert result.get("booking_data") is None
-    assert "no card was charged" in result["response"].lower()
+    assert "no card has been charged" in result["response"].lower()
 
 
 # ── Trip Planner mode: a single leg must never finalize on its own ───────────
@@ -250,4 +258,9 @@ def test_a_single_leg_pick_never_becomes_its_own_payment_in_trip_planner_mode(ag
 
     assert result.get("action") is None, "a single leg must never become its own payment in Trip Planner mode"
     assert result.get("booking_data") is None
-    assert "no card was charged" in result["response"].lower()
+    assert "no card has been charged" in result["response"].lower()
+    # The fallback names exactly what's missing instead of a vague "half a
+    # trip" — both required-but-never-searched pieces, by their friendly labels.
+    assert "Missing:" in result["response"]
+    assert "- Hotel" in result["response"]
+    assert "- Car Transfer (Gilgit → Hunza)" in result["response"]

@@ -8,7 +8,9 @@ import logging
 from agents.agent_tools import (
     date_provenance_error,
     execute_tool,
+    hub_mismatch_error,
     suggest_city_correction,
+    transport_mode_missing_error,
 )
 from core.supabase_client import supabase_admin
 
@@ -142,13 +144,23 @@ async def dispatch_tool_with_retry(
     name: str,
     args: dict,
     has_user_date: bool,
+    # Both default to "don't gate" so every existing call site (round-trip
+    # prefetch, the package fill-call, this file's own retry below) keeps
+    # working unchanged — only process_message_agentic's main model-tool-call
+    # loop passes the real values, since that's the only site where the
+    # traveller could still be mid-way through a Trip Planner clarifying
+    # question. See agent_tools.transport_mode_missing_error.
+    is_trip_planner: bool = False,
+    has_transport_mode: bool = True,
+    trip_destination: str = "",
 ) -> str:
     """
-    execute_tool, wrapped with the date-provenance gate (unchanged behaviour)
-    plus one deterministic retry for failures that look fixable, and logging
-    of everything that goes wrong for later human review. This IS the entire
-    "self-improvement" mechanism described in the FYP report: logging + a
-    single bounded retry, no fine-tuning, no autonomous prompt/weight changes.
+    execute_tool, wrapped with the date-provenance and transport-mode gates
+    (unchanged behaviour otherwise) plus one deterministic retry for
+    failures that look fixable, and logging of everything that goes wrong
+    for later human review. This IS the entire "self-improvement" mechanism
+    described in the FYP report: logging + a single bounded retry, no
+    fine-tuning, no autonomous prompt/weight changes.
     """
     gate = date_provenance_error(name, has_user_date=has_user_date)
     if gate:
@@ -159,6 +171,30 @@ async def dispatch_tool_with_retry(
             tool_name=name, tool_args=args, error_detail="date_not_provided",
         ))
         return json.dumps(gate)
+
+    mode_gate = transport_mode_missing_error(
+        name, is_trip_planner=is_trip_planner, has_transport_mode=has_transport_mode,
+    )
+    if mode_gate:
+        logger.info("transport-mode gate blocked %s — traveller hasn't chosen flight/train yet", name)
+        asyncio.ensure_future(log_agent_failure(
+            user_id=user_id, conversation_id=conversation_id,
+            failure_type="slot_fill_failure", user_message=user_message,
+            tool_name=name, tool_args=args, error_detail="transport_mode_not_chosen",
+        ))
+        return json.dumps(mode_gate)
+
+    hub_gate = hub_mismatch_error(
+        name, args, is_trip_planner=is_trip_planner, trip_destination=trip_destination,
+    )
+    if hub_gate:
+        logger.info("hub-mismatch gate blocked %s — city named doesn't match the trip's hub/destination", name)
+        asyncio.ensure_future(log_agent_failure(
+            user_id=user_id, conversation_id=conversation_id,
+            failure_type="slot_fill_failure", user_message=user_message,
+            tool_name=name, tool_args=args, error_detail=str(hub_gate.get("error")),
+        ))
+        return json.dumps(hub_gate)
 
     raw = await execute_tool(name, args)
     data = _safe_json(raw)

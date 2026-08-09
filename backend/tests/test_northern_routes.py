@@ -19,12 +19,28 @@ def test_naran_has_two_hub_options():
     assert {h.mode for h in hubs} == {"flight", "train"}
 
 
-def test_hunza_has_one_hub_option():
+def test_hunza_has_a_hub_for_each_mode():
+    """
+    Gilgit has an airport but NO railway station, so it cannot be the hub for a
+    train traveller — they'd be collected from a platform that doesn't exist.
+    Rail's nearest railhead to Hunza is Rawalpindi.
+    """
     hubs = hub_options_for("Hunza")
     assert hubs is not None
-    assert len(hubs) == 1
-    assert hubs[0].hub_city == "Gilgit"
-    assert hubs[0].mode == "flight"
+    by_mode = {h.mode: h.hub_city for h in hubs}
+    assert by_mode == {"flight": "Gilgit", "train": "Rawalpindi"}
+
+
+def test_the_rawalpindi_hunza_road_leg_is_priced_as_its_own_route():
+    """~600km of Karakoram Highway — it must not borrow the 100km Gilgit fare."""
+    from services.northern_routes import price_for_route
+
+    gilgit = price_for_route("Gilgit", "Hunza", "SUV")
+    rawalpindi = price_for_route("Rawalpindi", "Hunza", "SUV")
+    assert gilgit and rawalpindi
+    # 620km of Karakoram Highway against a 106km hop. The multiple eased when
+    # the Gilgit SUV fare was corrected upward to its sourced 18,000.
+    assert rawalpindi > gilgit * 2
 
 
 def test_swat_has_two_hub_options():
@@ -53,7 +69,7 @@ def test_hub_lookup_is_case_and_whitespace_insensitive():
 
 def test_price_for_route_matches_free_text_addresses():
     assert price_for_route("Islamabad International Airport", "Naran Bazar, KPK", "Sedan") == 18000
-    assert price_for_route("Gilgit Airport", "Karimabad, Hunza", "SUV") == 9500
+    assert price_for_route("Gilgit Airport", "Karimabad, Hunza", "SUV") == 18000
 
 
 def test_price_for_route_returns_none_for_unrelated_addresses():
@@ -88,7 +104,7 @@ def test_estimate_hub_car_fare_none_for_skardu_and_unknown_cities():
 
 def test_estimate_fare_uses_the_routed_price_for_a_known_hub_route():
     assert estimate_fare("Sedan", "Islamabad Airport", "Naran") == 18000
-    assert estimate_fare("Van", "Gilgit Airport", "Hunza") == 12000
+    assert estimate_fare("Van", "Gilgit Airport", "Hunza") == 30000
 
 
 def test_estimate_fare_falls_back_to_the_flat_rate_for_ordinary_rides():

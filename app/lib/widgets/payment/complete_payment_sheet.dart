@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_app/services/api_client.dart';
+import 'package:flight_app/utils/design_system_validators.dart';
 
 /// Card-payment bottom sheet for an **already-created pending booking**.
 ///
@@ -15,9 +16,18 @@ import 'package:flight_app/services/api_client.dart';
 /// chat, and never sent anywhere except the payment endpoint.
 class CompletePaymentSheet extends StatefulWidget {
   /// Booking UUID (`booking['id']`) — the value `/payments/initiate` expects.
+  /// For a whole-package payment this is the PRIMARY component (the transport
+  /// leg, so the transfer it carries is dispatched correctly) — see
+  /// [packageId].
   final String bookingId;
   final double amount;
   final String? email;
+  /// When set, this ONE payment covers every component sharing this package
+  /// id — the server verifies `amount` against all of them and refuses
+  /// (leaving every component untouched) if it doesn't match, or if any
+  /// component was already paid individually. Omit for an ordinary single
+  /// booking, exactly as this sheet always worked before.
+  final String? packageId;
   final void Function(String pnr, double amount) onSuccess;
 
   const CompletePaymentSheet({
@@ -26,6 +36,7 @@ class CompletePaymentSheet extends StatefulWidget {
     required this.amount,
     required this.onSuccess,
     this.email,
+    this.packageId,
   });
 
   @override
@@ -88,6 +99,7 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
         method: 'card',
         amount: widget.amount,
         email: widget.email,
+        packageId: widget.packageId,
       );
       final pnr = (data['pnr'] as String?) ??
           (data['booking_id'] as String?) ??
@@ -148,8 +160,11 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Complete Payment',
-                          style: TextStyle(
+                      Text(
+                          widget.packageId != null
+                              ? 'Pay Whole Package'
+                              : 'Complete Payment',
+                          style: const TextStyle(
                               fontSize: 18, fontWeight: FontWeight.w800)),
                       Text('Amount Due: PKR ${fmt.format(amount)}',
                           style: const TextStyle(
@@ -167,9 +182,7 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
                 hint: 'As printed on card',
                 icon: Icons.person_outline_rounded,
                 keyboardType: TextInputType.name,
-                validator: (v) => (v == null || v.trim().length < 2)
-                    ? 'Enter cardholder name'
-                    : null,
+                validator: DSValidators.cardholderName,
               ),
               const SizedBox(height: 14),
               _CardField(
@@ -189,10 +202,7 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
                     );
                   }
                 },
-                validator: (v) {
-                  final digits = (v ?? '').replaceAll(' ', '');
-                  return digits.length < 16 ? 'Enter 16-digit card number' : null;
-                },
+                validator: DSValidators.cardNumber,
               ),
               const SizedBox(height: 14),
               Row(
@@ -215,15 +225,7 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
                           );
                         }
                       },
-                      validator: (v) {
-                        final parts = (v ?? '').split('/');
-                        if (parts.length != 2 ||
-                            parts[0].length != 2 ||
-                            parts[1].length != 2) {
-                          return 'Invalid date';
-                        }
-                        return null;
-                      },
+                      validator: DSValidators.cardExpiry,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -236,8 +238,7 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
                       keyboardType: TextInputType.number,
                       maxLength: 3,
                       obscureText: true,
-                      validator: (v) =>
-                          ((v ?? '').length < 3) ? 'Enter 3-digit CVV' : null,
+                      validator: DSValidators.cvv,
                     ),
                   ),
                 ],
@@ -333,6 +334,7 @@ Future<void> showCompletePaymentSheet({
   required String bookingId,
   required double amount,
   String? email,
+  String? packageId,
   required void Function(String pnr, double amount) onSuccess,
 }) {
   return showModalBottomSheet(
@@ -343,6 +345,7 @@ Future<void> showCompletePaymentSheet({
       bookingId: bookingId,
       amount: amount,
       email: email,
+      packageId: packageId,
       onSuccess: onSuccess,
     ),
   );

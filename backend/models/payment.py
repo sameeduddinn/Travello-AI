@@ -16,6 +16,11 @@ class PaymentInitiateRequest(BaseModel):
     amount:     float = Field(..., gt=0)
     phone:      Optional[str] = Field(None, description="Mobile wallet phone number")
     email:      Optional[str] = Field(None, description="Override email for OTP delivery")
+    # Trip Planner package: pay for EVERY component of this package in one
+    # transaction. `booking_id` is then the package's transport component and
+    # `amount` must equal the sum of the package's component totals, which the
+    # server verifies before charging. Absent for standalone bookings.
+    package_id: Optional[str] = Field(None, description="Trip Planner package to pay for in full")
 
     class Config:
         json_schema_extra = {

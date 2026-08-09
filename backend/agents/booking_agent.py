@@ -114,7 +114,31 @@ def _stay_nights(check_in, check_out) -> int:
     return max((co - ci).days, 0)
 
 
-def _price_breakdown(bd: dict) -> str | None:
+def _component_amount(bd: dict) -> int:
+    """
+    What this component costs ON ITS OWN — its repriced total minus the car
+    transfer riding along inside it.
+
+    Display only. The transfer fare stays in total_price_pkr, which is what is
+    summed, charged and stored; this exists so a line that shows a per-person
+    fare can show the amount that fare actually multiplies out to.
+    """
+    total = _as_float(bd.get("total_price_pkr")) or 0.0
+    transfer = _as_float(bd.get("transfer_pkr"), 0.0) or 0.0
+    return int(round(total - transfer))
+
+
+def _price_breakdown(bd: dict, *, transfer_in_total: bool = False) -> str | None:
+    """
+    How a displayed amount was reached.
+
+    `transfer_in_total` says whether the figure this sits beside INCLUDES the
+    car transfer. It has to, because the same helper serves two shapes: a
+    package component line (transfer shown separately, so the amount is the
+    component alone) and a single booking's "Total" (one figure covering
+    everything). Getting this wrong is what produced
+    "PKR 396,348 (PKR 96,712 per person x 4)" — off by exactly the fare.
+    """
     total = _as_float(bd.get("total_price_pkr"))
     if total is None or total <= 0:
         return None
@@ -125,6 +149,8 @@ def _price_breakdown(bd: dict) -> str | None:
     base = round(total - transfer)
     if base <= 0:
         return None
+    tail = (f" + PKR {int(transfer):,} transfer"
+            if transfer_in_total and transfer > 0 else "")
 
     if bd.get("booking_type") == "hotel":
         nights = _stay_nights(bd.get("check_in"), bd.get("check_out"))
@@ -138,7 +164,7 @@ def _price_breakdown(bd: dict) -> str | None:
         parts = [f"PKR {per:,}/night", f"{nights} night(s)"]
         if rooms > 1:
             parts.append(f"{rooms} rooms")
-        return " × ".join(parts)
+        return " × ".join(parts) + tail
 
     pax = _as_int(bd.get("travelers"), 0) or (
         _as_int(bd.get("adults"), 0)
@@ -150,7 +176,7 @@ def _price_breakdown(bd: dict) -> str | None:
     per = round(base / pax)
     if per * pax != base:
         return None
-    return f"PKR {per:,} per person × {pax} passengers"
+    return f"PKR {per:,} per person × {pax} passengers" + tail
 
 
 def format_booking_summary(booking_data: dict) -> str:
@@ -228,7 +254,9 @@ def format_booking_summary(booking_data: dict) -> str:
         # Show HOW the total was reached whenever it covers more than one seat
         # or night — the bare total alone read as if the party size had been
         # ignored, even though it never was.
-        breakdown = _price_breakdown(booking_data)
+        # This total DOES include the transfer, so the breakdown names it —
+        # otherwise the multiplication visibly falls short of the figure.
+        breakdown = _price_breakdown(booking_data, transfer_in_total=True)
         suffix = f"  _({breakdown})_" if breakdown else ""
         lines.append(f"\n💰  **Total: PKR {int(price):,}**{suffix}")
     else:
@@ -307,7 +335,10 @@ def _component_line(index: int, component: dict) -> str:
         if component.get("travel_date"):
             detail += f", {component['travel_date']}"
     price = component.get("total_price_pkr")
-    money = f"PKR {int(price):,}" if price else "as quoted"
+    # This component ALONE. The car transfer it may carry is listed on its own
+    # line below with its own fare, so including it here made the row disagree
+    # with its own breakdown and the three lines stopped summing to the total.
+    money = f"PKR {_component_amount(component):,}" if price else "as quoted"
     # Same reason as format_booking_summary: a package line showing only the
     # multiplied total looks like the party size was never applied.
     breakdown = _price_breakdown(component) if price else None

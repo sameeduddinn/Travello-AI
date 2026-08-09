@@ -14,6 +14,7 @@ from services.payment_service import (
 )
 from services.car_service import book_car_transfers
 from services.email_service import send_booking_confirmation
+from services.package_email import send_package_confirmation
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/payments", tags=["Payments"])
@@ -45,12 +46,26 @@ async def initiate_payment_endpoint(
         amount=payload.amount,
         phone=payload.phone,
         email_override=payload.email,
+        package_id=payload.package_id,
     )
 
-    # Booking paid — send confirmation and assign car drivers in background
+    # Only reached when the charge actually succeeded — initiate_payment raises
+    # on a rejected package (empty, already paid, or a total that doesn't match
+    # the component rows), so a failed package can never get this far and can
+    # never produce a confirmation email or a "trip confirmed" reply.
     if not result.otp_required:
-        background_tasks.add_task(send_booking_confirmation, payload.booking_id)
-        background_tasks.add_task(book_car_transfers, payload.booking_id)
+        if payload.package_id:
+            # ONE consolidated email for the whole trip. Deliberately NOT
+            # send_booking_confirmation per component — that is what would turn
+            # one package into three near-identical confirmation emails.
+            background_tasks.add_task(send_package_confirmation, payload.package_id, user.id)
+            # The hub transfer rides on ONE component's raw_payload (the
+            # transport leg), so this still runs exactly once per package — the
+            # same call the standalone path makes, on the same booking.
+            background_tasks.add_task(book_car_transfers, payload.booking_id)
+        else:
+            background_tasks.add_task(send_booking_confirmation, payload.booking_id)
+            background_tasks.add_task(book_car_transfers, payload.booking_id)
 
     return result
 

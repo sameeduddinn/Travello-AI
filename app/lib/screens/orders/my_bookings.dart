@@ -1,6 +1,7 @@
 ﻿import 'package:flight_app/app/app_link.dart';
 import 'package:flight_app/utils/booking_service.dart';
 import 'package:flight_app/services/api_client.dart';
+import 'package:flight_app/widgets/payment/complete_payment_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:intl/intl.dart';
@@ -504,6 +505,62 @@ class _MyBookingsState extends State<MyBookings>
     }).length;
   }
 
+  // ── Trip Package grouping ─────────────────────────────────────────────────
+  // Purely a display-time fold over the already-filtered flat list: filtering
+  // and sorting above stay untouched, so a package only renders as a single
+  // grouped card when ALL of its components survive the active filter — a
+  // partially-filtered package quietly falls back to showing just the
+  // component(s) that matched, individually. Groups by bookings.package_id
+  // (flight/train/hotel) and also folds in any car_bookings row whose
+  // booking_id points at one of those components — car_bookings has no
+  // package_id column of its own, so that's the only way to tell a package's
+  // transfer leg apart from a genuinely standalone car ride.
+  List<dynamic> _groupPackages(List<Map<String, dynamic>> items) {
+    final byPkg = <String, List<Map<String, dynamic>>>{};
+    for (final b in items) {
+      final pkg = (b['package_id'] ?? '').toString();
+      if (pkg.isEmpty) continue;
+      byPkg.putIfAbsent(pkg, () => []).add(b);
+    }
+    if (byPkg.isEmpty) return items;
+
+    final fullGroups = <String, List<Map<String, dynamic>>>{};
+    for (final entry in byPkg.entries) {
+      final componentIds = entry.value
+          .map((c) => c['id']?.toString() ?? '')
+          .where((s) => s.isNotEmpty)
+          .toSet();
+      final transfers = items.where((x) =>
+          x['bookingType'] == 'car' &&
+          componentIds.contains(x['booking_id']?.toString() ?? ''));
+      fullGroups[entry.key] = [...entry.value, ...transfers];
+    }
+
+    final membership = <Map<String, dynamic>, String>{};
+    for (final entry in fullGroups.entries) {
+      if (entry.value.length > 1) {
+        for (final item in entry.value) {
+          membership[item] = entry.key;
+        }
+      }
+    }
+    if (membership.isEmpty) return items;
+
+    final result = <dynamic>[];
+    final emitted = <String>{};
+    for (final b in items) {
+      final key = membership[b];
+      if (key != null) {
+        if (emitted.add(key)) result.add(fullGroups[key]!);
+        continue;
+      }
+      result.add(b);
+    }
+    return result;
+  }
+
+  List<dynamic> get _displayItems => _groupPackages(_filteredBookings);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -529,18 +586,27 @@ class _MyBookingsState extends State<MyBookings>
           else if (_filteredBookings.isEmpty)
             SliverFillRemaining(child: _buildEmptyState())
           else
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: _buildBookingCard(_filteredBookings[index]),
+            Builder(builder: (context) {
+              final items = _displayItems;
+              return SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final item = items[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: item is List<Map<String, dynamic>>
+                            ? _buildPackageCard(item)
+                            : _buildBookingCard(
+                                item as Map<String, dynamic>),
+                      );
+                    },
+                    childCount: items.length,
                   ),
-                  childCount: _filteredBookings.length,
                 ),
-              ),
-            ),
+              );
+            }),
         ],
       ),
     );
@@ -849,6 +915,221 @@ class _MyBookingsState extends State<MyBookings>
             ]),
           ),
           if (_normalizedStatus(booking) == 'pending') _buildPendingPayStrip(),
+        ]),
+      ),
+    );
+  }
+
+  /// One card for a Trip Package: a gold header (package ref + overall
+  /// status) over a compact, tappable row per component. Each row still
+  /// navigates to the exact same booking-detail screen with the exact same
+  /// booking map _buildBookingCard would have used — grouping is purely
+  /// visual, no booking data is altered or duplicated.
+  Widget _buildPackageCard(List<Map<String, dynamic>> components) {
+    final pkgId = (components.first['package_id'] ?? '').toString();
+    final total = components.fold<double>(
+        0.0, (sum, c) => sum + ((c['total'] as num?)?.toDouble() ?? 0.0));
+    final statuses = components.map(_normalizedStatus).toSet();
+    final overallStatus = statuses.every((s) => s == 'cancelled')
+        ? 'cancelled'
+        : statuses.contains('pending')
+            ? 'pending'
+            : 'confirmed';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _gold.withValues(alpha: 0.45), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.07),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
+        ],
+      ),
+      child: Column(children: [
+        Container(
+          padding: EdgeInsets.symmetric(
+              horizontal: spacingUnit(1.75), vertical: spacingUnit(1.25)),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFD4AF37), Color(0xFFB8935C)],
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(children: [
+                const Icon(Icons.card_travel, color: Colors.white, size: 16),
+                const SizedBox(width: 6),
+                const Text('TRIP PACKAGE',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                        letterSpacing: 0.6)),
+                if (pkgId.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Text(pkgId,
+                      style: TravelloTheme.caption
+                          .copyWith(color: Colors.white70, fontSize: 11)),
+                ],
+              ]),
+              _buildStatusBadge(overallStatus),
+            ],
+          ),
+        ),
+        ...List.generate(components.length, (i) {
+          final c = components[i];
+          return Column(children: [
+            _buildPackageComponentRow(c),
+            if (i < components.length - 1)
+              Divider(height: 1, indent: 16, endIndent: 16, color: Colors.grey.shade100),
+          ]);
+        }),
+        Divider(color: Colors.grey.shade100, height: 1),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Package Total',
+                  style: TravelloTheme.caption
+                      .copyWith(color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+              Text('PKR ${total.toStringAsFixed(0)}',
+                  style: TravelloTheme.subtitle.copyWith(
+                      fontWeight: FontWeight.w800, color: _gold, fontSize: 16)),
+            ],
+          ),
+        ),
+        if (overallStatus == 'pending' && pkgId.isNotEmpty)
+          _buildPayPackageButton(pkgId, components, total),
+      ]),
+    );
+  }
+
+  /// A single combined payment for every pending component of a saved
+  /// package — same POST /payments/initiate + package_id path the "Pay for
+  /// Package" card-payment flow already uses (see card_payment_sheet.dart),
+  /// just reached from My Bookings for a package that was saved for later
+  /// instead of paid immediately. Without this, each Pay Later component had
+  /// to be paid one at a time from its own Booking Detail screen.
+  Widget _buildPayPackageButton(
+      String pkgId, List<Map<String, dynamic>> components, double total) {
+    // The transport leg carries the transfer in its raw_payload — see
+    // card_payment_sheet.dart's identical precedence — so it must be the
+    // booking_id the server dispatches the transfer against after payment.
+    final primary = components.firstWhere(
+      (c) => c['bookingType'] == 'flight',
+      orElse: () => components.firstWhere(
+        (c) => c['bookingType'] == 'train',
+        orElse: () => components.first,
+      ),
+    );
+    final primaryId = (primary['id'] ?? '').toString();
+    if (primaryId.isEmpty) return const SizedBox();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: SizedBox(
+        width: double.infinity,
+        height: 44,
+        child: ElevatedButton.icon(
+          onPressed: () => showCompletePaymentSheet(
+            context: context,
+            bookingId: primaryId,
+            amount: total,
+            packageId: pkgId,
+            onSuccess: (_, __) {
+              if (mounted) _loadBookings();
+            },
+          ),
+          icon: const Icon(Icons.credit_card_rounded, size: 16, color: Colors.white),
+          label: const Text('Pay Whole Package',
+              style: TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _gold,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 0,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Compact one-line summary for a single component inside a package card.
+  Widget _buildPackageComponentRow(Map<String, dynamic> booking) {
+    final type = booking['bookingType'] ?? 'flight';
+    IconData icon;
+    String label;
+    String summary;
+    switch (type) {
+      case 'train':
+        icon = Icons.train;
+        label = 'Train';
+        final t = booking['trainDetails'] as Map<String, dynamic>?;
+        summary = t != null ? '${t['from'] ?? ''} → ${t['to'] ?? ''}' : '';
+        break;
+      case 'hotel':
+        icon = Icons.hotel;
+        label = 'Hotel';
+        final h = booking['hotelDetails'] as Map<String, dynamic>?;
+        summary = h != null ? '${h['hotelName'] ?? ''} · ${h['nights'] ?? 1}N' : '';
+        break;
+      case 'car':
+        icon = Icons.directions_car;
+        label = 'Transfer';
+        final c = booking['carDetails'] as Map<String, dynamic>?;
+        summary = c != null ? '${c['pickup'] ?? ''} → ${c['dropoff'] ?? ''}' : '';
+        break;
+      default:
+        icon = Icons.flight;
+        label = 'Flight';
+        final f = booking['flightDetails'] as Map<String, dynamic>?;
+        summary = f != null ? '${f['from'] ?? ''} → ${f['to'] ?? ''}' : '';
+    }
+    final price = (booking['total'] as num?)?.toDouble() ?? 0.0;
+    return InkWell(
+      onTap: () async {
+        await Get.toNamed(AppLink.ticketDetail, arguments: booking);
+        if (mounted) _loadBookings();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+                color: _goldLight, borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, size: 16, color: _goldDark),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+              child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 12)),
+              if (summary.isNotEmpty)
+                Text(summary,
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+            ],
+          )),
+          Text('PKR ${price.toStringAsFixed(0)}',
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey.shade700)),
+          const SizedBox(width: 4),
+          Icon(Icons.chevron_right, size: 16, color: Colors.grey.shade400),
         ]),
       ),
     );

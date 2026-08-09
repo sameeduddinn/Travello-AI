@@ -321,6 +321,8 @@ def install_mocks(history=None):
     M.get_conversation_history = _hist
     M.save_turn = _noop_async
     M.save_message = _noop_async
+    M.get_active_planner_state = _noop_async
+    M.save_planner_state = _noop_async
     # fire-and-forget background tasks (would otherwise hit Supabase / warn)
     M._auto_save_preferences = _noop_async
     M._update_conversation_title = _noop_async
@@ -564,6 +566,7 @@ _PATCHED: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("agents.master_agent", (
         "generate_with_tools", "generate_text", "get_user_memory", "get_user_profile",
         "get_conversation_history", "save_turn", "save_message",
+        "get_active_planner_state", "save_planner_state",
         "_auto_save_preferences", "_update_conversation_title", "_log_task",
         "process_message",
     )),

@@ -70,10 +70,16 @@ async def create_booking(
     check_in: date | None = None,
     check_out: date | None = None,
     currency: str = "PKR",
+    package_id: str | None = None,
 ) -> BookingOut:
     """
     Insert a new booking row and return the BookingOut model.
     Status starts as 'pending' — updated to 'paid' after OTP verification.
+
+    `package_id` ties this row to the other components of ONE Trip Planner
+    package. It defaults to None, which is what every standalone flight,
+    train, hotel and car booking passes — so standalone rows keep
+    package_id = NULL and never enter the package payment/email paths.
     """
     booking_id = _generate_booking_id(booking_type)
     pnr = _generate_pnr(booking_type, booking_id)
@@ -98,6 +104,11 @@ async def create_booking(
         "check_in": check_in.isoformat() if check_in else None,
         "check_out": check_out.isoformat() if check_out else None,
     }
+    # Only set when this row really is part of a package. A standalone insert
+    # then carries exactly the columns it always has — the column simply
+    # defaults to NULL — so nothing about the standalone path changes.
+    if package_id:
+        row["package_id"] = package_id
 
     try:
         result = supabase_admin.table("bookings").insert(row).execute()
@@ -309,6 +320,34 @@ async def get_ticket(booking_uuid: str, user_id: str) -> TicketOut:
 
 # Mark booking as paid (called from payment service)
 
+async def mark_package_paid(package_id: str, transaction_id: str) -> int:
+    """
+    Confirm EVERY component of one Trip Planner package in a single statement.
+
+    Atomicity, without a stored procedure: this is one UPDATE matching all the
+    package's rows, and PostgreSQL applies a single statement entirely or not
+    at all. Confirming them in a Python loop — one UPDATE per component — is
+    what allowed the state this replaces: payment taken, flight and hotel
+    confirmed, transfer still pending because the third call failed.
+
+    `status = 'pending'` is part of the match, not just the payload, so a
+    retried or duplicated call cannot re-confirm rows that are already
+    confirmed. Returns how many rows this call actually moved.
+    """
+    try:
+        result = (
+            supabase_admin.table("bookings")
+            .update({"status": "confirmed", "transaction_id": transaction_id})
+            .eq("package_id", package_id)
+            .eq("status", "pending")
+            .execute()
+        )
+    except Exception as exc:
+        logger.error("mark_package_paid(%s) error: %s", package_id, exc)
+        raise
+    return len(result.data or [])
+
+
 async def mark_booking_paid(
     booking_uuid: str,
     transaction_id: str,
@@ -411,6 +450,7 @@ def _row_to_booking_out(row: dict[str, Any]) -> BookingOut:
         user_id=str(row.get("user_id", "")),
         booking_id=str(row.get("booking_id", "")),
         booking_type=str(row.get("booking_type", "")),
+        package_id=row.get("package_id"),
         pnr=row.get("pnr"),
         transaction_id=row.get("transaction_id"),
         contact_email=str(row.get("contact_email", "")),

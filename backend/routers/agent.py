@@ -87,6 +87,11 @@ class AgentBookRequest(BaseModel):
     # booking forms use (transferAdded / transferVehicleType / transferPickupLocation)
     # so the existing post-payment book_car_transfers task picks it up unchanged.
     facilities: dict | None = None
+    # Set only by the Trip Planner package checkout: every component booking of
+    # one selected package carries the SAME id, which is what makes one payment,
+    # one confirmation and one consolidated email possible. Absent (None) for
+    # every standalone booking, which keeps package_id NULL.
+    package_id: str | None = None
     description: str = "Agent-initiated booking"
 
 
@@ -146,6 +151,13 @@ def _get_messages(conversation_id: str):
         supabase_admin.table("ai_messages")
         .select("id, role, content, message_type, created_at")
         .eq("conversation_id", conversation_id)
+        # role="system" rows are the Trip Planner's persisted options/picks
+        # state (see memory_agent.save_planner_state) — internal bookkeeping,
+        # never a real chat turn. get_conversation_history already excludes
+        # them from what the model sees; this is the client-facing sibling
+        # that reopening a session calls, and it needs the same exclusion so
+        # a "[trip planner state]" row never renders as a chat bubble.
+        .in_("role", ["user", "assistant"])
         .order("created_at", desc=False)
         .execute()
     )
@@ -457,6 +469,7 @@ async def agent_book(payload: AgentBookRequest, user: CurrentUser):
         hotel_name=payload.hotel_name,
         check_in=_parse_date(payload.check_in),
         check_out=_parse_date(payload.check_out),
+        package_id=payload.package_id,
     )
 
     return AgentBookResponse(

@@ -22,7 +22,7 @@ from fastapi import HTTPException, status
 
 from core.supabase_client import supabase_admin
 from models.payment import PaymentAttemptOut, PaymentInitiateResponse
-from services.booking_service import mark_booking_paid
+from services.booking_service import mark_booking_paid, mark_package_paid
 
 logger = logging.getLogger(__name__)
 
@@ -212,6 +212,147 @@ async def _create_notification(
 
 # Initiate payment
 
+# ── Trip Planner package payment ─────────────────────────────────────────────
+#
+# A package is several booking rows the traveller buys ONCE. The rows stay
+# separate (tickets, PNRs, My Bookings and the per-component services all keep
+# working unchanged) but the money is a single transaction across the group.
+#
+# The amount is never taken on trust: it is re-derived from the component rows
+# the server itself wrote, and a mismatch refuses the charge outright. That is
+# the same posture as reprice_booking on the way in — the client proposes, the
+# server decides — and it is what stops a tampered or stale total from being
+# charged for a package.
+
+# Rounding tolerance, in rupees. Component totals are stored as NUMERIC(12,2)
+# and summed as floats here, so an exact == on the cent could refuse a
+# perfectly correct package for a half-paisa of float noise.
+_PACKAGE_TOTAL_TOLERANCE = 1.0
+
+
+async def get_package_components(package_id: str, user_id: str) -> list[dict[str, Any]]:
+    """Every booking row belonging to one package, oldest first."""
+    if not package_id:
+        return []
+    try:
+        result = (
+            supabase_admin.table("bookings")
+            .select(
+                "id, user_id, status, booking_type, booking_id, pnr, total_amount, "
+                "contact_email, contact_phone, origin, destination, departure_at, "
+                "arrival_at, hotel_name, check_in, check_out, raw_payload, package_id"
+            )
+            .eq("package_id", package_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+    except Exception as exc:
+        logger.error("get_package_components(%s) failed: %s", package_id, exc)
+        raise HTTPException(status_code=404, detail="Package not found.")
+    return list(result.data or [])
+
+
+def _verified_package_total(components: list[dict[str, Any]]) -> float:
+    return round(sum(float(c.get("total_amount") or 0) for c in components), 2)
+
+
+async def _pay_package(
+    *,
+    user_id: str,
+    package_id: str,
+    method: str,
+    amount: float,
+    currency: str,
+) -> PaymentInitiateResponse:
+    """
+    Charge a whole Trip Planner package in ONE transaction.
+
+    Refuses before charging anything if the package is empty, is already paid,
+    or if the requested amount doesn't match what the component rows actually
+    come to. Nothing is confirmed on any of those paths, so a rejected package
+    leaves every component exactly as it was: pending, unpaid, unemailed.
+    """
+    components = await get_package_components(package_id, user_id)
+    if not components:
+        raise HTTPException(status_code=404, detail="Package not found.")
+
+    already = [c for c in components if c.get("status") in ("paid", "confirmed")]
+    if already:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This package has already been paid for.",
+        )
+
+    expected = _verified_package_total(components)
+    if abs(expected - float(amount)) > _PACKAGE_TOTAL_TOLERANCE:
+        # Deliberately names both figures: this is the one error a traveller
+        # (and a developer) has to be able to act on without reading logs.
+        logger.warning(
+            "package %s payment refused — client sent %.2f, components total %.2f",
+            package_id, float(amount), expected,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Package total mismatch: this package costs PKR {expected:,.0f}, "
+                f"but PKR {float(amount):,.0f} was requested. Nothing has been charged."
+            ),
+        )
+
+    # ONE transaction id for the whole package — every component references it.
+    transaction_id = _generate_transaction_id(method)
+    primary = components[0]
+
+    attempt_id = await _create_payment_attempt(
+        user_id=user_id,
+        booking_uuid=primary["id"],
+        method=method,
+        amount=expected,
+        currency=currency,
+        attempt_status="pending",
+        provider_reference=transaction_id,
+        metadata={"simulated": True, "package_id": package_id,
+                  "component_count": len(components)},
+    )
+
+    # Confirm every component under that one transaction, in ONE statement —
+    # see mark_package_paid. A per-component loop here is exactly what could
+    # leave a paid package half-confirmed if a later update failed. Each row
+    # keeps its OWN total_amount: the package total is the payment, not a
+    # figure copied onto every row, which would multiply the trip's cost by its
+    # component count everywhere it is later displayed.
+    confirmed = await mark_package_paid(package_id, transaction_id)
+    if confirmed != len(components):
+        # Nothing partial can be left by the statement itself, so this means the
+        # package moved underneath us (a concurrent confirm). Surfaced rather
+        # than swallowed: the money is taken, so this needs to be visible.
+        logger.error(
+            "package %s: confirmed %d row(s) but expected %d — investigate",
+            package_id, confirmed, len(components),
+        )
+
+    await _create_notification(
+        user_id=user_id,
+        title="Payment Successful",
+        body=f"Your trip package payment of PKR {expected:,.0f} was processed successfully.",
+        notif_type="payment_success",
+        data={"package_id": package_id, "transaction_id": transaction_id},
+    )
+
+    _update_payment_attempt_status_best_effort(
+        attempt_id=attempt_id,
+        preferred_status="completed",
+        provider_reference=transaction_id,
+    )
+
+    return PaymentInitiateResponse(
+        request_id=attempt_id,
+        otp_required=False,
+        message="Payment processed successfully. Your trip package is confirmed.",
+        expires_at=None,
+    )
+
+
 async def initiate_payment(
     user_id: str,
     booking_uuid: str,
@@ -220,6 +361,7 @@ async def initiate_payment(
     phone: str | None = None,
     email_override: str | None = None,
     currency: str = "PKR",
+    package_id: str | None = None,
 ) -> PaymentInitiateResponse:
     """
     Start a payment attempt.
@@ -229,6 +371,18 @@ async def initiate_payment(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Unsupported payment method '{method}'. Use 'card' or 'bank_transfer'.",
+        )
+
+    # A Trip Planner package is charged as ONE transaction across all of its
+    # component bookings. Everything below this branch is the unchanged
+    # standalone path, which package_id=None always takes.
+    if package_id:
+        return await _pay_package(
+            user_id=user_id,
+            package_id=package_id,
+            method=method,
+            amount=amount,
+            currency=currency,
         )
 
     booking = await _get_booking_row(booking_uuid, user_id)

@@ -25,10 +25,13 @@ from agents.memory_agent import (
     get_user_memory,
     get_user_profile,
     get_conversation_history,
+    ConversationHistoryUnavailable,
     save_message,
     save_turn,
     save_user_memory,
     start_new_conversation,  # re-exported for callers (router uses this)
+    save_planner_state,
+    get_active_planner_state,
 )
 from agents.clarification_agent import (
     detect_query_type,
@@ -73,11 +76,16 @@ from services.llm_service import (
     INVALID_KEY,
 )
 from agents import deterministic_reply
+from agents import trip_package
+from agents import trip_selection
 from agents.conversation_state import derive_state
 from agents.prompt_builder import (
-    build_system_prompt, select_tools, select_tool_names, mentions_northern_destination,
+    build_system_prompt, select_tools, select_tools_by_name, select_tool_names,
+    mentions_northern_destination,
 )
-from services.northern_routes import estimate_hub_car_fare
+from services.northern_routes import (
+    canonical_destination, estimate_hub_car_fare, hub_options_for,
+)
 from agents.agent_tools import (
     get_missing_booking_fields,
     get_booking_count_error,
@@ -215,22 +223,10 @@ def _is_affirmative(message: str) -> bool:
     return msg in _AFFIRMATIVES
 
 
-# ── Deterministic "pick from the list" resolution (agentic path) ──────────────
-#
-# When the user answers a numbered list with just "6", "option 6", or "the sixth
-# one", the model otherwise has to re-derive which item that was by re-reading the
-# whole history — and on the free tier that extra reasoning is exactly what makes a
-# selection turn thrash (re-search, re-ask) and run out of the turn's time budget,
-# surfacing to the user as the "trouble responding" / "taking longer" messages. We
-# resolve the pick in code and hand the model ONE unambiguous line so it converges
-# in a single prepare_booking call. This is only a NUDGE: every booking gate
-# (missing fields, date, party size) and the server-side reprice still run — a bad
-# guess can't misbook, it just falls through to the model asking.
 _SELECTION_ORDINALS = {
     "first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5,
     "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10,
 }
-
 
 def _as_text(value) -> str:
     """Coerce any value to a string for the pure text helpers below.
@@ -423,10 +419,6 @@ def _selection_hint(user_message: str, history: list[dict]) -> str | None:
         if (m.get("role") or "").lower() != "assistant":
             continue
         content = m.get("content") or ""
-
-        # Multi-pick (round trip): pair pick #1 with the first offer list, pick #2
-        # with the second, and tell the model to prepare BOTH. Two prepared
-        # components become one package_choice — one passenger form, one payment.
         if len(picks) >= 2:
             lists = _offer_lists(content)
             if not lists and not _numbered_list_items(content):
@@ -473,15 +465,7 @@ def _selection_hint(user_message: str, history: list[dict]) -> str | None:
 
 
 def _booking_data_is_valid(bd: dict | None) -> bool:
-    """
-    Guard against showing a 'Pay with Card' summary built from hallucinated or
-    half-empty extraction. We only proceed to payment if the booking has BOTH a
-    concrete subject (a destination/hotel) AND a concrete option signal (a price,
-    a named flight/train/hotel, or an explicitly selected option).
 
-    If this returns False the turn falls through to normal handling — i.e. we
-    search and show real options instead of inventing a booking.
-    """
     if not bd or not bd.get("booking_type"):
         return False
 
@@ -507,11 +491,6 @@ def _format_memory(memory: dict, profile: dict) -> str:
         parts.append(f"User's name: {name}")
 
     if memory:
-        # NOTE: past_destinations is deliberately NOT injected. It is user-level
-        # (spans every conversation), and surfacing an earlier chat's destination
-        # here made the model invent demo searches to a place the user never named
-        # in the current chat — a cross-conversation bleed. Home city + stable
-        # preferences are safe to personalise with; a prior destination is not.
         parts.append(
             f"Travel preferences: home city={memory.get('origin_city')}, "
             f"preferred class={memory.get('preferred_class')}, "
@@ -530,14 +509,6 @@ async def _fill_slots_from_history(
     history: list[dict],
     query_type: str,
 ) -> dict:
-    """
-    If required slots are still None after extracting from the current message,
-    re-run entity extraction on the full recent history as input so Gemini can
-    find values mentioned in previous turns.
-
-    One extra LLM call — only triggered when slots are missing, which is exactly
-    the scenario where it pays off (preventing an unnecessary clarification round).
-    """
     missing = [
         f for f in _REQUIRED_FIELDS.get(query_type, [])
         if extracted.get(f) is None
@@ -697,6 +668,18 @@ async def _update_conversation_title(
 
 # Public entry point
 
+async def _history_or_empty(conversation_id: str, limit: int = 20) -> list[dict]:
+    """
+    The legacy pipeline's original behaviour, kept byte-for-byte: a failed
+    history read is treated the same as no history yet. process_message_agentic
+    does NOT use this — it needs to tell the two apart, see its own call site.
+    """
+    try:
+        return await get_conversation_history(conversation_id, limit)
+    except ConversationHistoryUnavailable:
+        return []
+
+
 async def process_message(
     user_id: str,
     conversation_id: str,
@@ -713,7 +696,7 @@ async def process_message(
     # Step 1 — load user profile + memory + conversation history IN PARALLEL
     (memory, profile), history = await asyncio.gather(
         asyncio.gather(get_user_memory(user_id), get_user_profile(user_id)),
-        get_conversation_history(conversation_id, limit=20),
+        _history_or_empty(conversation_id, limit=20),
     )
     memory_context = _format_memory(memory, profile)
 
@@ -741,8 +724,6 @@ async def process_message(
 
     if is_booking and history:
         booking_data = await extract_booking_from_history(user_message, history)
-        # Only commit to a payment summary when the extracted booking is concrete.
-        # Otherwise fall through so we search real options instead of faking one.
         if booking_data and _booking_data_is_valid(booking_data):
             summary = format_booking_summary(booking_data)
             await save_turn(
@@ -967,6 +948,13 @@ _TIMEOUT_MESSAGE = (
 # live reproduction. The other five are exempted defensively: none currently
 # match either regex, but they're equally code-authored, so a future wording
 # tweak to any of them can't silently reopen this same failure.
+# A trip-planner turn that fails must say so, not improvise. See
+# _is_trip_planner_turn for why this exists instead of the legacy fallback.
+_TRIP_PLANNER_FAILED_MESSAGE = (
+    "I couldn't complete your trip plan right now. No booking was created and no "
+    "payment was taken. Please try again."
+)
+
 _SCRIPTED_FALLBACK_MESSAGES = frozenset({
     _RATE_LIMIT_MESSAGE,
     _DAILY_QUOTA_MESSAGE,
@@ -974,6 +962,7 @@ _SCRIPTED_FALLBACK_MESSAGES = frozenset({
     _PROVIDER_DOWN_MESSAGE,
     _MISCONFIGURED_MESSAGE,
     _TIMEOUT_MESSAGE,
+    _TRIP_PLANNER_FAILED_MESSAGE,
 })
 
 
@@ -1342,9 +1331,31 @@ def _component_label(bd: dict) -> str:
 
 
 def _package_incomplete_message(
-    verified: list[dict], failed: list[dict], expected: int
+    verified: list[dict], failed: list[dict], expected: int,
+    missing_labels: list[str] | None = None,
 ) -> str:
-    """Explain which piece couldn't be prepared, and that nothing was charged."""
+    """Explain which piece couldn't be prepared, and that nothing was charged.
+
+    `missing_labels` — friendly component names (e.g. "Hotel", "Car Transfer
+    (Islamabad -> Swat)") from get_trip_planner_incomplete_error's own output —
+    is set only for a Trip Planner package the model failed to complete within
+    its retries. It names exactly what's still missing instead of the generic
+    wording below, using labels the backend already computed; nothing here is
+    recalculated. Every other caller (an ordinary incomplete round trip, where
+    there IS no fixed "required set" to name) is unaffected.
+    """
+    if missing_labels:
+        # Same wording-safety note as below applies: no booking noun sits next
+        # to a completion word, so this can never read as a fabricated confirm.
+        return "\n\n".join([
+            "I couldn't complete your trip package yet — some required "
+            "components are still missing.",
+            "Missing:\n" + "\n".join(f"- {label}" for label in missing_labels),
+            "Nothing has been sent to payment, and no card has been charged.",
+            "I'll first need to find these remaining services before I can "
+            "generate your complete trip package.",
+        ])
+
     ok_names = [_component_label(c) for c in verified]
     bad_names = [_component_label(c) for c in failed]
     # Wording note: this text must not trip _is_fabricated_booking. Phrases like
@@ -1434,6 +1445,149 @@ def _outstanding_other_components(
     if any(name == "search_hotels" for name, _ in gathered):
         other -= {"stay"}
     return other
+
+
+# The traveller choosing every component is the default. Ready-made tiers are
+# still built, but only when they actually ask to be recommended one rather
+# than to choose — otherwise the app is picking their flight and hotel for them.
+_RECOMMEND_RE = re.compile(
+    r"\b(?:recommend|suggest|suggestion|pick for me|choose for me|decide for me|"
+    r"best package|package options?|budget/standard|ready[- ]made|"
+    r"what do you recommend|surprise me|up to you|whatever you think)\b",
+    re.I,
+)
+
+
+def _wants_recommendations(user_texts: list[str] | None) -> bool:
+    return any(_RECOMMEND_RE.search(t or "") for t in (user_texts or []))
+
+
+# A transfer may also be picked by vehicle name alone ("SUV") with no digit
+# at all — see trip_selection.parse_picks' vehicle-word branch. Kept as its
+# own tiny, local check rather than reaching into trip_selection's private
+# vocabulary, per "do not modify trip_selection.py".
+_BARE_VEHICLE_RE = re.compile(r"^\s*(?:sedan|suv|van)\s*$", re.I)
+
+
+def _looks_like_planner_continuation(user_message: str) -> bool:
+    """
+    True when `user_message` ALONE — no history available — reads as an
+    answer to a previously-shown list or confirmation prompt: a bare pick
+    ("Flight 2"), a multi-pick ("Flight 2, Hotel 3, Transfer 1"), a bare
+    vehicle name ("SUV"), or a plain confirmation ("yes"). Reuses the same
+    shape-detectors already trusted elsewhere in this file for exactly this
+    judgment — no new parsing logic beyond the one vehicle-name check above.
+
+    Used ONLY to decide, when the conversation history read has FAILED (see
+    get_conversation_history/ConversationHistoryUnavailable), whether this
+    turn must be refused outright rather than silently continued as if it
+    were a brand-new conversation. A genuine new request ("Plan a trip to
+    Hunza", "book me a sedan...") never matches any of these shapes, so it is
+    unaffected and continues normally with an empty history — indistinguishable
+    here from a real one, and deliberately left that way rather than guessed at.
+    """
+    return bool(
+        _selected_index(user_message) is not None
+        or _selected_indices(user_message)
+        or trip_selection.is_confirmation(user_message)
+        or _BARE_VEHICLE_RE.match(user_message or "")
+    )
+
+
+def _is_trip_planner_turn(
+    user_message: str,
+    history: list[dict] | None,
+    trip_state,
+    tool_names: list[str] | None,
+) -> bool:
+    """
+    True when this turn is planning a northern trip, so an unexpected failure
+    must NOT be handed to the legacy process_message pipeline.
+
+    That pipeline answers through itinerary_agent, which is not bound by any of
+    the gates in this file — no reprice_booking, no offer grounding, no
+    "never invent a price". Observed output when a trip-planner turn fell
+    through to it: a "Bus ISB -> GIL — PKR 15,000" and a "Taxi GIL -> Karimabad
+    — PKR 5,000", neither a service this app sells nor a price anything
+    returned. Failing closed is the only honest answer.
+
+    Deliberately narrow so standalone requests keep their existing fallback:
+    a live selection block settles it outright, and otherwise the turn must be
+    doing an actual SEARCH — "book me a sedan to Naran" selects book_car alone
+    and is a standalone car booking, not a trip plan.
+    """
+    if trip_selection.find_options(history):
+        return True
+    searching = {"search_flights", "search_trains", "search_hotels"} & set(tool_names or [])
+    if not searching:
+        return False
+    destination = getattr(trip_state, "destination", "") or ""
+    return (
+        hub_options_for(destination) is not None
+        or mentions_northern_destination(user_message, history)
+    )
+
+
+def _package_fill_call(
+    still_needed: list[str],
+    trip_state,
+    transport_args: dict | None,
+) -> tuple[str, dict] | None:
+    """
+    The search a half-finished trip-planner turn is missing, ready to dispatch —
+    or None when its inputs aren't all known and it would have to be invented.
+
+    The model is TOLD to run this search and routinely doesn't: observed on a
+    real Hunza turn, it searched Karachi->Gilgit, was told "still needs hotels
+    in Hunza", spent the next step searching Gilgit->Karachi instead, and ran
+    out of steps with nothing to show — the turn dead-ended on "I'm having
+    trouble responding right now." Every input is already pinned down in code
+    by then, so the search is run here rather than asked for, exactly like the
+    round-trip prefetch does. Same reasoning as every other deterministic gate
+    in this file: a step the package cannot do without is not left to the model.
+
+    Only the missing-hotel direction is filled. Transport is what a model
+    reaches for first, so the reverse gap isn't what strands these turns — and
+    picking a hub, a mode and an origin unprompted is real guesswork, which the
+    nudge-then-ask fallback handles honestly instead.
+    """
+    if not any("search_hotels" in gap for gap in still_needed):
+        return None
+    if any("search_flights" in gap or "search_trains" in gap for gap in still_needed):
+        return None                     # transport missing too — nothing to build on
+    city = canonical_destination(getattr(trip_state, "destination", "") or "")
+    if not city:
+        return None
+
+    args = transport_args or {}
+    check_in = getattr(trip_state, "travel_date", "") or str(args.get("travel_date") or "")
+    check_out = getattr(trip_state, "return_date", "") or ""
+    if not check_out:
+        # A stay length the user actually stated is fine; one we made up would
+        # put an invented number of nights straight into the package price.
+        nights = getattr(trip_state, "nights", None)
+        if not (check_in and nights):
+            return None
+        try:
+            check_out = (
+                datetime.strptime(check_in, "%Y-%m-%d") + timedelta(days=int(nights))
+            ).strftime("%Y-%m-%d")
+        except (TypeError, ValueError):
+            return None
+    if not check_in or check_out <= check_in:
+        return None
+
+    fill: dict = {"city": city, "check_in": check_in, "check_out": check_out}
+    guests = getattr(trip_state, "passengers", None) or args.get("passengers")
+    try:
+        if guests and int(guests) > 0:
+            fill["guests"] = int(guests)
+    except (TypeError, ValueError):
+        pass                            # never guess a party size — omit it
+    rooms = getattr(trip_state, "rooms", None)
+    if rooms:
+        fill["rooms"] = int(rooms)
+    return "search_hotels", fill
 
 
 def _infer_package_next_step(
@@ -1674,6 +1828,171 @@ def _compact_history(history: list[dict]) -> list[dict]:
     return kept
 
 
+def log_gate_failure(
+    user_id: str, conversation_id: str, user_message: str,
+    tool_name: str, args: dict, error: dict,
+) -> None:
+    """
+    Fire-and-forget log for a prepare_booking/book_car gate rejection.
+    These are never auto-retried — fixing them means guessing a date, a
+    party size, or an address the caller didn't give, which is exactly what
+    every one of these gates exists to prevent. Logged for a human to
+    review whether the prompt (or, for a non-chat caller, the form) needs
+    to ask more clearly up front.
+    """
+    asyncio.ensure_future(self_improvement.log_agent_failure(
+        user_id=user_id, conversation_id=conversation_id,
+        failure_type="slot_fill_failure", user_message=user_message,
+        tool_name=tool_name, tool_args=args, error_detail=str(error.get("error")),
+    ))
+
+
+async def verify_booking_payload(
+    bd: dict,
+    *,
+    user_message: str,
+    history: list[dict],
+    conversation_user_texts: list[str],
+    trip_destination: str,
+) -> tuple[dict | None, dict | None, dict]:
+    """
+    Run one prepare_booking payload through the exact gate sequence a
+    model-issued call already goes through: missing fields, count, date,
+    already-booked, transfer, then server-side reprice. Returns
+    (verified, None, bd) on success or (None, error, bd) on the first
+    failing gate — same checks, same order, whether the payload came
+    from the model's own tool call (see the ATOMIC PACKAGE GATE in
+    process_message_agentic) or was built deterministically for a plan
+    the traveller already confirmed (see complete_trip_planner_confirmation),
+    or — in future — a Trip Package UI submission. Module-level and
+    parameterized (not a closure) specifically so every caller, chat or
+    otherwise, goes through this ONE implementation; there must never be a
+    second verification/repricing engine. The returned `bd` is the
+    recovered payload actually checked, for callers that log or inspect it
+    on failure.
+    """
+    bd = recover_booking_location(
+        bd, [user_message, *(m.get("content", "") for m in reversed(history))]
+    )
+    missing = get_missing_booking_fields(bd)
+    if missing:
+        return None, missing_fields_result(missing), bd
+    count_error = get_booking_count_error(bd)
+    if count_error:
+        return None, count_error, bd
+    date_error = get_booking_date_error(bd)
+    if date_error:
+        return None, date_error, bd
+    booked_error = get_already_booked_error(bd, history)
+    if booked_error:
+        return None, booked_error, bd
+    transfer_error = get_transfer_error(
+        bd, user_texts=conversation_user_texts, trip_destination=trip_destination,
+    )
+    if transfer_error:
+        return None, transfer_error, bd
+    bd = apply_traveler_totals(bd)
+    verified = await reprice_booking(bd)
+    if verified:
+        return verified, None, bd
+    return None, offer_not_found_result(), bd
+
+
+async def complete_trip_planner_confirmation(
+    plan, options, picks, pickup_location,
+    *,
+    user_id: str,
+    conversation_id: str,
+    user_message: str,
+    history: list[dict],
+    conversation_user_texts: list[str],
+    trip_destination: str,
+    travel_date_fallback: str,
+) -> tuple[dict | None, dict | None]:
+    """
+    Try to complete a traveller-confirmed Trip Planner plan entirely in
+    code, without asking the model to compose the prepare_booking calls.
+    Everything needed (flight/train, hotel, and — once pickup_location is
+    known — the transfer) is already known server-side from the plan
+    itself (trip_selection.confirmation_booking_payloads), so this reuses
+    the SAME gates and the SAME server-side reprice a model-issued call
+    goes through — verify_booking_payload, above.
+
+    Originally added because the ATOMIC PACKAGE GATE (in
+    process_message_agentic) requires every component to land in ONE model
+    turn, and a free-tier model was not reliably managing that for a Trip
+    Planner confirmation — dropping the hotel on one attempt, the
+    flight+transfer on the next, leaving the traveller stuck with nothing
+    ever completing even after repeated "Yes". Module-level and
+    parameterized so a future non-chat caller (e.g. a Trip Package UI
+    submit endpoint) can drive the exact same deterministic booking engine
+    the chat path uses — see CLAUDE.md's "one booking/payment engine"
+    principle.
+
+    Returns (booking_response, stale_component):
+    - (dict, None) on success — the same {"response", "conversation_id",
+      "action": "package_choice", "booking_data"} dict the existing package
+      path always returned.
+    - (None, {"booking_type": ..., "bd": ...}) when a component failed
+      verification specifically because reprice_booking couldn't re-confirm
+      the EXACT option any more (offer_not_found — e.g. a hotel that was
+      live moments ago dropped out of a fresh search, a real, observed
+      failure mode when the underlying provider changes results between the
+      pick and the confirm). This is recoverable: `bd` is the failed
+      payload, carrying everything needed to re-search that one category.
+      The caller decides whether to act on it — chat auto-recovers (see
+      process_message_agentic's _recover_stale_pick); a REST caller may
+      just report it.
+    - (None, None) for every other failure reason (missing fields, a bad
+      date, already-booked, the transfer gate) — none of those are fixable
+      by re-searching, so the caller falls back to its own next-best path,
+      exactly as before this distinction existed.
+    """
+    payloads = trip_selection.confirmation_booking_payloads(
+        plan, options, picks, pickup_location=pickup_location,
+        fallback_date=travel_date_fallback,
+    )
+    verified_components: list[dict] = []
+    for bd in payloads:
+        verified, error, bd = await verify_booking_payload(
+            bd,
+            user_message=user_message,
+            history=history,
+            conversation_user_texts=conversation_user_texts,
+            trip_destination=trip_destination,
+        )
+        if not verified:
+            log_gate_failure(
+                user_id, conversation_id, user_message,
+                "prepare_booking", bd, error or {},
+            )
+            stale = (
+                {"booking_type": bd.get("booking_type"), "bd": bd}
+                if (error or {}).get("error") == "offer_not_found" else None
+            )
+            return None, stale
+        verified_components.append(verified)
+    # Same safety net the model-driven path runs — belt and braces, since
+    # this already sent exactly transport + hotel (+ transfer once known).
+    if get_trip_planner_incomplete_error(
+        verified_components, history, trip_destination,
+    ):
+        return None, None
+    package_data = build_package_data(verified_components)
+    summary = format_package_summary(package_data)
+    await save_turn(conversation_id, user_id, user_message, summary,
+                     model_used=answering_model())
+    asyncio.ensure_future(_log_task(
+        user_id, conversation_id, "booking", user_message, package_data,
+    ))
+    return {
+        "response": summary,
+        "conversation_id": conversation_id,
+        "action": "package_choice",
+        "booking_data": package_data,
+    }, None
+
+
 async def process_message_agentic(
     user_id: str,
     conversation_id: str,
@@ -1694,11 +2013,57 @@ async def process_message_agentic(
     # what gets written to the message record — see llm_service.begin_turn.
     begin_turn()
 
-    # Step 1 — load context in parallel
-    (memory, profile), history = await asyncio.gather(
+    # Step 1 — load context in parallel. Only the history fetch's own
+    # exception is meant to be inspected below (see ConversationHistoryUnavailable
+    # handling) — catching it locally, rather than via return_exceptions=True on
+    # the whole gather, keeps get_user_memory/get_user_profile's result slot a
+    # plain (dict, dict) tuple. With return_exceptions=True on the outer gather,
+    # a future failure in either of those (both currently guaranteed not to
+    # raise) would land here as a bare exception object, and unpacking
+    # `(memory, profile)` from it would raise a confusing "cannot unpack
+    # non-iterable" TypeError instead of the real error.
+    async def _history_or_exception():
+        try:
+            return await get_conversation_history(conversation_id, limit=20)
+        except Exception as exc:
+            return exc
+
+    (memory, profile), history_or_error = await asyncio.gather(
         asyncio.gather(get_user_memory(user_id), get_user_profile(user_id)),
-        get_conversation_history(conversation_id, limit=20),
+        _history_or_exception(),
     )
+    # A genuine empty history (a brand-new conversation) and a FAILED history
+    # read both arrive as "nothing to work with" — but they are not the same
+    # thing. Silently treating the second as the first is exactly how a
+    # selection turn ("Flight 2, Hotel 3, Transfer 1") loses the option list
+    # it's answering and gets read as the start of a new conversation instead
+    # — see the forensic trace for this bug. get_conversation_history raises
+    # ConversationHistoryUnavailable specifically so this can be told apart.
+    if isinstance(history_or_error, BaseException):
+        if _looks_like_planner_continuation(user_message):
+            # This message only makes sense as an answer to something already
+            # shown — with no history to recover what that was, silently
+            # restarting would either re-ask questions the traveller already
+            # answered or let the model guess at a booking with nothing real
+            # to verify it against. Refuse instead: no LLM call, no legacy
+            # fallback, no fabricated itinerary, no booking, no payment.
+            logger.error(
+                "conversation history unavailable for conv=%s on what looks "
+                "like a trip-planner continuation (%r) — refusing rather "
+                "than restarting", conversation_id, user_message[:60],
+            )
+            await save_turn(
+                conversation_id, user_id, user_message, _TRIP_PLANNER_FAILED_MESSAGE,
+                model_used="history-fetch-guard",
+            )
+            return {"response": _TRIP_PLANNER_FAILED_MESSAGE, "conversation_id": conversation_id}
+        # Nothing about this message distinguishes it from a genuine first
+        # turn, which also has an empty history — proceeding is the same
+        # "never guess" posture this file uses everywhere else: no evidence
+        # of harm, so no invented refusal.
+        history: list[dict] = []
+    else:
+        history = history_or_error
 
     # ── Emergency / healthcare fast-path ──────────────────────────────────────
     # A medical emergency must NEVER hinge on the LLM chain being up. When the
@@ -1752,12 +2117,21 @@ async def process_message_agentic(
     # budget refuses the next request — see agents/prompt_builder.py.
     turn_tool_names = select_tool_names(user_message, history)
     turn_tools = select_tools(user_message, history)
+    # Hoisted so the deterministic transport-mode gate below (dispatch_tool_
+    # with_retry's is_trip_planner) uses the EXACT same signal that decided
+    # whether AGENTIC_TRIP_PLANNER_BLOCK is even in the prompt this turn —
+    # rather than a second, possibly-differing computation of "is this a
+    # Trip Planner turn". Named distinctly from the existing
+    # _is_trip_planner_turn() FUNCTION (used further down, near the crash
+    # fallback) — a local variable of that exact name would silently shadow
+    # it for the rest of this function.
+    _mentions_northern_dest_this_turn = mentions_northern_destination(user_message, history)
     system_prompt = build_system_prompt(
         today=today.isoformat(),
         weekday=today.strftime("%A"),
         memory=memory_context or "(no saved preferences yet)",
         tool_names=turn_tool_names,
-        trip_planner=mentions_northern_destination(user_message, history),
+        trip_planner=_mentions_northern_dest_this_turn,
     )
 
     # Route, dates, party size and budget pulled out of the conversation in code.
@@ -1798,6 +2172,449 @@ async def process_message_agentic(
     # that produced the "trouble responding" / "taking longer" replies. The booking
     # gates and server-side reprice still run, so this can never misbook.
     pick_hint = _selection_hint(user_message, history)
+    # A pick answering a rendered TRIP PACKAGE list is resolved from that list
+    # itself, not from the generic nudge above — which would name only the tier
+    # ("Standard — PKR 402,265"), leaving the model to re-read its own prose for
+    # which flight, which hotel and whether there was a car leg. That re-reading
+    # is exactly where a package silently decomposes back into parts. Recovering
+    # the components from our own rendered text keeps the pick exact.
+    # The user's own messages in CHRONOLOGICAL order (oldest first, this turn
+    # last). Shared by both provenance gates below and by the deterministic
+    # Trip Planner confirmation path (hoisted up here so both can use it); the
+    # car gate relies on the order to scope its scan to the car sub-conversation.
+    conversation_user_texts = [
+        *(m.get("content", "") for m in history if m.get("role") == "user"),
+        user_message,
+    ]
+
+    def _log_gate_failure(tool_name: str, args: dict, error: dict) -> None:
+        log_gate_failure(user_id, conversation_id, user_message, tool_name, args, error)
+
+    async def _verify_booking_payload(bd: dict) -> tuple[dict | None, dict | None, dict]:
+        # Thin closure over this turn's context — the actual gate sequence
+        # lives in the module-level verify_booking_payload so a future
+        # non-chat caller (e.g. a Trip Package UI submit endpoint) can drive
+        # the identical checks. See that function's docstring.
+        return await verify_booking_payload(
+            bd,
+            user_message=user_message,
+            history=history,
+            conversation_user_texts=conversation_user_texts,
+            trip_destination=_trip_state.destination,
+        )
+
+    async def _recover_stale_pick(options: dict, stale: dict) -> dict | None:
+        """
+        A component the traveller already picked and confirmed could not be
+        re-verified because the exact option is gone from a fresh search
+        (offer_not_found) — observed in practice when an external provider's
+        result set changes between the pick and the confirm (e.g. a hotel
+        aggregator falling back to a different upstream mid-session). Rather
+        than let that fall through to a model turn that (per the bug this
+        closes) produces a dead-end "still missing: Hotel" message with no
+        real next step, re-run the SAME search deterministically and
+        re-render — reusing trip_selection.merge_fresh_search exactly as the
+        "switched to business class mid-conversation" fix earlier does, just
+        triggered by a stale re-verify instead of a fresh user request.
+        Returns a plain {"response", "conversation_id"} reply (no booking
+        action — the traveller re-picks from the refreshed list), or None if
+        the re-search comes back empty too, in which case the caller falls
+        back to its existing next-best path unchanged.
+        """
+        bd = stale["bd"]
+        booking_type = stale.get("booking_type")
+        passengers = bd.get("guests") or bd.get("adults") or options.get("passengers") or 1
+        if booking_type == "hotel":
+            tool_name = "search_hotels"
+            args = {
+                "city": bd.get("destination", ""),
+                "check_in": bd.get("check_in", ""),
+                "check_out": bd.get("check_out", ""),
+                "guests": passengers,
+                "rooms": bd.get("rooms") or 1,
+            }
+            stale_label = bd.get("hotel_name") or "the hotel you picked"
+        elif booking_type in ("flight", "train"):
+            tool_name = "search_flights" if booking_type == "flight" else "search_trains"
+            args = {
+                "origin_city": bd.get("origin", ""),
+                "destination_city": bd.get("destination", ""),
+                "travel_date": bd.get("travel_date", ""),
+                "passengers": passengers,
+            }
+            if booking_type == "flight":
+                args["cabin_class"] = bd.get("cabin_class") or "ECONOMY"
+            stale_label = bd.get("flight_number") or bd.get("train_name") or "the option you picked"
+        else:
+            return None
+
+        # has_user_date=True: this date came from the traveller's OWN already-
+        # confirmed plan (built by confirmation_booking_payloads), not a
+        # guess — the date-provenance gate exists to stop an INVENTED date,
+        # which this is not.
+        result_json = await self_improvement.dispatch_tool_with_retry(
+            user_id=user_id, conversation_id=conversation_id, user_message=user_message,
+            name=tool_name, args=args, has_user_date=True,
+        )
+        merged = trip_selection.merge_fresh_search(
+            options, [(tool_name, result_json)],
+            passengers=_trip_state.passengers or 0,
+            preferred_mode=_trip_state.transport_mode,
+        )
+        if not merged:
+            return None
+        await save_planner_state(conversation_id, user_id, merged)
+        reply = (
+            f"{stale_label} is no longer available at that exact price — listings "
+            "just changed. Nothing has been booked or charged. I've refreshed the "
+            "options below; please pick again.\n\n"
+            + trip_selection.render_options(merged)
+        )
+        await save_turn(conversation_id, user_id, user_message, reply,
+                         model_used="deterministic-stale-recovery")
+        return {"response": reply, "conversation_id": conversation_id}
+
+    async def _complete_trip_planner_confirmation(plan, options, picks, pickup_location):
+        # Thin closure over this turn's context — see the module-level
+        # complete_trip_planner_confirmation's docstring.
+        result, stale = await complete_trip_planner_confirmation(
+            plan, options, picks, pickup_location,
+            user_id=user_id,
+            conversation_id=conversation_id,
+            user_message=user_message,
+            history=history,
+            conversation_user_texts=conversation_user_texts,
+            trip_destination=_trip_state.destination,
+            travel_date_fallback=_trip_state.travel_date,
+        )
+        if result is not None:
+            return result
+        if stale is not None:
+            recovered = await _recover_stale_pick(options, stale)
+            if recovered is not None:
+                return recovered
+        return None
+
+    # ── Interactive Trip Planner: resolve the traveller's component choices ──
+    #
+    # "Flight 2", "Hotel 1", "SUV" arrive over separate turns and each is
+    # answered from the rendered option block alone — no model call at all, so
+    # a selection can never be re-interpreted, re-priced or substituted. The
+    # single exception is the final confirmation, which becomes a booking
+    # instruction and rejoins the ordinary prepare_booking path.
+    # Structured planner state (see memory_agent.save_planner_state) is tried
+    # FIRST — a targeted, single-row lookup independent of the conversational
+    # history window, so it survives the trip's options block falling outside
+    # get_conversation_history's limit=20 in a long conversation. Absent,
+    # stale, or a failed read all fall back to the original find_options(history)
+    # text parser — byte-for-byte the same fallback path this already had,
+    # preserved for every conversation that predates this feature.
+    _planner_options: dict = {}
+    _prior_picks: dict = {}
+    _structured_state = await get_active_planner_state(conversation_id)
+    if _structured_state and not trip_selection.is_valid_planner_state(_structured_state):
+        # Defensive only — build_options() never produces anything but this
+        # exact shape, so reaching here means the DB row is corrupted/
+        # tampered. Treated exactly like "no state yet": never raise, fall
+        # back to find_options(history) below.
+        logger.warning(
+            "structured planner state for conv=%s failed shape validation — "
+            "falling back to find_options(history)", conversation_id,
+        )
+        _structured_state = None
+    if _structured_state:
+        _state_destination = _structured_state.get("destination") or ""
+        # Same staleness rule as find_options' own fallback — reused, not
+        # reimplemented, so structured state can't reopen the stale-options
+        # bug that check already closes. Checked against every user message
+        # this turn's history carries (always the most recent ones, so any
+        # destination change genuinely more recent than the state is visible
+        # here regardless of how old the state itself is).
+        _recent_user_texts = [
+            *(m.get("content", "") for m in history if m.get("role") == "user"),
+            user_message,
+        ]
+        _state_stale = bool(_state_destination) and any(
+            isinstance(t, str) and trip_selection.named_a_different_destination(t, _state_destination)
+            for t in _recent_user_texts
+        )
+        if not _state_stale:
+            _planner_options = _structured_state
+            # The state's OWN picks — not find_picks(history), which is
+            # exactly as window-bounded as find_options and would silently
+            # "forget" a pick recorded further back than limit=20.
+            _prior_picks = dict(_structured_state.get("picks") or {})
+    if not _planner_options:
+        _planner_options = trip_selection.find_options(history)
+        _prior_picks = trip_selection.find_picks(history)
+    # The optional return-leg offer (below) needs its own extra state
+    # (_return_rows etc.) to survive to the NEXT turn, and only
+    # save_planner_state/get_active_planner_state carry arbitrary extra keys
+    # across turns — find_options(history)'s text-reparse fallback recovers
+    # only what render_options' own AVAILABLE FLIGHTS/HOTELS/TRANSFERS shape
+    # carries. So the offer itself is skipped (silently — the trip books
+    # exactly as one-way, same as before this feature existed) whenever this
+    # turn is running on that fallback rather than real structured state.
+    _planner_options_are_structured = bool(_structured_state) and _planner_options is _structured_state
+    if _planner_options:
+        _merged = trip_selection.merge_picks(_planner_options, user_message, _prior_picks)
+        if _merged.picks_changed:
+            # Keep the structured record current so the NEXT turn's targeted
+            # lookup (not find_options(history)) sees this turn's pick,
+            # regardless of how deep in the conversation this turn ends up.
+            await save_planner_state(
+                conversation_id, user_id, {**_planner_options, "picks": _merged.picks})
+        _plan_shown = trip_selection.plan_was_shown(history)
+        _return_offered = trip_selection.return_was_offered(history)
+        if _merged.problems:
+            # Ambiguous or out-of-range: ask, never guess. Silently resolving
+            # this is exactly how "Flight 2, Hotel 1, SUV" used to become
+            # "package 2" and book something nobody chose.
+            _reply = trip_selection.clarification(
+                _merged.problems, _planner_options, _merged.picks)
+            logger.info("trip selection needs clarification: %s", _merged.problems)
+            await save_turn(conversation_id, user_id, user_message, _reply,
+                            model_used=answering_model())
+            return {"response": _reply, "conversation_id": conversation_id}
+        if trip_selection.complete(_planner_options, _merged.picks):
+            _plan = trip_selection.build_plan(_planner_options, _merged.picks)
+            # A return leg resolved on an EARLIER turn (e.g. this turn is
+            # only supplying the pickup address, or is the deterministic
+            # booking call itself) has to be re-applied here every time —
+            # `_plan` is rebuilt fresh from scratch each turn/request, so the
+            # in-memory mutation apply_return_pick made on the turn the
+            # traveller actually picked it does not itself survive; only the
+            # persisted index does.
+            if _plan and _planner_options.get("_return_resolved"):
+                trip_selection.apply_return_pick(
+                    _plan, _planner_options.get("_return_rows") or [],
+                    _planner_options.get("_return_kind", ""),
+                    _planner_options.get("_return_pick_index") or 0,
+                )
+            # Resolving the "would you like a return trip?" question asked on
+            # the PREVIOUS turn (see the return-leg offer further down) takes
+            # priority over everything else below: a bare "2" or "no thanks"
+            # here must never be misread as an outbound pick change, a fresh
+            # "yes, proceed", or a pickup-address follow-up answer.
+            _resolving_return = bool(
+                _plan and _return_offered and _planner_options.get("_return_rows")
+                and not _planner_options.get("_return_resolved")
+            )
+            if _resolving_return:
+                _return_rows = _planner_options.get("_return_rows") or []
+                _return_pick = trip_selection.parse_return_pick(user_message, _return_rows)
+                if _return_pick is None:
+                    _reply = trip_selection.render_return_options(
+                        _return_rows, _planner_options.get("_return_origin", ""),
+                        _planner_options.get("_return_date", ""),
+                    )
+                    await save_turn(conversation_id, user_id, user_message, _reply,
+                                    model_used=answering_model())
+                    return {"response": _reply, "conversation_id": conversation_id}
+                if _return_pick and _plan:
+                    trip_selection.apply_return_pick(
+                        _plan, _return_rows, _planner_options.get("_return_kind", ""),
+                        _return_pick,
+                    )
+                # Remember the return leg was already handled (and which row,
+                # so the re-apply above can rebuild the SAME choice on every
+                # later turn) — this also stops the offer or this branch from
+                # ever re-triggering for the same plan.
+                _planner_options = {
+                    **_planner_options, "_return_resolved": True,
+                    "_return_pick_index": _return_pick,
+                }
+                await save_planner_state(conversation_id, user_id, _planner_options)
+            _confirming = _resolving_return or (
+                _plan_shown and not _merged.picks_changed
+                and trip_selection.is_confirmation(user_message)
+            )
+            if _plan and _confirming:
+                if not _resolving_return:
+                    # A genuinely fresh "yes, proceed" — before asking for the
+                    # pickup address or booking, offer a return leg if the
+                    # traveller gave a real second (return) date anywhere in
+                    # the conversation. Searched deterministically server-side
+                    # (never left to the model — see hub_mismatch_error's own
+                    # reasoning for why that matters), and skipped entirely
+                    # when no real return date exists, or it was already
+                    # resolved once for this plan. A traveller who never gave
+                    # a return date sees no change at all from today.
+                    _return_date_signal = (
+                        _trip_state.return_date
+                        if _trip_state.return_date != _trip_state.travel_date else ""
+                    )
+                    if (
+                        _return_date_signal and _planner_options_are_structured
+                        and not _planner_options.get("_return_resolved")
+                    ):
+                        _outbound_rows = _planner_options.get("transport") or [{}]
+                        _return_hub = _outbound_rows[0].get("destination", "")
+                        _return_origin = _outbound_rows[0].get("origin", "")
+                        _return_kind = _planner_options.get("transport_kind") or "flight"
+                        if _return_hub and _return_origin:
+                            _return_tool = (
+                                "search_flights" if _return_kind == "flight" else "search_trains")
+                            _return_args: dict = {
+                                "origin_city": _return_hub, "destination_city": _return_origin,
+                                "travel_date": _return_date_signal,
+                                "passengers": _planner_options.get("passengers") or 1,
+                            }
+                            if _return_kind == "flight":
+                                _return_args["cabin_class"] = (
+                                    _outbound_rows[0].get("cabin") or "ECONOMY")
+                            try:
+                                _return_raw = await self_improvement.dispatch_tool_with_retry(
+                                    user_id=user_id, conversation_id=conversation_id,
+                                    user_message=user_message, name=_return_tool,
+                                    args=_return_args, has_user_date=True,
+                                )
+                            except Exception:
+                                logger.warning(
+                                    "return-leg prefetch failed — offering the plan one-way",
+                                    exc_info=True,
+                                )
+                                _return_raw = None
+                            _return_rows_found, _return_kind_found = (
+                                trip_selection.build_return_options([(_return_tool, _return_raw)])
+                                if _return_raw else ([], "")
+                            )
+                            if _return_rows_found:
+                                _return_state = {
+                                    **_planner_options, "_return_rows": _return_rows_found,
+                                    "_return_kind": _return_kind_found,
+                                    "_return_origin": _return_origin,
+                                    "_return_date": _return_date_signal,
+                                }
+                                await save_planner_state(
+                                    conversation_id, user_id, _return_state)
+                                _reply = trip_selection.render_return_options(
+                                    _return_rows_found, _return_origin, _return_date_signal)
+                                await save_turn(conversation_id, user_id, user_message, _reply,
+                                                model_used=answering_model())
+                                return {"response": _reply, "conversation_id": conversation_id}
+                            # Nothing found for the return leg — fall through
+                            # and book one-way, exactly as if no return date
+                            # had ever been given.
+                if _plan.transfer:
+                    # Everything else is already known server-side, but the
+                    # transfer's pickup address isn't -- ask directly, in
+                    # code, rather than let the model decide when/whether to
+                    # ask (it was inconsistently dropping the transfer, or
+                    # the hotel, or both, trying to juggle that itself — see
+                    # _complete_trip_planner_confirmation). The traveller's
+                    # next reply resumes below as a follow-up answer.
+                    _dest = _planner_options.get("destination") or _trip_state.destination
+                    _reply = (
+                        f"Your {_dest} trip (PKR {_plan.total_pkr:,}) is confirmed. "
+                        f"I just need the pickup address at {_plan.transfer['hub']} "
+                        f"for the {_plan.transfer['vehicle']} transfer, then I'll "
+                        "book the whole trip in one checkout."
+                    )
+                    await save_turn(conversation_id, user_id, user_message, _reply,
+                                    model_used=answering_model())
+                    return {"response": _reply, "conversation_id": conversation_id}
+                _completed = await _complete_trip_planner_confirmation(
+                    _plan, _planner_options, _merged.picks, "")
+                if _completed is not None:
+                    return _completed
+                # Fall back to the model-driven path — unchanged safety net
+                # for whatever made the deterministic attempt above decline
+                # (e.g. the fresh reprice couldn't confirm an option anymore).
+                pick_hint = trip_selection.booking_instruction(
+                    _plan, _planner_options, _merged.picks)
+                # This turn books, so it needs the booking schema even though
+                # the confirmation itself ("yes") looks like nothing.
+                if "prepare_booking" not in turn_tool_names:
+                    turn_tool_names = [*turn_tool_names, "prepare_booking"]
+                    turn_tools = select_tools_by_name(turn_tool_names)
+                logger.info(
+                    "trip plan confirmed — booking %s + hotel%s as one checkout",
+                    _plan.transport_kind, " + transfer" if _plan.transfer else "",
+                )
+            elif (
+                _plan and not _plan_shown and not _merged.picks_changed
+                and trip_selection.looks_like_a_followup_answer(user_message)
+            ):
+                # The plan was already confirmed on an earlier turn (the last
+                # message shown was neither the option list nor the plan card
+                # — it was the assistant's own follow-up question, e.g. "what's
+                # the pickup address?"), and this reply neither picked/changed
+                # a component nor reads as a question. Rather than silently
+                # re-answering with the same Trip Plan (the bug this closes),
+                # let it reach the real booking turn as an answer.
+                if _plan.transfer and trip_selection.looks_like_a_bare_number(user_message):
+                    # A lone number here is never a real pickup address —
+                    # most likely a stray reply to some other question (e.g.
+                    # the model free-lancing an over-budget "1/2/3" choice on
+                    # an earlier, now-superseded turn — the confirmation path
+                    # above no longer reaches the model at this point, so
+                    # that shouldn't recur, but a bare number is never a
+                    # street address regardless of where it came from). Ask
+                    # plainly rather than let it slip through the transfer
+                    # gates as literal address text, or get silently
+                    # misrouted to the model.
+                    _reply = (
+                        "That doesn't look like a pickup address — could you "
+                        f"give me the street address for pickup at {_plan.transfer['hub']}?"
+                    )
+                    await save_turn(conversation_id, user_id, user_message, _reply,
+                                    model_used=answering_model())
+                    return {"response": _reply, "conversation_id": conversation_id}
+                if _plan.transfer:
+                    # A real answer very often echoes "pickup address is..."
+                    # back naturally — strip just that leading frame so it
+                    # isn't mistaken for the placeholder text that exact
+                    # wording usually signals when a MODEL produces it
+                    # instead (see trip_selection.clean_pickup_reply).
+                    _pickup = trip_selection.clean_pickup_reply(user_message)
+                    _completed = await _complete_trip_planner_confirmation(
+                        _plan, _planner_options, _merged.picks, _pickup)
+                    if _completed is not None:
+                        return _completed
+                # Fall back to the model-driven path — every existing gate
+                # (get_transfer_error, reprice_booking, the atomic package
+                # gate) still runs on whatever the model calls, unchanged.
+                pick_hint = trip_selection.booking_instruction(
+                    _plan, _planner_options, _merged.picks)
+                if "prepare_booking" not in turn_tool_names:
+                    turn_tool_names = [*turn_tool_names, "prepare_booking"]
+                    turn_tools = select_tools_by_name(turn_tool_names)
+                logger.info(
+                    "trip plan follow-up answer (%r) — resuming booking, not "
+                    "re-rendering", user_message[:60],
+                )
+            elif _plan:
+                _reply = trip_selection.render_plan(
+                    _plan, _planner_options, _merged.picks,
+                    _planner_options.get("destination") or _trip_state.destination,
+                    budget_pkr=_trip_state.budget_pkr,
+                    travel_date=_trip_state.travel_date,
+                    return_date=_trip_state.return_date,
+                )
+                await save_turn(conversation_id, user_id, user_message, _reply,
+                                model_used=answering_model())
+                return {"response": _reply, "conversation_id": conversation_id}
+        elif _merged.picks_changed:
+            # Something was chosen but the trip isn't complete — show what's
+            # left, with the choice so far recorded on the block itself.
+            _reply = trip_selection.render_options(
+                {**_planner_options, "picks": _merged.picks})
+            await save_turn(conversation_id, user_id, user_message, _reply,
+                            model_used=answering_model())
+            return {"response": _reply, "conversation_id": conversation_id}
+
+    _picked_number = _selected_index(user_message)
+    if _picked_number is not None and not pick_hint:
+        _rendered_packages = trip_package.find_rendered(history)
+        _picked_package = _rendered_packages.get(_picked_number)
+        if _picked_package:
+            pick_hint = trip_package.selection_instruction(_picked_package)
+            logger.info(
+                "trip package %d picked (%s) — booking %d component(s) as one checkout",
+                _picked_number, _picked_package.get("tier", "?"),
+                2 if _picked_package.get("hotel_name") else 1,
+            )
     if pick_hint:
         messages.append({"role": "system", "content": pick_hint})
 
@@ -1811,18 +2628,22 @@ async def process_message_agentic(
     package_incomplete: bool = False
     package_ok: list[dict] = []
     package_failed: list[dict] = []
+    # Friendly labels from the LAST get_trip_planner_incomplete_error this turn
+    # attempted (see the ATOMIC PACKAGE GATE) — only set for a Trip Planner
+    # package, used solely to make the post-retry fallback message name what's
+    # actually missing instead of the generic wording every other caller keeps.
+    trip_planner_missing_labels: list[str] = []
     final_text: str = ""
+    # Set alongside final_text whenever this turn renders a FRESH interactive-
+    # planner options block, so it can be persisted as structured state
+    # (see memory_agent.save_planner_state) at the same point final_text is
+    # saved — never populated by the trip_package/tier or deterministic-reply
+    # renderers, which are a different feature.
+    _new_planner_options: dict | None = None
     tools_used: list[str] = []
     learned: dict = {}
     gathered: list[tuple[str, str]] = []  # (tool_name, result_json) — real data we collected
-
-    # The user's own messages in CHRONOLOGICAL order (oldest first, this turn
-    # last). Shared by both provenance gates below; the car gate relies on the
-    # order to scope its scan to the car sub-conversation.
-    conversation_user_texts = [
-        *(m.get("content", "") for m in history if m.get("role") == "user"),
-        user_message,
-    ]
+    turn_transport_args: dict = {}       # args of this turn's first transport search
 
     # Did the user ever actually give a date? The model tends to invent a
     # travel_date rather than ask; an invented "today" passes the missing/past
@@ -1842,20 +2663,6 @@ async def process_message_agentic(
             user_id=user_id, conversation_id=conversation_id,
             failure_type="user_correction", user_message=user_message,
             assistant_message=last_assistant,
-        ))
-
-    def _log_gate_failure(tool_name: str, args: dict, error: dict) -> None:
-        """
-        Fire-and-forget log for a prepare_booking/book_car gate rejection.
-        These are never auto-retried — fixing them means guessing a date, a
-        party size, or an address the user didn't give, which is exactly what
-        every one of these gates exists to prevent. Logged for a human to
-        review whether the prompt needs to ask more clearly up front.
-        """
-        asyncio.ensure_future(self_improvement.log_agent_failure(
-            user_id=user_id, conversation_id=conversation_id,
-            failure_type="slot_fill_failure", user_message=user_message,
-            tool_name=tool_name, tool_args=args, error_detail=str(error.get("error")),
         ))
 
     started = time.monotonic()
@@ -2043,55 +2850,11 @@ async def process_message_agentic(
             already_booked = 0
             for tc in booking_calls:
                 bd = _safe_args(tc.function.arguments)
-                # Deterministically recover a hotel's `destination` if the model
-                # dropped it (search names the field `city`, booking names it
-                # `destination` — the mismatch makes free-tier models omit it and
-                # loop on "which city?"). Only fills a blank; reprice still
-                # validates the hotel, so a bad recovery can't misbook.
-                bd = recover_booking_location(
-                    bd, [user_message, *(m.get("content", "") for m in reversed(history))]
-                )
-                missing = get_missing_booking_fields(bd)
-                if missing:
-                    booking_gate_results[tc.id] = missing_fields_result(missing)
-                    step_failures.append(bd)
-                    _log_gate_failure("prepare_booking", bd, booking_gate_results[tc.id])
-                    continue
-                count_error = get_booking_count_error(bd)
-                if count_error:
-                    booking_gate_results[tc.id] = count_error
-                    step_failures.append(bd)
-                    _log_gate_failure("prepare_booking", bd, count_error)
-                    continue
-                date_error = get_booking_date_error(bd)
-                if date_error:
-                    booking_gate_results[tc.id] = date_error
-                    step_failures.append(bd)
-                    _log_gate_failure("prepare_booking", bd, date_error)
-                    continue
-                # Already paid for, earlier in this same conversation. Runs
-                # before repricing because the answer cannot depend on whether
-                # the fare is still available — the traveller already owns it,
-                # and re-preparing it would charge them twice.
-                booked_error = get_already_booked_error(bd, history)
-                if booked_error:
-                    booking_gate_results[tc.id] = booked_error
-                    already_booked += 1
-                    _log_gate_failure("prepare_booking", bd, booked_error)
-                    continue
-                # The transfer pickup address is dispatched to a real driver
-                # after payment, so it gets the same hard gate as the date and
-                # party size — a placeholder must never reach car_bookings.
-                transfer_error = get_transfer_error(
-                    bd, user_texts=conversation_user_texts, trip_destination=_trip_state.destination,
-                )
-                if transfer_error:
-                    booking_gate_results[tc.id] = transfer_error
-                    step_failures.append(bd)
-                    _log_gate_failure("prepare_booking", bd, transfer_error)
-                    continue
-                bd = apply_traveler_totals(bd)
-                verified = await reprice_booking(bd)
+                # Same gate sequence _complete_trip_planner_confirmation's
+                # deterministic payloads go through, above — single source of
+                # truth, so a model-issued call and a server-built one can
+                # never be checked differently.
+                verified, error, bd = await _verify_booking_payload(bd)
                 if verified:
                     # Collect EVERY component the model prepared this turn, not just
                     # the first. A package ("flight + hotel + car", or the two legs
@@ -2102,9 +2865,19 @@ async def process_message_agentic(
                     # passenger details once and pays once.
                     step_components.append(verified)
                     continue
-                booking_gate_results[tc.id] = offer_not_found_result()
-                step_failures.append(bd)
-                _log_gate_failure("prepare_booking", bd, booking_gate_results[tc.id])
+                # _verify_booking_payload always returns one of (verified,
+                # error) non-None — this narrows `error` for the checker.
+                assert error is not None
+                booking_gate_results[tc.id] = error
+                if error.get("error") == "already_booked":
+                    # Already paid for, earlier in this same conversation. NOT a
+                    # failure of this checkout — the piece simply isn't part of
+                    # it, so it must not make the package look short and
+                    # withhold the piece that IS new.
+                    already_booked += 1
+                else:
+                    step_failures.append(bd)
+                _log_gate_failure("prepare_booking", bd, error)
 
             # book_car — standalone within-city ride. Same posture as
             # prepare_booking: the model NEVER commits it. The gate validates the
@@ -2173,6 +2946,9 @@ async def process_message_agentic(
                     package_incomplete = True
                     package_ok = step_components
                     package_failed = step_failures
+                    trip_planner_missing_labels = (
+                        trip_planner_error["missing_labels"] if trip_planner_error else []
+                    )
                     logger.warning(
                         "package incomplete — %d of %d component(s) verified "
                         "(trip_planner_error=%s); withholding payment action",
@@ -2235,13 +3011,21 @@ async def process_message_agentic(
             results = await asyncio.gather(
                 *[self_improvement.dispatch_tool_with_retry(
                       user_id=user_id, conversation_id=conversation_id, user_message=user_message,
-                      name=tc.function.name, args=args, has_user_date=user_dates_known)
+                      name=tc.function.name, args=args, has_user_date=user_dates_known,
+                      is_trip_planner=_mentions_northern_dest_this_turn,
+                      has_transport_mode=bool(_trip_state.transport_mode),
+                      trip_destination=_trip_state.destination or "")
                   for tc, args in other_calls],
                 return_exceptions=True,
             )
             for (tc, args), res in zip(other_calls, results):
                 tools_used.append(tc.function.name)
                 _absorb_learned(learned, args)
+                # The transport leg the model actually searched — the date it
+                # resolved is the check-in a missing hotel search needs, and
+                # it's a fact from this turn rather than a re-parse of prose.
+                if tc.function.name in ("search_flights", "search_trains") and not turn_transport_args:
+                    turn_transport_args = dict(args)
                 content = res if isinstance(res, str) else json.dumps({"error": str(res)})
                 # Backstop: if find_healthcare was called from phrasing the keyword
                 # matcher above didn't catch (e.g. "I feel dizzy"), still ground the
@@ -2292,8 +3076,215 @@ async def process_message_agentic(
             # see _outstanding_other_components, which also correctly stops
             # objecting once a hotel search actually IS among this turn's
             # results (a plain hotel-only search must still render).
+            # ── Trip Planner: answer with complete PACKAGES, not a parts list ──
+            # A northern trip is a package product, not a flight search that
+            # happens to mention a hotel. Once this turn holds transport AND
+            # hotel results, they are combined into whole priced itineraries
+            # (transport + stay + the hub transfer) and compared against the
+            # stated budget — so the traveller picks a TRIP rather than being
+            # handed the parts to assemble themselves. Composed in code for the
+            # same reason every other total is: a package total is money, and
+            # money is never left to the model to add up.
+            # Skipped on a pick turn — then the job is to BOOK the chosen
+            # package, not to re-list them.
+            #
+            # The traveller chooses each component. Auto-composed tiers used to
+            # be rendered here instead, which meant the app picked their flight,
+            # their hotel and their vehicle in order to have a package to show.
+            # Now the real options are listed per category and they select from
+            # them; tiers remain available only when they explicitly ask to be
+            # recommended one (_wants_recommendations).
+            if not booking_calls and not car_calls and not pick_hint:
+                rendered = ""
+                if _wants_recommendations(conversation_user_texts):
+                    if trip_package.can_build(gathered, _trip_state.destination):
+                        packages = trip_package.build(gathered, _trip_state.destination)
+                        rendered = trip_package.render(
+                            packages, _trip_state.destination,
+                            budget_pkr=_trip_state.budget_pkr,
+                        )
+                        if rendered:
+                            logger.info(
+                                "TRIP PACKAGES (recommendations asked for) for %s — %d option(s)",
+                                _trip_state.destination, len(packages),
+                            )
+                else:
+                    # The traveller asked for a mode we have nothing for. Say so
+                    # and ask — switching them to the other one is a decision
+                    # that belongs to them, and composing the trip around it
+                    # would silently price a different hub.
+                    _alternative = trip_selection.preferred_transport_missing(
+                        gathered, _trip_state.transport_mode,
+                    )
+                    if _alternative:
+                        logger.info(
+                            "no %s options for %s — offering %s rather than switching",
+                            _trip_state.transport_mode, _trip_state.destination,
+                            _alternative,
+                        )
+                        rendered = trip_selection.no_preferred_transport_message(
+                            _trip_state.transport_mode, _alternative,
+                        )
+                    elif trip_selection.can_offer(
+                        gathered, _trip_state.destination,
+                        preferred_mode=_trip_state.transport_mode,
+                    ):
+                        _options = trip_selection.build_options(
+                            gathered, _trip_state.destination,
+                            passengers=_trip_state.passengers or 0,
+                            preferred_mode=_trip_state.transport_mode,
+                        )
+                        rendered = trip_selection.render_options(_options)
+                        if rendered:
+                            logger.info(
+                                "interactive TRIP OPTIONS for %s (%s) — %d transport, "
+                                "%d hotel, %d transfer", _trip_state.destination,
+                                _trip_state.transport_mode or "any mode",
+                                len(_options["transport"]), len(_options["hotels"]),
+                                len(_options["transfers"]),
+                            )
+                            _new_planner_options = _options
+                    else:
+                        # This turn's own gathered results can't stand alone as a
+                        # full options block (e.g. "I want business class
+                        # flights" only re-searched transport, not hotels) — but
+                        # options ARE already active for this destination. Merge
+                        # the fresh category onto them rather than let the model
+                        # answer from raw search data in free text, which reads
+                        # fine but never updates the SAVED state: the traveller
+                        # would see real fresh prices and then have a later pick
+                        # silently resolve against the stale, pre-refresh ones.
+                        _merged_options = trip_selection.merge_fresh_search(
+                            _planner_options, gathered,
+                            passengers=_trip_state.passengers or 0,
+                            preferred_mode=_trip_state.transport_mode,
+                        )
+                        if _merged_options:
+                            rendered = trip_selection.render_options(_merged_options)
+                            if rendered:
+                                logger.info(
+                                    "interactive TRIP OPTIONS refreshed for %s — merged "
+                                    "a partial re-search onto the already-active options "
+                                    "(%d transport, %d hotel, %d transfer)",
+                                    _trip_state.destination, len(_merged_options["transport"]),
+                                    len(_merged_options["hotels"]), len(_merged_options["transfers"]),
+                                )
+                                _new_planner_options = _merged_options
+                if rendered:
+                    final_text = rendered
+                    break
+
+            # Half a trip-planner search (transport but no hotel, or the
+            # reverse) has nothing to combine, so it would fall back to
+            # listing parts — the very behaviour packages exist to replace.
+            # Name the gap and let the model close it in the next step rather
+            # than answering with a parts list.
+            still_needed: list[str] = []
+            if not booking_calls and not car_calls and not pick_hint:
+                still_needed = trip_package.missing_for_package(
+                    gathered, _trip_state.destination,
+                )
+                if still_needed:
+                    logger.info(
+                        "trip planner turn incomplete — still needs %s",
+                        ", ".join(still_needed),
+                    )
+                # Run the missing search ourselves when every input for it is
+                # already known. Asking the model costs a step it often spends
+                # on the wrong search, and _MAX_TOOL_STEPS leaves no room for
+                # that — see _package_fill_call.
+                fill = _package_fill_call(still_needed, _trip_state, turn_transport_args)
+                if fill:
+                    fill_name, fill_args = fill
+                    try:
+                        fill_result = await asyncio.wait_for(
+                            self_improvement.dispatch_tool_with_retry(
+                                user_id=user_id, conversation_id=conversation_id,
+                                user_message=user_message, name=fill_name,
+                                args=fill_args, has_user_date=user_dates_known,
+                            ),
+                            timeout=_time_left(started),
+                        )
+                    except Exception:
+                        logger.warning(
+                            "package fill (%s) failed — falling back to asking the model",
+                            fill_name, exc_info=True,
+                        )
+                        fill_result = None
+                    if isinstance(fill_result, str) and fill_result:
+                        logger.info("package fill ran %s(%s) in code", fill_name, fill_args)
+                        tools_used.append(fill_name)
+                        _absorb_learned(learned, fill_args)
+                        gathered.append((fill_name, fill_result))
+                        # Same shape a real tool round leaves behind, so history
+                        # replay and the provider request stay well-formed.
+                        fill_call = {
+                            "id": f"fill-{uuid.uuid4().hex[:8]}", "type": "function",
+                            "function": {"name": fill_name, "arguments": json.dumps(fill_args)},
+                        }
+                        messages.append(
+                            {"role": "assistant", "content": None, "tool_calls": [fill_call]})
+                        messages.append(
+                            {"role": "tool", "tool_call_id": fill_call["id"], "content": fill_result})
+                        still_needed = trip_package.missing_for_package(
+                            gathered, _trip_state.destination,
+                        )
+                        rendered = ""
+                        if _wants_recommendations(conversation_user_texts):
+                            if trip_package.can_build(gathered, _trip_state.destination):
+                                packages = trip_package.build(
+                                    gathered, _trip_state.destination)
+                                rendered = trip_package.render(
+                                    packages, _trip_state.destination,
+                                    budget_pkr=_trip_state.budget_pkr,
+                                )
+                        elif trip_selection.can_offer(
+                            gathered, _trip_state.destination,
+                            preferred_mode=_trip_state.transport_mode,
+                        ):
+                            _fill_options = trip_selection.build_options(
+                                gathered, _trip_state.destination,
+                                passengers=_trip_state.passengers or 0,
+                                preferred_mode=_trip_state.transport_mode,
+                            )
+                            rendered = trip_selection.render_options(_fill_options)
+                            if rendered:
+                                _new_planner_options = _fill_options
+                        else:
+                            # Same partial-refresh merge as the main render
+                            # site above — harmless no-op when no options
+                            # are already active for this destination yet.
+                            _merged_options = trip_selection.merge_fresh_search(
+                                _planner_options, gathered,
+                                passengers=_trip_state.passengers or 0,
+                                preferred_mode=_trip_state.transport_mode,
+                            )
+                            if _merged_options:
+                                rendered = trip_selection.render_options(_merged_options)
+                                if rendered:
+                                    _new_planner_options = _merged_options
+                        if rendered:
+                            logger.info(
+                                "TRIP options/packages for %s rendered after completing "
+                                "the missing search in code", _trip_state.destination,
+                            )
+                            final_text = rendered
+                            break
+                if still_needed:
+                    messages.append({"role": "system", "content": (
+                        "TRIP PACKAGE INCOMPLETE: this is package planning, not a "
+                        f"single-service search. Still missing: {', '.join(still_needed)}. "
+                        "Run that search NOW, in your next reply. Do NOT list what you "
+                        "already found and do NOT ask them to pick a flight or a hotel "
+                        "— the complete packages are built and shown for you once every "
+                        "piece has been searched."
+                    )})
+
             other_components = _outstanding_other_components(conversation_user_texts, gathered)
-            if not other_components and not booking_calls and not car_calls and deterministic_reply.should_render(
+            # `still_needed` guards the same thing one level up: a trip-planner
+            # turn missing a piece must not be answered with a tidy list of the
+            # piece it does have.
+            if not still_needed and not other_components and not booking_calls and not car_calls and deterministic_reply.should_render(
                 gathered, user_message,
                 has_budget_note=bool(budget_note), has_pick_hint=bool(pick_hint),
                 round_trip_incomplete=one_leg and _wants_round_trip(conversation_user_texts),
@@ -2327,28 +3318,14 @@ async def process_message_agentic(
                     "content": json.dumps(result),
                 })
 
-        # Loop ended with tools called but no final prose → synthesize one answer.
-        # A completed standalone car booking already broke the loop above with
-        # car_booking_data set (see "if car_booking_data: break") and needs no
-        # prose at all — format_car_booking_summary builds the whole reply from
-        # car_booking_data further down. Checking only booking_data here missed
-        # that car bookings use a SEPARATE variable, so every successful car
-        # booking paid for one more generate_with_tools call whose output was
-        # then thrown away unread.
         if not final_text and not booking_data and not car_booking_data:
             try:
-                # Bounded: a fallback provider that queues rather than 429s can sit
-                # here for its full 35s budget, which on a late turn is exactly what
-                # pushes us past the router's cancel and loses the whole answer.
                 msg = await asyncio.wait_for(
                     generate_with_tools(messages, tools=None, temperature=0.5, max_output_tokens=1200),
                     timeout=_time_left(started),
                 )
                 final_text = (getattr(msg, "content", "") or "").strip()
             except Exception as exc:
-                # Out of tool-call budget — synthesize from the data we ALREADY have,
-                # via generate_text (Groq->Gemini failover). Never re-run the pipeline
-                # from scratch (that double-spends quota and risks hallucinating).
                 logger.warning("final tool-synthesis failed (%s) — synthesizing from gathered data", exc)
                 final_text = await _synthesize_bounded(
                     started, system_prompt, history, user_message, gathered
@@ -2384,6 +3361,18 @@ async def process_message_agentic(
                 # legacy pipeline would only get a few seconds against the router's
                 # absolute 60s cutoff before losing everything the same way again.
                 final_text = _TIMEOUT_MESSAGE
+            elif _is_trip_planner_turn(user_message, history, _trip_state, turn_tool_names):
+                # A trip-planner turn NEVER degrades into the legacy pipeline:
+                # itinerary_agent isn't bound by this file's gates and will
+                # quote a bus fare or a taxi price that came from nowhere.
+                # Nothing was booked and nothing was charged at this point —
+                # the failure happened before any component was verified — so
+                # say exactly that instead of improvising a trip.
+                logger.error(
+                    "trip planner turn failed (%s) — refusing the legacy fallback",
+                    exc, exc_info=True,
+                )
+                final_text = _TRIP_PLANNER_FAILED_MESSAGE
             else:
                 # Nothing gathered → safe to try the legacy pipeline as a last resort.
                 return await process_message(user_id, conversation_id, user_message)
@@ -2395,7 +3384,7 @@ async def process_message_agentic(
     # as an ordinary payment_choice.
     if package_incomplete and not package_components:
         summary = _package_incomplete_message(
-            package_ok, package_failed, expected_components
+            package_ok, package_failed, expected_components, trip_planner_missing_labels,
         )
         summary += _car_booking_note(car_booking_data)
         await save_turn(
@@ -2409,12 +3398,6 @@ async def process_message_agentic(
         ))
         return {"response": summary, "conversation_id": conversation_id}
 
-    # Package path → package_choice. Two or more components were prepared and each
-    # one already passed the same gates and the same server-side reprice a single
-    # booking gets — this only bundles them so the app can collect passenger details
-    # once and take ONE payment for the combined total. The per-component totals are
-    # the repriced ones, so the package total is a sum of server-verified numbers and
-    # can never be a model-invented figure.
     if len(package_components) >= 2:
         package_data = build_package_data(package_components)
         summary = format_package_summary(package_data)
@@ -2432,14 +3415,7 @@ async def process_message_agentic(
             "action": "package_choice",
             "booking_data": package_data,
         }
-
-    # Booking path → payment_choice (same contract the Flutter app already handles)
     if booking_data:
-        # Package continuity: keep the model's next_step if it set a safe one;
-        # otherwise synthesize one deterministically so a forgotten next_step can't
-        # silently dead-end a multi-piece package. Sanitize the result so BOTH the
-        # summary and the app's post-payment handoff (which reads next_step raw)
-        # get vetted text — never a fabricated PNR or a "booked" claim.
         safe_next = sanitize_next_step(booking_data.get("next_step"))
         if not safe_next:
             safe_next = _infer_package_next_step(
@@ -2501,13 +3477,13 @@ async def process_message_agentic(
         else:
             final_text = "I'm having trouble responding right now. Could you rephrase that?"
 
-    # Persist both messages (ordered so replay stays user-then-assistant)
     await save_turn(
         conversation_id, user_id, user_message, final_text,
         model_used=answering_model(),
     )
+    if _new_planner_options:
+        await save_planner_state(conversation_id, user_id, _new_planner_options)
 
-    # Fire-and-forget: learn preferences, set a meaningful title, log the task
     derived_qt = _derive_query_type(tools_used)
     asyncio.ensure_future(_auto_save_preferences(user_id, learned, learned.get("travelers") or 1))
     asyncio.ensure_future(_update_conversation_title(

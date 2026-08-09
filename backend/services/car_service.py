@@ -9,12 +9,15 @@ from __future__ import annotations
 
 import logging
 import random
+import re
 import string
 import uuid
+from math import asin, cos, radians, sin, sqrt
 from typing import Any
 
 from core.supabase_client import supabase_admin
 from services.northern_routes import price_for_route
+from services.weather_service import CITY_COORDS
 
 logger = logging.getLogger(__name__)
 
@@ -37,19 +40,81 @@ def _price_for(vehicle_type: str) -> int:
     return _VEHICLE_PRICES.get(vehicle_type, 3000)
 
 
+# ── Long-distance (out-of-city) fallback pricing ──────────────────────────
+#
+# The flat rates above are an in-city rate — fine for an airport transfer or
+# a ride across town, absurd for a genuine point-to-point road trip (e.g.
+# Karachi -> Skardu, ~1,900km) that names no known hub<->northern-destination
+# route (price_for_route only covers the 6 sourced legs in northern_routes.py).
+# Reuses weather_service.CITY_COORDS (already maintained for weather lookups)
+# rather than a second city table, and prices per straight-line km once both
+# ends name a KNOWN city and the distance clears an in-city threshold — so an
+# ordinary same-city ride is untouched. Estimate, not a real routing engine:
+# haversine distance undercounts actual road distance on mountain routes, so
+# this is a floor, not a precise quote.
+_PER_KM_RATES: dict[str, float] = {
+    "Sedan": 30,
+    "SUV":   40,
+    "Van":   50,
+}
+_LONG_DISTANCE_MIN_KM = 100
+_CITY_NAME_TOKENS = sorted(CITY_COORDS, key=len, reverse=True)
+
+
+def _city_in(text: str) -> tuple[str, float, float] | None:
+    low = (text or "").lower()
+    for name in _CITY_NAME_TOKENS:
+        if re.search(rf"\b{re.escape(name.lower())}\b", low):
+            lat, lon = CITY_COORDS[name]
+            return name, lat, lon
+    return None
+
+
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    r = 6371.0  # earth radius, km
+    p1, p2 = radians(lat1), radians(lat2)
+    dphi = radians(lat2 - lat1)
+    dlambda = radians(lon2 - lon1)
+    h = sin(dphi / 2) ** 2 + cos(p1) * cos(p2) * sin(dlambda / 2) ** 2
+    return 2 * r * asin(sqrt(h))
+
+
+def _estimate_by_distance(vehicle_type: str, pickup_location: str, dropoff_location: str) -> int | None:
+    """PKR fare for a genuine long-distance ride between two KNOWN, DIFFERENT
+    cities named in the pickup/dropoff text — or None so the caller falls
+    back to the flat in-city rate (an unrecognised address, a same-city ride,
+    or an unrecognised vehicle type all fall through here on purpose)."""
+    rate = _PER_KM_RATES.get(vehicle_type)
+    if rate is None:
+        return None
+    pickup = _city_in(pickup_location)
+    dropoff = _city_in(dropoff_location)
+    if not pickup or not dropoff or pickup[0] == dropoff[0]:
+        return None
+    distance_km = _haversine_km(pickup[1], pickup[2], dropoff[1], dropoff[2])
+    if distance_km < _LONG_DISTANCE_MIN_KM:
+        return None
+    return round(distance_km * rate / 100) * 100
+
+
 def estimate_fare(vehicle_type: str, pickup_location: str = "", dropoff_location: str = "") -> int:
     """
     Route-aware fare: a known hub<->northern-destination route (Islamabad/
     Rawalpindi->Naran, Gilgit->Hunza, Islamabad/Rawalpindi->Swat) prices by
-    real distance; everything else — an ordinary in-city ride or an airport/
-    station transfer — keeps the flat rate. Called with no addresses (as
-    every existing transfer-leg call site does), this behaves exactly like
-    `_price_for` always has.
+    real (sourced/estimated) distance first; failing that, a genuine
+    long-distance ride between two other known cities prices per km
+    (_estimate_by_distance); everything else — an ordinary in-city ride or
+    an airport/station transfer, or an address naming no known city — keeps
+    the flat rate. Called with no addresses (as every existing transfer-leg
+    call site does), this behaves exactly like `_price_for` always has.
     """
     if pickup_location or dropoff_location:
         routed = price_for_route(pickup_location, dropoff_location, vehicle_type)
         if routed is not None:
             return routed
+        by_distance = _estimate_by_distance(vehicle_type, pickup_location, dropoff_location)
+        if by_distance is not None:
+            return by_distance
     return _price_for(vehicle_type)
 
 

@@ -49,6 +49,9 @@ class QuickAccessFeatures extends StatelessWidget {
                 subtitle: 'Emergency Help',
                 onTap: () => Get.toNamed(AppLink.healthcare),
               ),
+              // Trip Package tile hidden from the home grid for now — the
+              // flow itself (AppLink.tripPackageRequirements) is untouched
+              // and still fully reachable/testable directly by route name.
             ];
 
             final availableWidth = constraints.maxWidth;
