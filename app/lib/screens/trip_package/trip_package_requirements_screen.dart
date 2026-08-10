@@ -443,7 +443,7 @@ class _TripPackageRequirementsScreenState
       child: _fieldShell(
         child: Row(
           children: [
-            Icon(Icons.sync_alt_rounded, size: 18, color: _goldDark),
+            const Icon(Icons.sync_alt_rounded, size: 18, color: _goldDark),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -460,7 +460,7 @@ class _TripPackageRequirementsScreenState
             ),
             Switch(
               value: _wantReturn,
-              activeColor: _gold,
+              activeThumbColor: _gold,
               onChanged: (v) => setState(() => _wantReturn = v),
             ),
           ],
