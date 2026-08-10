@@ -91,8 +91,17 @@ _BUDGET_RE = re.compile(
     # 300,000" and "Budget: 300,000" are how people actually write it, and
     # allowing only "of" meant both parsed as no budget at all — which silently
     # switched off every budget comparison downstream.
-    r"\b(?:budget|under|below|within|max(?:imum)?|around|about|upto|up\s+to)\s*"
-    r"(?:is|of|are|=|:|~)?\s*(?:around\s+|about\s+)?(?:pkr|rs\.?|rupees)?\s*([\d,]{3,12})\s*(k\b)?"
+    # The {3,12}-digit floor guards against reading a flight/gate number as a
+    # budget, but a "k" shorthand ("50k", "5k") legitimately has only 1-2
+    # digits before the multiplier — so that case gets its own branch with no
+    # digit-count floor, gated on the mandatory trailing "k" instead.
+    # Up to 4 filler words are allowed between "budget" and the connector, so
+    # "budget for flight and hotel is 50k" reaches the number too, not just
+    # the bare "budget is 50k" phrasing.
+    r"\b(?:budget|under|below|within|max(?:imum)?|around|about|upto|up\s+to)\b"
+    r"(?:\s+[a-z]+){0,4}?\s*"
+    r"(?:is|of|are|=|:|~)?\s*(?:around\s+|about\s+)?(?:pkr|rs\.?|rupees)?\s*"
+    r"(?:([\d,]{3,12})\s*(k\b)?|(\d{1,2})\s*(k\b))"
     r"|\b(?:pkr|rs\.?)\s*([\d,]{3,12})\b",
     re.I,
 )
@@ -246,11 +255,11 @@ def _budget_in(text: str) -> int | None:
     m = _BUDGET_RE.search(text or "")
     if not m:
         return None
-    raw = m.group(1) or m.group(3)
+    raw = m.group(1) or m.group(3) or m.group(5)
     value = _int_or_none(raw)
     if value is None:
         return None
-    if m.group(2):        # "50k"
+    if m.group(2) or m.group(4):        # "50k" / "5k"
         value *= 1000
     # A three-digit "budget" is almost always a fragment of something else
     # (a flight number, a year); a real PKR trip budget starts in the thousands.
