@@ -37,6 +37,14 @@ HOTELS_JSON = json.dumps({
     ],
 })
 EMPTY_FLIGHTS_JSON = json.dumps({"flights": [], "available_count": 0, "search_date": "2027-06-10"})
+RETURN_FLIGHTS_JSON = json.dumps({
+    "search_date": "2027-06-12", "passengers": 2,
+    "flights": [
+        {"flight_number": "PA912", "airline": "Airblue", "from": "Islamabad", "to": "Karachi",
+         "depart": "2027-06-12 18:00", "arrive": "20:00", "cabin": "ECONOMY",
+         "total_price_pkr": 27000},
+    ],
+})
 
 
 def _owned(*_a, **_k):
@@ -384,3 +392,190 @@ def test_confirm_end_to_end_drives_the_real_deterministic_engine(monkeypatch):
     assert len(components) == 2   # flight (carrying the transfer) + hotel
     assert any(c.get("transfer_vehicle_type") for c in components)
     assert saved["reply"]          # a real chat-shaped summary was persisted too
+
+
+# ── Optional return leg (native form) ────────────────────────────────────────
+#
+# The native form always has a real nights value (a required stepper, unlike
+# chat where a return date may never be given at all) — want_return is the
+# ONLY signal needed, no "was this a real date" ambiguity to gate on. Same
+# "never search a leg the traveller didn't ask for" posture as the chat Trip
+# Planner's own return-leg offer (trip_selection.build_return_options).
+
+def test_search_without_want_return_never_searches_a_return_leg(monkeypatch):
+    calls: list[str] = []
+
+    async def _dispatch(*, user_id, conversation_id, user_message, name, args, has_user_date):
+        calls.append(name)
+        return FLIGHTS_JSON if name == "search_flights" else HOTELS_JSON
+
+    async def _start_new_conversation(uid, title=""):
+        return "conv-new"
+
+    async def _save_state(cid, uid, state):
+        pass
+
+    monkeypatch.setattr(tp, "dispatch_tool_with_retry", _dispatch)
+    monkeypatch.setattr(tp, "start_new_conversation", _start_new_conversation)
+    monkeypatch.setattr(tp, "save_planner_state", _save_state)
+
+    payload = tp.TripRequirements(
+        origin="Karachi", destination="Naran", travel_date="2027-06-10",
+        travelers=2, preferred_mode="flight",   # want_return defaults False
+    )
+    result = asyncio.run(tp.search_trip_package(payload, USER))
+
+    assert calls == ["search_flights", "search_hotels"]
+    assert "return_transport" not in result.options
+
+
+def test_search_with_want_return_adds_return_transport_to_options(monkeypatch):
+    calls: list[tuple[str, dict]] = []
+
+    async def _dispatch(*, user_id, conversation_id, user_message, name, args, has_user_date):
+        calls.append((name, args))
+        if name == "search_hotels":
+            return HOTELS_JSON
+        # First search_flights call is outbound (Karachi->Islamabad), second
+        # is the return leg (Islamabad->Karachi) — distinguished by args,
+        # not call order, so the assertions below can't pass by accident.
+        if args.get("destination_city") == "Karachi":
+            return RETURN_FLIGHTS_JSON
+        return FLIGHTS_JSON
+
+    async def _start_new_conversation(uid, title=""):
+        return "conv-new"
+
+    saved: dict = {}
+
+    async def _save_state(cid, uid, state):
+        saved["state"] = state
+
+    monkeypatch.setattr(tp, "dispatch_tool_with_retry", _dispatch)
+    monkeypatch.setattr(tp, "start_new_conversation", _start_new_conversation)
+    monkeypatch.setattr(tp, "save_planner_state", _save_state)
+
+    payload = tp.TripRequirements(
+        origin="Karachi", destination="Naran", travel_date="2027-06-10",
+        nights=2, travelers=2, preferred_mode="flight", want_return=True,
+    )
+    result = asyncio.run(tp.search_trip_package(payload, USER))
+
+    flight_calls = [args for name, args in calls if name == "search_flights"]
+    assert len(flight_calls) == 2
+    return_call = next(a for a in flight_calls if a["destination_city"] == "Karachi")
+    assert return_call["origin_city"] == "Islamabad"   # Naran's own flight hub
+    assert return_call["travel_date"] == "2027-06-12"  # travel_date + nights
+
+    assert result.options["return_transport"][0]["flight_number"] == "PA912"
+    assert result.options["_return_kind"] == "flight"
+    assert result.options["_return_origin"] == "Karachi"
+    assert result.options["_return_date"] == "2027-06-12"
+    assert saved["state"]["return_transport"]   # persisted for /confirm too
+
+
+def test_search_with_want_return_but_nothing_found_falls_back_to_one_way(monkeypatch):
+    async def _dispatch(*, user_id, conversation_id, user_message, name, args, has_user_date):
+        if name == "search_hotels":
+            return HOTELS_JSON
+        if args.get("destination_city") == "Karachi":
+            return EMPTY_FLIGHTS_JSON   # no return flights found
+        return FLIGHTS_JSON
+
+    async def _start_new_conversation(uid, title=""):
+        return "conv-new"
+
+    async def _save_state(cid, uid, state):
+        pass
+
+    monkeypatch.setattr(tp, "dispatch_tool_with_retry", _dispatch)
+    monkeypatch.setattr(tp, "start_new_conversation", _start_new_conversation)
+    monkeypatch.setattr(tp, "save_planner_state", _save_state)
+
+    payload = tp.TripRequirements(
+        origin="Karachi", destination="Naran", travel_date="2027-06-10",
+        nights=2, travelers=2, preferred_mode="flight", want_return=True,
+    )
+    result = asyncio.run(tp.search_trip_package(payload, USER))
+
+    # A complete one-way package still comes back — the traveller ticking
+    # "return trip" and getting nothing for it must never break the outbound
+    # package they already have.
+    assert result.options["destination"] == "Naran"
+    assert result.options["transport"][0]["flight_number"] == "PA911"
+    assert "return_transport" not in result.options
+
+
+def test_confirm_applies_a_picked_return_leg_as_a_third_component(monkeypatch):
+    monkeypatch.setattr(tp, "_verify_conversation_owner", _owned)
+    options = _sample_options()
+    return_rows, return_kind = ts.build_return_options(
+        [("search_flights", RETURN_FLIGHTS_JSON)]
+    )
+    options["return_transport"] = return_rows
+    options["_return_kind"] = return_kind
+    options["_return_origin"] = "Karachi"
+    options["_return_date"] = "2027-06-12"
+
+    async def _state(cid):
+        return options
+    monkeypatch.setattr(tp, "get_active_planner_state", _state)
+
+    async def _reprice(bd):
+        verified = dict(bd)
+        verified["total_price_pkr"] = bd.get("total_price_pkr") or 0
+        return verified
+    monkeypatch.setattr(ma, "reprice_booking", _reprice)
+    monkeypatch.setattr(ma, "save_turn", lambda *a, **k: _async_none())
+    monkeypatch.setattr(ma, "_log_task", lambda *a, **k: _async_none())
+
+    payload = tp.TripPackageConfirmRequest(
+        conversation_id="conv-1",
+        picks={"transport": 1, "hotel": 1, "transfer": 1, "return_transport": 1},
+        pickup_location="Islamabad Airport",
+    )
+    result = asyncio.run(tp.confirm_trip_package(payload, USER))
+
+    components = result.booking_data.get("components") or []
+    assert len(components) == 3   # outbound flight (+transfer) + hotel + return flight
+    return_leg = next(c for c in components if c.get("flight_number") == "PA912")
+    assert return_leg["origin"] == "Islamabad" and return_leg["destination"] == "Karachi"
+    assert return_leg["total_price_pkr"] == 27000
+
+
+def test_confirm_without_a_return_pick_stays_two_components_even_when_offered(monkeypatch):
+    """Ticking "return trip" and getting options doesn't force picking one —
+    omitting return_transport from picks must book the outbound trip alone,
+    same as if want_return had never been set."""
+    monkeypatch.setattr(tp, "_verify_conversation_owner", _owned)
+    options = _sample_options()
+    return_rows, return_kind = ts.build_return_options(
+        [("search_flights", RETURN_FLIGHTS_JSON)]
+    )
+    options["return_transport"] = return_rows
+    options["_return_kind"] = return_kind
+
+    async def _state(cid):
+        return options
+    monkeypatch.setattr(tp, "get_active_planner_state", _state)
+
+    async def _reprice(bd):
+        verified = dict(bd)
+        verified["total_price_pkr"] = bd.get("total_price_pkr") or 0
+        return verified
+    monkeypatch.setattr(ma, "reprice_booking", _reprice)
+    monkeypatch.setattr(ma, "save_turn", lambda *a, **k: _async_none())
+    monkeypatch.setattr(ma, "_log_task", lambda *a, **k: _async_none())
+
+    payload = tp.TripPackageConfirmRequest(
+        conversation_id="conv-1", picks={"transport": 1, "hotel": 1, "transfer": 1},
+        pickup_location="Islamabad Airport",
+    )
+    result = asyncio.run(tp.confirm_trip_package(payload, USER))
+
+    components = result.booking_data.get("components") or []
+    assert len(components) == 2
+
+
+async def _async_none(*_a, **_k):
+    return None

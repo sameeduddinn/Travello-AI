@@ -53,8 +53,18 @@ class _TripPackageOptionsScreenState extends State<TripPackageOptionsScreen> {
       ((_options['transfers'] as List?) ?? const [])
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
+  List<Map<String, dynamic>> get _returnTransport =>
+      ((_options['return_transport'] as List?) ?? const [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
 
   bool get _needsTransfer => _transfers.isNotEmpty;
+  // Offered only when the traveller ticked "Round trip" on the requirements
+  // form AND a real return-leg search came back with something — see
+  // routers/trip_packages.py's want_return handling. Deliberately NOT part
+  // of _complete: a one-way trip is still a complete trip, so skipping this
+  // (never tapping a card) must never block Continue.
+  bool get _hasReturnOption => _returnTransport.isNotEmpty;
 
   bool get _complete =>
       _picks.containsKey('transport') &&
@@ -74,6 +84,10 @@ class _TripPackageOptionsScreenState extends State<TripPackageOptionsScreen> {
     final tr = _picks['transfer'];
     if (tr != null && tr >= 1 && tr <= _transfers.length) {
       sum += (_transfers[tr - 1]['fare_pkr'] as num?) ?? 0;
+    }
+    final rt = _picks['return_transport'];
+    if (rt != null && rt >= 1 && rt <= _returnTransport.length) {
+      sum += (_returnTransport[rt - 1]['price_pkr'] as num?) ?? 0;
     }
     return sum;
   }
@@ -144,6 +158,15 @@ class _TripPackageOptionsScreenState extends State<TripPackageOptionsScreen> {
                   ..._transfers.asMap().entries.map((e) => _transferCard(
                       e.key + 1, e.value, _picks['transfer'] == e.key + 1)),
                 ],
+                if (_hasReturnOption) ...[
+                  const SizedBox(height: 20),
+                  _sectionHeader(
+                      'Return — Optional', isFlight ? Icons.flight_land : Icons.train),
+                  ..._returnTransport.asMap().entries.map((e) => _transportCard(
+                      e.key + 1, e.value, isFlight,
+                      _picks['return_transport'] == e.key + 1,
+                      pickKey: 'return_transport')),
+                ],
                 const SizedBox(height: 16),
               ],
             ),
@@ -203,7 +226,8 @@ class _TripPackageOptionsScreenState extends State<TripPackageOptionsScreen> {
         size: 22,
       );
 
-  Widget _transportCard(int index, Map<String, dynamic> row, bool isFlight, bool selected) {
+  Widget _transportCard(int index, Map<String, dynamic> row, bool isFlight, bool selected,
+      {String pickKey = 'transport'}) {
     final route = (row['origin'] as String?)?.isNotEmpty == true
         ? '${row['origin']} → ${row['destination']}'
         : '';
@@ -214,7 +238,7 @@ class _TripPackageOptionsScreenState extends State<TripPackageOptionsScreen> {
     final extra = (row['cabin'] as String?) ?? (row['travel_class'] as String?) ?? '';
     return _selectableCard(
       selected: selected,
-      onTap: () => setState(() => _picks['transport'] = index),
+      onTap: () => setState(() => _picks[pickKey] = index),
       child: Row(children: [
         Expanded(
           child: Column(

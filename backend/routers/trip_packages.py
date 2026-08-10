@@ -146,6 +146,13 @@ class TripRequirements(BaseModel):
     preferred_mode: Literal["flight", "train"]
     cabin_class: str | None = None
     min_hotel_stars: int | None = Field(None, ge=1, le=5)
+    # Explicit opt-in for a round trip — the native form always has a real
+    # nights/return_date value (unlike chat, where a return date may never be
+    # given at all), so this is the ONLY signal needed to decide whether to
+    # search a return leg; see the same "never search a leg the traveller
+    # didn't ask for" posture as trip_selection.build_return_options' chat
+    # caller in master_agent.py.
+    want_return: bool = False
     # Continue an existing Trip Package session (e.g. re-searching after
     # changing dates) or omit to start a fresh one — mirrors POST /agent/chat.
     conversation_id: str | None = None
@@ -262,6 +269,36 @@ async def search_trip_package(payload: TripRequirements, user: CurrentUser):
     # docstring). Extra key is safe: is_valid_planner_state() only checks the
     # keys build_options() itself defines, never rejects additional ones.
     options["_travel_date"] = payload.travel_date
+
+    if payload.want_return:
+        # Same hub the outbound leg searched TO is where the return leg
+        # searches FROM — deterministic, server-side, exactly like the chat
+        # Trip Planner's own return-leg offer (trip_selection.
+        # build_return_options / master_agent.py). A traveller who doesn't
+        # tick "return trip" sees no change at all from today.
+        return_args: dict = {
+            "origin_city": hub, "destination_city": payload.origin,
+            "travel_date": check_out, "passengers": payload.travelers,
+        }
+        if payload.preferred_mode == "flight":
+            return_args["cabin_class"] = payload.cabin_class or "ECONOMY"
+        return_raw = await dispatch_tool_with_retry(
+            user_id=user.id, conversation_id=conversation_id,
+            user_message=f"[Trip Package UI] {transport_tool} (return)",
+            name=transport_tool, args=return_args, has_user_date=True,
+        )
+        return_rows, return_kind = trip_selection.build_return_options(
+            [(transport_tool, return_raw)]
+        )
+        if return_rows:
+            options["return_transport"] = return_rows
+            options["_return_kind"] = return_kind
+            options["_return_origin"] = payload.origin
+            options["_return_date"] = check_out
+        # Nothing found for the return leg falls through silently — the
+        # traveller still gets a complete one-way package to review, exactly
+        # as if they'd never ticked "return trip".
+
     await save_planner_state(conversation_id, user.id, options)
     return TripPackageOptionsResponse(conversation_id=conversation_id, options=options)
 
@@ -271,8 +308,10 @@ async def search_trip_package(payload: TripRequirements, user: CurrentUser):
 class TripPackageConfirmRequest(BaseModel):
     conversation_id: str
     # 1-based indices into the options block /search returned, e.g.
-    # {"transport": 2, "hotel": 1, "transfer": 1} — "transfer" omitted when
-    # this destination/options block has none.
+    # {"transport": 2, "hotel": 1, "transfer": 1, "return_transport": 1} —
+    # "transfer" omitted when this destination/options block has none,
+    # "return_transport" omitted (or its row simply not offered) for a
+    # one-way trip.
     picks: dict[str, int]
     pickup_location: str | None = None
 
@@ -324,6 +363,19 @@ async def confirm_trip_package(payload: TripPackageConfirmRequest, user: Current
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="This selection could not be resolved into a trip plan.",
+        )
+
+    # Optional return leg — outside trip_selection.complete()/outstanding()
+    # on purpose (same reasoning as the chat flow's own return-leg step):
+    # a one-way trip is still a COMPLETE trip, so this can never block
+    # confirmation the way a missing transport/hotel pick does. Silently
+    # ignored if the traveller didn't opt into a return search at /search,
+    # or picked an index that isn't on the list.
+    return_rows = options.get("return_transport") or []
+    return_pick = (payload.picks or {}).get("return_transport")
+    if return_rows and isinstance(return_pick, int):
+        trip_selection.apply_return_pick(
+            plan, return_rows, options.get("_return_kind", ""), return_pick,
         )
 
     pickup_location = (payload.pickup_location or "").strip()

@@ -1355,6 +1355,7 @@ class ApiClient {
     required String preferredMode,   // 'flight' | 'train'
     String? cabinClass,
     int? minHotelStars,
+    bool wantReturn = false,
     String? conversationId,
   }) async {
     final res = await http
@@ -1371,6 +1372,7 @@ class ApiClient {
             'preferred_mode': preferredMode,
             if (cabinClass != null) 'cabin_class': cabinClass,
             if (minHotelStars != null) 'min_hotel_stars': minHotelStars,
+            'want_return': wantReturn,
             if (conversationId != null) 'conversation_id': conversationId,
           }),
         )

@@ -77,6 +77,7 @@ class _TripPackageRequirementsScreenState
   String _preferredMode = 'flight';
   String _cabinClass = 'ECONOMY';
   int? _minHotelStars;
+  bool _wantReturn = false;
   bool _searching = false;
   String? _error;
 
@@ -115,6 +116,7 @@ class _TripPackageRequirementsScreenState
         preferredMode: _preferredMode,
         cabinClass: _preferredMode == 'flight' ? _cabinClass : null,
         minHotelStars: _minHotelStars,
+        wantReturn: _wantReturn,
       );
       if (!mounted) return;
       await Get.toNamed(AppLink.tripPackageOptions, arguments: {
@@ -176,6 +178,8 @@ class _TripPackageRequirementsScreenState
               max: 14,
               onChanged: (v) => setState(() => _nights = v),
             ),
+            SizedBox(height: spacingUnit(1.25)),
+            _returnTripToggle(),
             SizedBox(height: spacingUnit(1.25)),
             _sectionLabel('Travellers'),
             _stepperField(
@@ -429,6 +433,38 @@ class _TripPackageRequirementsScreenState
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon, size: 18, color: onTap == null ? Colors.grey.shade400 : _goldDark),
+      ),
+    );
+  }
+
+  Widget _returnTripToggle() {
+    return GestureDetector(
+      onTap: () => setState(() => _wantReturn = !_wantReturn),
+      child: _fieldShell(
+        child: Row(
+          children: [
+            Icon(Icons.sync_alt_rounded, size: 18, color: _goldDark),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Round trip',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  Text(
+                    'Add a flight/train back to your departure city',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: _wantReturn,
+              activeColor: _gold,
+              onChanged: (v) => setState(() => _wantReturn = v),
+            ),
+          ],
+        ),
       ),
     );
   }
