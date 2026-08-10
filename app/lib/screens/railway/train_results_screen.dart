@@ -22,6 +22,13 @@ class TrainResult {
   final Map<String, double> classPrices; // class name -> price
   final List<String> availableClasses;
   final bool isRefundable;
+  // Set only for an agent/package booking whose fare has a car transfer
+  // bundled into it (see agent_tools._add_transfer_fare on the backend) —
+  // null for every ordinary manual search result. Display-only: the actual
+  // charge already correctly includes this regardless, via total_price_pkr;
+  // this exists so the passenger form can say so instead of silently
+  // showing a "fare per person" that's actually fare-plus-transfer.
+  final double? transferPkr;
 
   TrainResult({
     required this.id,
@@ -35,6 +42,7 @@ class TrainResult {
     required this.classPrices,
     required this.availableClasses,
     this.isRefundable = true,
+    this.transferPkr,
   });
 
   int get availableSeats =>

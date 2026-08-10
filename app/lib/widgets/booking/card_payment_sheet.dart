@@ -8,6 +8,7 @@
 
 import 'package:flight_app/models/airport.dart';
 import 'package:flight_app/models/hotel.dart' show Hotel;
+import 'package:flight_app/models/railway_station.dart';
 import 'package:flight_app/screens/flight/flight_results_screen.dart' show FlightResult;
 import 'package:flight_app/screens/railway/train_results_screen.dart' show TrainResult;
 import 'package:flight_app/services/api_client.dart';
@@ -154,6 +155,32 @@ Map<String, dynamic> flightFormArgs(Map<String, dynamic> data) {
   };
 }
 
+/// The real station for a city (its city-name match in
+/// PakistanRailwayStations, preferring a station whose OWN name equals the
+/// city — e.g. "Rawalpindi" station for Rawalpindi — since several cities
+/// list more than one), or a derived 3-letter code so an agent booking never
+/// falls back to the literal placeholder text "DEP"/"ARR" the way
+/// train_passenger_form.dart's own `fromStation?.code ?? 'DEP'` did when no
+/// station was ever passed in.
+RailwayStation _stationFor(String city) {
+  final trimmed = city.trim();
+  if (trimmed.isEmpty) {
+    return RailwayStation(name: 'Departure', code: 'DEP', city: '');
+  }
+  final matches = PakistanRailwayStations.getAllStations()
+      .where((s) => s.city.toLowerCase() == trimmed.toLowerCase())
+      .toList();
+  if (matches.isNotEmpty) {
+    return matches.firstWhere(
+      (s) => s.name.toLowerCase() == trimmed.toLowerCase(),
+      orElse: () => matches.first,
+    );
+  }
+  final clean = trimmed.replaceAll(RegExp(r'[^A-Za-z ]'), '');
+  final code = clean.substring(0, clean.length.clamp(0, 3)).toUpperCase();
+  return RailwayStation(name: trimmed, code: code.isEmpty ? 'STN' : code, city: trimmed);
+}
+
 /// Args for train_passenger_form.dart's agentMode hand-off — see flightFormArgs.
 Map<String, dynamic> trainFormArgs(Map<String, dynamic> data) {
   final cls = (data['train_class'] as String?) ?? 'Economy';
@@ -169,6 +196,7 @@ Map<String, dynamic> trainFormArgs(Map<String, dynamic> data) {
     classSeats: {cls: null},
     classPrices: {cls: perSeatFromTotal(data)},
     availableClasses: [cls],
+    transferPkr: (data['transfer_pkr'] as num?)?.toDouble(),
   );
   return {
     'agentMode': true,
@@ -181,6 +209,8 @@ Map<String, dynamic> trainFormArgs(Map<String, dynamic> data) {
       'departureDate':
           DateTime.tryParse((data['travel_date'] as String?) ?? '') ??
               DateTime.now(),
+      'fromStation': _stationFor((data['origin'] as String?) ?? ''),
+      'toStation': _stationFor((data['destination'] as String?) ?? ''),
     },
   };
 }

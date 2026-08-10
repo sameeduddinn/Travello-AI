@@ -1567,31 +1567,49 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
           // ── Footer: base fare per person ──────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.sell_outlined,
-                    size: 14, color: Colors.grey.shade400),
-                const SizedBox(width: 6),
-                Text(
-                  'Base fare per person',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                Row(
+                  children: [
+                    Icon(Icons.sell_outlined,
+                        size: 14, color: Colors.grey.shade400),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Fare per person',
+                      style:
+                          TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F5E9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        price != null ? formatPKR(price) : 'N/A',
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2E7D32)),
+                      ),
+                    ),
+                  ],
                 ),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
-                    borderRadius: BorderRadius.circular(20),
+                // Only set for a package booking whose fare bundles a car
+                // transfer -- explains why this isn't just the ticket price,
+                // rather than leaving the traveller to wonder about the gap
+                // against a price shown earlier in the trip summary.
+                if ((t.transferPkr ?? 0) > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6, left: 20),
+                    child: Text(
+                      'Includes ${formatPKR(t.transferPkr!)} car transfer',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    ),
                   ),
-                  child: Text(
-                    price != null ? formatPKR(price) : 'N/A',
-                    style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2E7D32)),
-                  ),
-                ),
               ],
             ),
           ),
