@@ -50,6 +50,15 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
 
   // Agent chat flow — submit returns data to the conversation via Get.back
   bool _agentMode = false;
+  // Set only when this screen is step 1 of a multi-component Trip Package
+  // (train + hotel [+ car transfer], one payment) -- see card_payment_sheet
+  // .dart's trainFormArgs. Tapping NEXT here never actually charges
+  // anything either way (a package hands off to CardPaymentSheet with the
+  // full booking_data later), so showing just this leg's price as "Total"
+  // understates what the traveller is really committing to. Null for an
+  // ordinary single train booking, which keeps _calculateTotalPrice() as
+  // the displayed total exactly as before.
+  double? _packageTotalPkr;
 
   final _contactNameKey = GlobalKey();
   final _contactEmailKey = GlobalKey();
@@ -70,6 +79,7 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
     // Agent chat flow: on submit, return the data to the conversation
     // instead of continuing into the manual facilities/checkout chain.
     _agentMode = args['agentMode'] as bool? ?? false;
+    _packageTotalPkr = (args['packageTotalPkr'] as num?)?.toDouble();
     train = args['train'] as TrainResult;
     selectedClass = args['selectedClass'] as String? ?? '';
     searchParams = args['searchParams'] as Map<String, dynamic>? ?? {};
@@ -1822,11 +1832,14 @@ class _TrainPassengerFormState extends State<TrainPassengerForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(isRoundTrip ? 'Total (Round Trip)' : 'Total',
+                    Text(
+                        _packageTotalPkr != null
+                            ? 'Package Total'
+                            : (isRoundTrip ? 'Total (Round Trip)' : 'Total'),
                         style: TextStyle(
                             fontSize: 11, color: Colors.grey.shade500)),
                     Text(
-                      formatPKR(_calculateTotalPrice()),
+                      formatPKR(_packageTotalPkr ?? _calculateTotalPrice()),
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,

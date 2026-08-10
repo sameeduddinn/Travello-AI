@@ -95,19 +95,27 @@ class _TripPackageReviewScreenState extends State<TripPackageReviewScreen> {
     if (data == null || _collectingPassengers) return;
     final primary = primaryComponent(data);
     final type = primary['booking_type'] as String? ?? 'flight';
+    // This screen only exists for a Trip Package (2+ components: transport
+    // + hotel, plus an optional transfer and/or return leg), so the
+    // passenger form should show the real trip total, not just the primary
+    // component's own price.
+    final packageTotal = (data['total_price_pkr'] as num?)?.toDouble();
 
     setState(() => _collectingPassengers = true);
     dynamic result;
     try {
       switch (type) {
         case 'train':
-          result = await Get.toNamed('/train-passengers', arguments: trainFormArgs(primary));
+          result = await Get.toNamed('/train-passengers',
+              arguments: trainFormArgs(primary, packageTotalPkr: packageTotal));
           break;
         case 'hotel':
-          result = await Get.toNamed(AppLink.hotelGuestForm, arguments: hotelFormArgs(primary));
+          result = await Get.toNamed(AppLink.hotelGuestForm,
+              arguments: hotelFormArgs(primary, packageTotalPkr: packageTotal));
           break;
         default:
-          result = await Get.toNamed(AppLink.bookingStep1, arguments: flightFormArgs(primary));
+          result = await Get.toNamed(AppLink.bookingStep1,
+              arguments: flightFormArgs(primary, packageTotalPkr: packageTotal));
       }
     } finally {
       if (mounted) setState(() => _collectingPassengers = false);

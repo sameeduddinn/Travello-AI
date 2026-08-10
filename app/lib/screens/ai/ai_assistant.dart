@@ -672,6 +672,12 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     // collected here are reused for every other piece in the package.
     final data = primaryComponent(pending);
     final type = data['booking_type'] as String? ?? 'flight';
+    // Only set for a genuine multi-piece package -- an ordinary single
+    // booking (flight/train/hotel alone, no package wrapper) keeps showing
+    // just its own price, unchanged.
+    final packageTotal = packageComponents(pending).length > 1
+        ? (pending['total_price_pkr'] as num?)?.toDouble()
+        : null;
 
     setState(() => _collectingPassengers = true);
     dynamic result;
@@ -679,15 +685,15 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       switch (type) {
         case 'train':
           result = await Get.toNamed('/train-passengers',
-              arguments: trainFormArgs(data));
+              arguments: trainFormArgs(data, packageTotalPkr: packageTotal));
           break;
         case 'hotel':
           result = await Get.toNamed(AppLink.hotelGuestForm,
-              arguments: hotelFormArgs(data));
+              arguments: hotelFormArgs(data, packageTotalPkr: packageTotal));
           break;
         default:
           result = await Get.toNamed(AppLink.bookingStep1,
-              arguments: flightFormArgs(data));
+              arguments: flightFormArgs(data, packageTotalPkr: packageTotal));
       }
     } finally {
       if (mounted) setState(() => _collectingPassengers = false);

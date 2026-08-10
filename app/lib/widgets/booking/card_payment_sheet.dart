@@ -114,7 +114,7 @@ double perSeatFromTotal(Map<String, dynamic> data) {
 /// verified flight component — the SAME map shape a prepare_booking gate
 /// verifies and reprice_booking returns, whether it arrived via the AI
 /// Assistant chat flow or the Trip Package UI's /trip-packages/confirm.
-Map<String, dynamic> flightFormArgs(Map<String, dynamic> data) {
+Map<String, dynamic> flightFormArgs(Map<String, dynamic> data, {double? packageTotalPkr}) {
   Airport lookup(String city, String fallbackCode) => airportList.firstWhere(
         (a) =>
             a.location.toLowerCase() == city.toLowerCase() ||
@@ -142,6 +142,7 @@ Map<String, dynamic> flightFormArgs(Map<String, dynamic> data) {
   return {
     'agentMode': true,
     'flight': flight,
+    if (packageTotalPkr != null) 'packageTotalPkr': packageTotalPkr,
     'searchParams': {
       'fromAirport': lookup((data['origin'] as String?) ?? '', 'DEP'),
       'toAirport': lookup((data['destination'] as String?) ?? '', 'ARR'),
@@ -182,7 +183,7 @@ RailwayStation _stationFor(String city) {
 }
 
 /// Args for train_passenger_form.dart's agentMode hand-off — see flightFormArgs.
-Map<String, dynamic> trainFormArgs(Map<String, dynamic> data) {
+Map<String, dynamic> trainFormArgs(Map<String, dynamic> data, {double? packageTotalPkr}) {
   final cls = (data['train_class'] as String?) ?? 'Economy';
   final train = TrainResult(
     id: 'AGENT',
@@ -202,6 +203,7 @@ Map<String, dynamic> trainFormArgs(Map<String, dynamic> data) {
     'agentMode': true,
     'train': train,
     'selectedClass': cls,
+    if (packageTotalPkr != null) 'packageTotalPkr': packageTotalPkr,
     'searchParams': {
       'adults': countOf(data, 'adults', 1),
       'children': countOf(data, 'children', 0),
@@ -216,7 +218,7 @@ Map<String, dynamic> trainFormArgs(Map<String, dynamic> data) {
 }
 
 /// Args for hotel_guest_form_screen.dart's agentMode hand-off — see flightFormArgs.
-Map<String, dynamic> hotelFormArgs(Map<String, dynamic> data) {
+Map<String, dynamic> hotelFormArgs(Map<String, dynamic> data, {double? packageTotalPkr}) {
   final total = ((data['total_price_pkr'] as num?) ?? 0).toDouble();
   final rooms = countOf(data, 'rooms', 1);
   final checkIn = DateTime.tryParse((data['check_in'] as String?) ?? '');
@@ -251,6 +253,7 @@ Map<String, dynamic> hotelFormArgs(Map<String, dynamic> data) {
     'rooms': rooms,
     'guests': countOf(data, 'guests', 1),
     'totalPrice': total,
+    if (packageTotalPkr != null) 'packageTotalPkr': packageTotalPkr,
   };
 }
 

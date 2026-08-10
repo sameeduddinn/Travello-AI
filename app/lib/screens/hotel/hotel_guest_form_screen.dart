@@ -36,6 +36,7 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
 
   // Agent chat flow — submit returns data to the conversation via Get.back
   bool _agentMode = false;
+  double? _packageTotalPkr;
   String _gender = 'Male';
   bool _cnicVerified = false;
   bool _saveGuestDetails = false;
@@ -61,6 +62,13 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
     // Agent chat flow: on submit, return the data to the conversation
     // instead of continuing into the manual checkout chain.
     _agentMode = args['agentMode'] as bool? ?? false;
+    // Set only when this screen is step 1 of a multi-component Trip Package
+    // (hotel + flight/train [+ car transfer], one payment) -- see
+    // train_passenger_form.dart's identical field for the full reasoning.
+    // Purely a display override: agentMode's own Get.back(result: {...})
+    // never includes totalPrice/finalTotal at all, so this can't affect
+    // what's actually charged either way.
+    _packageTotalPkr = (args['packageTotalPkr'] as num?)?.toDouble();
     final hotelArg = args['hotel'];
     if (hotelArg == null || hotelArg is! Hotel) {
       WidgetsBinding.instance.addPostFrameCallback((_) => Get.back());
@@ -1162,10 +1170,13 @@ class _HotelGuestFormScreenState extends State<HotelGuestFormScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Total amount',
-                            style: TextStyle(fontSize: 11, color: Colors.grey)),
                         Text(
-                            'PKR ${NumberFormat('#,##0').format(finalTotal.round())}',
+                            _packageTotalPkr != null
+                                ? 'Package Total'
+                                : 'Total amount',
+                            style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        Text(
+                            'PKR ${NumberFormat('#,##0').format((_packageTotalPkr ?? finalTotal).round())}',
                             style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,

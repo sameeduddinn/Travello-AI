@@ -127,6 +127,14 @@ class _BookingPassengersState extends State<BookingPassengers> {
 
   // Agent chat flow — submit returns data to the conversation via Get.back
   bool _agentMode = false;
+  // Set only when this screen is step 1 of a multi-component Trip Package
+  // (flight + hotel [+ car transfer], one payment) -- see
+  // card_payment_sheet.dart's flightFormArgs. See train_passenger_form
+  // .dart's identical field for the full reasoning: tapping NEXT here never
+  // actually charges anything on a package, so showing just this leg's
+  // price as "Total" understates the real commitment. Null for an ordinary
+  // single flight booking, unchanged behaviour.
+  double? _packageTotalPkr;
 
   @override
   void initState() {
@@ -136,6 +144,7 @@ class _BookingPassengersState extends State<BookingPassengers> {
     // Agent chat flow: on submit, return the data to the conversation
     // instead of continuing into the manual facilities/checkout chain.
     _agentMode = args['agentMode'] as bool? ?? false;
+    _packageTotalPkr = (args['packageTotalPkr'] as num?)?.toDouble();
 
     // Round trip detection
     _isRoundTrip = args['isRoundTrip'] as bool? ?? false;
@@ -3096,11 +3105,14 @@ class _BookingPassengersState extends State<BookingPassengers> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(_isRoundTrip ? 'Total (Round Trip)' : 'Total',
+                    Text(
+                        _packageTotalPkr != null
+                            ? 'Package Total'
+                            : (_isRoundTrip ? 'Total (Round Trip)' : 'Total'),
                         style: TextStyle(
                             fontSize: 11, color: Colors.grey.shade500)),
                     Text(
-                      formatPKR(_calculateTotalPrice()),
+                      formatPKR(_packageTotalPkr ?? _calculateTotalPrice()),
                       style: TextStyle(
                         fontSize: R.sp(context, 20),
                         fontWeight: FontWeight.bold,
