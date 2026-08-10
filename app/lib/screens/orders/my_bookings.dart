@@ -927,8 +927,26 @@ class _MyBookingsState extends State<MyBookings>
   /// visual, no booking data is altered or duplicated.
   Widget _buildPackageCard(List<Map<String, dynamic>> components) {
     final pkgId = (components.first['package_id'] ?? '').toString();
-    final total = components.fold<double>(
-        0.0, (sum, c) => sum + ((c['total'] as num?)?.toDouble() ?? 0.0));
+    // A car transfer's fare already lives INSIDE its carrying transport
+    // booking's own total_amount (see agents/booking_agent.py's
+    // _component_amount and package_email.py, which both deliberately never
+    // add a transfer's fare a second time) — car_bookings is folded into
+    // this card by _groupPackages purely for DISPLAY, but summing every
+    // component's 'total' here double-counted the transfer on top of what
+    // the transport row already includes. Map each transport booking's id
+    // to its paired transfer's fare, so both the total and that one row can
+    // show the transport-alone price, same as the chat summary already does.
+    final transferFareByBookingId = <String, double>{
+      for (final c in components)
+        if (c['bookingType'] == 'car' &&
+            (c['booking_id'] ?? '').toString().isNotEmpty)
+          (c['booking_id']).toString():
+              (c['total'] as num?)?.toDouble() ?? 0.0,
+    };
+    final total = components.fold<double>(0.0, (sum, c) {
+      if (c['bookingType'] == 'car') return sum;
+      return sum + ((c['total'] as num?)?.toDouble() ?? 0.0);
+    });
     final statuses = components.map(_normalizedStatus).toSet();
     final overallStatus = statuses.every((s) => s == 'cancelled')
         ? 'cancelled'
@@ -985,8 +1003,10 @@ class _MyBookingsState extends State<MyBookings>
         ),
         ...List.generate(components.length, (i) {
           final c = components[i];
+          final transferFare =
+              transferFareByBookingId[(c['id'] ?? '').toString()];
           return Column(children: [
-            _buildPackageComponentRow(c),
+            _buildPackageComponentRow(c, transferFare: transferFare),
             if (i < components.length - 1)
               Divider(height: 1, indent: 16, endIndent: 16, color: Colors.grey.shade100),
           ]);
@@ -1063,7 +1083,16 @@ class _MyBookingsState extends State<MyBookings>
   }
 
   /// Compact one-line summary for a single component inside a package card.
-  Widget _buildPackageComponentRow(Map<String, dynamic> booking) {
+  ///
+  /// `transferFare` is set only for a transport row that carries a car
+  /// transfer — its own total_amount already includes that fare (see
+  /// _buildPackageCard), so it's subtracted back out here purely for
+  /// display, the same distinction agents/booking_agent.py's
+  /// _component_amount already makes in the chat summary. The transfer's
+  /// OWN row (bookingType == 'car') is untouched — it already shows just
+  /// its own fare.
+  Widget _buildPackageComponentRow(Map<String, dynamic> booking,
+      {double? transferFare}) {
     final type = booking['bookingType'] ?? 'flight';
     IconData icon;
     String label;
@@ -1093,7 +1122,8 @@ class _MyBookingsState extends State<MyBookings>
         final f = booking['flightDetails'] as Map<String, dynamic>?;
         summary = f != null ? '${f['from'] ?? ''} → ${f['to'] ?? ''}' : '';
     }
-    final price = (booking['total'] as num?)?.toDouble() ?? 0.0;
+    final price =
+        ((booking['total'] as num?)?.toDouble() ?? 0.0) - (transferFare ?? 0.0);
     return InkWell(
       onTap: () async {
         await Get.toNamed(AppLink.ticketDetail, arguments: booking);
