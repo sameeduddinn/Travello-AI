@@ -1174,7 +1174,25 @@ def confirmation_booking_payloads(
         }
     if plan.transfer and pickup_location:
         transport["transfer_vehicle_type"] = plan.transfer["vehicle"]
-        transport["transfer_pickup_location"] = pickup_location
+        # get_transfer_error already grounds this exact string against the
+        # traveller's own words — real risk here isn't fabrication, it's that
+        # this app's own downstream fare lookup (agent_tools._add_transfer_fare
+        # -> car_service.estimate_fare -> northern_routes.price_for_route)
+        # matches routes by scanning for known city NAMES anywhere in this
+        # text, and re-derives the fare from it rather than trusting the
+        # ALREADY server-computed plan.transfer['fare_pkr']. A traveller who
+        # answers "what's the pickup address?" with a real landmark instead
+        # of literally typing the hub city name (e.g. "near point to hunza"
+        # for a Gilgit hub) silently fell through to the flat in-city rate —
+        # observed live: PKR 18,000 (Gilgit->Hunza, sourced) became PKR 6,000.
+        # Appending the known hub name (only when genuinely absent) keeps the
+        # traveller's own words as the primary pickup text a driver reads,
+        # while guaranteeing the fare lookup can still find the real route.
+        hub = str(plan.transfer.get("hub") or "").strip()
+        pickup_text = pickup_location
+        if hub and hub.lower() not in pickup_location.lower():
+            pickup_text = f"{pickup_location} ({hub})"
+        transport["transfer_pickup_location"] = pickup_text
         transport["transfer_dropoff_location"] = plan.transfer["destination"]
 
     hotel: dict = {

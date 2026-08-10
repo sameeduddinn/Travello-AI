@@ -527,7 +527,14 @@ def test_a_pickup_address_answer_that_echoes_the_question_still_completes(agent,
     components = result["booking_data"]["components"]
     assert len(components) == 2
     flight = next(c for c in components if c["booking_type"] == "flight")
-    assert flight["transfer_pickup_location"] == "Gilgit Baltistan airport"
+    # The real hub for this trip is Islamabad, and "Gilgit Baltistan airport"
+    # never names it -- confirmation_booking_payloads appends the hub so the
+    # downstream fare lookup (agent_tools._add_transfer_fare) can still find
+    # the real route fare instead of silently falling back to the flat rate.
+    # See test_trip_planner_return_leg.py-adjacent coverage for the bug this
+    # closes: a real pickup answer that never says the hub name by name used
+    # to reprice PKR 18,000 down to PKR 6,000.
+    assert flight["transfer_pickup_location"] == "Gilgit Baltistan airport (Islamabad)"
 
 
 def test_a_non_confirmation_right_after_the_plan_still_re_renders_it(agent, monkeypatch):

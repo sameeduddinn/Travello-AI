@@ -283,3 +283,46 @@ def test_the_module_header_does_not_call_every_fare_researched():
     assert "PROVENANCE IS MIXED" in header
     assert "SOURCED" in header and "ESTIMATED" in header
     assert "Wonderland Treks & Tours" in header      # the source is named
+
+
+# ── The real fare survives a pickup address that never names the hub ────────
+#
+# Observed live: a traveller answering "what's the pickup address?" with a
+# real landmark ("near point to hunza") instead of literally typing "Gilgit"
+# — completely normal phrasing — silently repriced the transfer from its
+# real PKR 18,000 sourced fare down to the PKR 6,000 flat in-city rate,
+# because agent_tools._add_transfer_fare's fare lookup only ever scans the
+# pickup/dropoff TEXT for known city names, and that text never happened to
+# contain "Gilgit". confirmation_booking_payloads now guarantees the known
+# hub name is present in transfer_pickup_location before it ever reaches
+# that lookup.
+
+def test_a_pickup_address_that_never_names_the_hub_still_prices_the_real_route():
+    options, picks, plan = _pick_through("Hunza", "flight", vehicle_index=2)   # Gilgit -> Hunza, SUV sourced at 18,000
+    assert plan is not None and plan.transfer is not None
+    assert plan.transfer["vehicle"] == "SUV"
+    assert plan.transfer["fare_pkr"] == 18000
+
+    payloads = ts.confirmation_booking_payloads(
+        plan, options, picks, pickup_location="near point to hunza")
+    transport = payloads[0]
+    assert transport["transfer_pickup_location"] == "near point to hunza (Gilgit)"
+
+    # The actual money check: agent_tools._add_transfer_fare (the real
+    # downstream fare lookup) must now resolve the SAME sourced fare, not
+    # the flat rate.
+    from agents.agent_tools import _add_transfer_fare
+    verified = dict(transport)
+    verified["total_price_pkr"] = 100000   # any positive base; fare is additive
+    priced = _add_transfer_fare(verified)
+    assert priced["transfer_pkr"] == 18000
+
+
+def test_a_pickup_address_that_already_names_the_hub_is_left_alone():
+    options, picks, plan = _pick_through("Hunza", "flight")
+    assert plan is not None
+    payloads = ts.confirmation_booking_payloads(
+        plan, options, picks, pickup_location="Gilgit International Airport")
+    transport = payloads[0]
+    # Already names the hub -- no redundant "(Gilgit)" suffix appended.
+    assert transport["transfer_pickup_location"] == "Gilgit International Airport"
