@@ -2584,6 +2584,21 @@ async def process_message_agentic(
                     "trip plan follow-up answer (%r) — resuming booking, not "
                     "re-rendering", user_message[:60],
                 )
+            elif (
+                _plan and _plan_shown and not _merged.picks_changed
+                and trip_selection.looks_like_a_budget_objection(user_message)
+            ):
+                # Free-text budget pushback right after the plan card ("its
+                # not in my budget") named no pick and isn't a recognized
+                # confirmation, so it used to fall straight into the plain
+                # re-render below — the exact same card, verbatim, with no
+                # acknowledgement and no path forward. Answer it directly
+                # instead of silently repeating the plan.
+                _reply = trip_selection.budget_objection_reply(
+                    _plan, _trip_state.budget_pkr)
+                await save_turn(conversation_id, user_id, user_message, _reply,
+                                model_used=answering_model())
+                return {"response": _reply, "conversation_id": conversation_id}
             elif _plan:
                 _reply = trip_selection.render_plan(
                     _plan, _planner_options, _merged.picks,

@@ -968,6 +968,66 @@ def plan_was_shown(history: list[dict] | None) -> bool:
     return False
 
 
+_BUDGET_OBJECTION_RE = re.compile(
+    r"\b(?:"
+    r"not\s+(?:in|within)\s+(?:my|our|the)\s+budget"
+    r"|budget\s+is\s+(?:lower|less|smaller|tight(?:er)?)"
+    r"|(?:over|out\s+of|above|beyond|exceeds?)\s+(?:my|our|the)?\s*budget"
+    r"|too\s+expensive"
+    r"|(?:can'?t|cannot|can\s+not)\s+afford"
+    r"|(?:reduce|lower|cut)\s+(?:the\s+)?(?:price|cost|total)"
+    r"|need\s+(?:something\s+)?cheaper"
+    r"|(?:this|that|it)\s+is\s+too\s+much"
+    r")\b",
+    re.I,
+)
+
+
+def looks_like_a_budget_objection(message: str) -> bool:
+    """
+    True for free-text budget pushback that names no specific pick — "its not
+    in my budget", "but my budget is lower", "this is too expensive" — as
+    opposed to a pick change ("Hotel 2 instead") or a question.
+
+    The bug this closes: once the Trip Plan card is shown, a reply that is
+    neither a pick, nor a recognized confirmation (_CONFIRM_RE), nor (later)
+    a follow-up answer just fell through to re-rendering the exact same plan
+    verbatim — a silent dead end that never asked for the traveller's real
+    number or offered a swap. See the caller in master_agent.py, which only
+    reaches this check once those other, more specific paths have already
+    been ruled out — so it can't hijack a genuine pick or confirmation.
+    """
+    return bool(_BUDGET_OBJECTION_RE.search((message or "").strip()))
+
+
+def budget_objection_reply(plan: "TripPackage", budget_pkr) -> str:
+    """
+    Deterministic reply to a budget objection -- never left to the model,
+    same reasoning as _budget_block: the numbers must come from the real
+    priced plan, not be reconstructed from prose.
+    """
+    total = plan.total_pkr
+    budget = _num(budget_pkr)
+    if budget <= 0:
+        return (
+            f"No problem — what's your budget for this trip? This plan "
+            f"currently totals {_money(total)}; I'll check whether it fits "
+            f"or suggest a cheaper swap for any part you'd like changed."
+        )
+    if total > budget:
+        return (
+            f"You're right — this plan comes to {_money(total)}, which is "
+            f"{_money(total - budget)} over your {_money(budget)} budget. "
+            f"Tell me which part to swap (e.g. \"Hotel 2\") and I'll "
+            f"re-price it, or give me an updated budget."
+        )
+    return (
+        f"This plan totals {_money(total)}, which is within your stated "
+        f"{_money(budget)} budget. If you had a different number in mind, "
+        f"let me know, or tell me which part you'd like to swap."
+    )
+
+
 _CONFIRM_RE = re.compile(
     r"^\s*(?:yes|yep|yeah|yup|ok(?:ay)?|sure|proceed|confirm(?:ed)?|go ahead|"
     r"book it|book now|let'?s go|do it|sounds good|perfect|that works)\b",
