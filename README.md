@@ -1,7 +1,9 @@
 # Travello AI — Intelligent Travel Booking Platform
 
-> A full-stack AI-powered travel booking application built as a Final Year Project.  
-> Covers flight, train, and hotel booking for Pakistan with an integrated AI assistant, real-time notifications, and a professional booking management system.
+> A full-stack, AI-powered travel booking application for Pakistan, built as a Final Year Project.
+> Covers flight, hotel, train, and car-transfer booking, with a native tool-calling AI travel
+> assistant that can search, compare, and book on the user's behalf — including a guided,
+> multi-leg **Trip Package** (transport + hotel + car transfer as one linked booking, one payment).
 
 ---
 
@@ -20,91 +22,136 @@
    - [Flutter App Setup](#flutter-app-setup)
 9. [Environment Variables](#9-environment-variables)
 10. [Third-Party Integrations](#10-third-party-integrations)
-11. [Screenshots & Flows](#11-screenshots--flows)
+11. [User Journeys](#11-user-journeys)
 12. [Team](#12-team)
 
 ---
 
 ## 1. Project Overview
 
-**Travello AI** is a cross-platform mobile and web travel booking system tailored for Pakistan. It lets users search, compare, and book flights, trains, and hotels through a single unified interface. The platform includes an AI travel assistant, saved search history, post-booking review system, real-time in-app notifications, and transactional email confirmations.
+**Travello AI** is an Android travel booking app tailored for Pakistan. Users can search, compare,
+and book flights, trains, hotels, and car transfers through a manual step-by-step flow, or by
+chatting with an integrated AI assistant that drives the exact same backend booking pipeline. The
+assistant can also run a guided **Trip Planner**: it searches transport + hotel (+ a car transfer
+for a northern destination), lets the user pick each part, prices the whole trip, and books all of
+it as one linked package under a single card payment.
 
-The backend is a RESTful API built with Python FastAPI, connected to a Supabase (PostgreSQL) database. The frontend is a Flutter application targeting Android, iOS, and Web from a single codebase.
+The backend is a Python/FastAPI REST API on Supabase (PostgreSQL + Auth + Storage). The frontend
+is a Flutter application. **Android is the only built and tested target** — the `ios/`, `web/`,
+`windows/`, `linux/`, and `macos/` folders are default `flutter create` scaffolding that has never
+been built or run.
+
+This is an academic project, not a commercial product — some scope decisions (card-only payment,
+no promo codes, fully mocked train data) are deliberate, supervisor-approved simplifications, not
+gaps.
 
 ---
 
 ## 2. Features
 
 ### Booking & Search
-- **Flight Search** — Search domestic and international flights via Amadeus GDS API with cabin class, passenger count, and trip type filters
-- **Hotel Search** — Search hotels by city with multi-source fallback: RapidAPI Hotels → Google Places → OpenStreetMap Nominatim → OSM Overpass → Mock data
-- **Train Search** — Pakistan Railways train search with class, route, and date filters
-- **Saved Searches** — Searches are auto-saved to the database; accessible from the Profile screen with one-tap re-run
+- **Flight Search** — Domestic Pakistan routes: seeded mock data supplemented by live
+  [AviationStack](https://aviationstack.com) results when available. International routes:
+  AviationStack primary, mock supplement. (Free-tier AviationStack is 100 requests/month and
+  today-only, so future-dated searches rely on the mock data.)
+- **Hotel Search** — Multi-source fallback chain: RapidAPI (TripAdvisor) → Google Places →
+  OpenStreetMap (Nominatim + Overpass) → mock data.
+- **Train Search** — Pakistan Railways. **Fully mocked** with realistic names, schedules, and
+  ±5% price jitter — there is no public Pakistan Railways API, so this is a permanent,
+  supervisor-approved design choice, not a TODO.
+- **Car / Transfer Booking** — Standalone driver booking (Sedan/SUV/Van) for any pickup/dropoff,
+  plus a real hub→destination fare table for the four supported northern trips (Naran, Hunza,
+  Swat, Skardu).
+- **Saved Searches** — Auto-saved to the database; re-run with one tap from the Profile screen.
+
+### AI Travel Assistant
+- **Native tool-calling agent** (not a framework like LangChain) that searches, compares, and
+  books through the same deterministic pipeline the manual UI uses — every money/dispatch
+  decision (pricing, booking gates, package totals) is enforced in code, never left to the model.
+- **Interactive Trip Planner** — a guided flow (options → user picks → priced plan → one-checkout
+  booking) for a complete Naran/Hunza/Swat/Skardu package: transport + hotel + hub car transfer,
+  booked together as one payment.
+- **Budget feasibility checks** — the assistant compares real search-tool prices against a stated
+  budget and states plainly whether a trip fits, without ever fabricating numbers.
+- **LLM provider fallback chain** — Groq (Llama 3.3 70B) → OpenRouter (free-tier models) → Google
+  Gemini, so the assistant keeps working even when a free-tier provider is rate-limited.
+- Card numbers/CVV and identity documents (CNIC, passport, DOB) are never accepted as a chat
+  message or sent to the LLM.
 
 ### Booking Management
-- **Full Booking Flow** — Passenger details, seat selection, baggage add-ons, and payment in a step-by-step flow
-- **Multiple Payment Methods** — Credit/Debit Card, JazzCash, EasyPaisa, Bank Transfer
-- **Booking History** — View all bookings (confirmed, pending, cancelled) with status badges
-- **Booking Detail & E-Ticket** — Detailed ticket view with QR code, barcode, and PDF download/share
-- **Cancel Booking** — Cancel pending or confirmed bookings with appropriate refund warnings
-- **Remove from History** — Permanently delete cancelled bookings from the user's history
+- **Full Booking Flow** — Passenger/guest details, then card payment, for a single component or
+  for an entire Trip Package in one checkout.
+- **Booking History** — All bookings (confirmed, pending, cancelled), with Trip Package
+  components grouped together.
+- **Booking Detail & E-Ticket** — QR code, barcode, and PDF download/share.
+- **Cancel Booking** — Cancel pending/confirmed bookings; remove cancelled ones from history.
 
 ### Post-Booking
-- **Email Confirmations** — Booking confirmation emails sent via Gmail SMTP after every successful payment
-- **In-App Notifications** — Push-style in-app notifications for booking events
-- **Review System** — Leave star ratings and comments on completed bookings; stored in Supabase
-- **PDF Ticket Generation** — Download e-ticket as a PDF directly from the app
+- **Email Confirmations** — Sent via Gmail SMTP after every successful payment; a Trip Package
+  gets one consolidated confirmation email covering all of its components.
+- **In-App Notifications** — Notification feed for booking events.
+- **Review System** — Star ratings and comments on completed bookings, stored in Supabase.
+- **PDF Ticket Generation** — Downloadable e-ticket PDF.
 
 ### User Profile
-- **Authentication** — Email/password signup and login via Supabase Auth with JWT
-- **Profile Management** — Edit name, phone, profile picture
-- **Wishlist** — Save favourite flights, hotels, or trains
-- **Saved Searches** — Browse and re-run past searches by type (flight, train, hotel)
+- **Authentication** — Email/password via Supabase Auth (JWT).
+- **Profile & Preferences** — Name, phone, profile picture, and travel preferences (cabin class,
+  travel style, companion type, and more) that the AI assistant also learns from and reuses.
+- **Wishlist & Saved Searches**
 - **FAQ, Terms, Privacy Policy, Cancellation Policy**
 
-### AI Assistant
-- **Integrated chat interface** for travel queries, recommendations, and booking guidance
-
-### Explore
-- City destinations, promotional offers, package deals, vouchers, weather information, healthcare facility search
+### Other
+- **Weather** — Google Weather API, falling back to Open-Meteo, then a static default.
+- **Healthcare** — Nearby hospitals/pharmacies and emergency numbers.
+- **Support** — Contact-support email flow with an admin email-reply link.
 
 ---
 
 ## 3. System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     CLIENT LAYER                            │
-│              Flutter App (Android / iOS / Web)              │
-│   Screens → Widgets → Controllers (GetX) → Services        │
-└─────────────────────┬───────────────────────────────────────┘
-                      │ HTTPS / REST API
-┌─────────────────────▼───────────────────────────────────────┐
-│                    API LAYER                                 │
-│              Python FastAPI Backend                         │
-│   Routers → Services → Models → Core (Auth / DB / Email)   │
-└──────┬──────────────┬───────────────────────┬───────────────┘
-       │              │                       │
-┌──────▼──────┐ ┌─────▼──────┐  ┌────────────▼──────────────┐
-│  Supabase   │ │ Third-Party│  │      Gmail SMTP           │
-│ PostgreSQL  │ │    APIs    │  │  (Email Confirmations)    │
-│  + Auth     │ │ Amadeus    │  └───────────────────────────┘
-│  + Storage  │ │ RapidAPI   │
-└─────────────┘ │ Google     │
-                │ Places     │
-                │ OSM / OWM  │
-                └────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                          CLIENT LAYER                             │
+│                    Flutter App (Android only)                     │
+│      Screens → Widgets → Controllers (GetX) → Services            │
+└──────────────────────────┬─────────────────────────────────────────┘
+                            │ HTTPS / REST API
+┌───────────────────────────▼─────────────────────────────────────────┐
+│                           API LAYER                                  │
+│                     Python FastAPI Backend                           │
+│  Routers → Agents (AI loop) → Services → Models → Core (Auth/DB)    │
+└───┬──────────────┬───────────────┬───────────────┬──────────────────┘
+    │              │               │               │
+┌───▼───────┐ ┌────▼────────┐ ┌────▼───────────┐ ┌──▼─────────────────┐
+│ Supabase  │ │ Search APIs │ │ LLM Providers   │ │ Gmail SMTP          │
+│ PostgreSQL│ │ AviationStack│ │ Groq → OpenRouter│ │ (booking + support │
+│ + Auth    │ │ RapidAPI    │ │ → Gemini         │ │  emails)            │
+│ + Storage │ │ Google Places│ └─────────────────┘ └─────────────────────┘
+└───────────┘ │ OpenStreetMap│
+              │ Open-Meteo   │
+              └──────────────┘
 ```
 
-### Data Flow — Booking
+### Data Flow — Single-Component Booking
 ```
-User fills form → Flutter calls POST /flights/book (or /hotels/book, /trains/book)
+User fills passenger/guest form → Flutter calls POST /flights/book (or /hotels/book, /trains/book)
 → Backend creates booking (status: pending) in Supabase
 → Flutter calls POST /payments/initiate
-→ Backend marks booking as confirmed, creates payment_attempt row
-→ Backend triggers email confirmation (Gmail SMTP)
-→ Flutter shows payment_status / hotel_booking_confirmation screen
-→ In-app notification pushed to user
+→ Backend marks booking as confirmed, records a payment_attempt row
+→ Backend sends a confirmation email (Gmail SMTP)
+→ Flutter shows the confirmation / e-ticket screen
+→ In-app notification created
+```
+
+### Data Flow — AI Trip Package Booking
+```
+User chats with the assistant (or uses the native Trip Package screens)
+→ POST /agent/chat drives process_message_agentic (backend/agents/master_agent.py)
+→ Assistant searches transport + hotel (+ car transfer), presents options
+→ User picks; assistant builds one priced plan and asks to confirm
+→ On confirmation: transport, hotel, and transfer are created as linked booking rows
+  sharing one package_id, and charged in exactly one payment
+→ One consolidated confirmation email is sent for the whole package
 ```
 
 ---
@@ -113,24 +160,29 @@ User fills form → Flutter calls POST /flights/book (or /hotels/book, /trains/b
 
 | Layer | Technology | Version |
 |---|---|---|
-| Mobile Frontend | Flutter (Dart) | 3.x / Dart 3.4+ |
-| State Management | GetX | 4.7.3 |
+| Mobile Frontend | Flutter (Dart), **Android only** | 3.x / Dart ≥3.4.4 |
+| State Management | GetX | ^4.7.3 |
 | Backend Framework | FastAPI | 0.115.6 |
 | Backend Runtime | Python | 3.11+ |
 | ASGI Server | Uvicorn | 0.32.1 |
 | Database | Supabase (PostgreSQL) | — |
 | Auth | Supabase JWT | — |
+| Supabase Client | supabase-py | 2.15.3 |
 | Async DB Driver | asyncpg | 0.30.0 |
-| HTTP Client (backend) | httpx | 0.26–0.28 |
-| HTTP Client (Flutter) | http | 1.2.2 |
-| Local Storage | SharedPreferences | 2.3.2 |
-| PDF Generation | pdf + printing | 3.12.0 / 5.13.4 |
-| QR / Barcode | qr_flutter, barcode_widget | 4.1.0 / 2.0.4 |
-| Maps | flutter_map + latlong2 | 7.0.2 / 0.9.1 |
+| HTTP Client (backend) | httpx | 0.28.1 |
+| HTTP Client (Flutter) | http | ^1.2.2 |
+| Local Storage | SharedPreferences | ^2.3.2 |
+| PDF Generation | pdf + printing | ^3.12.0 / ^5.13.4 |
+| QR / Barcode | qr_flutter, barcode_widget | ^4.1.0 / ^2.0.4 |
+| Maps | flutter_map + latlong2 | ^7.0.2 / ^0.9.1 |
 | Email | Gmail SMTP | — |
-| Flight Data | Amadeus GDS API | — |
-| Hotel Data | RapidAPI Hotels4 + Google Places + OSM | — |
-| Train Data | Pakistan Railways | — |
+| Flight Data | AviationStack | — |
+| Hotel Data | RapidAPI (TripAdvisor) + Google Places + OpenStreetMap | — |
+| Train Data | Fully mocked (no live API) | — |
+| Weather Data | Google Weather API + Open-Meteo | — |
+| LLM — primary | Groq (`llama-3.3-70b-versatile`) | groq ≥0.13.0 |
+| LLM — fallback | OpenRouter (`gpt-oss-20b`, `nemotron-3-super-120b`, free tier) | via httpx |
+| LLM — final fallback | Google Gemini (`gemini-2.5-flash`) | google-genai 2.14.0 |
 | Deployment | Render | — |
 | JSON | orjson | 3.10.12 |
 | Fonts | Ubuntu (Regular, Medium, Bold) | — |
@@ -142,136 +194,101 @@ User fills form → Flutter calls POST /flights/book (or /hotels/book, /trains/b
 ```
 Travello-AI-Project/
 │
-├── app/                            # Flutter mobile application
+├── app/                             # Flutter application (Android only)
 │   └── lib/
-│       ├── main.dart               # App entry point
-│       ├── app/                    # Routing & navigation
-│       │   ├── app_link.dart       # Named route constants
-│       │   ├── app_routes.dart     # GetX route definitions
-│       │   └── routes_*.dart       # Per-module route files
+│       ├── main.dart                # App entry point
+│       ├── app/                     # Routing & navigation
+│       ├── models/                  # Dart data models (flight, hotel, train, booking, trip, ...)
+│       ├── screens/                 # Feature screens
+│       │   ├── auth/                # Login, Register, OTP, Reset Password
+│       │   ├── home/                # Unified home screen
+│       │   ├── flight/              # Search, Results, Detail
+│       │   ├── hotel/               # Search, Results, Detail, Checkout
+│       │   ├── railway/             # Train search, Results, Detail
+│       │   ├── railway_booking/     # Train-specific booking flow
+│       │   ├── booking/             # Flight booking flow (passengers, checkout)
+│       │   ├── trip_package/        # Native Trip Package requirements/review screens
+│       │   ├── transport/           # Car/transfer booking
+│       │   ├── payment/             # Card payment, Status
+│       │   ├── orders/              # My Bookings, Booking Detail, E-Ticket
+│       │   ├── profile/             # Profile, Saved Searches, FAQ, etc.
+│       │   ├── explore/             # Destination discovery
+│       │   ├── ai/                  # AI Assistant chat
+│       │   ├── messages/            # Notifications / support messages
+│       │   ├── healthcare/          # Hospital/clinic search
+│       │   ├── weather/             # Weather screens
+│       │   ├── wishlist/            # Saved favourites
+│       │   └── intro/               # Onboarding & splash
 │       │
-│       ├── models/                 # Dart data models
-│       │   ├── user.dart
-│       │   ├── flight.dart
-│       │   ├── hotel.dart
-│       │   ├── train.dart
-│       │   ├── booking.dart
-│       │   ├── payment.dart
-│       │   ├── airport.dart
-│       │   ├── railway_station.dart
+│       ├── widgets/                 # Reusable UI components
+│       │   ├── cards/               # Flight, Hotel, Train, Ticket cards
+│       │   ├── booking/             # Passenger forms, card payment sheet
+│       │   ├── railway_booking/     # Train passenger form
+│       │   ├── search_filters/      # Search forms, filters, sorting
+│       │   ├── chat/                # AI Assistant chat bubbles/cards
+│       │   ├── home/                # Banners, sliders, sections
 │       │   └── ...
 │       │
-│       ├── screens/                # Feature screens
-│       │   ├── auth/               # Login, Register, OTP, Reset Password
-│       │   ├── home/               # Unified home screen
-│       │   ├── flight/             # Search, Results, Detail
-│       │   ├── hotel/              # Search, Results, Detail, Checkout
-│       │   ├── railway/            # Train search, Results, Detail
-│       │   ├── booking/            # Flight/train booking flow
-│       │   ├── railway_booking/    # Train-specific booking flow
-│       │   ├── payment/            # Payment methods, Status
-│       │   ├── orders/             # My Bookings, Booking Detail, E-Ticket
-│       │   ├── profile/            # Profile, Saved Searches, FAQ, etc.
-│       │   ├── promo/              # Promotions, Vouchers, Packages
-│       │   ├── explore/            # Destination discovery
-│       │   ├── ai/                 # AI Assistant chat
-│       │   ├── healthcare/         # Hospital/clinic search
-│       │   ├── wishlist/           # Saved favourites
-│       │   └── intro/              # Onboarding & splash
+│       ├── controllers/             # GetX state controllers
+│       ├── services/                # API & integration clients
+│       │   ├── api_client.dart      # Central HTTP client for the backend
+│       │   ├── ai_service.dart      # AI assistant integration
+│       │   ├── location_service.dart
+│       │   └── notification_service.dart
 │       │
-│       ├── widgets/                # Reusable UI components
-│       │   ├── cards/              # Flight, Hotel, Train, Ticket cards
-│       │   ├── booking/            # Seat picker, baggage, passenger forms
-│       │   ├── payment/            # Card, wallet, bank transfer forms
-│       │   ├── search_filters/     # Search forms, filters, sorting
-│       │   ├── home/               # Banners, sliders, sections
-│       │   ├── bottom_navigation/  # App navigation bar
-│       │   └── ...
-│       │
-│       ├── controllers/            # GetX state controllers
-│       ├── services/               # API & integration clients
-│       │   ├── api_client.dart     # Central HTTP client for backend
-│       │   ├── ai_service.dart     # AI assistant integration
-│       │   ├── notification_service.dart
-│       │   └── transactional_service.dart
-│       │
-│       ├── utils/                  # Helpers & utilities
-│       │   ├── auth_service.dart
-│       │   ├── booking_service.dart    # Local booking storage
-│       │   ├── search_history_service.dart
-│       │   └── responsive_helper.dart
-│       │
-│       ├── constants/              # App constants & image paths
-│       ├── config/                 # Supabase configuration
-│       └── ui/
-│           ├── themes/             # TravelloTheme design system
-│           └── layouts/            # Shared layout wrappers
+│       ├── utils/                   # Helpers & utilities
+│       ├── constants/               # App constants & image paths
+│       ├── config/                  # Supabase configuration
+│       └── ui/                      # Theme + shared layouts
 │
-│   ├── assets/
-│   │   ├── images/                 # Banners, logos, empty state SVGs
-│   │   └── fonts/                  # Ubuntu font family
-│   └── (android/ ios/ web/ windows/ linux/ macos/)
+│   └── assets/                      # Images, fonts (Ubuntu family)
 │
-│
-├── backend/                        # Python FastAPI server
-│   ├── main.py                     # App entry point, router registration
+├── backend/                         # Python FastAPI server
+│   ├── main.py                      # App entry point, router registration
 │   ├── requirements.txt
 │   ├── Dockerfile
-│   ├── render.yaml                 # Render deployment config
+│   ├── render.yaml                  # Render deployment config
 │   │
 │   ├── core/
-│   │   ├── config.py               # Settings from .env (pydantic-settings)
-│   │   ├── auth.py                 # JWT verification (Supabase tokens)
-│   │   ├── database.py             # asyncpg pool init/close
-│   │   ├── email.py                # Gmail SMTP email sender
-│   │   └── supabase_client.py      # Supabase admin + anon clients
+│   │   ├── config.py                # Settings from .env (pydantic-settings)
+│   │   ├── auth.py                  # JWT verification (Supabase tokens)
+│   │   ├── database.py              # asyncpg pool init/close
+│   │   ├── email.py                 # Gmail SMTP email sender
+│   │   └── supabase_client.py       # Supabase admin + anon clients
 │   │
-│   ├── models/                     # Pydantic request/response schemas
-│   │   ├── user.py
-│   │   ├── flight.py
-│   │   ├── hotel.py
-│   │   ├── train.py
-│   │   ├── booking.py
-│   │   └── payment.py
+│   ├── models/                      # Pydantic request/response schemas
 │   │
-│   ├── routers/                    # REST API route handlers
-│   │   ├── auth.py                 # POST /auth/login, /auth/signup
-│   │   ├── flights.py              # POST /flights/search, POST /flights/book
-│   │   ├── hotels.py               # POST /hotels/search, POST /hotels/book
-│   │   ├── trains.py               # POST /trains/search, POST /trains/book
-│   │   ├── bookings.py             # GET/PUT/DELETE /bookings
-│   │   ├── passengers.py           # POST /passengers
-│   │   ├── payments.py             # POST /payments/initiate, /payments/verify-otp
-│   │   ├── reviews.py              # POST /reviews, GET /reviews/booking/{id}
-│   │   ├── notifications.py        # GET /notifications
-│   │   ├── email.py                # POST /email/send
-│   │   ├── wishlist.py             # GET/POST/DELETE /wishlist
-│   │   ├── saved_searches.py       # GET/POST/DELETE /saved-searches
-│   │   ├── weather.py              # GET /weather
-│   │   └── healthcare.py           # GET /healthcare
+│   ├── routers/                     # REST API route handlers
+│   │   ├── auth.py / flights.py / hotels.py / trains.py / cars.py
+│   │   ├── bookings.py / passengers.py / payments.py / reviews.py
+│   │   ├── notifications.py / wishlist.py / saved_searches.py
+│   │   ├── weather.py / healthcare.py / support.py / email.py
+│   │   ├── agent.py                 # AI chat endpoint + conversation history
+│   │   └── trip_packages.py         # Native Trip Package search/confirm
 │   │
-│   ├── services/                   # Business logic
-│   │   ├── flight_service.py       # Amadeus GDS integration + fallback
-│   │   ├── hotel_service.py        # RapidAPI → Google Places → OSM → Mock
-│   │   ├── train_service.py        # Pakistan Railways data & search
-│   │   ├── booking_service.py      # Booking CRUD, status management
-│   │   ├── payment_service.py      # Payment initiation, OTP, confirmation
-│   │   ├── email_service.py        # Gmail SMTP transactional emails
-│   │   └── weather_service.py      # Weather API integration
+│   ├── agents/                      # The AI agent system (native tool-calling loop)
+│   │   ├── master_agent.py          # Orchestration loop, deterministic booking gates
+│   │   ├── agent_tools.py           # Tool schemas + deterministic validators
+│   │   ├── trip_selection.py        # Trip Planner logic (options, picks, plan) — pure
+│   │   ├── memory_agent.py          # Conversation/preference persistence (Supabase)
+│   │   ├── conversation_state.py    # Soft, regex-derived conversation hints
+│   │   └── ...                      # One agent module per domain (hotel, transport, ...)
 │   │
-│   └── sql/                        # Database schema (run in order)
-│       ├── 01_profiles.sql
-│       ├── 02_bookings.sql
-│       ├── 03_payments.sql
-│       ├── 04_passengers.sql
-│       ├── 05_wishlist.sql
-│       ├── 06_notifications.sql
-│       ├── 07_indexes_and_triggers.sql
-│       ├── 08_security_fixes.sql
-│       └── 09_ai_agent.sql
+│   ├── services/                    # External integrations & business logic
+│   │   ├── flight_service.py        # AviationStack + seeded mock
+│   │   ├── hotel_service.py         # RapidAPI → Google Places → OSM → mock
+│   │   ├── train_service.py         # Fully mocked Pakistan Railways data
+│   │   ├── car_service.py           # Driver assignment, northern-route fares
+│   │   ├── northern_routes.py       # Hub → destination fare table
+│   │   ├── payment_service.py       # Payment initiation & confirmation (card only)
+│   │   ├── email_service.py         # Gmail SMTP transactional emails
+│   │   ├── package_email.py         # Consolidated Trip Package emails
+│   │   ├── llm_service.py           # Groq → OpenRouter → Gemini provider chain
+│   │   └── weather_service.py       # Google Weather → Open-Meteo
+│   │
+│   └── sql/                         # Database schema (run in order, 01–14)
 │
-└── documentation/
-    └── Overview.md
+└── README.md
 ```
 
 ---
@@ -283,13 +300,20 @@ All tables live in Supabase (PostgreSQL) with Row Level Security (RLS) enabled.
 | Table | Purpose |
 |---|---|
 | `profiles` | Extended user data linked to Supabase Auth (`auth.users`) |
-| `bookings` | All booking records — flights, hotels, trains. Status: `pending → confirmed → cancelled` |
+| `user_preferences` | Origin city, currency, theme, language, and AI-learned travel preferences |
+| `bookings` | All flight/hotel/train booking records. Carries `package_id` (nullable) linking the components of one Trip Package together |
 | `payment_attempts` | Payment transaction log per booking |
+| `payment_otps` | OTP records for payment verification |
 | `passengers` | Passenger details attached to each booking |
 | `reviews` | Post-booking star ratings and comments (one per booking) |
 | `wishlist` | User-saved favourite routes/hotels |
 | `saved_searches` | Auto-saved search parameters per user |
 | `notifications` | In-app notification log per user |
+| `ai_conversations` / `ai_messages` | AI assistant conversation history, including the Trip Planner's own persisted state |
+| `agent_tasks` / `agent_actions` / `agent_failure_log` | AI assistant task/action logging and failure diagnostics |
+| `ai_feedback` | User feedback on AI assistant responses |
+| `support_messages` | Contact-support submissions and admin replies |
+| `drivers` / `car_bookings` | Car-transfer drivers and bookings (standalone or Trip Package transfers) |
 
 ### Booking Status Flow
 ```
@@ -302,63 +326,92 @@ pending  →  confirmed  →  (completed)
 
 ## 7. API Reference
 
-Base URL: `http://<your-server>/` (local: `http://10.0.2.2:8000/` for Android emulator)
+Base URL: the app defaults to the deployed Render backend; override with
+`--dart-define=BACKEND_BASE_URL=http://10.0.2.2:8000` for local development against the Android
+emulator.
 
 ### Authentication
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/auth/signup` | Register a new user |
-| POST | `/auth/login` | Login, returns JWT token |
-| POST | `/auth/refresh` | Refresh access token |
+| GET | `/auth/me` | Get the current authenticated user |
+| PUT | `/auth/profile` | Update profile fields |
+| PUT | `/auth/preferences` | Update travel preferences |
+| DELETE | `/auth/avatar` | Remove profile picture |
 | DELETE | `/auth/account` | Delete user account |
 
-### Search
+### Search & Booking
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/flights/search` | Search flights (Amadeus) |
-| POST | `/hotels/search` | Search hotels (RapidAPI / Google Places / OSM) |
-| POST | `/trains/search` | Search Pakistan Railways trains |
-
-### Booking
-| Method | Endpoint | Description |
-|---|---|---|
+| POST | `/flights/search` | Search flights (AviationStack + mock) |
+| GET | `/flights/{offer_id}` | Get a single flight offer |
 | POST | `/flights/book` | Create a flight booking |
+| GET | `/flights/deals` | Featured flight deals |
+| POST | `/hotels/search` | Search hotels (RapidAPI → Google Places → OSM) |
+| GET | `/hotels/{hotel_id}` | Get hotel detail |
+| GET | `/hotels/{hotel_id}/rooms` | Get room offers for a hotel |
 | POST | `/hotels/book` | Create a hotel booking |
+| POST | `/trains/search` | Search trains (mocked Pakistan Railways) |
 | POST | `/trains/book` | Create a train booking |
+| POST | `/cars/book` | Book a standalone driver (Sedan/SUV/Van) |
+| GET | `/cars/bookings` | List the user's car bookings |
+| POST | `/trip-packages/search` | Search a full Naran/Hunza/Swat/Skardu package |
+| POST | `/trip-packages/confirm` | Confirm and book a Trip Package |
+
+### Bookings & Passengers
+| Method | Endpoint | Description |
+|---|---|---|
 | GET | `/bookings` | List all user bookings (paginated) |
 | GET | `/bookings/{id}` | Get single booking detail |
 | PUT | `/bookings/{id}/cancel` | Cancel a booking |
-| DELETE | `/bookings/{id}` | Remove cancelled booking from history |
+| DELETE | `/bookings/{id}` | Remove a cancelled booking from history |
 | GET | `/bookings/{id}/ticket` | Get structured ticket data |
-
-### Passengers
-| Method | Endpoint | Description |
-|---|---|---|
 | POST | `/passengers` | Add passengers to a booking |
+| GET | `/passengers/{booking_id}` | Get passengers for a booking |
+| DELETE | `/passengers/{passenger_id}` | Remove a passenger |
 
 ### Payments
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/payments/initiate` | Start payment (card / bank transfer / wallet) |
-| POST | `/payments/verify-otp` | Verify OTP for wallet payments |
+| POST | `/payments/initiate` | Initiate card payment for a booking or package |
 | GET | `/payments/{booking_id}` | Get payment history for a booking |
 
-### Reviews
+### AI Assistant
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/agent/chat` | Send a chat message; drives the full tool-calling agent loop |
+| GET | `/agent/conversations` | List the user's conversations |
+| GET | `/agent/conversations/{id}/messages` | Get a conversation's message history |
+| POST | `/agent/conversations/{id}/notes` | Attach a note to a conversation |
+| DELETE | `/agent/conversations/{id}` | Delete a conversation |
+| POST | `/agent/book` | Deterministic booking endpoint used by the agent's own tool calls |
+| GET | `/agent/proactive-alert` | Proactive alert check (e.g. price/weather changes) |
+
+### Reviews & Wishlist
 | Method | Endpoint | Description |
 |---|---|---|
 | POST | `/reviews` | Submit or update a review for a booking |
-| GET | `/reviews/booking/{booking_id}` | Get review for a booking |
-| GET | `/reviews/my` | Get all reviews by current user |
+| GET | `/reviews/booking/{booking_id}` | Get the review for a booking |
+| GET | `/reviews/my` | Get all reviews by the current user |
+| GET/POST/DELETE | `/wishlist` | Manage wishlist items |
+| GET/POST/DELETE | `/saved-searches` | Manage saved searches |
 
 ### Other
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/notifications` | Get user notifications |
-| GET/POST/DELETE | `/wishlist` | Manage wishlist items |
-| GET/POST/DELETE | `/saved-searches` | Manage saved searches |
-| GET | `/weather` | Get weather data for a city |
-| GET | `/healthcare` | Search hospitals/clinics |
+| PUT | `/notifications/{id}/read` | Mark a notification as read |
+| PUT | `/notifications/read-all` | Mark all notifications as read |
+| GET | `/weather/{city}` | Get weather for a city |
+| GET | `/healthcare/nearby` | Search nearby hospitals/clinics |
+| GET | `/healthcare/pharmacies` | Search nearby pharmacies |
+| GET | `/healthcare/emergency-numbers` | Get emergency contact numbers |
+| POST | `/email/contact-support` | Submit a support request |
+| POST | `/email/booking-confirmation` | Resend a booking confirmation email |
+| GET/DELETE | `/support/messages` | Manage support messages |
+| POST | `/support/reply` | Admin reply to a support message |
 | GET | `/health` | Server health check |
+
+Full interactive docs (Swagger) are available at `/docs` on any running backend instance.
 
 ---
 
@@ -366,12 +419,12 @@ Base URL: `http://<your-server>/` (local: `http://10.0.2.2:8000/` for Android em
 
 ### Prerequisites
 
-- Flutter SDK 3.x ([flutter.dev](https://flutter.dev))
-- Dart SDK 3.4+
+- Flutter SDK 3.x ([flutter.dev](https://flutter.dev)) with the Android toolchain
+- Dart SDK ≥3.4.4
 - Python 3.11+
 - pip
 - A [Supabase](https://supabase.com) project (free tier works)
-- Android Studio / Xcode (for mobile targets)
+- Android Studio (emulator) or a physical Android device
 
 ---
 
@@ -379,7 +432,7 @@ Base URL: `http://<your-server>/` (local: `http://10.0.2.2:8000/` for Android em
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/your-username/Travello-AI-Project.git
+git clone https://github.com/<your-username>/Travello-AI-Project.git
 cd Travello-AI-Project/backend
 ```
 
@@ -400,14 +453,12 @@ pip install -r requirements.txt
 ```
 
 **4. Configure environment variables**
-```bash
-cp .env.example .env
-# Edit .env with your credentials (see Environment Variables section)
-```
+
+Create a `.env` file in `backend/` — see [Environment Variables](#9-environment-variables) below.
 
 **5. Set up the database**
 
-Run the SQL files in order inside your Supabase SQL Editor:
+Run the SQL files in order inside your Supabase SQL Editor (all are idempotent — safe to re-run):
 ```
 sql/01_profiles.sql
 sql/02_bookings.sql
@@ -418,6 +469,11 @@ sql/06_notifications.sql
 sql/07_indexes_and_triggers.sql
 sql/08_security_fixes.sql
 sql/09_ai_agent.sql
+sql/10_support_messages.sql
+sql/11_car_drivers.sql
+sql/12_ai_preferences_columns.sql
+sql/13_agent_failure_log.sql
+sql/14_trip_packages.sql
 ```
 
 **6. Start the server**
@@ -425,12 +481,15 @@ sql/09_ai_agent.sql
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-The API will be available at `http://localhost:8000`  
+The API will be available at `http://localhost:8000`
 Interactive docs at `http://localhost:8000/docs`
 
 ---
 
 ### Flutter App Setup
+
+**Android only** — this app has never been built for iOS, Web, or desktop; those platform folders
+are unused `flutter create` scaffolding.
 
 **1. Navigate to the app directory**
 ```bash
@@ -442,18 +501,16 @@ cd Travello-AI-Project/app
 flutter pub get
 ```
 
-**3. Configure the backend URL**
+**3. Point the app at your backend**
 
-Open `lib/services/api_client.dart` and update `_baseUrl` to point to your running backend:
-```dart
-// For Android emulator
-static const String _baseUrl = 'http://10.0.2.2:8000';
+`lib/services/api_client.dart` defaults to the deployed Render backend. To use a local backend
+instead, pass the URL at run time:
+```bash
+# Android emulator (10.0.2.2 maps to the host machine's localhost)
+flutter run --dart-define=BACKEND_BASE_URL=http://10.0.2.2:8000
 
-// For physical device (use your machine's local IP)
-static const String _baseUrl = 'http://192.168.x.x:8000';
-
-// For production
-static const String _baseUrl = 'https://your-backend.onrender.com';
+# Physical device on the same network (use your machine's LAN IP)
+flutter run --dart-define=BACKEND_BASE_URL=http://192.168.x.x:8000
 ```
 
 **4. Configure Supabase**
@@ -462,14 +519,7 @@ Open `lib/config/supabase_config.dart` and add your Supabase project URL and ano
 
 **5. Run the app**
 ```bash
-# Android
 flutter run
-
-# Web
-flutter run -d chrome
-
-# iOS (macOS only)
-flutter run -d ios
 ```
 
 ---
@@ -488,32 +538,57 @@ DEBUG=true
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# ── Database (direct connection) ─────────────────────────
-DATABASE_URL=postgresql://postgres:password@db.your-project.supabase.co:5432/postgres
-
-# ── JWT ───────────────────────────────────────────────────
 SUPABASE_JWT_SECRET=your-jwt-secret
 
+# ── Database (direct asyncpg connection) ─────────────────
+DATABASE_URL=postgresql://postgres:password@db.your-project.supabase.co:5432/postgres
+
+# ── Flight data ───────────────────────────────────────────
+AVIATIONSTACK_KEY=your-aviationstack-key
+
+# ── Hotel data (RapidAPI — TripAdvisor host) ─────────────
+RAPIDAPI_KEY=your-rapidapi-key
+RAPIDAPI_HOST=tripadvisor16.p.rapidapi.com
+
+# ── Google Maps Platform (Places, Weather, Healthcare) ───
+GOOGLE_PLACES_API_KEY=your-google-places-key
+
+# ── LLM providers (AI assistant fallback chain) ──────────
+GROQ_API_KEY_1=your-groq-key-1
+GROQ_API_KEY_2=your-groq-key-2
+GROQ_MODEL=llama-3.3-70b-versatile
+
+OPENROUTER_API_KEY=your-openrouter-key
+OPENROUTER_MODEL=openai/gpt-oss-20b:free,nvidia/nemotron-3-super-120b-a12b:free
+
+GEMINI_API_KEY=your-gemini-key
+GEMINI_MODEL=gemini-2.5-flash
+
+AGENT_DAILY_MESSAGE_LIMIT=100
+
 # ── Email (Gmail SMTP) ────────────────────────────────────
+EMAIL_FROM=Travello AI <your-email@gmail.com>
+EMAIL_REPLY_TO=support@travello.ai
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password        # Use a Gmail App Password, not your main password
 
-# ── Flight API ────────────────────────────────────────────
-AMADEUS_CLIENT_ID=your-amadeus-client-id
-AMADEUS_CLIENT_SECRET=your-amadeus-client-secret
+# ── Currency ──────────────────────────────────────────────
+USD_TO_PKR_RATE=278.0
+EUR_TO_PKR_RATE=305.0
 
-# ── Hotel APIs ────────────────────────────────────────────
-RAPIDAPI_KEY=your-rapidapi-key
-GOOGLE_PLACES_API_KEY=your-google-places-key
-
-# ── Weather ───────────────────────────────────────────────
-OPENWEATHER_API_KEY=your-openweather-key
+# ── Admin / deployment ────────────────────────────────────
+ADMIN_SECRET_KEY=your-admin-secret
+BACKEND_BASE_URL=https://your-backend.onrender.com
+CORS_ORIGINS=*
 ```
 
-> **Gmail SMTP note:** Go to your Google Account → Security → 2-Step Verification → App Passwords. Generate an app password and use it as `SMTP_PASSWORD`.
+> **Gmail SMTP note:** Go to your Google Account → Security → 2-Step Verification → App Passwords.
+> Generate an app password and use it as `SMTP_PASSWORD`.
+
+> **Note:** there is no Amadeus, JazzCash, EasyPaisa, or bank-transfer integration anywhere in this
+> project — payment is card-only, and flight data comes from AviationStack, not Amadeus.
 
 ---
 
@@ -521,74 +596,75 @@ OPENWEATHER_API_KEY=your-openweather-key
 
 | Service | Purpose | Fallback |
 |---|---|---|
-| **Amadeus GDS** | Live flight search | Mock flight data |
-| **RapidAPI Hotels4** | Hotel search | Google Places → OSM → Mock |
-| **Google Places API** | Hotel search fallback | OSM Nominatim |
+| **AviationStack** | Live flight schedules (domestic + international) | Seeded mock flight data |
+| **RapidAPI (TripAdvisor host)** | Primary hotel search | Google Places → OSM → Mock |
+| **Google Places API** | Hotel search fallback + healthcare search | OpenStreetMap Nominatim |
 | **OpenStreetMap (Nominatim + Overpass)** | Hotel/location data | Mock hotel data |
-| **Gmail SMTP** | Booking confirmation emails | Silent fail (logged) |
-| **OpenWeatherMap** | City weather data | — |
+| **Google Weather API** | City weather | Open-Meteo → static default |
+| **Groq** (Llama 3.3 70B) | AI assistant — primary LLM | OpenRouter |
+| **OpenRouter** (free-tier models) | AI assistant — secondary LLM | Google Gemini |
+| **Google Gemini** (2.5 Flash) | AI assistant — final LLM fallback | — |
+| **Gmail SMTP** | Booking confirmation & support emails | Silent fail (logged) |
 | **Supabase** | Database, Auth, Storage | — |
 
-All external API calls include fallback chains so the app remains functional even if individual APIs are unavailable or quota-limited.
+All external API calls include fallback chains, so the app stays functional even if an individual
+API is unavailable or quota-limited. Pakistan Railways has no public API at all, so train data is
+permanently and deliberately mocked rather than falling back from a live source.
 
 ---
 
-## 11. Screenshots & Flows
+## 11. User Journeys
 
-### User Journey — Flight Booking
+### Flight Booking
 ```
 Home Screen
   └── Flight Search (origin, destination, date, passengers, class)
         └── Flight Results (list with price, duration, airline)
-              └── Flight Detail (amenities, fare breakdown)
-                    └── Passenger Form (name, CNIC, passport)
-                          └── Extras (baggage, seat selection)
-                                └── Payment Screen (card / wallet / bank)
-                                      └── Payment Status (confirmed + email sent)
-                                            └── E-Ticket (QR code, PDF download)
+              └── Flight Detail (fare breakdown)
+                    └── Passenger Form (name, contact — no CNIC/passport collected in chat)
+                          └── Card Payment
+                                └── Payment Status (confirmed + email sent)
+                                      └── E-Ticket (QR code, PDF download)
 ```
 
-### User Journey — Hotel Booking
+### Hotel Booking
 ```
 Home Screen
   └── Hotel Search (city, check-in, check-out, rooms, guests)
         └── Hotel Results (list with rating, price/night)
               └── Hotel Detail (amenities, room types, map)
                     └── Guest Form (name, contact)
-                          └── Hotel Checkout (price breakdown)
-                                └── Payment Screen
-                                      └── Hotel Booking Confirmation (PDF invoice)
+                          └── Card Payment
+                                └── Hotel Booking Confirmation (PDF invoice)
 ```
 
-### User Journey — Train Booking
+### Train Booking
 ```
 Home Screen (Railway Mode)
   └── Train Search (from, to, date, class, passengers)
         └── Train Results (available trains with timings)
-              └── Train Detail (seats, class options)
-                    └── Passenger Form
-                          └── Payment
-                                └── E-Ticket
+              └── Passenger Form
+                    └── Card Payment
+                          └── E-Ticket
 ```
 
----
-
-## 12. Team
-
-**Institution:** [Your University Name]  
-**Department:** Computer Science / Software Engineering  
-**Supervisor:** [Supervisor Name]  
-**Academic Year:** 2025–2026
-
-| Name | Role |
-|---|---|
-| Sameed Fareed | Full-Stack Developer (Flutter + FastAPI) |
-| [Team Member 2] | [Role] |
-| [Team Member 3] | [Role] |
+### AI-Guided Trip Package (Naran / Hunza / Swat / Skardu)
+```
+AI Assistant chat (or native Trip Package screens)
+  └── User states destination, dates, party size, budget
+        └── Assistant searches transport + hotel (+ hub car transfer) and presents options
+              └── User picks a flight/train, a hotel, and a transfer
+                    └── Assistant returns one priced Trip Plan (budget check included)
+                          └── User confirms — the assistant asks for the transfer pickup address
+                                └── Passenger/guest details collected once for the whole package
+                                      └── One card payment for the entire package
+                                            └── One consolidated confirmation email, linked
+                                                bookings visible together in My Bookings
+```
 
 ---
 
 ## License
 
-This project was developed as a Final Year Project for academic purposes.  
+This project was developed as a Final Year Project for academic purposes.
 All rights reserved © 2026 Travello AI Team.

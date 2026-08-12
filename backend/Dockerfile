@@ -1,13 +1,11 @@
-# =============================================================================
 # FILE: Dockerfile
 # Multi-stage build for minimal image size.
 # Compatible with Render.com free tier and Railway.app.
 #
 # Build:  docker build -t travello-backend .
 # Run:    docker run -p 8000:8000 --env-file .env travello-backend
-# =============================================================================
 
-# ── Stage 1: dependency builder ───────────────────────────────────────────────
+# ── Stage 1: dependency builder 
 FROM python:3.11-slim AS builder
 
 WORKDIR /app
@@ -25,7 +23,7 @@ RUN pip install --upgrade pip && \
     pip install --prefix=/install --no-cache-dir -r requirements.txt
 
 
-# ── Stage 2: final runtime image ─────────────────────────────────────────────
+# ── Stage 2: final runtime image 
 FROM python:3.11-slim AS runtime
 
 WORKDIR /app
